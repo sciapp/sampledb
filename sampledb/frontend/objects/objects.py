@@ -11,7 +11,6 @@ import flask_login
 import markupsafe
 import werkzeug
 from flask_babel import _
-from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
@@ -75,6 +74,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
     'action_info',
     'display_properties',
     'location_info',
+    'topic_info',
 )
 
 
@@ -481,7 +481,7 @@ def objects() -> FlaskResponseT:
             except logic.errors.ObjectDoesNotExistError:
                 pass
         try:
-            filter_func_with_notes, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
+            filter_func_with_notes, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search, use_permissions_filter_for_referenced_objects=not flask_login.current_user.has_admin_permissions)
         except Exception:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
@@ -646,7 +646,6 @@ def objects() -> FlaskResponseT:
             'eln_import_id': obj.eln_import_id,
             'eln_object_id': obj.eln_object_id,
             'eln_import': obj.eln_import,
-            'files': logic.files.get_files_for_object(obj.object_id),
         })
 
         for property_name in display_properties:
@@ -691,7 +690,7 @@ def objects() -> FlaskResponseT:
             display_property_titles[property_name] = property_title
 
     if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
-        creation_info, last_edit_info, action_info, other_databases_info, location_info = _parse_object_list_options(flask.request.args)
+        creation_info, last_edit_info, action_info, other_databases_info, location_info, topic_info = _parse_object_list_options(flask.request.args)
     else:
         creation_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('creation_info', ['user', 'date'])
         last_edit_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('last_edit_info', ['user', 'date'])
@@ -704,6 +703,7 @@ def objects() -> FlaskResponseT:
             location_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('location_info', [])
         else:
             location_info = ['location', 'responsible_user']
+        topic_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('topic_info', [])
     if not flask.current_app.config['FEDERATION_UUID']:
         other_databases_info = False
 
@@ -722,6 +722,24 @@ def objects() -> FlaskResponseT:
             else:
                 object['location_id'] = object_location_assignment.location_id
                 object['responsible_user_id'] = object_location_assignment.responsible_user_id
+
+    if topic_info:
+        object_ids = {
+            object['object_id']
+            for object in objects
+        }
+        topic_ids_by_object_ids = logic.topics.get_topic_ids_by_object_ids(list(object_ids), flask_login.current_user.id)
+        for object in objects:
+            if object['object_id'] in topic_ids_by_object_ids:
+                object['topic_ids'] = topic_ids_by_object_ids[object['object_id']]
+            else:
+                object['topic_ids'] = {}
+        topics_by_id = {
+            topic.id: topic
+            for topic in logic.topics.get_topics()
+        }
+    else:
+        topics_by_id = {}
 
     object_name_plural = _('Objects')
 
@@ -892,7 +910,7 @@ def objects() -> FlaskResponseT:
     projects_treepicker_info = None
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
-        all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
+        all_choices, choices = get_locations_form_data(filter=lambda location: location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments))
         location_form.location.all_choices = all_choices
         location_form.location.choices = choices
         possible_resposible_users = [('-1', '-')]
@@ -932,7 +950,7 @@ def objects() -> FlaskResponseT:
             actions = logic.actions.get_actions(action_type_id=use_in_action_type_id)
 
         for action in actions:
-            if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action.id not in favorite_actions:
+            if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action not in favorite_actions:
                 favorite_actions.append(action)
 
     elif generate_labels:
@@ -1042,6 +1060,8 @@ def objects() -> FlaskResponseT:
         action_info=action_info,
         other_databases_info=other_databases_info,
         location_info=location_info,
+        topic_info=topic_info,
+        topics_by_id=topics_by_id,
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
@@ -1100,7 +1120,6 @@ def objects() -> FlaskResponseT:
         PAGE_SIZES=PAGE_SIZES,
         HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
         VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
-        mm=mm,
         edit_permissions=edit_permissions,
         edit_permissions_form=edit_permissions_form,
         current_permissions_special_groups=current_permissions_special_groups,
@@ -1402,6 +1421,7 @@ def _parse_object_list_options(
     typing.List[str],
     bool,
     typing.List[str],
+    typing.List[str],
 ]:
     creation_info_set = set()
     for creation_info_str in params.getlist('creation_info'):
@@ -1431,8 +1451,15 @@ def _parse_object_list_options(
             location_info_set.add(location_info_str)
     location_info = list(location_info_set)
 
+    topic_info_set = set()
+    for topic_info_str in params.getlist('topic_info'):
+        topic_info_str = topic_info_str.strip().lower()
+        if topic_info_str in {'topics'}:
+            topic_info_set.add(topic_info_str)
+    topic_info = list(topic_info_set)
+
     other_databases_info = 'other_databases_info' in params
-    return creation_info, last_edit_info, action_info, other_databases_info, location_info
+    return creation_info, last_edit_info, action_info, other_databases_info, location_info, topic_info
 
 
 def _parse_display_properties(
@@ -1543,6 +1570,7 @@ def save_object_list_defaults() -> FlaskResponseT:
             action_info,
             other_databases_info,
             location_info,
+            topic_info,
         ) = _parse_object_list_options(
             params=flask.request.form
         )
@@ -1558,6 +1586,7 @@ def save_object_list_defaults() -> FlaskResponseT:
                     'action_info': action_info,
                     'other_databases_info': other_databases_info,
                     'location_info': location_info,
+                    'topic_info': topic_info,
                     'display_properties': display_properties
                 }
             }
@@ -1599,7 +1628,7 @@ def edit_multiple_locations() -> FlaskResponseT:
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), get_location_name(location, include_id=True))
         for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if location.type is None or location.type.enable_object_assignments
+        if location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments)
     ]
 
     possible_resposible_users = [('-1', '-')]

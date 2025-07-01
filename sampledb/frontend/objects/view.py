@@ -5,6 +5,7 @@
 import csv
 import io
 import json
+import re
 import typing
 
 import math
@@ -13,7 +14,6 @@ import flask
 import flask_login
 import itsdangerous
 from flask_babel import _
-from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
@@ -199,6 +199,8 @@ def object(object_id: int) -> FlaskResponseT:
     template_kwargs.update({
         "show_object_type_and_id_on_object_page_text": user_settings["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
         "show_object_title": user_settings["SHOW_OBJECT_TITLE"],
+        "workflow_view_modals": flask.current_app.config['WORKFLOW_VIEW_MODALS'] if user_settings['WORKFLOW_VIEW_MODALS'] is None else user_settings['WORKFLOW_VIEW_MODALS'],
+        "workflow_view_collapsed": flask.current_app.config['WORKFLOW_VIEW_COLLAPSED'] if user_settings['WORKFLOW_VIEW_COLLAPSED'] is None else user_settings['WORKFLOW_VIEW_COLLAPSED'],
     })
 
     # QR code
@@ -214,7 +216,6 @@ def object(object_id: int) -> FlaskResponseT:
         "PAGE_SIZES": PAGE_SIZES,
         "HORIZONTAL_LABEL_MARGIN": HORIZONTAL_LABEL_MARGIN,
         "VERTICAL_LABEL_MARGIN": VERTICAL_LABEL_MARGIN,
-        "mm": mm,
     })
 
     # dataverse export
@@ -359,6 +360,8 @@ def object(object_id: int) -> FlaskResponseT:
         location_form = ObjectLocationAssignmentForm()
 
         def location_filter(location: Location, action_type_id: typing.Optional[int] = action_type.id if action_type is not None else None) -> bool:
+            if not location.enable_object_assignments:
+                return False
             if not location.type.enable_object_assignments:
                 return False
             if location.type.enable_capacities:
@@ -433,15 +436,43 @@ def object(object_id: int) -> FlaskResponseT:
     workflows = get_workflow_references(object, flask_login.current_user.id, actions_by_id)
     template_kwargs.update({
         "workflows": workflows,
+        "only_empty_workflows": all(len(workflow) == 0 for workflow in workflows),
     })
 
     # related objects tree
     if action and action.type and action.type.enable_related_objects:
-        related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, user_id=flask_login.current_user.id)
+        related_objects_subtrees = logic.object_relationships.gather_related_object_subtrees(object_id)
+        related_object_refs_by_object_id = {}
+        for object_ref in related_objects_subtrees:
+            if object_ref.is_local:
+                related_object_refs_by_object_id[object_ref.object_id] = object_ref
+        related_object_ids = set(related_object_refs_by_object_id)
+        related_objects = logic.object_permissions.get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            object_ids=tuple(related_object_ids),
+            name_only=True
+        )
+        related_object_by_object_ref = {
+            related_object_refs_by_object_id[related_object.object_id]: related_object
+            for related_object in related_objects
+        }
+        related_objects_object_refs = list(related_objects_subtrees)
+        related_objects_index_by_object_ref = {
+            object_ref: index
+            for index, object_ref in enumerate(related_objects_object_refs)
+        }
     else:
-        related_objects_tree = None
+        related_objects_subtrees = None
+        related_object_by_object_ref = None
+        related_objects_object_refs = None
+        related_objects_index_by_object_ref = None
     template_kwargs.update({
-        "related_objects_tree": related_objects_tree,
+        "related_objects_subtrees": related_objects_subtrees,
+        "related_object_by_object_ref": related_object_by_object_ref,
+        "object_ref": logic.object_relationships.ObjectRef(object_id=object_id, component_uuid=None, eln_object_url=None, eln_source_url=None),
+        "related_objects_object_refs": related_objects_object_refs,
+        "related_objects_index_by_object_ref": related_objects_index_by_object_ref
     })
 
     # various getters
@@ -516,8 +547,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         paper_format = flask.request.args.get('width-paper-format', '')
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
-        maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
-        maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
+        maximum_width = math.floor(PAGE_SIZES[paper_format][0] - 2 * HORIZONTAL_LABEL_MARGIN)
+        maximum_height = math.floor(PAGE_SIZES[paper_format][1] - 2 * VERTICAL_LABEL_MARGIN)
         ghs_classes_side_by_side = 'side-by-side' in flask.request.args
         label_minimum_width = 20.0
         if ghs_classes_side_by_side:
@@ -550,7 +581,7 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         paper_format = flask.request.args.get('height-paper-format', '')
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
-        maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
+        maximum_width = math.floor(PAGE_SIZES[paper_format][0] - 2 * HORIZONTAL_LABEL_MARGIN)
         include_qrcode_in_long_labels = 'include-qrcode' in flask.request.args
         label_width = 0
         label_minimum_height = 0
@@ -729,8 +760,8 @@ def multiselect_labels() -> FlaskResponseT:
     if paper_format not in PAGE_SIZES:
         paper_format = DEFAULT_PAPER_FORMAT
 
-    maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
-    maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
+    maximum_width = math.floor(PAGE_SIZES[paper_format][0] - 2 * HORIZONTAL_LABEL_MARGIN)
+    maximum_height = math.floor(PAGE_SIZES[paper_format][1] - 2 * VERTICAL_LABEL_MARGIN)
 
     qr_code_width = 18.0
     min_label_width = 0.0
@@ -893,7 +924,7 @@ def post_object_location(object_id: int) -> FlaskResponseT:
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), get_location_name(location, include_id=True, has_read_permissions=True))
         for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if location.type is None or location.type.enable_object_assignments
+        if location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments)
     ]
     possible_responsible_users = [('-1', '—')]
     for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
@@ -1208,6 +1239,31 @@ def new_object() -> FlaskResponseT:
                         'object_id': passed_object_ids[0]
                     }
 
+    url_properties: dict[typing.Sequence[str | int], typing.Any] = {}
+    prefix = 'properties.'
+    for k, [*_vs, v] in flask.request.args.lists():
+        if not k.startswith(prefix):
+            continue
+        path = parse_property_path(k.removeprefix(prefix))
+        try:
+            schema = iter_schema_path(action.schema, path)
+        except Exception:
+            flask.flash(_('The path "%(path)s" is not valid for the schema of this action.', path=k), 'error')
+            continue
+        try:
+            url_properties[path] = parse_default_for_subschema(
+                schema,
+                v,
+            )
+        except errors.MismatchedUnitError:
+            flask.flash(_('The unit of "%(path)s=%(value)s" does not match the unit(s) of the schema: %(units)s', path=k, value=v, units=schema["units"]), 'error')
+        except Exception:
+            flask.flash(_('The value of "%(path)s=%(value)s" is not valid for this schema: %(schema)s', path=k, value=v, schema=schema), 'error')
+    if url_properties:
+        if not placeholder_data:
+            placeholder_data = {}
+        placeholder_data.update(url_properties)
+
     if previous_object is not None:
         should_upgrade_schema = flask.request.args.get('mode', '') == 'upgrade'
         if action.schema != previous_object.schema and not should_upgrade_schema and flask.current_app.config['DISABLE_OUTDATED_USE_AS_TEMPLATE']:
@@ -1226,6 +1282,72 @@ def new_object() -> FlaskResponseT:
         passed_object_ids=passed_object_ids,
         show_selecting_modal=(not fields_selected)
     )
+
+
+def parse_property_path(path: str) -> tuple[int | str, ...]:
+    def f(v: str) -> str | int:
+        try:
+            return int(v)
+        except Exception:
+            return v
+    return tuple(f(v) for v in path.split('.'))
+
+
+def iter_schema_path(schema: dict[str, typing.Any], path: tuple[int | str, ...]) -> dict[str, typing.Any]:
+    s = schema
+    for k in path:
+        while s.get('type', None) in ('object', 'array'):
+            if s['type'] == 'object':
+                s = s['properties']
+            else:
+                s = s['items']
+        if isinstance(k, int):
+            continue
+        s = s[k]
+    return s
+
+
+def parse_default_for_subschema(schema: dict[str, typing.Any], value: str) -> dict[str, typing.Any]:
+    def quantity() -> dict[str, typing.Any]:
+        m = re.match(r'^(\d+\.?\d*)(.*)', value)
+        if not m:
+            raise ValueError()
+        magnitude = m.group(1)
+        unit = m.group(2) or '1'
+        if unit not in schema['units']:
+            raise errors.MismatchedUnitError()
+        return {
+            'magnitude': float(magnitude),
+            'units': unit,
+        }
+
+    def simple(
+            k: str,
+            f: typing.Callable[[str], typing.Any] | None = None,
+    ) -> typing.Callable[[], dict[str, typing.Any]]:
+        return lambda: {
+            k: f(value) if f else value
+        }
+
+    functions = {
+        'quantity': quantity,
+        'text': simple('text'),
+        'bool': simple('value', lambda v: v == 'true'),
+        'datetime': simple('utc_datetime'),
+        'tags': simple('tags', lambda v: v.split(',')),
+        'user': simple('user_id', int),
+        'object_reference': simple('object_id', int),
+        'sample': simple('object_id', int),
+        'measurement': simple('object_id', int),
+    }
+
+    instance = {
+        '_type': schema['type'],
+    } | functions[schema['type']]()
+
+    logic.schemas.validate(instance, schema)
+
+    return instance
 
 
 @frontend.route('/objects/<int:object_id>/timeseries_data/<timeseries_id>')

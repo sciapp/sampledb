@@ -13,7 +13,6 @@ import flask
 from flask_babel import refresh, _, lazy_gettext
 import flask_login
 from fido2.webauthn import PublicKeyCredentialUserEntity, ResidentKeyRequirement, UserVerificationRequirement
-import sqlalchemy.sql.expression
 import pytz
 
 from ... import db
@@ -28,8 +27,8 @@ from ..utils import get_groups_form_data
 
 from ... import logic
 from ...logic import user_log, errors
-from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server, get_api_tokens
-from ...logic.users import get_user, get_users, User
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server, get_api_tokens, get_authentication_methods, get_authentication_method, confirm_authentication_method_by_email, ALL_AUTHENTICATION_TYPES
+from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
@@ -40,7 +39,7 @@ from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
 from ...logic.webhooks import get_webhooks, create_webhook, remove_webhook
 from ...logic.instruments import get_user_instruments
-from ...models import Authentication, AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
+from ...models import AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
 from ...models.webhooks import WebhookType
 from ...utils import FlaskResponseT
 
@@ -69,17 +68,258 @@ def user_preferences(user_id: int) -> FlaskResponseT:
             if not flask_login.login_fresh():
                 # ensure only fresh sessions can edit preferences including passwords and api tokens
                 return flask.redirect(flask.url_for('.refresh_sign_in', next=flask.url_for('.user_preferences', user_id=flask_login.current_user.id)))
-            # user eingeloggt, change preferences möglich
-            user = flask_login.current_user
-            return change_preferences(user, user_id)
+            # user is logged in and can edit their preferences
+            return change_preferences()
     else:
         return typing.cast(flask_login.LoginManager, flask.current_app.login_manager).unauthorized()  # type: ignore[attr-defined, no-any-return]
 
 
-def change_preferences(user: User, user_id: int) -> FlaskResponseT:
-    is_instrument_responsible_user = bool(get_user_instruments(user.id, exclude_hidden=True))
-    two_factor_authentication_methods = get_two_factor_authentication_methods(user_id)
+def _handle_account_information_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    change_user_form = ChangeUserForm()
+
+    template_kwargs.update(
+        change_user_form=change_user_form,
+        EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+    )
+    if 'change' not in flask.request.form:
+        if change_user_form.name.data is None or change_user_form.name.data == "":
+            change_user_form.name.data = flask_login.current_user.name
+        if change_user_form.email.data is None or change_user_form.email.data == "":
+            change_user_form.email.data = flask_login.current_user.email
+        if change_user_form.orcid.data is None or change_user_form.orcid.data == "":
+            change_user_form.orcid.data = flask_login.current_user.orcid
+        if change_user_form.affiliation.data is None or change_user_form.affiliation.data == "":
+            change_user_form.affiliation.data = flask_login.current_user.affiliation
+        if change_user_form.role.data is None or change_user_form.role.data == "":
+            change_user_form.role.data = flask_login.current_user.role
+    if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
+        if change_user_form.validate_on_submit():
+            if change_user_form.name.data != flask_login.current_user.name:
+                logic.users.update_user(
+                    flask_login.current_user.id,
+                    updating_user_id=flask_login.current_user.id,
+                    name=str(change_user_form.name.data)
+                )
+                user_log.edit_user_preferences(user_id=flask_login.current_user.id)
+                flask.flash(_("Successfully updated your user name."), 'success')
+            if change_user_form.email.data != flask_login.current_user.email:
+                # send confirm link
+                mail_send_status = send_email_confirmation_email(
+                    email=change_user_form.email.data,
+                    user_id=flask_login.current_user.id,
+                    salt='edit_profile'
+                )[0]
+                if mail_send_status == BackgroundTaskStatus.FAILED:
+                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+                else:
+                    flask.flash(_("Please see your email to confirm this change."), 'success')
+            if change_user_form.orcid.data != flask_login.current_user.orcid or change_user_form.affiliation.data != flask_login.current_user.affiliation or change_user_form.role.data != flask_login.current_user.role:
+                if change_user_form.orcid.data and change_user_form.orcid.data.strip():
+                    orcid = change_user_form.orcid.data.strip()
+                else:
+                    orcid = None
+                if change_user_form.affiliation.data and change_user_form.affiliation.data.strip():
+                    affiliation = change_user_form.affiliation.data.strip()
+                else:
+                    affiliation = None
+                if change_user_form.role.data and change_user_form.role.data.strip():
+                    role = change_user_form.role.data.strip()
+                else:
+                    role = None
+                extra_fields = {}
+                for extra_field_id in flask.current_app.config['EXTRA_USER_FIELDS']:
+                    extra_field_value = flask.request.form.get('extra_field_' + str(extra_field_id))
+                    if extra_field_value:
+                        extra_fields[extra_field_id] = extra_field_value
+                change_orcid = (flask_login.current_user.orcid != orcid and (orcid is not None or flask_login.current_user.orcid is not None))
+                change_affiliation = (flask_login.current_user.affiliation != affiliation and (affiliation is not None or flask_login.current_user.affiliation is not None))
+                change_role = (flask_login.current_user.role != role and (role is not None or flask_login.current_user.role is not None))
+                change_extra_fields = flask_login.current_user.extra_fields != extra_fields
+                if change_orcid or change_affiliation or change_role or change_extra_fields:
+                    logic.users.update_user(
+                        flask_login.current_user.id,
+                        updating_user_id=flask_login.current_user.id,
+                        orcid=orcid,
+                        affiliation=affiliation,
+                        role=role,
+                        extra_fields=extra_fields
+                    )
+                    user_log.edit_user_preferences(user_id=flask_login.current_user.id)
+                    flask.flash(_("Successfully updated your user information."), 'success')
+
+            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
+    return None
+
+
+def _handle_authentication_methods_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    authentication_methods = get_authentication_methods(
+        user_id=flask_login.current_user.id,
+        authentication_types=ALL_AUTHENTICATION_TYPES - {
+            AuthenticationType.API_TOKEN,
+            AuthenticationType.API_ACCESS_TOKEN
+        } - ({AuthenticationType.FEDERATED_LOGIN} if not flask.current_app.config['ENABLE_FEDERATED_LOGIN'] else set())
+    )
+    authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
+
+    authentication_form = AuthenticationForm()
+    if flask.current_app.config["ENABLE_FIDO2_PASSKEY_AUTHENTICATION"]:
+        authentication_form.authentication_method.choices.append(('FIDO2_PASSKEY', 'FIDO2 Passkey'))
+    authentication_method_form = AuthenticationMethodForm()
+    authentication_password_form = AuthenticationPasswordForm()
+
+    server = get_webauthn_server()
+    all_credentials = get_all_fido2_passkey_credentials()
+    options, state = server.register_begin(
+        PublicKeyCredentialUserEntity(
+            id=f"signin-{flask_login.current_user.id}".encode('utf-8'),
+            name=f"{flask_login.current_user.name} ({flask_login.current_user.email})",
+            display_name=flask_login.current_user.name,
+        ),
+        credentials=all_credentials,
+        resident_key_requirement=ResidentKeyRequirement.PREFERRED,
+        user_verification=UserVerificationRequirement.REQUIRED
+    )
+    if not authentication_form.validate_on_submit():
+        flask.session["webauthn_enroll_state"] = state
+
+    template_kwargs.update(
+        authentication_password_form=authentication_password_form,
+        authentication_method_form=authentication_method_form,
+        authentication_form=authentication_form,
+        confirmed_authentication_methods=len([
+            authentication_method
+            for authentication_method in authentication_methods
+            if authentication_method.confirmed and authentication_method.type != AuthenticationType.FIDO2_PASSKEY
+        ]),
+        authentications=authentication_methods,
+        api_access_tokens=get_authentication_methods(
+            user_id=flask_login.current_user.id,
+            authentication_types={AuthenticationType.API_ACCESS_TOKEN}
+        ),
+        options=options,
+    )
+
+    if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
+        if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
+            authentication_method_id = authentication_password_form.id.data
+            try:
+                password_was_changed = change_password_in_authentication_method(authentication_method_id, authentication_password_form.password.data)
+            except Exception as e:
+                password_was_changed = False
+                template_kwargs.update(
+                    error=str(e),
+                )
+            if not password_was_changed:
+                flask.flash(_("Failed to change password."), 'error')
+                return None
+            flask.flash(_("Successfully updated your password."), 'success')
+            user_log.edit_user_preferences(user_id=flask_login.current_user.id)
+            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
+        else:
+            flask.flash(_("Failed to change password."), 'error')
+    if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
+        authentication_method_id = authentication_method_form.id.data
+        if authentication_method_form.validate_on_submit():
+            try:
+                remove_authentication_method(authentication_method_id)
+            except Exception as e:
+                flask.flash(_("Failed to remove the authentication method."), 'error')
+                template_kwargs.update(
+                    error=str(e),
+                )
+                return None
+            else:
+                flask.flash(_("Successfully removed the authentication method."), 'success')
+                user_log.edit_user_preferences(user_id=flask_login.current_user.id)
+                return flask.redirect(flask.url_for('frontend.user_me_preferences'))
+    if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
+        if logic.oidc.is_oidc_only_auth_method():
+            # The form isn't shown to the user, so ignore attempts.
+            return None
+
+        if authentication_form.validate_on_submit():
+            # check, if login already exists
+            all_authentication_methods = {
+                'E': AuthenticationType.EMAIL,
+                'L': AuthenticationType.LDAP,
+                'O': AuthenticationType.OTHER
+            }
+            if flask.current_app.config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION']:
+                all_authentication_methods['FIDO2_PASSKEY'] = AuthenticationType.FIDO2_PASSKEY
+            if authentication_form.authentication_method.data not in all_authentication_methods:
+                return flask.abort(400)
+
+            authentication_method = all_authentication_methods[authentication_form.authentication_method.data]
+            # check, if additional authentication is correct
+            try:
+                if authentication_method == AuthenticationType.FIDO2_PASSKEY:
+                    auth_data = server.register_complete(
+                        flask.session["webauthn_enroll_state"],
+                        json.loads(authentication_form.fido2_passkey_credentials.data)
+                    )
+                    assert auth_data.credential_data is not None
+                    add_fido2_passkey(
+                        user_id=flask_login.current_user.id,
+                        credential_data=auth_data.credential_data,
+                        description=authentication_form.description.data
+                    )
+                    del flask.session["webauthn_enroll_state"]
+                else:
+                    add_authentication_method(flask_login.current_user.id, authentication_form.login.data, authentication_form.password.data, authentication_method)
+                flask.flash(_("Successfully added the authentication method."), 'success')
+                return flask.redirect(flask.url_for('.user_me_preferences'))
+            except Exception as e:
+                flask.flash(_("Failed to add an authentication method."), 'error')
+                template_kwargs.update(
+                    error_add=str(e)
+                )
+                return None
+        else:
+            flask.flash(_("Failed to add an authentication method."), 'error')
+    return None
+
+
+def _handle_create_api_token_form(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    create_api_token_form = CreateAPITokenForm()
+
+    template_kwargs.update(
+        api_tokens=get_api_tokens(flask_login.current_user.id),
+        create_api_token_form=create_api_token_form,
+        created_api_token=None
+    )
+    if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
+        created_api_token = secrets.token_hex(32)
+        description = create_api_token_form.description.data
+        try:
+            add_api_token(flask_login.current_user.id, created_api_token, description)
+            template_kwargs.update(
+                api_tokens=get_api_tokens(flask_login.current_user.id),
+                created_api_token=created_api_token,
+            )
+        except Exception as e:
+            flask.flash(_("Failed to add an API token."), 'error')
+            template_kwargs.update(
+                error_add=str(e)
+            )
+    return None
+
+
+def _handle_two_factor_authentication_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    two_factor_authentication_methods = get_two_factor_authentication_methods(flask_login.current_user.id)
     manage_two_factor_authentication_method_form = ManageTwoFactorAuthenticationMethodForm()
+    template_kwargs.update(
+        two_factor_authentication_methods=two_factor_authentication_methods,
+        manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+        has_active_method=any(method.active for method in two_factor_authentication_methods),
+    )
 
     if manage_two_factor_authentication_method_form.validate_on_submit():
         method_id = manage_two_factor_authentication_method_form.method_id.data
@@ -139,45 +379,102 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     method_to_deactivate=method
                 )
         flask.flash(_('Something went wrong, please try again.'), 'error')
+    return None
 
-    api_tokens = get_api_tokens(user_id)
-    api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
-    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
-    authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN, Authentication.type != AuthenticationType.FIDO2_PASSKEY).count()
-    change_user_form = ChangeUserForm()
-    authentication_form = AuthenticationForm()
-    if flask.current_app.config["ENABLE_FIDO2_PASSKEY_AUTHENTICATION"]:
-        authentication_form.authentication_method.choices.append(('FIDO2_PASSKEY', 'FIDO2 Passkey'))
-    authentication_method_form = AuthenticationMethodForm()
-    authentication_password_form = AuthenticationPasswordForm()
 
-    server = get_webauthn_server()
-    all_credentials = get_all_fido2_passkey_credentials()
-    options, state = server.register_begin(
-        PublicKeyCredentialUserEntity(
-            id=f"signin-{flask_login.current_user.id}".encode('utf-8'),
-            name=f"{flask_login.current_user.name} ({flask_login.current_user.email})",
-            display_name=flask_login.current_user.name,
-        ),
-        credentials=all_credentials,
-        resident_key_requirement=ResidentKeyRequirement.PREFERRED,
-        user_verification=UserVerificationRequirement.REQUIRED
+def _handle_webhook_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    may_use_webhooks = flask_login.current_user.is_admin or flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS']
+    add_webhook_form = AddWebhookForm()
+    if add_webhook_form.address.data is None:
+        add_webhook_form.address.data = ''
+    if add_webhook_form.name.data is None:
+        add_webhook_form.name.data = ''
+    remove_webhook_form = RemoveWebhookForm()
+
+    template_kwargs.update(
+        may_use_webhooks=may_use_webhooks,
+        webhooks=get_webhooks(user_id=flask_login.current_user.get_id()),
+        show_add_form=False,
+        webhook_secret=None,
+        add_webhook_form=add_webhook_form,
+        remove_webhook_form=remove_webhook_form,
     )
-    if not authentication_form.validate_on_submit():
-        flask.session["webauthn_enroll_state"] = state
 
-    created_api_token = None
-    create_api_token_form = CreateAPITokenForm()
+    if 'remove_webhook' in flask.request.form and may_use_webhooks:
+        if remove_webhook_form.validate_on_submit():
+            try:
+                webhook_id = remove_webhook_form.id.data
+                remove_webhook(webhook_id)
+                flask.flash(_('Successfully removed the webhook.'), 'success')
+            except Exception:
+                flask.flash(_('Failed to remove the webhook.'), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
 
+    if 'add_webhook' in flask.request.form:
+        if not may_use_webhooks:
+            flask.flash(_('You are not allowed to create Webhooks.'), 'error')
+            return None
+        if add_webhook_form.validate_on_submit():
+            try:
+                name = add_webhook_form.name.data
+                address = add_webhook_form.address.data
+                if name == '':
+                    name = None
+                if address == '':
+                    address = None
+                new_webhook = create_webhook(type=WebhookType.OBJECT_LOG, user_id=flask_login.current_user.get_id(), target_url=address, name=name)
+            except errors.WebhookAlreadyExistsError:
+                add_webhook_form.address.errors.append(_('A webhook of this type with this target address already exists', service_name=flask.current_app.config['SERVICE_NAME']))
+            except errors.InsecureComponentAddressError:
+                add_webhook_form.address.errors.append(_('Only secure communication via https is allowed'))
+            except errors.InvalidComponentAddressError:
+                add_webhook_form.address.errors.append(_('This webhook address is invalid'))
+            except Exception:
+                add_webhook_form.name.errors.append(_('Failed to create webhook'))
+            else:
+                flask.flash(_('The webhook has been added successfully'), 'success')
+                template_kwargs.update(
+                    webhooks=get_webhooks(user_id=flask_login.current_user.get_id()),
+                    webhook_secret=new_webhook.secret,
+                )
+                return None
+        template_kwargs.update(
+            show_add_form=True
+        )
+    return None
+
+
+def _handle_notification_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
     notification_mode_form = NotificationModeForm()
 
-    other_settings_form = OtherSettingsForm()
-    all_timezones = list(pytz.all_timezones)
-    your_locale = flask.request.accept_languages.best_match(SUPPORTED_LOCALES)
+    template_kwargs.update(
+        notification_modes=get_notification_modes(flask_login.current_user.id),
+        notification_mode_form=notification_mode_form,
+        NotificationMode=NotificationMode,
+        NotificationType=NotificationType,
+        is_instrument_responsible_user=bool(get_user_instruments(flask_login.current_user.id, exclude_hidden=True))
+    )
 
-    user_settings = get_user_settings(flask_login.current_user.id)
+    if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
+        for notification_type in NotificationType:
+            if 'notification_mode_for_type_' + notification_type.name.lower() in flask.request.form:
+                notification_mode_text = flask.request.form.get('notification_mode_for_type_' + notification_type.name.lower())
+                for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL]:
+                    if notification_mode_text == notification_mode.name.lower():
+                        set_notification_mode_for_type(notification_type, flask_login.current_user.id, notification_mode)
+                        break
+        flask.flash(_("Successfully updated your notification settings."), 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+    return None
 
+
+def _handle_default_permissions_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
     project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
@@ -199,9 +496,9 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         existing_project_permissions=project_permissions
     )
 
-    users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True)
-    users = [user for user in users if user.id not in user_permissions]
-    users.sort(key=lambda user: user.id)
+    users_without_permissions = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True)
+    users_without_permissions = [user for user in users_without_permissions if user.id not in user_permissions]
+    users_without_permissions.sort(key=lambda user: user.id)
 
     show_groups_form, groups_treepicker_info = get_groups_form_data(
         basic_group_filter=lambda group: group.id not in group_permissions
@@ -210,367 +507,25 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
     show_projects_form, projects_treepicker_info = get_groups_form_data(
         project_group_filter=lambda group: group.id not in project_permissions
     )
-
-    may_use_webhooks = flask_login.current_user.is_admin or flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS']
-    webhooks = get_webhooks(user_id=flask_login.current_user.get_id())
-    show_add_form = False
-    webhook_secret = None
-    add_webhook_form = AddWebhookForm()
-    if add_webhook_form.address.data is None:
-        add_webhook_form.address.data = ''
-    if add_webhook_form.name.data is None:
-        add_webhook_form.name.data = ''
-    remove_webhook_form = RemoveWebhookForm()
-
-    if 'change' not in flask.request.form:
-        if change_user_form.name.data is None or change_user_form.name.data == "":
-            change_user_form.name.data = user.name
-        if change_user_form.email.data is None or change_user_form.email.data == "":
-            change_user_form.email.data = user.email
-        if change_user_form.orcid.data is None or change_user_form.orcid.data == "":
-            change_user_form.orcid.data = user.orcid
-        if change_user_form.affiliation.data is None or change_user_form.affiliation.data == "":
-            change_user_form.affiliation.data = user.affiliation
-        if change_user_form.role.data is None or change_user_form.role.data == "":
-            change_user_form.role.data = user.role
-
-    if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
-        if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
-            authentication_method_id = authentication_password_form.id.data
-            try:
-                change_password_in_authentication_method(authentication_method_id, authentication_password_form.password.data)
-                flask.flash(_("Successfully updated your password."), 'success')
-            except Exception as e:
-                flask.flash(_("Failed to change password."), 'error')
-                return flask.render_template(
-                    'preferences.html',
-                    user=user,
-                    change_user_form=change_user_form,
-                    authentication_password_form=authentication_password_form,
-                    default_permissions_form=default_permissions_form,
-                    add_user_permissions_form=add_user_permissions_form,
-                    add_group_permissions_form=add_group_permissions_form,
-                    add_project_permissions_form=add_project_permissions_form,
-                    notification_mode_form=notification_mode_form,
-                    Permissions=Permissions,
-                    NotificationMode=NotificationMode,
-                    NotificationType=NotificationType,
-                    notification_modes=get_notification_modes(flask_login.current_user.id),
-                    is_instrument_responsible_user=is_instrument_responsible_user,
-                    user_settings=user_settings,
-                    other_settings_form=other_settings_form,
-                    all_timezones=all_timezones,
-                    supported_locales=SUPPORTED_LOCALES,
-                    your_locale=your_locale,
-                    get_user=get_user,
-                    users=users,
-                    get_group=get_group,
-                    show_groups_form=show_groups_form,
-                    groups_treepicker_info=groups_treepicker_info,
-                    show_projects_form=show_projects_form,
-                    projects_treepicker_info=projects_treepicker_info,
-                    get_project=get_project,
-                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-                    user_permissions=user_permissions,
-                    group_permissions=group_permissions,
-                    project_permissions=project_permissions,
-                    all_user_permissions=all_user_permissions,
-                    authentication_method_form=authentication_method_form,
-                    options=options,
-                    authentication_form=authentication_form,
-                    create_api_token_form=create_api_token_form,
-                    confirmed_authentication_methods=confirmed_authentication_methods,
-                    authentications=authentication_methods,
-                    error=str(e),
-                    two_factor_authentication_methods=two_factor_authentication_methods,
-                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-                    has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens,
-                    api_access_tokens=api_access_tokens,
-                    webhooks=webhooks,
-                    may_use_webhooks=may_use_webhooks,
-                    add_webhook_form=add_webhook_form,
-                    show_add_form=show_add_form,
-                    remove_webhook_form=remove_webhook_form,
-                    webhook_secret=webhook_secret,
-                )
-            user_log.edit_user_preferences(user_id=user_id)
-            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
-        else:
-            flask.flash(_("Failed to change password."), 'error')
-    if 'delete_dataverse_api_token' in flask.request.form:
-        set_user_settings(flask_login.current_user.id, {
-            'DATAVERSE_API_TOKEN': ''
-        })
-        flask.flash(_('Successfully deleted your stored Dataverse API Token.'), 'success')
-        return flask.redirect(flask.url_for('frontend.user_me_preferences'))
-    if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
-        if change_user_form.validate_on_submit():
-            if change_user_form.name.data != user.name:
-                logic.users.update_user(
-                    user.id,
-                    updating_user_id=user.id,
-                    name=str(change_user_form.name.data)
-                )
-                user_log.edit_user_preferences(user_id=user_id)
-                flask.flash(_("Successfully updated your user name."), 'success')
-            if change_user_form.email.data != user.email:
-                # send confirm link
-                mail_send_status = send_email_confirmation_email(
-                    email=change_user_form.email.data,
-                    user_id=user.id,
-                    salt='edit_profile'
-                )[0]
-                if mail_send_status == BackgroundTaskStatus.FAILED:
-                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
-                else:
-                    flask.flash(_("Please see your email to confirm this change."), 'success')
-            if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation or change_user_form.role.data != user.role:
-                if change_user_form.orcid.data and change_user_form.orcid.data.strip():
-                    orcid = change_user_form.orcid.data.strip()
-                else:
-                    orcid = None
-                if change_user_form.affiliation.data and change_user_form.affiliation.data.strip():
-                    affiliation = change_user_form.affiliation.data.strip()
-                else:
-                    affiliation = None
-                if change_user_form.role.data and change_user_form.role.data.strip():
-                    role = change_user_form.role.data.strip()
-                else:
-                    role = None
-                extra_fields = {}
-                for extra_field_id in flask.current_app.config['EXTRA_USER_FIELDS']:
-                    extra_field_value = flask.request.form.get('extra_field_' + str(extra_field_id))
-                    if extra_field_value:
-                        extra_fields[extra_field_id] = extra_field_value
-                change_orcid = (user.orcid != orcid and (orcid is not None or user.orcid is not None))
-                change_affiliation = (user.affiliation != affiliation and (affiliation is not None or user.affiliation is not None))
-                change_role = (user.role != role and (role is not None or user.role is not None))
-                change_extra_fields = user.extra_fields != extra_fields
-                if change_orcid or change_affiliation or change_role or change_extra_fields:
-                    logic.users.update_user(
-                        user.id,
-                        updating_user_id=user.id,
-                        orcid=orcid,
-                        affiliation=affiliation,
-                        role=role,
-                        extra_fields=extra_fields
-                    )
-                    user_log.edit_user_preferences(user_id=user_id)
-                    flask.flash(_("Successfully updated your user information."), 'success')
-
-            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
-    if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
-        authentication_method_id = authentication_method_form.id.data
-        if authentication_method_form.validate_on_submit():
-            try:
-                remove_authentication_method(authentication_method_id)
-                flask.flash(_("Successfully removed the authentication method."), 'success')
-            except Exception as e:
-                flask.flash(_("Failed to remove the authentication method."), 'error')
-                return flask.render_template(
-                    'preferences.html',
-                    user=user,
-                    change_user_form=change_user_form,
-                    authentication_password_form=authentication_password_form,
-                    default_permissions_form=default_permissions_form,
-                    add_user_permissions_form=add_user_permissions_form,
-                    add_group_permissions_form=add_group_permissions_form,
-                    add_project_permissions_form=add_project_permissions_form,
-                    notification_mode_form=notification_mode_form,
-                    Permissions=Permissions,
-                    NotificationMode=NotificationMode,
-                    NotificationType=NotificationType,
-                    notification_modes=get_notification_modes(flask_login.current_user.id),
-                    is_instrument_responsible_user=is_instrument_responsible_user,
-                    user_settings=user_settings,
-                    other_settings_form=other_settings_form,
-                    all_timezones=all_timezones,
-                    supported_locales=SUPPORTED_LOCALES,
-                    your_locale=your_locale,
-                    get_user=get_user,
-                    users=users,
-                    get_group=get_group,
-                    show_groups_form=show_groups_form,
-                    groups_treepicker_info=groups_treepicker_info,
-                    show_projects_form=show_projects_form,
-                    projects_treepicker_info=projects_treepicker_info,
-                    get_project=get_project,
-                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-                    user_permissions=user_permissions,
-                    group_permissions=group_permissions,
-                    project_permissions=project_permissions,
-                    all_user_permissions=all_user_permissions,
-                    authentication_method_form=authentication_method_form,
-                    options=options,
-                    authentication_form=authentication_form,
-                    create_api_token_form=create_api_token_form,
-                    confirmed_authentication_methods=confirmed_authentication_methods,
-                    authentications=authentication_methods,
-                    error=str(e),
-                    two_factor_authentication_methods=two_factor_authentication_methods,
-                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-                    has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens,
-                    api_access_tokens=api_access_tokens,
-                    webhooks=webhooks,
-                    may_use_webhooks=may_use_webhooks,
-                    add_webhook_form=add_webhook_form,
-                    show_add_form=show_add_form,
-                    remove_webhook_form=remove_webhook_form,
-                    webhook_secret=webhook_secret,
-                )
-            user_log.edit_user_preferences(user_id=user_id)
-            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
-    if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
-        if authentication_form.validate_on_submit():
-            # check, if login already exists
-            all_authentication_methods = {
-                'E': AuthenticationType.EMAIL,
-                'L': AuthenticationType.LDAP,
-                'O': AuthenticationType.OTHER
-            }
-            if flask.current_app.config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION']:
-                all_authentication_methods['FIDO2_PASSKEY'] = AuthenticationType.FIDO2_PASSKEY
-            if authentication_form.authentication_method.data not in all_authentication_methods:
-                return flask.abort(400)
-
-            authentication_method = all_authentication_methods[authentication_form.authentication_method.data]
-            # check, if additional authentication is correct
-            try:
-                if authentication_method == AuthenticationType.FIDO2_PASSKEY:
-                    auth_data = server.register_complete(
-                        flask.session["webauthn_enroll_state"],
-                        json.loads(authentication_form.fido2_passkey_credentials.data)
-                    )
-                    assert auth_data.credential_data is not None
-                    add_fido2_passkey(
-                        user_id=flask_login.current_user.id,
-                        credential_data=auth_data.credential_data,
-                        description=authentication_form.description.data
-                    )
-                    del flask.session["webauthn_enroll_state"]
-                else:
-                    add_authentication_method(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
-                flask.flash(_("Successfully added the authentication method."), 'success')
-                return flask.redirect(flask.url_for('.user_me_preferences'))
-            except Exception as e:
-                flask.flash(_("Failed to add an authentication method."), 'error')
-                return flask.render_template(
-                    'preferences.html',
-                    user=user,
-                    change_user_form=change_user_form,
-                    authentication_password_form=authentication_password_form,
-                    default_permissions_form=default_permissions_form,
-                    add_user_permissions_form=add_user_permissions_form,
-                    add_group_permissions_form=add_group_permissions_form,
-                    add_project_permissions_form=add_project_permissions_form,
-                    notification_mode_form=notification_mode_form,
-                    Permissions=Permissions,
-                    NotificationMode=NotificationMode,
-                    NotificationType=NotificationType,
-                    notification_modes=get_notification_modes(flask_login.current_user.id),
-                    is_instrument_responsible_user=is_instrument_responsible_user,
-                    user_settings=user_settings,
-                    other_settings_form=other_settings_form,
-                    all_timezones=all_timezones,
-                    supported_locales=SUPPORTED_LOCALES,
-                    your_locale=your_locale,
-                    get_user=get_user,
-                    users=users,
-                    get_group=get_group,
-                    show_groups_form=show_groups_form,
-                    groups_treepicker_info=groups_treepicker_info,
-                    show_projects_form=show_projects_form,
-                    projects_treepicker_info=projects_treepicker_info,
-                    get_project=get_project,
-                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-                    user_permissions=user_permissions,
-                    group_permissions=group_permissions,
-                    project_permissions=project_permissions,
-                    all_user_permissions=all_user_permissions,
-                    authentication_method_form=authentication_method_form,
-                    options=options,
-                    authentication_form=authentication_form,
-                    create_api_token_form=create_api_token_form,
-                    confirmed_authentication_methods=confirmed_authentication_methods,
-                    authentications=authentication_methods,
-                    error_add=str(e),
-                    two_factor_authentication_methods=two_factor_authentication_methods,
-                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-                    has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens,
-                    api_access_tokens=api_access_tokens,
-                    webhooks=webhooks,
-                    may_use_webhooks=may_use_webhooks,
-                    add_webhook_form=add_webhook_form,
-                    show_add_form=show_add_form,
-                    remove_webhook_form=remove_webhook_form,
-                    webhook_secret=webhook_secret,
-                )
-            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
-        else:
-            flask.flash(_("Failed to add an authentication method."), 'error')
-    if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
-        created_api_token = secrets.token_hex(32)
-        description = create_api_token_form.description.data
-        try:
-            add_api_token(flask_login.current_user.id, created_api_token, description)
-            api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
-        except Exception as e:
-            flask.flash(_("Failed to add an API token."), 'error')
-            return flask.render_template(
-                'preferences.html',
-                user=user,
-                change_user_form=change_user_form,
-                authentication_password_form=authentication_password_form,
-                default_permissions_form=default_permissions_form,
-                add_user_permissions_form=add_user_permissions_form,
-                add_group_permissions_form=add_group_permissions_form,
-                add_project_permissions_form=add_project_permissions_form,
-                notification_mode_form=notification_mode_form,
-                Permissions=Permissions,
-                NotificationMode=NotificationMode,
-                NotificationType=NotificationType,
-                notification_modes=get_notification_modes(flask_login.current_user.id),
-                is_instrument_responsible_user=is_instrument_responsible_user,
-                user_settings=user_settings,
-                other_settings_form=other_settings_form,
-                all_timezones=all_timezones,
-                supported_locales=SUPPORTED_LOCALES,
-                your_locale=your_locale,
-                get_user=get_user,
-                users=users,
-                get_group=get_group,
-                show_groups_form=show_groups_form,
-                groups_treepicker_info=groups_treepicker_info,
-                show_projects_form=show_projects_form,
-                projects_treepicker_info=projects_treepicker_info,
-                get_project=get_project,
-                EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-                user_permissions=user_permissions,
-                group_permissions=group_permissions,
-                project_permissions=project_permissions,
-                all_user_permissions=all_user_permissions,
-                authentication_method_form=authentication_method_form,
-                options=options,
-                authentication_form=authentication_form,
-                create_api_token_form=create_api_token_form,
-                confirmed_authentication_methods=confirmed_authentication_methods,
-                authentications=authentication_methods,
-                error_add=str(e),
-                two_factor_authentication_methods=two_factor_authentication_methods,
-                manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-                has_active_method=any(method.active for method in two_factor_authentication_methods),
-                api_tokens=api_tokens,
-                api_access_tokens=api_access_tokens,
-                webhooks=webhooks,
-                may_use_webhooks=may_use_webhooks,
-                add_webhook_form=add_webhook_form,
-                show_add_form=show_add_form,
-                remove_webhook_form=remove_webhook_form,
-                webhook_secret=webhook_secret,
-            )
+    template_kwargs.update(
+        Permissions=Permissions,
+        user_permissions=user_permissions,
+        group_permissions=group_permissions,
+        project_permissions=project_permissions,
+        all_user_permissions=all_user_permissions,
+        default_permissions_form=default_permissions_form,
+        add_user_permissions_form=add_user_permissions_form,
+        add_group_permissions_form=add_group_permissions_form,
+        add_project_permissions_form=add_project_permissions_form,
+        users=users_without_permissions,
+        show_groups_form=show_groups_form,
+        groups_treepicker_info=groups_treepicker_info,
+        show_projects_form=show_projects_form,
+        projects_treepicker_info=projects_treepicker_info,
+        get_user=get_user,
+        get_group=get_group,
+        get_project=get_project,
+    )
     if handle_permission_forms(
         default_permissions,
         flask_login.current_user.id,
@@ -581,18 +536,23 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
     ):
         flask.flash(_("Successfully updated default permissions."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+    return None
 
-    if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
-        for notification_type in NotificationType:
-            if 'notification_mode_for_type_' + notification_type.name.lower() in flask.request.form:
-                notification_mode_text = flask.request.form.get('notification_mode_for_type_' + notification_type.name.lower())
-                for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL]:
-                    if notification_mode_text == notification_mode.name.lower():
-                        set_notification_mode_for_type(notification_type, flask_login.current_user.id, notification_mode)
-                        break
-        flask.flash(_("Successfully updated your notification settings."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
+
+def _handle_other_settings_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    other_settings_form = OtherSettingsForm()
+    all_timezones = list(pytz.all_timezones)
+
+    template_kwargs.update(
+        user_settings=get_user_settings(flask_login.current_user.id),
+        other_settings_form=other_settings_form,
+        all_timezones=all_timezones,
+        supported_locales=SUPPORTED_LOCALES,
+        your_locale=flask.request.accept_languages.best_match(SUPPORTED_LOCALES),
+        allowed_language_codes=logic.locale.get_allowed_language_codes(),
+    )
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         modified_settings: typing.Dict[str, typing.Any] = {
@@ -656,6 +616,24 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
             full_width_objects_table = None
         modified_settings['FULL_WIDTH_OBJECTS_TABLE'] = full_width_objects_table
 
+        workflow_view_modals_text = flask.request.form.get('input-workflow-view-modals', 'default')
+        if workflow_view_modals_text == 'yes':
+            workflow_view_modals = True
+        elif workflow_view_modals_text == 'no':
+            workflow_view_modals = False
+        else:
+            workflow_view_modals = None
+        modified_settings['WORKFLOW_VIEW_MODALS'] = workflow_view_modals
+
+        workflow_view_collapsed_text = flask.request.form.get('input-workflow-view-collapsed', 'default')
+        if workflow_view_collapsed_text == 'yes':
+            workflow_view_collapsed = True
+        elif workflow_view_collapsed_text == 'no':
+            workflow_view_collapsed = False
+        else:
+            workflow_view_collapsed = None
+        modified_settings['WORKFLOW_VIEW_COLLAPSED'] = workflow_view_collapsed
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
@@ -669,147 +647,46 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
 
-    if 'remove_webhook' in flask.request.form and may_use_webhooks:
-        if remove_webhook_form.validate_on_submit():
-            try:
-                webhook_id = remove_webhook_form.id.data
-                remove_webhook(webhook_id)
-                flask.flash(_('Successfully removed the webhook.'), 'success')
-            except Exception:
-                flask.flash(_('Failed to remove the webhook.'), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=user_id))
-    if 'add_webhook' in flask.request.form:
-        if not may_use_webhooks:
-            flask.flash(_('You are not allowed to create Webhooks.'), 'error')
-            return flask.render_template(
-                'preferences.html',
-                user=user,
-                change_user_form=change_user_form,
-                authentication_password_form=authentication_password_form,
-                default_permissions_form=default_permissions_form,
-                add_user_permissions_form=add_user_permissions_form,
-                add_group_permissions_form=add_group_permissions_form,
-                add_project_permissions_form=add_project_permissions_form,
-                notification_mode_form=notification_mode_form,
-                NotificationMode=NotificationMode,
-                NotificationType=NotificationType,
-                notification_modes=get_notification_modes(flask_login.current_user.id),
-                is_instrument_responsible_user=is_instrument_responsible_user,
-                user_settings=user_settings,
-                other_settings_form=other_settings_form,
-                all_timezones=all_timezones,
-                your_locale=your_locale,
-                supported_locales=SUPPORTED_LOCALES,
-                allowed_language_codes=logic.locale.get_allowed_language_codes(),
-                Permissions=Permissions,
-                users=users,
-                get_user=get_user,
-                get_group=get_group,
-                show_groups_form=show_groups_form,
-                groups_treepicker_info=groups_treepicker_info,
-                show_projects_form=show_projects_form,
-                projects_treepicker_info=projects_treepicker_info,
-                get_project=get_project,
-                EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-                user_permissions=user_permissions,
-                group_permissions=group_permissions,
-                project_permissions=project_permissions,
-                all_user_permissions=all_user_permissions,
-                authentication_method_form=authentication_method_form,
-                options=options,
-                authentication_form=authentication_form,
-                create_api_token_form=create_api_token_form,
-                created_api_token=created_api_token,
-                confirmed_authentication_methods=confirmed_authentication_methods,
-                authentications=authentication_methods,
-                two_factor_authentication_methods=two_factor_authentication_methods,
-                manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-                has_active_method=any(method.active for method in two_factor_authentication_methods),
-                api_tokens=api_tokens,
-                api_access_tokens=api_access_tokens,
-                webhooks=webhooks,
-                may_use_webhooks=may_use_webhooks,
-                add_webhook_form=add_webhook_form,
-                show_add_form=show_add_form,
-                remove_webhook_form=remove_webhook_form,
-                webhook_secret=webhook_secret,
-            )
-        show_add_form = True
-        if add_webhook_form.validate_on_submit():
-            try:
-                name = add_webhook_form.name.data
-                address = add_webhook_form.address.data
-                if name == '':
-                    name = None
-                if address == '':
-                    address = None
-                new_webhook = create_webhook(type=WebhookType.OBJECT_LOG, user_id=flask_login.current_user.get_id(), target_url=address, name=name)
-            except errors.WebhookAlreadyExistsError:
-                add_webhook_form.address.errors.append(_('A webhook of this type with this target address already exists', service_name=flask.current_app.config['SERVICE_NAME']))
-            except errors.InsecureComponentAddressError:
-                add_webhook_form.address.errors.append(_('Only secure communication via https is allowed'))
-            except errors.InvalidComponentAddressError:
-                add_webhook_form.address.errors.append(_('This webhook address is invalid'))
-            except Exception:
-                add_webhook_form.name.errors.append(_('Failed to create webhook'))
-            else:
-                flask.flash(_('The webhook has been added successfully'), 'success')
-                show_add_form = False
-                webhooks = get_webhooks(user_id=flask_login.current_user.get_id())
-                webhook_secret = new_webhook.secret
+    if 'delete_dataverse_api_token' in flask.request.form:
+        set_user_settings(flask_login.current_user.id, {
+            'DATAVERSE_API_TOKEN': ''
+        })
+        flask.flash(_('Successfully deleted your stored Dataverse API Token.'), 'success')
+        return flask.redirect(flask.url_for('frontend.user_me_preferences'))
+    return None
+
+
+def change_preferences() -> FlaskResponseT:
+    template_kwargs: typing.Dict[str, typing.Any] = {}
+
+    response = _handle_account_information_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_authentication_methods_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_create_api_token_form(template_kwargs)  # pylint: disable=assignment-from-none
+    if response is not None:
+        return response
+    response = _handle_two_factor_authentication_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_webhook_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_notification_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_default_permissions_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_other_settings_forms(template_kwargs)
+    if response is not None:
+        return response
 
     return flask.render_template(
         'preferences.html',
-        user=user,
-        change_user_form=change_user_form,
-        authentication_password_form=authentication_password_form,
-        default_permissions_form=default_permissions_form,
-        add_user_permissions_form=add_user_permissions_form,
-        add_group_permissions_form=add_group_permissions_form,
-        add_project_permissions_form=add_project_permissions_form,
-        notification_mode_form=notification_mode_form,
-        NotificationMode=NotificationMode,
-        NotificationType=NotificationType,
-        notification_modes=get_notification_modes(flask_login.current_user.id),
-        is_instrument_responsible_user=is_instrument_responsible_user,
-        user_settings=user_settings,
-        other_settings_form=other_settings_form,
-        all_timezones=all_timezones,
-        your_locale=your_locale,
-        supported_locales=SUPPORTED_LOCALES,
-        allowed_language_codes=logic.locale.get_allowed_language_codes(),
-        Permissions=Permissions,
-        users=users,
-        get_user=get_user,
-        get_group=get_group,
-        show_groups_form=show_groups_form,
-        groups_treepicker_info=groups_treepicker_info,
-        show_projects_form=show_projects_form,
-        projects_treepicker_info=projects_treepicker_info,
-        get_project=get_project,
-        EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-        user_permissions=user_permissions,
-        group_permissions=group_permissions,
-        project_permissions=project_permissions,
-        all_user_permissions=all_user_permissions,
-        authentication_method_form=authentication_method_form,
-        options=options,
-        authentication_form=authentication_form,
-        create_api_token_form=create_api_token_form,
-        created_api_token=created_api_token,
-        confirmed_authentication_methods=confirmed_authentication_methods,
-        authentications=authentication_methods,
-        two_factor_authentication_methods=two_factor_authentication_methods,
-        manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-        has_active_method=any(method.active for method in two_factor_authentication_methods),
-        api_tokens=api_tokens,
-        api_access_tokens=api_access_tokens,
-        webhooks=webhooks,
-        may_use_webhooks=may_use_webhooks,
-        add_webhook_form=add_webhook_form,
-        show_add_form=show_add_form,
-        remove_webhook_form=remove_webhook_form,
-        webhook_secret=webhook_secret,
+        **template_kwargs
     )
 
 
@@ -840,14 +717,13 @@ def confirm_email() -> FlaskResponseT:
                 email=email
             )
         elif salt == 'add_login':
-            auth = Authentication.query.filter(
-                Authentication.user_id == user_id,
-                Authentication.login['login'].astext == email
-            ).first()
-            if auth is None:
+            try:
+                confirm_authentication_method_by_email(
+                    user_id=user_id,
+                    email=email
+                )
+            except errors.AuthenticationMethodDoesNotExistError:
                 return flask.abort(400)
-            auth.confirmed = True
-            db.session.add(auth)
         else:
             return flask.abort(400)
         db.session.commit()
@@ -894,7 +770,7 @@ def reset_password() -> FlaskResponseT:
     authentication_id = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
     if not authentication_id:
         return flask.abort(404)
-    authentication_method = Authentication.query.filter(Authentication.id == authentication_id).first()
+    authentication_method = get_authentication_method(authentication_method_id=authentication_id)
     password_form = PasswordForm()
     has_error = False
     if authentication_method is None:

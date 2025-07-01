@@ -9,12 +9,17 @@ from .location_types import _parse_location_type_ref, _get_or_create_location_ty
 from .users import _parse_user_ref, _get_or_create_user_id, import_user, UserRef, UserData
 from ..locations import LocationType, get_location_type, set_location_responsible_users, get_location, get_locations, create_location, update_location, Location
 from ..components import Component, get_component, get_component_by_uuid
-from .. import errors, fed_logs
+from .. import errors, fed_logs, location_permissions
+from ...models import Permissions
 
 
 class LocationRef(typing.TypedDict):
     location_id: int
     component_uuid: str
+
+
+class LocationPermissionsData(typing.TypedDict):
+    all_users: typing.Union[typing.Literal['none'], typing.Literal['read']]
 
 
 class LocationData(typing.TypedDict):
@@ -25,6 +30,7 @@ class LocationData(typing.TypedDict):
     parent_location: typing.Optional[LocationRef]
     location_type: typing.Optional[LocationTypeRef]
     responsible_users: typing.List[UserRef]
+    permissions: typing.Optional[LocationPermissionsData]
 
 
 class SharedLocationData(typing.TypedDict):
@@ -35,6 +41,7 @@ class SharedLocationData(typing.TypedDict):
     parent_location: typing.Optional[LocationRef]
     location_type: typing.Optional[LocationTypeRef]
     responsible_users: typing.List[UserRef]
+    permissions: typing.Optional[LocationPermissionsData]
 
 
 def parse_location(
@@ -57,7 +64,8 @@ def parse_location(
         description=_get_translation(location_data.get('description')),
         parent_location=_parse_location_ref(_get_dict(location_data.get('parent_location'))),
         location_type=_parse_location_type_ref(_get_dict(location_data.get('location_type'))),
-        responsible_users=responsible_users
+        responsible_users=responsible_users,
+        permissions=_parse_location_permissions(_get_dict(location_data.get('permissions'))),
     )
 
 
@@ -113,6 +121,7 @@ def import_location(
                 user_id=None,
                 type_id=location_type_id,
                 is_hidden=location.is_hidden,
+                enable_object_assignments=location.enable_object_assignments
             )
             set_location_responsible_users(
                 location_id=location.id,
@@ -134,6 +143,9 @@ def import_location(
             responsible_user_ids=responsible_user_ids
         )
         fed_logs.import_location(location.id, component.id)
+    location_permissions_data = location_data.get('permissions')
+    if location_permissions_data is not None and location_permissions_data.get('all_users') == 'read':
+        location_permissions.set_location_permissions_for_all_users(location.id, Permissions.READ)
     return location
 
 
@@ -159,6 +171,19 @@ def _parse_location_ref(
     return LocationRef(
         location_id=location_id,
         component_uuid=component_uuid
+    )
+
+
+def _parse_location_permissions(
+        location_permissions_data: typing.Optional[typing.Dict[str, typing.Any]]
+) -> typing.Optional[LocationPermissionsData]:
+    if location_permissions_data is None:
+        return None
+    all_users_permissions = location_permissions_data.get('all_users')
+    if all_users_permissions not in ('none', 'read'):
+        return None
+    return LocationPermissionsData(
+        all_users=all_users_permissions,
     )
 
 
@@ -243,6 +268,10 @@ def shared_location_preprocessor(
                     component_uuid=responsible_user.component.uuid
                 )
             responsible_users.append(responsible_user_ref)
+
+    location_permissions_data = LocationPermissionsData(
+        all_users='read' if location_permissions.location_is_public(location.id) else 'none'
+    )
     return SharedLocationData(
         location_id=location.id if location.fed_id is None else location.fed_id,
         component_uuid=flask.current_app.config['FEDERATION_UUID'] if location.component is None else location.component.uuid,
@@ -251,6 +280,7 @@ def shared_location_preprocessor(
         parent_location=parent_location,
         location_type=location_type_ref,
         responsible_users=responsible_users,
+        permissions=location_permissions_data
     )
 
 
@@ -295,7 +325,8 @@ def locations_check_for_cyclic_dependencies(
                     name=None,
                     description=None,
                     location_type=None,
-                    responsible_users=[]
+                    responsible_users=[],
+                    permissions={'all_users': 'none'},
                 )
             else:
                 parent_location = get_location(location.parent_location_id)
@@ -310,7 +341,8 @@ def locations_check_for_cyclic_dependencies(
                         name=None,
                         description=None,
                         location_type=None,
-                        responsible_users=[]
+                        responsible_users=[],
+                        permissions={'all_users': 'none'},
                     )
                 else:
                     data[(location.fed_id, location.component.uuid)] = LocationData(
@@ -323,7 +355,8 @@ def locations_check_for_cyclic_dependencies(
                         name=None,
                         description=None,
                         location_type=None,
-                        responsible_users=[]
+                        responsible_users=[],
+                        permissions={'all_users': 'none'},
                     )
 
         else:
@@ -335,7 +368,8 @@ def locations_check_for_cyclic_dependencies(
                     name=None,
                     description=None,
                     location_type=None,
-                    responsible_users=[]
+                    responsible_users=[],
+                    permissions={'all_users': 'none'},
                 )
             else:
                 parent_location = get_location(location.parent_location_id)
@@ -350,7 +384,8 @@ def locations_check_for_cyclic_dependencies(
                         name=None,
                         description=None,
                         location_type=None,
-                        responsible_users=[]
+                        responsible_users=[],
+                        permissions={'all_users': 'none'},
                     )
                 else:
                     data[(location.id, flask.current_app.config['FEDERATION_UUID'])] = LocationData(
@@ -363,7 +398,8 @@ def locations_check_for_cyclic_dependencies(
                         name=None,
                         description=None,
                         location_type=None,
-                        responsible_users=[]
+                        responsible_users=[],
+                        permissions={'all_users': 'none'},
                     )
 
     for _, location_data in data.items():

@@ -460,8 +460,8 @@ $(function () {
       showClose: true,
       showTodayButton: true,
       timeZone: window.getTemplateValue('current_user.timezone'),
-      minDate: minDate,
-      maxDate: maxDate
+      minDate,
+      maxDate
     });
     checkbox.on('change', function () {
       const checked = checkbox.prop('checked');

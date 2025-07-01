@@ -3,26 +3,30 @@ beautifulsoup4
 bleach
 CherryPy
 email-validator
-fido2
+fido2 < 2.0.0
 Flask
 Flask-Babel
+Flask-Cors
 Flask-HTTPAuth
 Flask-Login
 Flask-Mail
-Flask-MonitoringDashboard
+Flask-MonitoringDashboard @ git+https://github.com/FlorianRhiem/Flask-MonitoringDashboard.git@fix-requests-version
+flask-orjson
 Flask-SQLAlchemy
 Flask-WTF
 itsdangerous
 kaleido
 ldap3
 Markdown
+py-minisign @ git+https://github.com/x13a/py-minisign.git
 Pillow
 Pint
 plotly
 psycopg2-binary
 pyotp
+pysaml2
 qrcode
-reportlab
 requests
+simple_openid_connect
 SQLAlchemy
 weasyprint

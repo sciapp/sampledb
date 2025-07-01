@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Info Page') }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
+  <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+{% endblock %}
+
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% for lang in languages %}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+  {% set translations = [] %}
+  {% for translation in info_page_translations %}
+    {% do translations.append({"language_id": translation.language.id | string, "title": translation.title, "content": translation.content}) %}
+  {% endfor %}
+  {% do set_template_value("translations", translations) %}
+
+  {% do set_template_value("is_create_form", submit_text == _('Create')) %}
+
+  {{ super() }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/info_page_form.js') }}" type="module"></script>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    {{ info_page_form.hidden_tag() }}
+    <div class="hidden" id="title-template">
+      <div class="input-group" data-language-id="">
+        <input type="text" class="form-control" id="input-title" placeholder="{{ _("Title") }}" data-name="input-title" data-translation-attribute="title" data-empty-text="{{ _("Please enter a title.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter title (at most 100 characters).") }}" data-required-in-all-languages="1">
+        <span class="input-group-addon language-addon" data-name="language"></span>
+      </div>
+      <span class="help-block" data-name="title"></span>
+    </div>
+
+    <div class="hidden" id="content-template">
+      <div class="input-group" data-language-id="">
+        <textarea class="form-control" id="input-content" placeholder="{{ _("Content") }}" data-name="input-content" data-translation-attribute="content" data-empty-text="{{ _("Please enter content.") }}" data-required-in-all-languages="1" style="resize: vertical; min-height: 371px"></textarea>
+        <span class="input-group-addon language-addon" data-name="language"></span>
+      </div>
+      <span class="help-block" data-name="content"></span>
+    </div>
+
+    <div class="form-group row" style="padding-right: 10px">
+      <label for="select-languages" class="control-label col-md-10">{{ _("Languages") }}</label>
+      <select class="selectpicker btn-xs select-language col-md-2" data-style="btn-default btn-xs" multiple="multiple" id="select-languages">
+        {% for language in languages %}
+          <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected" {% endif %} {% if language.id in info_page_language_ids %} selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <input type="hidden" id="input-translations" name="{{ info_page_form.translations.name }}" value="">
+
+    <div class="form-group" data-name="input-titles">
+      <div class="form-group" style="margin-bottom: 0">
+          <label for="input-title" class="control-label">{{ _('Title') }}</label>
+      </div>
+      <div class="input-group" hidden="hidden"></div>
+      {% for translation in info_page_translations %}
+        <div class="input-group" data-language-id="{{ translation.language.id }}">
+          <input type="text" class="form-control" id="input-title-{{ translation.language.id }}" placeholder="{{ _('Title') }}" data-name="input-title" value="{{ translation.title }}" data-translation-attribute="title" data-empty-text="{{ _("Please enter a title.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter title (at most 100 characters).") }}">
+          <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+        </div>
+        <span class="help-block" data-name="title" id="help-block-title-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group" data-name="input-contents">
+      <div class="form-group" style="margin-bottom: 0">
+        <label for="input-content" class="control-label">{{ _("Content") }}</label>
+      </div>
+      <div class="input-group" hidden="hidden"></div>
+      {% for translation in info_page_translations %}
+        <div class="input-group" data-language-id="{{ translation.language.id }}">
+          <textarea class="form-control" id="input-content-{{ translation.language.id }}" placeholder="{{ _("Content") }}" data-name="input-content" data-translation-attribute="content" data-empty-text="{{ _("Please enter content.") }}" data-required-in-all-languages="1" style="resize: vertical; min-height: 371px">{{ translation.content }}</textarea>
+          <span class="input-group-addon language-addon" data-name="language">{{ translation.language.names | get_translated_text }}</span>
+        </div>
+        <span class="help-block" data-name="name" id="help-block-content-{{ translation.language_id }}" data-language-id="{{ translation.language.id }}"></span>
+      {% endfor %}
+    </div>
+
+    <div class="form-group {% if info_page_form.endpoint.name in info_page_form.errors %}has-error{% endif %}">
+      <label for="input-endpoint" class="control-label">{{ _('Routes') }}</label>
+      <select class="selectpicker form-control" id="input-endpoint" name="{{ info_page_form.endpoint.name }}" data-none-selected-text="{{ _('All routes') }}">
+        {% for endpoint, routes in info_page_form.endpoint.choices %}
+          <option value="{{ endpoint }}" {% if info_page_form.endpoint.data == endpoint %}selected="selected"{% endif %}>
+            {{ routes }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if submit_text == _('Create') %}
+      <div class="checkbox">
+        <label for="input-do_not_show_existing_users" style="font-weight:400">
+          <input type="checkbox" id="input-do_not_show_existing_users" name="{{ info_page_form.do_not_show_existing_users.name }}" {% if info_page_form.do_not_show_existing_users.data %}checked="checked"{% endif %}> {{ _('Do not show to previously existing users') }}
+        </label>
+        <span data-toggle="tooltip" data-placement="top" title="{{ _('The info page will not be shown to users that already had an account at the time it was created.') }}"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+      </div>
+    {% else %}
+      <div class="checkbox">
+        <label for="input-clear_acknowledgements" style="font-weight:400">
+          <input type="checkbox" id="input-clear_acknowledgements" name="{{ info_page_form.clear_acknowledgements.name }}" {% if info_page_form.clear_acknowledgements.data %}checked="checked"{% endif %}> {{ _('Clear previous acknowledgements') }}
+        </label>
+        <span data-toggle="tooltip" data-placement="top" title="{{ _('All previous acknowledgements of the info page will be cleared and users will need to acknowledge it again.') }}"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+      </div>
+    {% endif %}
+
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.admin_info_pages') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

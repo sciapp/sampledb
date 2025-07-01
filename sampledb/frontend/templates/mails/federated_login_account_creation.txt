@@ -1,0 +1,8 @@
+{% extends "mails/base.txt" %}
+
+{% block content %}
+Hello,
+
+this email address was used to create an {{ service_name }} account. To create the account and confirm this email, please click the link below:
+{{ confirm_url | safe }}
+{% endblock %}

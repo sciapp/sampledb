@@ -1,5 +1,7 @@
 import base64
+import copy
 import datetime
+import dataclasses
 import functools
 import secrets
 import typing
@@ -13,7 +15,7 @@ from fido2.webauthn import AttestationConveyancePreference, PublicKeyCredentialR
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod
+from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod, FederatedIdentity
 from . import errors, api_log
 
 # enable JSON mapping for webauthn options
@@ -24,6 +26,30 @@ fido2.features.webauthn_json_mapping.enabled = True
 # 12 is the default in the Python bcrypt module, this variable allows
 # overriding this in tests
 NUM_BCYRPT_ROUNDS = 12
+
+
+@dataclasses.dataclass(frozen=True)
+class AuthenticationMethod:
+    """
+    This class provides an immutable wrapper around models.authentication.Authentication.
+    """
+    id: int
+    user_id: int
+    login: typing.Dict[str, typing.Any]
+    type: AuthenticationType
+    confirmed: bool
+    user: logic.users.User
+
+    @classmethod
+    def from_database(cls, authentication_method: Authentication) -> 'AuthenticationMethod':
+        return AuthenticationMethod(
+            id=authentication_method.id,
+            user_id=authentication_method.user_id,
+            login=copy.deepcopy(authentication_method.login),
+            type=authentication_method.type,
+            confirmed=authentication_method.confirmed,
+            user=logic.users.get_user(authentication_method.user_id)
+        )
 
 
 def _hash_password(password: str) -> str:
@@ -41,7 +67,7 @@ def _validate_password_authentication(authentication_method: Authentication, pas
 
 def _add_password_authentication(user_id: int, login: str, password: str, authentication_type: AuthenticationType, confirmed: bool = True) -> None:
     login = login.lower().strip()
-    if Authentication.query.filter(Authentication.login['login'].astext == login).first():
+    if check_authentication_method_with_login_exists(login=login):
         raise errors.AuthenticationMethodAlreadyExists('An authentication method with this login already exists')
     authentication = Authentication(
         login={'login': login, 'bcrypt_hash': _hash_password(password)},
@@ -147,14 +173,90 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     db.session.commit()
 
 
-def get_api_tokens(user_id: int) -> typing.Sequence[Authentication]:
+ALL_AUTHENTICATION_TYPES = {
+    authentication_type
+    for authentication_type in AuthenticationType.__members__.values()
+}
+
+
+def get_authentication_methods(
+        user_id: int,
+        authentication_types: typing.Set[AuthenticationType]
+) -> typing.Sequence[AuthenticationMethod]:
+    """
+    Get all authentication methods for a given user.
+
+    :param user_id: the ID of an existing user
+    :param authentication_types: the authentication types to filter for
+    :return: the authentication methods for the user
+    """
+    authentication_methods = Authentication.query.filter(
+        Authentication.user_id == user_id,
+        Authentication.type.in_(authentication_types)
+    ).all()
+    return [
+        AuthenticationMethod.from_database(authentication_method)
+        for authentication_method in authentication_methods
+    ]
+
+
+def get_api_tokens(user_id: int) -> typing.Sequence[AuthenticationMethod]:
     """
     Get all API tokens for a given user.
 
     :param user_id: the ID of an existing user
     :return: the API tokens for the user
     """
-    return Authentication.query.filter_by(user_id=user_id, type=AuthenticationType.API_TOKEN).all()
+    return get_authentication_methods(
+        user_id=user_id,
+        authentication_types={AuthenticationType.API_TOKEN}
+    )
+
+
+def get_authentication_method(authentication_method_id: int) -> AuthenticationMethod:
+    """
+    Get an authentication method by its ID.
+
+    :param authentication_method_id: the ID of an existing authentication method
+    :return: the authentication method
+    :raise errors.AuthenticationMethodDoesNotExistError: if the authentication method does not exist
+    """
+    authentication_method = Authentication.query.filter_by(id=authentication_method_id).first()
+    if authentication_method is None:
+        raise errors.AuthenticationMethodDoesNotExistError()
+    return AuthenticationMethod.from_database(authentication_method)
+
+
+def check_authentication_method_with_login_exists(login: str) -> bool:
+    """
+    Return whether an authentication method with a given login exists.
+
+    :param login: the login to check
+    :return: whether an authentication method with the login exists
+    """
+    return bool(db.session.query(db.exists().where(Authentication.login['login'].astext == login)).scalar())
+
+
+def confirm_authentication_method_by_email(
+        user_id: int,
+        email: str
+) -> None:
+    """
+    Mark an authentication method as confirmed by its associated email.
+
+    :param user_id: the ID of an existing user
+    :param email: the email for this authentication method
+    :raise errors.AuthenticationMethodDoesNotExistError: if the authentication method does not exist
+    """
+    authentication_method = Authentication.query.filter(
+        Authentication.user_id == user_id,
+        Authentication.login['login'].astext == email
+    ).first()
+    if authentication_method is None:
+        raise errors.AuthenticationMethodDoesNotExistError()
+    authentication_method.confirmed = True
+    db.session.add(authentication_method)
+    db.session.commit()
 
 
 def add_fido2_passkey(user_id: int, credential_data: AttestedCredentialData, description: str) -> None:
@@ -206,6 +308,76 @@ def get_user_id_for_fido2_passkey_credential_id(credential_id: bytes) -> typing.
     if authentication is None:
         return None
     return authentication.user_id
+
+
+def add_federated_login_authentication(federated_identity: FederatedIdentity) -> None:
+    """
+    Add a federated login authentication method for a given federated identity.
+
+    :param federated_identity: the federated identity
+    """
+    if Authentication.query.filter(
+        Authentication.type == AuthenticationType.FEDERATED_LOGIN,
+        Authentication.user_id == federated_identity.user_id,
+        Authentication.login['fed_user_id'].astext.cast(db.Integer) == federated_identity.local_fed_user.fed_id,
+        Authentication.login['component_id'].astext.cast(db.Integer) == federated_identity.local_fed_user.component_id
+    ).first():
+        raise errors.AuthenticationMethodAlreadyExists('An authentication method for this federated identity already exists')
+
+    authentication = Authentication(
+        login={
+            'fed_user_id': federated_identity.local_fed_user.fed_id,
+            'component_id': federated_identity.local_fed_user.component_id
+        },
+        authentication_type=AuthenticationType.FEDERATED_LOGIN,
+        user_id=federated_identity.user_id,
+        confirmed=True
+    )
+
+    db.session.add(authentication)
+    db.session.commit()
+
+
+def add_oidc_authentication(user_id: int, iss: str, sub: str) -> None:
+    """
+    Add an authentication method of type OIDC for a given user.
+
+    :param user_id: the ID of an existing user
+    :param iss: the issuer
+    :param sub: the subject identifier
+    """
+    authentication = Authentication(
+        login={
+            'iss': iss,
+            'sub': sub,
+        },
+        authentication_type=AuthenticationType.OIDC,
+        confirmed=True,
+        user_id=user_id
+    )
+    db.session.add(authentication)
+    db.session.commit()
+
+
+def get_oidc_authentications_by_sub(iss: str, sub: str) -> typing.List[AuthenticationMethod]:
+    """
+    Get all authentication methods of type OIDC with the given issuer and
+    subject identifier.
+
+    :param iss: the issuer
+    :param sub: the subject identifier
+    """
+    return [
+        AuthenticationMethod.from_database(method)
+        for method in
+        Authentication.query.filter(
+            db.and_(
+                Authentication.type == AuthenticationType.OIDC,
+                Authentication.login['iss'].astext == iss,
+                Authentication.login['sub'].astext == sub,
+            )
+        ).all()
+    ]
 
 
 @functools.cache
@@ -461,6 +633,24 @@ def login_via_api_refresh_token(api_refresh_token: str) -> typing.Optional[logic
     return None
 
 
+def login_via_oidc_access_token(access_token: str) -> typing.Optional[logic.users.User]:
+    """
+    Authenticate a user using an OIDC Access Token, if OIDC is configured and
+    Access Tokens may be used as API keys.
+
+    :param access_token: the access token to use for authentication
+    :return: the user, or None
+    """
+    if not flask.current_app.config['OIDC_ACCESS_TOKEN_AS_API_KEY']:
+        return None
+    try:
+        authentication_method, user = logic.oidc.validate_access_token(access_token)
+    except Exception:
+        return None
+    api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
+    return user
+
+
 def add_authentication_method(user_id: int, login: str, password: str, authentication_type: AuthenticationType) -> bool:
     """
     Add an authentication method for a user.
@@ -503,7 +693,10 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     if authentication_method is None:
         return False
     if authentication_method.type not in {AuthenticationType.API_TOKEN, AuthenticationType.API_ACCESS_TOKEN}:
-        authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
+        authentication_methods_query = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN)
+        if not flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
+            authentication_methods_query = authentication_methods_query.filter(Authentication.type != AuthenticationType.FEDERATED_LOGIN)
+        authentication_methods_count = authentication_methods_query.count()
         if authentication_methods_count <= 1:
             raise errors.OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
     db.session.delete(authentication_method)

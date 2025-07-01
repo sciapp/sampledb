@@ -273,7 +273,7 @@ class Objects(Resource):
         query_string = flask.request.args.get('q', '')
         if query_string:
             try:
-                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, text_to_bool(flask.request.args.get('use_advanced_search', 'true')))
+                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, text_to_bool(flask.request.args.get('use_advanced_search', 'true')), use_permissions_filter_for_referenced_objects=not flask.g.user.has_admin_permissions)
             except Exception:
                 # TODO: ensure that advanced search does not cause exceptions
                 def unwrapped_filter_func(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Any:
@@ -331,6 +331,8 @@ class Objects(Resource):
                         'object_id': object.object_id,
                         'version_id': object.version_id,
                         'action_id': object.action_id,
+                        'user_id': object.user_id,
+                        'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
                         'schema': object.schema,
                         'data': object.data,
                         'fed_object_id': object.fed_object_id,
@@ -346,6 +348,8 @@ class Objects(Resource):
                     'object_id': object.object_id,
                     'version_id': object.version_id,
                     'action_id': object.action_id,
+                    'user_id': object.user_id,
+                    'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
                     'schema': object.schema,
                     'data': object.data,
                     'fed_object_id': object.fed_object_id,

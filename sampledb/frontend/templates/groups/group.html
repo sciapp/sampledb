@@ -213,6 +213,17 @@
                 </select>
               </div>
             </div>
+            {% if current_user.is_admin %}
+              <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="{{ invite_user_form.add_directly.name }}"> {{ _('Add user directly, without sending an invitation') }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
@@ -258,6 +269,8 @@
   {% do set_template_value("language_info.english_id", ENGLISH.id) %}
 
   {% do set_template_value("translations", translations) %}
+  {% do set_template_value("translations.invite_user", _('Invite User')) %}
+  {% do set_template_value("translations.add_user", _('Add User')) %}
   {% do set_template_value("name_language_ids", name_language_ids) %}
   {% do set_template_value("description_language_ids", description_language_ids) %}
   {% do set_template_value("show_edit_form", show_edit_form) %}

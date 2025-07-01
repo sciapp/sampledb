@@ -356,7 +356,7 @@
   {% else %}
     <p>{{ _('You are currently not linked with any user from %(component_name)s.', component_name=component.name) }}</p>
   {% endif %}
-  <form method="post" action="{{ url_for('frontend.redirect_login_confirmation', component_uuid=component.uuid) }}">
+  <form method="post" action="{{ url_for('frontend.redirect_login_confirmation', component=component.uuid) }}">
     <button class="btn btn-primary" type="submit" {% if component.address is none %} data-toggle="tooltip" data-placement="top" title="{{ _('Address must be set') }}" disabled="disabled" {% endif %}>{{ _('Sign in to %(component_name)s', component_name=component.get_name()) }}</button>
     {% if active_identities|length > 0 %}
       <button class="btn btn-danger" type="button" data-toggle="modal" data-target="#activeIdentitiesModal">{{ _('Revoke active user links') }}</button>
@@ -366,6 +366,7 @@
     {% endif %}
   </form>
 
+  {% set has_login_identity = false %}
   <div class="modal fade" id="activeIdentitiesModal" tabindex="-1" role="dialog" aria-labelledby="activeIdentitiesModalLabel">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -379,24 +380,31 @@
               <colgroup>
                 <col style="width: 1em;">
                 <col>
+                <col>
               </colgroup>
               <thead>
                 <tr>
                   <th></th>
                   <th>{{ _('Federated user') }}</th>
+                  <th style="text-align: center;">{{ _('Login') }}</th>
                 </tr>
               </thead>
               <tbody>
                 {% for identity in active_identities %}
+                  {% set has_login_identity = has_login_identity or identity.login %}
                   <tr>
-                    <td><input type="checkbox" name="local_fed_id" value="{{ identity.local_fed_user.fed_id }}"></td>
+                    <td><input type="checkbox" name="local_fed_id" value="{{ identity.local_fed_user.fed_id }}" {% if config["ENABLE_FEDERATED_LOGIN"] and not has_other_auth_methods and identity.login %} class="auth-relevant" data-toggle="tooltip" data-placement="top" title="{{ _('You have to keep at least one federated user link for authentication purposes. Please see the hint below.') }}" {% endif %}></td>
                     <td><a {% if federation_user_base_url %} href="{{ federation_user_base_url }}/{{ identity.local_fed_user.fed_id }}" {% endif %}>{{ _('User #%(user_id)s', user_id=identity.local_fed_user.fed_id) }}</a></td>
+                    <td style="text-align: center;"><i class="fa {% if identity.login %} fa-check {% else %} fa-times {% endif %}"</td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
           <div class="modal-footer">
+            {% if not has_other_auth_methods and has_login_identity %}
+              <p class="help-block">{{ _('You do not have any other authentication methods added, but the federated login with this federation partner. To keep the user accessible, you must keep at least one federated identity, which can be used to login.') }}</p>
+            {% endif %}
             <button type="button" class="btn btn-default" data-dismiss="modal" style="min-width: 7em;">{{ _('Close') }}</button>
             <button type="submit" class="btn btn-primary" style="min-width: 7em;" disabled="disabled">{{ _('Revoke selection') }}</button>
           </div>
@@ -428,7 +436,7 @@
               <tbody>
                 {% for identity in inactive_identities %}
                   <tr>
-                    <td><input type="checkbox" name="local_fed_id" value="{{ identity.local_fed_user.fed_id }}"/></td>
+                    <td><input type="checkbox" name="local_fed_id" value="{{ identity.local_fed_user.fed_id }}" /></td>
                     <td><a {% if federation_user_base_url %} href="{{ federation_user_base_url }}/{{ identity.local_fed_user.fed_id }}" {% endif %}>{{ _('User #%(user_id)s', user_id=identity.local_fed_user.fed_id) }}</a></td>
                   </tr>
                 {% endfor %}

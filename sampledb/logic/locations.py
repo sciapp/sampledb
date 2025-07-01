@@ -12,7 +12,7 @@ import datetime
 import typing
 
 from .components import Component
-from . import actions
+from . import actions, topics
 from .action_types import check_action_type_exists
 from .. import db, models, logic
 from . import user_log, object_log, location_log, objects, users, errors, languages, components
@@ -76,6 +76,8 @@ class Location:
     type: LocationType
     responsible_users: typing.List[users.User]
     is_hidden: bool
+    enable_object_assignments: bool
+    topics: typing.List[topics.Topic]
     parent_location_id: typing.Optional[int] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -98,6 +100,8 @@ class Location:
                 for responsible_user in location.responsible_users
             ],
             is_hidden=location.is_hidden,
+            enable_object_assignments=location.enable_object_assignments,
+            topics=[topics.Topic.from_database(topic) for topic in location.topics],
         )
 
 
@@ -258,6 +262,7 @@ def update_location(
         user_id: typing.Optional[int],
         type_id: int,
         is_hidden: bool,
+        enable_object_assignments: bool,
 ) -> None:
     """
     Update a location's information.
@@ -270,6 +275,7 @@ def update_location(
     :param user_id: the ID of an existing user
     :param type_id: the ID of an existing location type
     :param is_hidden: whether the location is hidden
+    :param enable_object_assignments: whether object assignments are enabled for the location
     :raise errors.LocationDoesNotExistError: when no location with the given
         location ID or parent location ID exists
     :raise errors.CyclicLocationError: when location ID is an ancestor of
@@ -314,6 +320,7 @@ def update_location(
     location.parent_location_id = parent_location_id
     location.type_id = type_id
     location.is_hidden = is_hidden
+    location.enable_object_assignments = enable_object_assignments
     db.session.add(location)
     db.session.commit()
     if user_id is not None:

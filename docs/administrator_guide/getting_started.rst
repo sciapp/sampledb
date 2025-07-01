@@ -42,7 +42,7 @@ Next, start the SampleDB container:
         --restart=always \
         --name sampledb \
         -p 8000:8000 \
-        sciapp/sampledb:0.30.0
+        sciapp/sampledb:0.31.0
 
 This will start a minimal SampleDB installation at ``http://localhost:8000`` and allow you to sign in with the username ``admin`` and the password ``password``.
 
@@ -97,9 +97,9 @@ After the previous steps, you can fully evaluate SampleDB locally using the admi
 Step 5: User Management
 -----------------------
 
-At this time, SampleDB users can either sign in using a username and password specific to SampleDB, or by using LDAP if it has been enabled using the :ref:`LDAP configuration variables<ldap_configuration>`.
+At this time, SampleDB users can either sign in using a username and password specific to SampleDB, or by using LDAP or OpenID Connect (OIDC) if it has been enabled using the :ref:`LDAP<ldap_configuration>` or :ref:`OIDC<oidc_configuration>` configuration variables.
 
-If your facility already has an LDAP system for user management, we recommend that you configure LDAP in SampleDB so that users can use their existing credentials.
+If your facility already has an LDAP system or OIDC provider for user management, we recommend that you configure LDAP or OIDC in SampleDB so that users can use their existing credentials.
 
 Otherwise, you can invite your users using the :ref:`User Invitation Form<authentication>`.
 

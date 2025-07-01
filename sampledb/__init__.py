@@ -11,6 +11,8 @@ from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, current_user
 from flask_mail import Mail
+import orjson
+from flask_orjson import OrjsonProvider
 from flask_sqlalchemy import SQLAlchemy
 from bs4 import BeautifulSoup
 
@@ -94,6 +96,8 @@ def setup_admin_account_from_config(app: flask.Flask) -> None:
 def setup_jinja_environment(app: flask.Flask) -> None:
     with app.app_context():
         is_ldap_configured = sampledb.logic.ldap.is_ldap_configured()
+        is_oidc_configured = sampledb.logic.oidc.is_oidc_configured()
+        is_oidc_only_auth_method = sampledb.logic.oidc.is_oidc_only_auth_method()
 
     if app.config['JUPYTERHUB_TEMPLATES_URL']:
         jupyterhub_templates_url = app.config['JUPYTERHUB_TEMPLATES_URL']
@@ -117,6 +121,8 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         service_accessibility=app.config['SERVICE_ACCESSIBILITY'],
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
+        is_oidc_configured=is_oidc_configured,
+        is_oidc_only_auth_method=is_oidc_only_auth_method,
         get_action_types=sampledb.logic.action_types.get_action_types,
         get_translated_text=sampledb.logic.utils.get_translated_text,
         get_topics=sampledb.logic.topics.get_topics,
@@ -158,6 +164,9 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     app = flask.Flask(__name__)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore
 
+    json_provider = OrjsonProvider(app)
+    json_provider.option = orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC | orjson.OPT_NON_STR_KEYS
+    app.json = json_provider
     app.config.from_object(sampledb.config)
 
     internal_config = sampledb.config.check_config(app.config)
@@ -170,6 +179,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     app.register_blueprint(sampledb.api.server.api)
     app.register_blueprint(sampledb.api.federation.federation_api)
+    app.register_blueprint(sampledb.api.frontend.frontend_api)
 
     app.register_blueprint(sampledb.frontend.frontend)
 
@@ -178,6 +188,13 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     login_manager.login_view = 'frontend.sign_in'
     login_manager.anonymous_user = sampledb.logic.users.AnonymousUser
+
+    with app.app_context():
+        if sampledb.logic.oidc.is_oidc_configured():
+            sampledb.logic.oidc.init_app(app)
+
+            if sampledb.logic.oidc.is_oidc_only_auth_method():
+                login_manager.login_message = ''
 
     def custom_send_static_file(filename: str) -> sampledb.utils.FlaskResponseT:
         response = flask.make_response(
@@ -272,6 +289,10 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
         if flask.request.endpoint == 'frontend.federation':
             connect_sources += [
                 '*'
+            ]
+        elif flask.request.endpoint == 'frontend.federated_login':
+            script_sources = [
+                "'unsafe-inline'"
             ]
         content_security_policy = f"base-uri '{base_uri}'; default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; object-src 'none'; report-uri /csp-violation-report"
         if app.config.get('TESTING', True):

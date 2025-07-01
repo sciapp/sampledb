@@ -393,6 +393,11 @@ This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_
 
 .. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
 
+note
+^^^^
+
+A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please describe the process in detail."`` or ``{"en": "Can be filled in later."}``.
+
 conditions
 ^^^^^^^^^^
 
@@ -1662,3 +1667,51 @@ As ``bool`` inputs do not support a ``null`` value you might use ``false`` to un
       },
       "required": ["name"]
     }
+
+Query Placeholder
+-----------------
+
+When creating new objects through the user interface, query placeholders can
+automatically populate predefined values. This allows another application,
+script, or bookmark to specify known values, while the user manually enters
+the remaining ones.
+
+For example:
+
+::
+
+  /objects/new?action_id=1&properties.name=via_query_placeholder
+
+  # or:
+
+  /objects/new?action_id=1
+  &properties.name=test
+  &properties.count=100
+  &properties.size=10nm
+  &properties.created=2025-01-01 10:20:30
+  &properties.boolfield=false
+  &properties.sample=1
+  &properties.tags=a,b
+  &properties.multilayer.0.repetitions=1
+
+Limitations:
+
+- Quantities must use one of the units specified in the schema of the field.
+  E.g., if a schema expects either ``µm`` or ``nm``, then it's not possible to
+  use ``um``.
+- The unit of unitless quantities must be set as ``1`` within the schema.
+- Values in Arrays, Objects and Conditional Properties can only be populated
+  if the specified field would have been rendered by default. E.g., it's not
+  possible to populate a field in an array if the array defaults to zero
+  items.
+- Only the following types are supported:
+
+  - quantity
+  - text
+  - bool
+  - datetime
+  - tags
+  - user
+  - object_reference
+  - sample
+  - measurement

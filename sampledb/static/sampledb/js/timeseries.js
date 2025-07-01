@@ -3,8 +3,13 @@
 /* globals Plotly */
 
 window.all_timeseries_data = [];
-$(function () {
-  $('.timeseries-container').each(function (index, element) {
+
+/**
+ * Set up timeseries charts, tables and buttons.
+ * @param container a DOM element
+ */
+function setUpTimeseries (container) {
+  $(container).find('.timeseries-container').each(function (index, element) {
     const timeseriesData = JSON.parse($(element).find('script[type="application/json"]')[0].textContent);
     window.all_timeseries_data.push({
       id: $(element).data('sampledbTimeseriesId'),
@@ -176,4 +181,9 @@ $(function () {
       tableModal.modal();
     });
   });
+}
+
+$(function () {
+  setUpTimeseries(document);
+  window.setUpFunctions.push(setUpTimeseries);
 });

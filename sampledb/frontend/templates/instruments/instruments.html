@@ -68,15 +68,13 @@
     </div>
   {% endif %}
   {% for instrument in instruments %}
-    <form action="{{ url_for('.toggle_favorite_instrument') }}" method="post">
-      <input type="hidden" name="instrument_id" value="{{ instrument.id }}">
-      {{ toggle_favorite_instrument_form.csrf_token() }}
-      <h2>
-        <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
-        {{ import_information_symbol(instrument) }}
-        <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
-      </h2>
-    </form>
+    <h2>
+      <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
+      {{ import_information_symbol(instrument) }}
+      {% if instrument.id in user_favorite_instrument_ids or not current_user.is_readonly %}
+        <button type="button" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value="" {% if not current_user.is_readonly %}data-instrument-id="{{ instrument.id }}"{% endif %}></button>
+      {% endif %}
+    </h2>
     {% if instrument.is_hidden %}
       <p class="text-muted">
         <i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.') }}
@@ -114,5 +112,6 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}

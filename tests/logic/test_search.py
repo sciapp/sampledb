@@ -2196,13 +2196,6 @@ def test_find_by_invalid_array_placeholder(user, action) -> None:
         }
     }, user_id=user.id)
 
-    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array_attr.?.?.bool_attr', use_advanced_search=True)
-    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
-    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
-    assert len(objects) == 0
-    assert len(search_notes) == 1
-    assert search_notes[0] == ('error', "Multiple array placeholders", 0, len('array_attr.?.?.bool_attr'))
-
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array_attr.??.bool_attr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
@@ -2871,7 +2864,20 @@ def test_find_by_missing_attribute(user, action) -> None:
     assert len(objects) == 1 and objects[0].id == object1.id
     assert len(search_notes) == 0
 
-def test_find_by_referenced_object(user):
+@pytest.mark.parametrize(
+    ['use_permissions_filter_for_referenced_objects'],
+    [[True], [False]]
+)
+def test_find_by_referenced_object(user, use_permissions_filter_for_referenced_objects):
+    if use_permissions_filter_for_referenced_objects:
+        get_objects_func = lambda filter_func: sampledb.logic.object_permissions.get_objects_with_permissions(
+            user_id=user.id,
+            permissions=sampledb.models.Permissions.READ,
+            filter_func=filter_func
+        )
+    else:
+        get_objects_func = sampledb.logic.objects.get_objects
+
     referenced_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema={
@@ -2923,32 +2929,775 @@ def test_find_by_referenced_object(user):
     }
     referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
 
-    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True)
+    sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.NONE)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
-    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    objects = get_objects_func(filter_func=filter_func)
+    if use_permissions_filter_for_referenced_objects:
+        assert not objects
+        assert len(search_notes) == 0
+    else:
+        assert len(objects) == 1 and objects[0].id == referencing_object.id
+        assert len(search_notes) == 0
+
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(referenced_object.id, sampledb.models.Permissions.READ)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = get_objects_func(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(referenced_object.id, sampledb.models.Permissions.NONE)
+    sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.READ)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = get_objects_func(filter_func=filter_func)
     assert len(objects) == 1 and objects[0].id == referencing_object.id
     assert len(search_notes) == 0
 
     referencing_data['object_reference']['object_id'] = referencing_object.id
     other_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
 
-    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = get_objects_func(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('(*object_reference.name == "Name 1") || (*object_reference.name == "Name 2")', use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = get_objects_func(filter_func=filter_func)
+    assert len(search_notes) == 0
+    assert len(objects) == 2 and {object.id for object in objects} == {referencing_object.id, other_object.id}
+
+
+@pytest.mark.parametrize(
+    ['use_permissions_filter_for_referenced_objects'],
+    [[True], [False]]
+)
+def test_find_by_nested_referenced_object(user, use_permissions_filter_for_referenced_objects):
+    if use_permissions_filter_for_referenced_objects:
+        get_objects_func = lambda filter_func: sampledb.logic.object_permissions.get_objects_with_permissions(
+            user_id=user.id,
+            permissions=sampledb.models.Permissions.READ,
+            filter_func=filter_func
+        )
+    else:
+        get_objects_func = sampledb.logic.objects.get_objects
+
+    referenced_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        }
+    }
+    referenced_object = sampledb.logic.objects.create_object(action_id=referenced_action.id, data=referenced_data, user_id=user.id)
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referencing Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'object_reference': {
+                    'title': 'Object',
+                    'type': 'object_reference'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_object_id = referenced_object.id
+    for i in range(1, 10):
+        referencing_data = {
+            'name': {
+                '_type': 'text',
+                'text': 'Name 2'
+            },
+            'object_reference': {
+                '_type': 'object_reference',
+                'object_id': referenced_object_id
+            }
+        }
+        referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+        search_query = '*object_reference.' * i + 'name == "Name 1"'
+
+        sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.NONE)
+
+        filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(search_query, use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
+        filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+        objects = get_objects_func(filter_func=filter_func)
+        if use_permissions_filter_for_referenced_objects:
+            assert not objects
+            assert len(search_notes) == 0
+        else:
+            assert len(objects) == 1 and objects[0].id == referencing_object.id
+            assert len(search_notes) == 0
+
+        sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.READ)
+
+        filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(search_query, use_advanced_search=True, use_permissions_filter_for_referenced_objects=use_permissions_filter_for_referenced_objects)
+        filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+        objects = get_objects_func(filter_func=filter_func)
+        assert len(objects) == 1 and objects[0].id == referencing_object.id
+        assert len(search_notes) == 0
+
+        referenced_object_id = referencing_object.id
+
+
+def test_find_with_nested_array_placeholders(user):
+    action_schema = {
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'item': {
+                    'title': 'Item',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=action_schema
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        },
+        'item': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    previous_property_name = 'item'
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    for depth in range(10):
+        search_query = f'{previous_property_name}{'.?' * depth} == "Example"'
+
+        filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(search_query, use_advanced_search=True)
+        filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+        objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+        assert len(objects) == 1 and objects[0].id == object.id
+        assert len(search_notes) == 0
+
+        previous_property_schema = action_schema['properties'][previous_property_name]
+        previous_property_data = data[previous_property_name]
+        del action_schema['properties'][previous_property_name]
+        del data[previous_property_name]
+        action_schema['properties']['array'] = {
+            'title': 'Array',
+            'type': 'array',
+            'items': previous_property_schema
+        }
+        sampledb.logic.actions.update_action(
+            action_id=action.id,
+            schema=action_schema
+        )
+        data['array'] = [
+            previous_property_data
+        ]
+        object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+        previous_property_name = 'array'
+
+
+def test_find_by_referenced_object_in_array(user):
+    referenced_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        }
+    }
+    referenced_object = sampledb.logic.objects.create_object(action_id=referenced_action.id, data=referenced_data, user_id=user.id)
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referencing Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'array': {
+                    'title': 'Array',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Object',
+                        'type': 'object_reference'
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referencing_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'array': [
+            {
+                '_type': 'object_reference',
+                'object_id': referenced_object.object_id
+            }
+        ]
+    }
+    referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.*0.name == "Name 1"', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(objects) == 1 and objects[0].id == referencing_object.id
     assert len(search_notes) == 0
 
-    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('(*object_reference.name == "Name 1") || (*object_reference.name == "Name 2")', use_advanced_search=True)
+    referencing_data['array'][0]['object_id'] = referencing_object.id
+    other_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.*0.name == "Name 1"', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
     assert len(search_notes) == 0
-    assert len(objects) == 2 and {object.id for object in objects} == {referencing_object.id, other_object.id}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.*0.name == "Name 2"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == other_object.id
+    assert len(search_notes) == 0
+
+
+def test_find_by_referenced_object_below_array_placeholder(user):
+    referenced_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        }
+    }
+    referenced_object = sampledb.logic.objects.create_object(action_id=referenced_action.id, data=referenced_data, user_id=user.id)
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referencing Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'array': {
+                    'title': 'Array',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Item',
+                        'type': 'object',
+                        'properties': {
+                            'object_reference': {
+                                'title': 'Object Reference',
+                                'type': 'object_reference'
+                            }
+                        }
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.?.*object_reference.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert not objects
+
+    referencing_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'array': [
+            {
+                'object_reference': {
+                    '_type': 'object_reference',
+                    'object_id': referenced_object.object_id
+                }
+            }
+        ]
+    }
+    referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'array.?.(*object_reference.name == "Name 1" and object_reference == #{referenced_object.id})', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.?.*object_reference.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.?.*object_reference.name == "Name 2"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert not objects
+
+
+def test_find_by_array_placeholder_below_referenced_object(user):
+    referenced_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'array_a': {
+                    'title': 'Array A',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Item',
+                        'type': 'text'
+                    }
+                },
+                'array_b': {
+                    'title': 'Array B',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Item',
+                        'type': 'object',
+                        'properties': {
+                            'text': {
+                                'title': 'Text',
+                                'type': 'text'
+                            }
+                        }
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        },
+        'array_a': [
+            {
+                '_type': 'text',
+                'text': 'Text 1'
+            }
+        ],
+        'array_b': [
+            {
+                'text': {
+                    '_type': 'text',
+                    'text': 'Text 2'
+                }
+            }
+        ]
+    }
+    referenced_object = sampledb.logic.objects.create_object(action_id=referenced_action.id, data=referenced_data, user_id=user.id)
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referencing Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'object_reference': {
+                    'title': 'Object Reference',
+                    'type': 'object_reference'
+                }
+            },
+            'required': ['name']
+        }
+    )
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.array_a.? == "Text 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert not objects
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.array_b.?.text == "Text 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert not objects
+
+    referencing_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'object_reference': {
+            '_type': 'object_reference',
+            'object_id': referenced_object.object_id
+        }
+    }
+    referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.array_a.? == "Text 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.array_b.?.text == "Text 2"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.(array_a.? == "Text 1" and array_b.?.text == "Text 2")', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.array_a.? == "Text 2"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert not objects
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.array_b.?.text == "Text 3"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    assert not objects
+
+
+def test_find_by_referenced_object_in_array_with_placeholder(user):
+    referenced_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        }
+    }
+    referenced_object = sampledb.logic.objects.create_object(action_id=referenced_action.id, data=referenced_data, user_id=user.id)
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referencing Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'array': {
+                    'title': 'Array',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Object',
+                        'type': 'object_reference'
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referencing_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'array': [
+            {
+                '_type': 'object_reference',
+                'object_id': referenced_object.object_id
+            }
+        ]
+    }
+    referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.*?.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    referencing_data['array'][0]['object_id'] = referencing_object.id
+    other_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.*?.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    referencing_data['array'].append({
+        '_type': 'object_reference',
+        'object_id': referenced_object.object_id
+    })
+    sampledb.logic.objects.update_object(object_id=other_object.id, data=referencing_data, user_id=user.id)
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('array.*?.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 2 and {objects[0].id, objects[1].id} == {referencing_object.id, other_object.id}
+    assert len(search_notes) == 0
+
+@pytest.mark.parametrize(
+    ['search_query', 'should_find'],
+    [
+        ['object.(!text_attr)', False],
+        ['object.(!bool_attr)', False],
+        ['object.(text_attr == "A")', True],
+        ['object.(bool_attr == true)', True],
+        ['object.(text_attr == "B")', False],
+        ['object.(bool_attr == false)', False],
+        ['object.(!(text_attr == "A"))', False],
+        ['object.(!(text_attr == "B"))', True],
+        ['object.(!(bool_attr == true))', False],
+        ['object.(!(bool_attr == false))', True],
+        ['object.(text_attr and bool_attr)', False],
+        ['object.(text_attr or bool_attr)', True],
+        ['object.(text_attr == "A" and bool_attr)', True],
+        ['object.(text_attr == "B" and bool_attr)', False],
+        ['object.(text_attr == "A" and !bool_attr)', False],
+        ['object.(text_attr == "B" and !bool_attr)', False],
+        ['object.(text_attr == "A" or bool_attr)', True],
+        ['object.(text_attr == "B" or bool_attr)', True],
+        ['object.(text_attr == "A" or !bool_attr)', True],
+        ['object.(text_attr == "B" or !bool_attr)', False],
+    ]
+)
+def test_find_by_search_in_attribute_subdata(user, search_query, should_find):
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'object': {
+                    'title': 'Object',
+                    'type': 'object',
+                    'properties': {
+                        'text_attr': {
+                            'title': 'Text',
+                            'type': 'text'
+                        },
+                        'bool_attr': {
+                            'title': 'Bool',
+                            'type': 'bool'
+                        }
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'object': {
+            'text_attr': {
+                '_type': 'text',
+                'text': 'A'
+            },
+            'bool_attr': {
+                '_type': 'bool',
+                'value': True
+            }
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(search_query, use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    if should_find:
+        assert len(objects) == 1 and objects[0].id == object.id
+    else:
+        assert not objects
+
+
+@pytest.mark.parametrize(
+    ['search_query', 'should_find'],
+    [
+        ['outer_array.0.(bool_attr == True)', True],
+        ['outer_array.0.(bool_attr == False)', False],
+        ['outer_array.0.(inner_array.0 == "A")', True],
+        ['outer_array.0.(inner_array.0 == "B")', False],
+        ['outer_array.0.(inner_array.? == "A")', True],
+        ['outer_array.0.(inner_array.? == "B")', False],
+        ['outer_array.?.(bool_attr == True)', True],
+        ['outer_array.?.(bool_attr == False)', False],
+        ['outer_array.?.(inner_array.0 == "A")', True],
+        ['outer_array.?.(inner_array.0 == "B")', False],
+        ['outer_array.?.(inner_array.0 == "A" and bool_attr == True)', True],
+        ['outer_array.?.(inner_array.0 == "B" and bool_attr == True)', False],
+        ['outer_array.?.(inner_array.? == "A")', True],
+        ['outer_array.?.(inner_array.? == "B")', False],
+        ['outer_array.?.(inner_array.? == "A" and bool_attr == True)', True],
+        ['outer_array.?.(inner_array.? == "B" and bool_attr == True)', False],
+    ]
+)
+def test_find_by_search_in_attribute_subdata_with_array_placeholders(user, search_query, should_find):
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'outer_array': {
+                    'title': 'Array',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Object',
+                        'type': 'object',
+                        'properties': {
+                            'inner_array': {
+                                'title': 'Array',
+                                'type': 'array',
+                                'items': {
+                                    'title': 'Text',
+                                    'type': 'text'
+                                }
+                            },
+                            'bool_attr': {
+                                'title': 'Bool',
+                                'type': 'bool'
+                            }
+                        }
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'outer_array': [
+            {
+                'inner_array': [
+                    {
+                        '_type': 'text',
+                        'text': 'A'
+                    }
+                ],
+                'bool_attr': {
+                    '_type': 'bool',
+                    'value': True
+                }
+            }
+        ]
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(search_query, use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert not search_notes
+    if should_find:
+        assert len(objects) == 1 and objects[0].id == object.id
+    else:
+        assert not objects
+
 
 @pytest.mark.parametrize('query_string', [
-    '*object_reference.*other_reference.name == "Name 1"',
-    'array.?.*other_reference.name == "Name 1"',
     'object_reference*.name == "Name 1"',
-    'array.*.name == "Name 1"'
+    'array.*.name == "Name 1"',
+    'property.(property)',
+    'property.(property) == "A"',
+    '.(property == "A")',
 ])
 def test_invalid_referencing_query(query_string):
     filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(query_string, use_advanced_search=True)
@@ -3080,4 +3829,4 @@ def test_parse_extra_parenthesis(user):
     assert objects[0].object_id == object.object_id
 
 def test_parse_chained_binary_operators():
-    assert repr(sampledb.logic.object_search_parser.parse_query_string('a and (b and c and d)')) == """[<Attribute(['a'])>, <Operator(operator="and")>, [[<Attribute(['b'])>, <Operator(operator="and")>, <Attribute(['c'])>], <Operator(operator="and")>, <Attribute(['d'])>]]"""
+    assert repr(sampledb.logic.object_search_parser.parse_query_string('a and (b and c and d)')) == """[<Attribute(['a'], False)>, <Operator(operator="and")>, [[<Attribute(['b'], False)>, <Operator(operator="and")>, <Attribute(['c'], False)>], <Operator(operator="and")>, <Attribute(['d'], False)>]]"""

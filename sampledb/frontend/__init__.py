@@ -27,6 +27,7 @@ from . import export
 from . import favicon
 from . import group_categories
 from . import index
+from . import info_pages
 from . import instruments
 from . import locations
 from . import location_types
@@ -45,6 +46,7 @@ from . import users_forms
 from . import errors
 from . import utils
 from . import federation
+from . import well_known
 
 
 __all__ = [
@@ -60,6 +62,7 @@ __all__ = [
     'favicon',
     'group_categories',
     'index',
+    'info_pages',
     'instruments',
     'locations',
     'location_types',
@@ -78,4 +81,5 @@ __all__ = [
     'errors',
     'utils',
     'federation',
+    'well_known',
 ]

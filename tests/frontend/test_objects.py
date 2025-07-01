@@ -17,6 +17,8 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 
+from ..conftest import wait_for_page_load
+
 SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas'))
 OBJECTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'objects'))
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
@@ -339,6 +341,38 @@ def test_search_objects(flask_server, user):
         else:
             assert name not in str(document.find('tbody'))
 
+    schema = action.schema
+    schema['properties']['object_reference'] = {
+        'title': 'Object Reference',
+        'type': 'object_reference'
+    }
+    sampledb.logic.actions.update_action(
+        action_id=action.id,
+        schema=schema
+    )
+    object = sampledb.logic.objects.create_object(
+        data={
+            'name': {
+                '_type': 'text',
+                'text': 'Example4'
+            },
+            'object_reference': {
+                '_type': 'object_reference',
+                'object_id': objects[0].id
+            }
+        },
+        user_id=user.id,
+        action_id=action.id
+    )
+    r = session.get(flask_server.base_url + 'objects', params={'q': '*object_reference.name == "Example1"'})
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 1
+    for name in names + ['Example4']:
+        if 'Example4' in name:
+            assert name in str(document.find('tbody'))
+        else:
+            assert name not in str(document.find('tbody'))
 
 def test_objects_referencable(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
@@ -829,7 +863,8 @@ def test_new_object(flask_server, driver, user):
 
     driver.find_element(By.NAME, 'object__substrate__text_en').send_keys("Ag")
 
-    driver.find_element(By.NAME, 'action_submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.NAME, 'action_submit').click()
 
     assert len(sampledb.logic.objects.get_objects()) == 1
     object = sampledb.logic.objects.get_objects()[0]
@@ -1185,7 +1220,8 @@ def test_new_object_javascript_fields_array(flask_server, driver, user):
     driver.find_element(By.XPATH, '//select[@name="object__choices__0__text"]/following-sibling::button').click()
     driver.find_element(By.XPATH, '//select[@name="object__choices__0__text"]/following-sibling::div/div/ul/li/a/span[text()="D"]/parent::a/parent::li').click()
 
-    driver.find_element(By.NAME, 'action_submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.NAME, 'action_submit').click()
 
     assert len(sampledb.logic.objects.get_objects()) == 2
 
@@ -1196,6 +1232,74 @@ def test_new_object_javascript_fields_array(flask_server, driver, user):
     assert object.data['obj_ref'][0]['object_id'] == example_object.id
     assert object.data['sample'][0]['object_id'] == example_object.id
     assert object.data['choices'][0]['text'] == 'D'
+
+
+@pytest.mark.parametrize(
+    [
+        'property_name', 'property_schema', 'default_property_data', 'expected_property_data', 'query_parameter'
+    ],
+    [
+        ('text', {"title": "Test Property", "type": "text"}, None, {"_type": "text", "text": {"en": "Example Text"}}, "properties.text=Example Text"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": "1"}, None, {"_type": "quantity", "magnitude": 123.0, "magnitude_in_base_units": 123.0, "units": "1", "dimensionality": "dimensionless"}, "properties.quantity=123"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": ["1", "percent"]}, None, {"_type": "quantity", "magnitude": 123.0, "magnitude_in_base_units": 1.23, "units": "percent", "dimensionality": "dimensionless"}, "properties.quantity=123percent"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": "kg"}, None, {"_type": "quantity", "magnitude": 42.0, "magnitude_in_base_units": 42.0, "units": "kg", "dimensionality": "[mass]"}, "properties.quantity=42kg"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": ["kg", "g"]}, None, {"_type": "quantity", "magnitude": 42.0, "magnitude_in_base_units": 0.042, "units": "g", "dimensionality": "[mass]"}, "properties.quantity=42g"),
+        ('boolean', {"title": "Test Property", "type": "bool"}, {"_type": "bool", "value": False}, {"_type": "bool", "value": True}, "properties.boolean=true"),
+        ('boolean', {"title": "Test Property", "type": "bool"}, {"_type": "bool", "value": False}, {"_type": "bool", "value": False}, "properties.boolean=false"),
+        ('datetime', {"title": "Test Property", "type": "datetime"}, None, {"_type": "datetime", "utc_datetime": "2025-01-02 03:04:05"}, "properties.datetime=2025-01-02 03:04:05"),
+        ('tags', {"title": "Test Property", "type": "tags"}, {"_type": "tags", "tags": []}, {"_type": "tags", "tags": ["example", "tags"]}, "properties.tags=example,tags"),
+        ('user', {"title": "Test Property", "type": "user"}, None, {"_type": "user", "user_id": 'USER_ID'}, "properties.user=USER_ID"),
+        ('object', {"title": "Test Property", "type": "object_reference"}, None, {"_type": "object_reference", "object_id": 'OBJECT_ID'}, "properties.object=OBJECT_ID"),
+    ]
+)
+def test_new_object_query_parameter_placeholders(flask_server, driver, user, property_name, property_schema, default_property_data, expected_property_data, query_parameter):
+    schema = {
+        "title": "Object Information",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text",
+                "default": "Default Name"
+            },
+            property_name: property_schema
+        },
+        "required": ["name"]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+    driver.get(f"{flask_server.base_url}users/{user.id}/autologin")
+
+    driver.get(f"{flask_server.base_url}objects/new?action_id={action.id}")
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+    assert driver.current_url.startswith(f'{flask_server.base_url}objects/')
+    object_id = int(driver.current_url.split(f'{flask_server.base_url}objects/', 1)[1])
+    data = sampledb.logic.objects.get_object(object_id).data
+    if property_schema['type'] == "datetime":
+        assert abs((datetime.datetime.strptime(data[property_name]['utc_datetime'], '%Y-%m-%d %H:%M:%S') - datetime.datetime.now()).total_seconds()) < 10
+    elif default_property_data is None:
+        assert property_name not in data
+    else:
+        assert data[property_name] == default_property_data
+
+    if property_schema['type'] == 'user':
+        expected_property_data['user_id'] = user.id
+        query_parameter = query_parameter.replace('USER_ID', str(user.id))
+    if property_schema['type'] == 'object_reference':
+        expected_property_data['object_id'] = object_id
+        query_parameter = query_parameter.replace('OBJECT_ID', str(object_id))
+
+    driver.get(f"{flask_server.base_url}objects/new?action_id={action.id}&{query_parameter}")
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+    assert driver.current_url.startswith(f'{flask_server.base_url}objects/')
+    object_id = int(driver.current_url.split(f'{flask_server.base_url}objects/', 1)[1])
+    data = sampledb.logic.objects.get_object(object_id).data
+    assert data[property_name] == expected_property_data
 
 
 def test_restore_object_version(flask_server, user):
@@ -1444,7 +1548,7 @@ def test_object_permissions_add_user(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id))
     assert r.status_code == 200
-    csrf_token = BeautifulSoup(r.content, 'html.parser').findAll('input', {'name': 'csrf_token'})[1]['value']
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find_all('input', {'name': 'csrf_token'})[1]['value']
 
     with flask_server.app.app_context():
         user2 = sampledb.models.User(name="New User", email="example@example.com", type=sampledb.models.UserType.PERSON)
@@ -2236,6 +2340,8 @@ def test_object_federation_references(flask_server, user, simple_object, compone
 
 
 def test_update_recipes_for_input(mock_current_user):
+    mock_current_user.id = 1
+
     schema = {
         'type': 'object',
         'title': 'Example Schema',

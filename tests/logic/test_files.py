@@ -5,7 +5,9 @@
 
 import datetime
 import os
+import time
 
+import numpy as np
 import pytest
 
 import sampledb
@@ -430,3 +432,45 @@ def test_get_referenced_temporary_file_ids():
             }
         }
     ) == {1, 2}
+
+
+def test_deferred_attribute_performance(user: User, object: Object):
+    large_file_content = b'a' * 1024 * 1024 * 5
+    for _ in range(100):
+        files.create_database_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(large_file_content))
+    sampledb.db.engine.dispose()
+    start = time.time()
+    for _ in range(10):
+        all_files = sampledb.models.files.File.query.all()
+        for file in all_files:
+            assert file.id >= 0
+            _ = file.binary_data
+        sampledb.db.session.expire_all()
+    models_with_data_access = time.time() - start
+    start = time.time()
+    for _ in range(10):
+        all_files = sampledb.models.files.File.query.all()
+        for file in all_files:
+            assert file.id >= 0
+        sampledb.db.session.expire_all()
+    models_without_data_access = time.time() - start
+    assert models_without_data_access < models_with_data_access / 2
+    start = time.time()
+    for _ in range(10):
+        all_files = sampledb.logic.files.get_files_for_object(object.object_id)
+        for file in all_files:
+            assert file.id >= 0
+            _ = file.binary_data
+        sampledb.db.session.expire_all()
+    logic_with_data_access = time.time() - start
+    start = time.time()
+    for _ in range(10):
+        all_files = sampledb.logic.files.get_files_for_object(object.object_id)
+        for file in all_files:
+            assert file.id >= 0
+        sampledb.db.session.expire_all()
+    logic_without_data_access = time.time() - start
+    assert models_without_data_access < models_with_data_access / 2
+    assert logic_without_data_access < logic_with_data_access / 2
+    assert np.isclose(logic_with_data_access, models_with_data_access, rtol=1)
+    assert np.isclose(logic_without_data_access, models_without_data_access, rtol=2)

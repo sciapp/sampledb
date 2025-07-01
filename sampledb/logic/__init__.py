@@ -11,6 +11,7 @@ from . import action_type_translations
 from . import api_log
 from . import authentication
 from . import background_tasks
+from . import caching
 from . import comments
 from . import components
 from . import component_authentication
@@ -27,6 +28,7 @@ from . import fed_logs
 from . import files
 from . import groups
 from . import group_categories
+from . import info_pages
 from . import instruments
 from . import instrument_log_entries
 from . import languages
@@ -46,6 +48,7 @@ from . import object_search
 from . import object_search_parser
 from . import object_permissions
 from . import object_sorting
+from . import oidc
 from . import projects
 from . import publications
 from . import rdf
@@ -80,6 +83,7 @@ __all__ = [
     'api_log',
     'authentication',
     'background_tasks',
+    'caching',
     'comments',
     'datatypes',
     'dataverse_export',
@@ -96,6 +100,7 @@ __all__ = [
     'files',
     'groups',
     'group_categories',
+    'info_pages',
     'instruments',
     'instrument_translations',
     'instrument_log_entries',
@@ -116,6 +121,7 @@ __all__ = [
     'object_search_parser',
     'object_permissions',
     'object_sorting',
+    'oidc',
     'projects',
     'publications',
     'rdf',
@@ -133,6 +139,7 @@ __all__ = [
     'utils',
     'webhooks',
     'where_filters',
+    'minisign_keys',
 ]
 
 Objects._data_validator = validate

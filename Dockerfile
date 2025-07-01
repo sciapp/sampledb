@@ -1,5 +1,5 @@
 # Dockerfile for sampledb
-FROM python:3.12-slim-bookworm as builder
+FROM python:3.13-slim-bookworm as builder
 
 # Install required system packages
 # GCC is required to build python dependencies on ARM architectures
@@ -27,7 +27,7 @@ COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Final image
-FROM python:3.12-slim-bookworm
+FROM python:3.13-slim-bookworm
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
 LABEL org.opencontainers.image.source=https://github.com/sciapp/sampledb
@@ -41,7 +41,7 @@ LABEL org.opencontainers.image.licenses=MIT
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y libpangocairo-1.0-0 gettext && \
+    apt-get install -y libpangocairo-1.0-0 gettext xmlsec1 chromium && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user

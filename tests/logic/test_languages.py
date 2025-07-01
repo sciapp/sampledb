@@ -222,7 +222,7 @@ def test_get_languages():
     )
 
 
-def test_get_user_language():
+def test_get_user_language(flask_server):
     english = languages.get_language_by_lang_code('en')
     german = languages.get_language_by_lang_code('de')
 
@@ -235,23 +235,28 @@ def test_get_user_language():
     )
     db.session.add(user)
     db.session.commit()
-    user = users.get_user(user.id)
-    assert user.language_cache[0] is None
 
-    assert languages.get_user_language(user) == english
-    assert user.language_cache[0] == english
+    with flask_server.app.app_context():
+        user = users.get_user(user.id)
+        assert user.language_cache[0] is None
 
-    settings.set_user_settings(user.id, {'LOCALE': 'de', 'AUTO_LC': False})
-    assert languages.get_user_language(user) == english
+        assert languages.get_user_language(user) == english
+        assert user.language_cache[0] == english
 
-    user.language_cache[0] = None
-    assert languages.get_user_language(user) == german
-    assert user.language_cache[0] == german
+    with flask_server.app.app_context():
+        settings.set_user_settings(user.id, {'LOCALE': 'de', 'AUTO_LC': False})
+        assert languages.get_user_language(user) == english
 
-    user.language_cache[0] = None
-    settings.set_user_settings(user.id, {'LOCALE': 'xy'})
-    assert languages.get_user_language(user) == english
-    assert user.language_cache[0] == english
+    with flask_server.app.app_context():
+        user.language_cache[0] = None
+        assert languages.get_user_language(user) == german
+        assert user.language_cache[0] == german
+
+    with flask_server.app.app_context():
+        user.language_cache[0] = None
+        settings.set_user_settings(user.id, {'LOCALE': 'xy'})
+        assert languages.get_user_language(user) == english
+        assert user.language_cache[0] == english
 
 
 def test_get_languages_in_object_data():

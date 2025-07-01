@@ -11,13 +11,20 @@
 
 {% block content %}
   <h1 class="text-center">{{ _('Sign in to %(service_name)s', service_name=service_name) }}</h1>
+  {% if saml_user_creation %}
+  <div style="display: flex; justify-content: center; text-align: center; align-items: center;">
+    <form method="post" action="/federated-login/sp/{{ component.id }}" style="flex: 1;">
+      <button type="submit" class="btn btn-primary">{{ _('Sign in with %(component_name)s', component_name=component.get_name()) }}</button>
+    </form>
+  </div>
+  {% else %}
   {% if is_for_refresh %}
   <div class="help-block text-center">{{ _('To ensure the security of your account information, please sign in again.') }}</div>
   {% else %}
   <div class="help-block text-center">
     {% if is_ldap_configured %}
     {{ _('If you have an LDAP account, you can use your LDAP username to sign in. Otherwise, if you do not have a %(service_name)s account yet, please ask another user for an invitation.', service_name=service_name) }}
-    {% else %}
+    {% elif not is_oidc_configured %}
     {{ _('If you do not have a %(service_name)s account yet, please ask another user for an invitation.', service_name=service_name) }}
     {% endif %}
   </div>
@@ -54,13 +61,15 @@
       <input type="hidden" name="remember_me" value="" />
       <input type="hidden" name="shared_device" value="" />
     </form>
-    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
+    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] or (config['ENABLE_FEDERATED_LOGIN'] and components and not federated_login_authentication) or is_oidc_configured %}
       <div style="border-left: 1px solid #ccc; width: 0; margin: 40px; display: flex; justify-content: center; flex-direction: column">
         <div class="text-muted" style="width: 40px; margin-left:-20px; background: linear-gradient(transparent, white, white, transparent); text-align: center; padding: 40px 0; flex:0">
           {{ _('or') }}
         </div>
       </div>
-      <form class="form-horizontal" method="post" id="fido2-authenticate-form" style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column">
+      <div style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px;">
+      {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
+      <form class="form-horizontal" method="post" id="fido2-authenticate-form">
         <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
             <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
         </div>
@@ -70,6 +79,21 @@
         <input type="hidden" name="remember_me" value="" />
         <input type="hidden" name="shared_device" value="" />
       </form>
+      {% endif %}
+      {% if is_oidc_configured %}
+        <a class="btn btn-primary" href="{{ url_for('frontend.oidc_start') }}">
+          {{ _('Sign in with %(oidc_name)s', oidc_name=config['OIDC_NAME']) }}
+        </a>
+      {% endif %}
+      {% if config['ENABLE_FEDERATED_LOGIN'] and components and not federated_login_authentication %}
+          {% for component in components %}
+            <form method="post" class="federated-login-form" action="/federated-login/sp/{{ component.id }}">
+              <button type="submit" class="btn btn-primary">{{ _('Sign in with %(component_name)s', component_name=component.get_name()) }}</button>
+              <input type="hidden" name="shared_device" value="" />
+            </form>
+          {% endfor %}
+      {% endif %}
+    </div>
   {% endif %}
   </div>
   {% if not is_for_refresh %}
@@ -91,13 +115,15 @@
       </div>
     </div>
   {% endif %}
+  {% endif %}
 {% endblock %}
 
 {% block template_values %}
+  {% if not saml_user_creation %}
   {% do set_template_value("config.enable_fido2_passkey_authentication", config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION']) %}
   {% do set_template_value("fido2_options", dict(options)) %}
   {% do set_template_value("translations.passkey_failed", _('The passkey failed to authenticate with the following error: ')) %}
-
+  {% endif %}
   {{ super() }}
 {% endblock %}
 

@@ -21,6 +21,48 @@
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
 
+{% block info_pages %}
+{% set info_pages = get_info_pages() %}
+{% if info_pages %}
+  <div class="modal fade" id="infoPageModal" tabindex="-1" role="dialog" aria-labelledby="infoPageModalLabel">
+    <div class="modal-dialog modal-lg" role="document">
+      {% for info_page in info_pages %}
+        <div class="modal-content" data-info-page-id="{{ info_page.id }}">
+          <div class="modal-header">
+            <h4 class="modal-title" {% if loop.first %}id="infoPageModalLabel"{% endif %}>
+              {{ info_page.title | get_translated_text }}
+              {% if info_pages | length > 1 %}
+                ({{ loop.index }}&#8239;/&#8239;{{ info_pages | length }})
+              {% endif %}
+            </h4>
+          </div>
+          <div class="modal-body info-page-user-content">
+            {{ info_page.content | get_translated_text | markdown_to_safe_html(anchor_prefix="info-page-content-" + info_page.id | string) | safe }}
+          </div>
+          <div class="modal-footer">
+            {% if not loop.first %}
+              <button type="button" class="btn btn-default" data-info-page-button="back">{{ _("Back") }}</button>
+            {% endif %}
+            {% if not loop.last %}
+              <button type="button" class="btn btn-default" data-info-page-button="next">{{ _("Next") }}</button>
+            {% endif %}
+            {% if loop.last %}
+              <form action="{{ url_for('frontend.acknowledge_info_pages') }}" method="post" style="display: inline">
+                {% with info_page_form = InfoPageAcknowledgementForm() %}
+                  {{ info_page_form.csrf_token() }}
+                  <input type="hidden" name="{{ info_page_form.info_page_ids.name }}" value="{% for info_page in info_pages %}{{ info_page.id }}{% if not loop.last %},{% endif %}{% endfor %}" />
+                  <button type="button" class="btn btn-primary" data-info-page-button="acknowledge">{{ _("Acknowledge") }}</button>
+                {% endwith %}
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
 {% if current_user.is_authenticated %}
   {% set num_unread_notifications = (current_user | get_num_unread_notifications) %}
   {% if config['SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS']  %}
@@ -156,6 +198,7 @@
               {% if config['ENABLE_MONITORINGDASHBOARD'] %}
               <li><a href="{{ url_for('dashboard.index') }}">{{ _('Monitoring Dashboard') }}</a></li>
               {% endif %}
+              <li><a href="{{ url_for('frontend.admin_info_pages') }}">{{ _('Info Pages') }}</a></li>
             {% endif %}
           </ul>
         </li>
@@ -186,7 +229,7 @@
               <li role="separator" class="divider"></li>
             {% endif %}
             {% if config['DISABLE_USER_INVITATIONS'] is not true %}
-              <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
+              <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured or is_oidc_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>
             {% endif %}
               <li><a href="{{ url_for('frontend.export', user_id=current_user.id) }}">{{ _('Export Data') }}</a></li>
@@ -226,6 +269,9 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             {% if category == "error" %}
+                {% set alert_class="alert-danger" %}
+            {% elif category == "error-url" %}
+                {% set message = message | safe %}
                 {% set alert_class="alert-danger" %}
             {% elif category == "warning" %}
                 {% set alert_class="alert-warning" %}

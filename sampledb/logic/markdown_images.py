@@ -105,7 +105,7 @@ def find_referenced_markdown_images(html_content: str) -> typing.Set[str]:
     file_names = set()
     base_image_url = flask.url_for('frontend.markdown_image', file_name='', _external=False)
     soup = BeautifulSoup(html_content, "html.parser")
-    for image in soup.findAll('img'):
+    for image in soup.find_all('img'):
         image_url = image.get('src')
         if image_url.startswith(base_image_url):
             file_name = image_url[len(base_image_url):]

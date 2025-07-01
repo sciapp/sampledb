@@ -33,6 +33,7 @@ class RemoveGroupMemberForm(FlaskForm):
 
 class InviteUserForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
+    add_directly = BooleanField(default=False)
 
 
 class ToggleFavoriteActionForm(FlaskForm):

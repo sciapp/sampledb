@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-12-09 12:45+0100\n"
+"POT-Creation-Date: 2025-05-20 12:59+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.16.0\n"
+"Generated-By: Babel 2.17.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -81,6 +81,17 @@ msgstr ""
 
 msgid "Editing imported actions is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionen wird noch nicht unterstützt."
+
+msgid "Using imported instruments to create actions is not supported."
+msgstr ""
+"Das Verwenden importierter Instrumente zur Erstellung von Aktionen wird "
+"nicht unterstützt."
+
+msgid "Insufficient permissions to use the requested instrument."
+msgstr "Unzureichende Berechtigungen, um das angefragte Instrument zu nutzen."
+
+msgid "The requested instrument does not exist."
+msgstr "Das angefragte Instrument existiert nicht."
 
 msgid "Insufficient permissions to use the requested action as a template."
 msgstr ""
@@ -296,11 +307,6 @@ msgstr "Unbekannte Datenbank (%(uuid)s)"
 msgid "An error occurred: Users could not be linked."
 msgstr "Ein Fehler ist aufgetreten: Nutzer konnten nicht verknüpft werden."
 
-msgid "The federated user already has a federated identity in this database."
-msgstr ""
-"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
-"Identität."
-
 #, python-format
 msgid ""
 "You were successfully linked with a federated user from "
@@ -308,6 +314,14 @@ msgid ""
 msgstr ""
 "Sie wurden erfolgreich mit einem föderierten Nutzer von "
 "%(component_name)s verknüpft."
+
+msgid "The identity was successfully verified."
+msgstr "Die Identität wurde erfolgreich verifiziert."
+
+msgid "The federated user already has a federated identity in this database."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität."
 
 msgid "Could not confirm identity: The databases are not in a federation."
 msgstr ""
@@ -319,6 +333,13 @@ msgstr "Entfernen der Nutzerverknüpfungen fehlgeschlagen."
 
 msgid "Failed to revoke user links."
 msgstr "Widerrufen der Nutzerverknüpfungen fehlgeschlagen"
+
+msgid ""
+"You must keep at least one federated identity to login or add another "
+"authentication method first."
+msgstr ""
+"Sie müssen mindestens eine föderierte Identität für die Anmeldung "
+"behalten oder zuerst eine weitere Authentifizierungsmethode hinzufügen."
 
 msgid "An error occurred: Failed to edit federated identity."
 msgstr ""
@@ -334,6 +355,101 @@ msgstr "Nutzerverknüpfungen erfolgreich widerrufen."
 msgid "Successfully enabled user link."
 msgstr "Nutzerverknüpfungen erfolgreich aktiviert."
 
+#, python-format
+msgid "The federated login is not available for %(component_name)s."
+msgstr "Die föderierte Anmeldung ist für %(component_name)s nicht verfügbar."
+
+#, python-format
+msgid "%(component_name)s disabled the federated login."
+msgstr "%(component_name)s hat den föderierten Login deaktiviert."
+
+msgid "Failed to use federated login. Please contact an administrator."
+msgstr ""
+"Fehler beim nutzen der föderierten Anmeldung. Bitte kontaktieren Sie "
+"einen Administrator."
+
+msgid "An error occurred: Failed to use federated login. Please try again."
+msgstr ""
+"Ein Fehler ist aufgetreten: Fehler beim verwenden der föderierten "
+"Anmeldung. Bitte versuchen Sie es erneut."
+
+msgid ""
+"An error occurred: The authentication could not be verified. Please try "
+"again."
+msgstr ""
+"Ein Fehler ist aufgetreten: Die Authentifizierung konnte nicht bestätigt "
+"werden. Bitte versuchen Sie es erneut."
+
+msgid "Failed to use federated login. Please try again."
+msgstr ""
+"Fehler beim verwenden der föderierten Anmeldung. Bitte versuchen Sie es "
+"erneut."
+
+msgid ""
+"The federated user already has a federated identity in this database "
+"which is not verified. Please sign in to the corresponding user."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität, die nicht verifiziert ist. Bitte melden Sie sich mit dem "
+"entsprechenden Nutzer an."
+
+msgid ""
+"A user with this email address exists already. If you own this account, "
+"please use the sign in."
+msgstr ""
+"Ein Nutzer mit dieser E-Mail-Adresse existiert bereits. Falls Sie dieses "
+"Konto besitzen, nutzen Sie bitte die Anmeldung."
+
+#, python-format
+msgid ""
+"Failed to verify the authentication request. Please try again or contact "
+"an administrator. If you are an administrator, follow the <a "
+"href=\"%(docs_url)s\">documentation</a>."
+msgstr ""
+"Fehler beim Verifizieren der Authentifizierungsanfrage. Bitte "
+"kontaktieren Sie einen Administrator. Wenn sie ein Administrator sind, "
+"folgen Sie der <a href=\"%(docs_url)s\">Dokumentation</a>."
+
+#, python-format
+msgid ""
+"Failed to use federated login because of missing metadata. Please contact"
+" an administrator. If you are an administrator, follow the <a "
+"href=\"%(docs_url)s\">documentation</a>."
+msgstr ""
+"Der föderierte Login konnte wegen fehlender Metadaten nicht verwendet "
+"werden. Bitte kontaktieren Sie einen Administrator. Wenn sie ein "
+"Administrator sind, folgen Sie der <a "
+"href=\"%(docs_url)s\">Dokumentation</a>."
+
+msgid ""
+"Sending an email failed. Please try again later or contact an "
+"administrator."
+msgstr ""
+"Das Senden einer E-Mail ist fehlgeschlagen. Bitte versuchen Sie es später"
+" erneut oder kontaktieren Sie einen Administrator."
+
+msgid "Please see your email to confirm this mail address and create the user."
+msgstr ""
+"Bitte schauen Sie in Ihre E-Mails, um diese E-Mail-Adresse zu bestätigen "
+"und den Nutzer zu erstellen."
+
+#, python-format
+msgid "The selected username is not valid: %(error)s"
+msgstr "Der gewählte Nutzername ist ungültig: %(error)s"
+
+msgid "Invalid token. Please login again."
+msgstr "Fehlerhafter Token. Bitte melden Sie sich erneut an."
+
+msgid ""
+"The federated user already has a local federated identity. Please login "
+"with this user."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität. Bitte melden Sie sich mit diesem Nutzer an."
+
+msgid "The user was successfully created. Please sign in."
+msgstr "Der Nutzer wurde erfolgreich erstellt. Bitte melden Sie sich an."
+
 msgid "Please enter your name as: surname, given names."
 msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
 
@@ -348,6 +464,33 @@ msgstr "Ungültige Eltern-Kategorie."
 
 msgid "The group category was updated successfully."
 msgstr "Die Gruppen-Kategorie wurde erfolgreich aktualisiert."
+
+msgid "The info page has been deleted successfully."
+msgstr "Die Infoseite wurde erfolgreich gelöscht."
+
+msgid "The info page has already been disabled."
+msgstr "Die Infoseite wurde bereits deaktiviert."
+
+msgid "The info page has already been enabled."
+msgstr "Die Infoseite wurde bereits aktiviert."
+
+msgid "The info page has been disabled successfully."
+msgstr "Die Infoseite wurde erfolgreich deaktiviert."
+
+msgid "The info page has been enabled successfully."
+msgstr "Die Infoseite wurde erfolgreich aktiviert."
+
+msgid "The fields for title and content are required."
+msgstr "Die Felder für Titel und Inhalt sind Pflichtfelder."
+
+msgid "Please enter a shorter title (at most 100 characters)."
+msgstr "Bitte geben Sie einen kürzeren Titel ein (höchstens 100 Zeichen)."
+
+msgid "The info page has been created successfully."
+msgstr "Die Infoseite wurde erfolgreich erstellt."
+
+msgid "The info page has been updated successfully."
+msgstr "Die Infoseite wurde erfolgreich aktualisiert."
 
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
@@ -893,11 +1036,14 @@ msgstr "Sie können diesen Nutzer nicht hinzufügen."
 msgid "Please select read permissions (or higher) for the invitation."
 msgstr "Bitte wählen Sie Lese-Berechtigungen (oder höher) für diese Einladung aus."
 
-msgid "This user is already a member of this project group."
-msgstr "Dieser Nutzer ist bereits ein Mitglied dieser Projektgruppe."
+msgid "The user was successfully added to the project group."
+msgstr "Der Nutzer wurde erfolgreich zu der Projektgruppe hinzugefügt."
 
 msgid "The user was successfully invited to the project group."
 msgstr "Der Nutzer wurde erfolgreich in die Projektgruppe eingeladen."
+
+msgid "This user is already a member of this project group."
+msgstr "Dieser Nutzer ist bereits ein Mitglied dieser Projektgruppe."
 
 msgid "You cannot add this basic group."
 msgstr "Sie können diese einfache Gruppe nicht hinzufügen."
@@ -1462,6 +1608,26 @@ msgstr "Das ausgewählte Objekt kann nicht in dieser Aktion verwendet werden."
 msgid "The selected objects cannot be used in this action."
 msgstr "Die ausgewählten Objekte können nicht in dieser Aktion verwendet werden."
 
+#, python-format
+msgid "The path \"%(path)s\" is not valid for the schema of this action."
+msgstr "Der Pfad \"%(path)s\" ist für das Schema dieser Aktion nicht gültig."
+
+#, python-format
+msgid ""
+"The unit of \"%(path)s=%(value)s\" does not match the unit(s) of the "
+"schema: %(units)s"
+msgstr ""
+"Die Einheit von \"%(path)s=%(value)s\" stimmt nicht mit den Einheiten des"
+" Schemas überein: %(units)s"
+
+#, python-format
+msgid ""
+"The value of \"%(path)s=%(value)s\" is not valid for this schema: "
+"%(schema)s"
+msgstr ""
+"Der Wert von \"%(path)s=%(value)s\" ist nicht gültig für dieses Schema: "
+"%(schema)s"
+
 msgid "API Log"
 msgstr "API Log"
 
@@ -1489,6 +1655,15 @@ msgstr "Endpunkt"
 #, python-format
 msgid "This %(api_token_type)s has not been used so far."
 msgstr "Dieses %(api_token_type)s ist noch nicht benutzt worden."
+
+msgid "Back"
+msgstr "Zurück"
+
+msgid "Next"
+msgstr "Weiter"
+
+msgid "Acknowledge"
+msgstr "Bestätigen"
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
@@ -1561,6 +1736,9 @@ msgstr "Sprachen"
 
 msgid "Monitoring Dashboard"
 msgstr "Monitoring Dashboard"
+
+msgid "Info Pages"
+msgstr "Infoseiten"
 
 #, python-format
 msgid ""
@@ -2221,6 +2399,19 @@ msgstr "Andere"
 msgid "FIDO2 Passkey"
 msgstr "FIDO2 Passkey"
 
+msgid "Federated Login"
+msgstr "Föderierte Anmeldung"
+
+msgid "OIDC"
+msgstr "OIDC"
+
+msgid ""
+"To remove this authentication method, revoke the corresponding federated "
+"identity."
+msgstr ""
+"Um diese Authentifizierungsmethode zu entfernen müssen Sie die zugehörige"
+" föderierte Identität widerrufen."
+
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
@@ -2431,6 +2622,24 @@ msgstr "Ja &mdash; Mache die Objekttabelle so breit wie das Browserfenster"
 
 msgid "No &mdash; Limit the objects table to the regular content width"
 msgstr "Nein &mdash; Begrenze die Objekttabelle auf die normale Inhaltsbreite"
+
+msgid "Show workflow views in popup windows"
+msgstr "Zeige Workflow Ansichten in Dialogfenstern"
+
+msgid "Yes &mdash; Show workflow views in popup windows."
+msgstr "Ja &mdash; Zeige Workflow Ansichten in Dialogfenstern."
+
+msgid "No &mdash; Show workflow views directly on the object page."
+msgstr "Nein &mdash; Zeige Workflow Ansichten direkt auf der Objektseite."
+
+msgid "Collapse objects in workflow views"
+msgstr "Objekte in Workflow Ansichten einklappen"
+
+msgid "Yes &mdash; Collapse objects in workflow views"
+msgstr "Ja &mdash; Objekte in Workflow Ansichten einklappen"
+
+msgid "No &mdash; Expand objects in workflow views"
+msgstr "Nein &mdash; Objekte in Workflow Ansichten ausklappen"
 
 msgid "Language"
 msgstr "Sprache"
@@ -2850,6 +3059,10 @@ msgstr "Bedingung hinzufügen"
 msgid "Sign in to %(service_name)s"
 msgstr "Anmelden bei %(service_name)s"
 
+#, python-format
+msgid "Sign in with %(component_name)s"
+msgstr "Anmelden mit %(component_name)s"
+
 msgid "To ensure the security of your account information, please sign in again."
 msgstr ""
 "Bitte melden Sie sich erneut an, um die Sicherheit Ihres Nutzerkontos zu "
@@ -2890,6 +3103,10 @@ msgstr ""
 
 msgid "Use Passkey"
 msgstr "Passkey nutzen"
+
+#, python-format
+msgid "Sign in with %(oidc_name)s"
+msgstr "Anmelden mit %(oidc_name)s"
 
 msgid "Remember me"
 msgstr "Angemeldet bleiben"
@@ -3778,6 +3995,17 @@ msgstr ""
 "%(service_name)s kann Objekte aus von anderen elektronischen Laborbüchern"
 " erzeugten .eln-Dateien importieren."
 
+#, python-format
+msgid "This .eln file was signed by %(sign_url)s."
+msgstr "Diese .eln-Datei wurde von %(sign_url)s signiert."
+
+#, python-format
+msgid "Unsigned import: %(note)s"
+msgstr "Unsignierter Import: %(note)s"
+
+msgid "Unsigned import"
+msgstr "Unsignierter Import"
+
 msgid "The following objects can be imported from this .eln file:"
 msgstr "Die folgenden Objekte können aus dieser .eln-Datei importiert werden:"
 
@@ -3854,6 +4082,9 @@ msgstr "Widerrufen"
 #, python-format
 msgid "Removes the federated identity with %(username)s permanently."
 msgstr "Entfernt die föderierte Identität mit %(username)s endgültig."
+
+msgid "Signed by"
+msgstr "Signiert von"
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -3990,8 +4221,14 @@ msgstr "Bitte geben Sie einen kürzeren Gruppennamen ein (höchstens 100 Zeichen
 msgid "No category selected"
 msgstr "Keine Kategorie ausgewählt"
 
+msgid "Add user directly, without sending an invitation"
+msgstr "Nutzer direkt hinzufügen, ohne eine Einladung zu versenden"
+
 msgid "Are you certain you want to delete this basic group?"
 msgstr "Sind Sie sich sicher, dass Sie diese einfache Gruppe löschen wollen?"
+
+msgid "Add User"
+msgstr "Nutzer hinzufügen"
 
 msgid "Member"
 msgstr "Mitglied"
@@ -4008,6 +4245,85 @@ msgstr "Einfache Gruppe erstellen"
 
 msgid "Manage Group Categories"
 msgstr "Gruppen-Kategorien verwalten"
+
+msgid "Info Page"
+msgstr "Infoseite"
+
+msgid "This info page is currently disabled and will not be shown."
+msgstr "Diese Infoseite ist aktuell deaktiviert und wird nicht angezeigt."
+
+msgid ""
+"This info page will not be shown to users that existed when it was "
+"created."
+msgstr ""
+"Diese Infoseite wird Nutzern, die zum Zeitpunkt ihrer Erstellung bereits "
+"ein Nutzerkonto hatten, nicht angezeigt."
+
+msgid "Routes"
+msgstr "Routen"
+
+msgid "Unknown route"
+msgstr "Unbekannte Route"
+
+msgid "All routes"
+msgstr "Alle Routen"
+
+msgid "Content"
+msgstr "Inhalt"
+
+msgid "Acknowledgement"
+msgstr "Bestätigung"
+
+msgid "Delete Info Page"
+msgstr "Infoseite löschen"
+
+#, python-format
+msgid "Are you sure you want to delete the info page \"%(info_page_title)s\"?"
+msgstr ""
+"Sind Sie sich sicher, dass Sie die Infoseite \"%(info_page_title)s\" "
+"löschen wollen?"
+
+msgid "Please enter content."
+msgstr "Bitte geben Sie einen Inhalt ein."
+
+msgid "Do not show to previously existing users"
+msgstr "Bestehenden Nutzern nicht anzeigen"
+
+msgid ""
+"The info page will not be shown to users that already had an account at "
+"the time it was created."
+msgstr ""
+"Die Infoseite wird Nutzern, die zum Zeitpunkt ihrer Erstellung bereits "
+"ein Nutzerkonto hatten, nicht angezeigt werden."
+
+msgid "Clear previous acknowledgements"
+msgstr "Bisherige Bestätigungen zurücksetzen"
+
+msgid ""
+"All previous acknowledgements of the info page will be cleared and users "
+"will need to acknowledge it again."
+msgstr ""
+"Alle bisherigen Bestätigungen der Infoseite werden zurückgesetzt und "
+"Nutzer werden diese neu bestätigen müssen."
+
+msgid "Info Pages are shown when users visit specific routes for the first time."
+msgstr "Infoseiten werden Nutzern angezeigt, wenn diese bestimmte Routen besuchen."
+
+msgid "Create Info Page"
+msgstr "Infoseite erstellen"
+
+msgid "disabled"
+msgstr "deaktiviert"
+
+msgid ""
+"Are you sure you want to delete the info page \"<span "
+"id=\"deleteInfoPageTitle\"></span>\"?"
+msgstr ""
+"Sind Sie sich sicher, dass Sie die Infoseite \"<span "
+"id=\"deleteInfoPageTitle\"></span>\" löschen wollen?"
+
+msgid "There are no info pages set up at this time."
+msgstr "Aktuell sind keine Infoseiten eingerichtet."
 
 msgid "This instrument has been hidden from instrument lists."
 msgstr "Dieses Instrument wurde aus Instrumentlisten versteckt."
@@ -4198,9 +4514,6 @@ msgstr "Änderungen speichern"
 
 msgid "There are no log entries for this instrument."
 msgstr "Es gibt keine Log-Einträge für dieses Instrument."
-
-msgid "Content"
-msgstr "Inhalt"
 
 msgid "Please enter a text or add an attachment."
 msgstr "Bitte geben Sie einen Text ein oder fügen Sei einen Anhang hinzu."
@@ -4525,6 +4838,12 @@ msgstr ""
 msgid "This location has been hidden from location lists."
 msgstr "Dieser Ort wurde aus Ortslisten versteckt."
 
+msgid "Objects may not be assigned to locations of this type."
+msgstr "Orten dieses Typs dürfen keine Objekte zugewiesen werden."
+
+msgid "Objects may not be assigned to this location."
+msgstr "Diesem Ort dürfen keine Objekte zugewiesen werden."
+
 msgid "Sub-Locations"
 msgstr "Unter-Orte"
 
@@ -4700,6 +5019,9 @@ msgstr "Verantwortliche Nutzer"
 msgid "Hide this location from location lists"
 msgstr "Diesen Ort aus Ortslisten verstecken"
 
+msgid "Objects may be assigned to this location"
+msgstr "Diesem Ort dürfen Objekte zugewiesen werden"
+
 msgid "Location Permissions"
 msgstr "Ortsberechtigungen"
 
@@ -4803,9 +5125,6 @@ msgstr "Export"
 
 msgid "This object has already been exported as:"
 msgstr "Dieses Objekt wurde bereits exportiert als:"
-
-msgid "Back"
-msgstr "Zurück"
 
 #, python-format
 msgid ""
@@ -4915,9 +5234,6 @@ msgstr "Sondergruppen"
 msgid "Administrators"
 msgstr "Administratoren"
 
-msgid "Add User"
-msgstr "Nutzer hinzufügen"
-
 msgid "Select User"
 msgstr "Nutzer auswählen"
 
@@ -5026,9 +5342,11 @@ msgstr "Wählen Sie ein Papierformat aus"
 msgid "The quantity must be an integer value greater than 0."
 msgstr "Die Anzahl muss ein ganzzahliger Wert größer als 0 sein."
 
+#, python-brace-format
 msgid "The width must be a number between {minWidth} and {maxWidth}."
 msgstr "Die Breite muss eine Zahl zwischen {minWidth} und {maxWidth} sein."
 
+#, python-brace-format
 msgid "The minimum height must be a number between 0 and {maxHeight}."
 msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
 
@@ -5148,6 +5466,9 @@ msgstr "Ort anzeigen"
 
 msgid "Show Responsible User"
 msgstr "Verantwortlichen Nutzer anzeigen"
+
+msgid "Show Topics"
+msgstr "Themen anzeigen"
 
 msgid "Filter by User Activity"
 msgstr "Nach Nutzeraktivität filtern"
@@ -5332,6 +5653,12 @@ msgstr "Geteilt von %(component_name)s"
 #, python-format
 msgid "Shared with %(component_name)s"
 msgstr "Geteilt mit %(component_name)s"
+
+msgid "via"
+msgstr "über"
+
+msgid "a different source"
+msgstr "eine andere Quelle"
 
 msgid "Pages"
 msgstr "Seiten"
@@ -5768,6 +6095,9 @@ msgstr "Notebook erstellen"
 
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
+
+msgid "Workflow Views"
+msgstr "Workflow Ansichten"
 
 #, python-format
 msgid ""
@@ -6394,6 +6724,12 @@ msgstr ""
 "Die ursprüngliche URL ist <a "
 "href=\"%(eln_import_url)s\">%(eln_import_url)s</a>."
 
+#, python-format
+msgid "The .eln file was signed by <a href=\"%(signed_by)s\">%(signed_by)s.</a>"
+msgstr ""
+"Diese .eln-Datei wurde von <a href=\"%(signed_by)s\">%(signed_by)s</a> "
+"signiert."
+
 msgid ""
 "The schema for this object is out-of-date and the action it was created "
 "with has a new schema available. Do you want to use the new schema?"
@@ -6426,6 +6762,7 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 msgid "Please select a paper format."
 msgstr "Bitte wählen Sie ein Papierformat aus."
 
+#, python-brace-format
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
@@ -6435,15 +6772,15 @@ msgstr "Bitte wählen Sie ein existierendes Etikettenpapierformat aus."
 msgid "Please select which data should be stored in the qr codes."
 msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
 
+#, python-format
+msgid "Include #%(object_id)s in Export"
+msgstr "#%(object_id)s in Export aufnehmen"
+
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
 msgid "show plot"
 msgstr "Plot einblenden"
-
-#, python-format
-msgid "Include #%(object_id)s in Export"
-msgstr "#%(object_id)s in Export aufnehmen"
 
 msgid "Show all"
 msgstr "Alle anzeigen"
@@ -6608,6 +6945,26 @@ msgstr "Aktive Nutzerverknüpfungen"
 msgid "Federated user"
 msgstr "Föderierte Nutzer"
 
+msgid "Login"
+msgstr "Anmeldung"
+
+msgid ""
+"You have to keep at least one federated user link for authentication "
+"purposes. Please see the hint below."
+msgstr ""
+"Sie müssen mindestens eine föderierte Identität für die Authentifizierung"
+" behalten. Bitte beachten Sie den untenstehenden Hinweis."
+
+msgid ""
+"You do not have any other authentication methods added, but the federated"
+" login with this federation partner. To keep the user accessible, you "
+"must keep at least one federated identity, which can be used to login."
+msgstr ""
+"Sie haben keine andere Authentifizierungsmethoden hinzugefügt außer die "
+"föderierte Anmeldung mit diesem Föderationspartner. Um den Zugriff zum "
+"Nutzer zu behalten müssen Sie mindestens eine föderierte Identität, die "
+"für die Anmeldung genutzt werden kann, behalten."
+
 msgid "Revoke selection"
 msgstr "Auswahl widerrufen"
 
@@ -6619,7 +6976,7 @@ msgid ""
 " as they are not removed, these links won't be created when importing "
 "updates."
 msgstr ""
-"Widerrufene Nutzerverknüpfungen werden nicht zum repräsentieren von "
+"Widerrufene Nutzerverknüpfungen werden nicht zum Repräsentieren von "
 "föderierten Nutzern verwendet. So lange sie nicht entfernt werden, wird "
 "diese Nutzerverknüpfung nicht durch das Importieren von Updates erneut "
 "erzeugt."
@@ -6632,6 +6989,16 @@ msgstr "Identität verknüpfen"
 
 #, python-format
 msgid ""
+"You have to confirm that you want to verify the federated identity using "
+"the currently signed-in user (%(username)s #%(user_id)s). After verifying"
+" the identity, it can be used for the federated login."
+msgstr ""
+"Sie müssen bestätigen, dass Sie mit dem angemeldeten Nutzer eine "
+"föderierte Identität erstellen möchten (%(username)s #%(user_id)s). "
+"Danach kann die Identität für die föderierte Anmeldung verwendet werden."
+
+#, python-format
+msgid ""
 "You have to confirm that you want to create a federated identity using "
 "the currently signed-in user (%(username)s #%(user_id)s)."
 msgstr ""
@@ -6640,6 +7007,57 @@ msgstr ""
 
 msgid "Confirm Identity"
 msgstr "Identität bestätigen"
+
+#, python-format
+msgid ""
+"The currently signed in user (%(username)s #%(user_id)s) is already "
+"linked with a different user."
+msgstr ""
+"Der derzeit angemeldete Nutzer (%(username)s #%(user_id)s) ist bereits "
+"mit einem anderen Nutzer verknüpft."
+
+#, python-format
+msgid ""
+"The currently signed in user (%(username)s #%(user_id)s) is already "
+"linked with you."
+msgstr ""
+"Der derzeit angemeldete Nutzer (%(username)s #%(user_id)s) ist bereits "
+"mit Ihnen verknüpft."
+
+msgid "Back to federation overview"
+msgstr "Zurück zur Föderationsübersicht"
+
+msgid ""
+"A federated identity was found for the federated user, but has not been "
+"verified. Please login to the corresponding user so that the federated "
+"identity can be enabled for login. This needs to be done once."
+msgstr ""
+"Eine föderierte Identität wurde für den föderierteren Nutzer gefunden, "
+"die noch nicht verifiziert wurde. Bitte melden Sie sich mit dem "
+"zugehörigen lokalen Nutzer an, sodass die föderierte Identität für die "
+"Anmeldung freigeschaltet werden kann. Dies muss nur einmal durchgeführt "
+"werden."
+
+msgid ""
+"The federated user does not have a federated identity at the local "
+"SampleDB service, which is needed to get access. Therefore, you need to "
+"sign in to an existing account."
+msgstr ""
+"Der föderierte Nutzer hat noch keine föderierte Identität bei dem lokalen"
+" SampleDB-Dienst, die erforderlich ist, um Zugriff zu bekommen. Dazu "
+"müssen Sie sich bei einem existierenden Nutzer anmelden."
+
+msgid "As an alternative you can also create a new user."
+msgstr "Alternativ dazu können Sie auch einen neuen Nutzer erstellen."
+
+msgid "Sign in to existing account"
+msgstr "Bei bestehendem Konto anmelden"
+
+msgid "Sign up"
+msgstr "Registrieren"
+
+msgid "Create User"
+msgstr "Nutzer erstellen"
 
 #, python-format
 msgid ""
@@ -6658,6 +7076,9 @@ msgstr "UUID von %(service_name)s: "
 
 msgid "Add Database"
 msgstr "Datenbank hinzufügen"
+
+msgid "Federated Login is available"
+msgstr "Föderierte Anmeldung ist verfügbar"
 
 #, python-format
 msgid ""
@@ -6861,6 +7282,12 @@ msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
 msgid "No, this topic should not be shown in the navbar"
 msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
 
+msgid "View Instruments"
+msgstr "Instrumente anzeigen"
+
+msgid "View Locations"
+msgstr "Orte anzeigen"
+
 msgid "Modify the settings for this topic."
 msgstr "Einstellungen für dieses Thema modifizieren."
 
@@ -6886,9 +7313,6 @@ msgstr "Themen erlauben das Filtern von Informationen in %(service_name)s."
 
 msgid "Create Topic"
 msgstr "Thema erstellen"
-
-msgid "View Instruments"
-msgstr "Instrumente anzeigen"
 
 msgid "Use FIDO2 Passkey"
 msgstr "FIDO2 Passkey verwenden"
@@ -7045,6 +7469,22 @@ msgstr "Für diesen Passkey wurde kein Nutzer gefunden."
 msgid "Please sign in again."
 msgstr "Bitte melden Sie sich erneut an."
 
+msgid "The federated login token expired. No federated identity link was created."
+msgstr ""
+"Das föderierte Anmeldetoken ist abgelaufen. Es wurde keine föderierte "
+"Identitätsverknüpfung erzeugt."
+
+msgid "The federated user already has a federated identity with a different user."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität mit einem anderen Nutzer."
+
+msgid "OIDC is disabled."
+msgstr "OIDC ist deaktiviert."
+
+msgid "Login failed. Please contact an administrator."
+msgstr "Anmeldung fehlgeschlagen. Bitte kontaktieren Sie einen Administrator."
+
 msgid "Please enter a valid user name."
 msgstr "Bitte geben Sie einen gültigen Nutzernamen ein."
 
@@ -7056,30 +7496,6 @@ msgstr "Dieser Name wird bereits verwendet."
 
 msgid "The user has been created successfully."
 msgstr "Der Nutzer wurde erfolgreich erstellt."
-
-msgid "The action has been added to your favorites."
-msgstr "Diese Aktion wurde zu Ihren Favoriten hinzugefügt."
-
-msgid "The action has been removed from your favorites."
-msgstr "Diese Aktion wurde aus Ihren Favoriten entfernt."
-
-msgid "An error occurred while editing your favorite actions. Please try again."
-msgstr ""
-"Beim Ändern Ihrer Aktionsfavoriten ist ein Problem aufgetreten. Bitte "
-"versuchen Sie es später erneut."
-
-msgid "The instrument has been added to your favorites."
-msgstr "Dieses Instrument wurde zu Ihren Favoriten hinzugefügt."
-
-msgid "The instrument has been removed from your favorites."
-msgstr "Dieses Instrument wurde aus Ihren Favoriten entfernt."
-
-msgid ""
-"An error occurred while editing your favorite instruments. Please try "
-"again."
-msgstr ""
-"Beim Ändern Ihrer Instrumentfavoriten ist ein Problem aufgetreten. Bitte "
-"versuchen Sie es später erneut."
 
 msgid "A basic group with this name already exists."
 msgstr "Eine einfache Gruppe mit diesem Namen existiert bereits."
@@ -7110,11 +7526,14 @@ msgstr "Diese Gruppen-Einladung wurde bereits akzeptiert."
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."
 
-msgid "This user is already a member of this basic group."
-msgstr "Dieser Nutzer ist bereits ein Mitglied dieser einfachen Gruppe."
+msgid "The user was successfully added to the basic group."
+msgstr "Der Nutzer wurde erfolgreich zu der einfachen Gruppe hinzugefügt."
 
 msgid "The user was successfully invited to the basic group."
 msgstr "Der Nutzer wurde erfolgreich in die einfache Gruppe eingeladen."
+
+msgid "This user is already a member of this basic group."
+msgstr "Dieser Nutzer ist bereits ein Mitglied dieser einfachen Gruppe."
 
 msgid "You have already left the basic group."
 msgstr "Sie haben diese einfache Gruppe bereits verlassen."
@@ -7162,6 +7581,30 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
+msgid "Successfully updated your user name."
+msgstr "Der Nutzername wurde erfolgreich geändert."
+
+msgid "Please see your email to confirm this change."
+msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
+
+msgid "Successfully updated your user information."
+msgstr "Ihre Nutzerinformationen wurden erfolgreich geändert."
+
+msgid "Failed to change password."
+msgstr "Das Ändern des Passworts ist fehlgeschlagen."
+
+msgid "Successfully updated your password."
+msgstr "Das Passwort wurde erfolgreich geändert."
+
+msgid "Successfully added the authentication method."
+msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
+
+msgid "Failed to add an authentication method."
+msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
+
+msgid "Failed to add an API token."
+msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
+
 msgid "You cannot delete an active two-factor authentication method."
 msgstr "Sie können eine aktive Zwei-Faktor-Authentisierungsmethode nicht löschen."
 
@@ -7176,49 +7619,6 @@ msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde deaktiviert."
 
 msgid "Something went wrong, please try again."
 msgstr "Etwas ist fehlgeschlagen, bitte versuchen Sie es erneut."
-
-msgid "Successfully updated your password."
-msgstr "Das Passwort wurde erfolgreich geändert."
-
-msgid "Failed to change password."
-msgstr "Das Ändern des Passworts ist fehlgeschlagen."
-
-msgid "Successfully deleted your stored Dataverse API Token."
-msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
-
-msgid "Successfully updated your user name."
-msgstr "Der Nutzername wurde erfolgreich geändert."
-
-msgid ""
-"Sending an email failed. Please try again later or contact an "
-"administrator."
-msgstr ""
-"Das Senden einer E-Mail ist fehlgeschlagen. Bitte versuchen Sie es später"
-" erneut oder kontaktieren Sie einen Administrator."
-
-msgid "Please see your email to confirm this change."
-msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
-
-msgid "Successfully updated your user information."
-msgstr "Ihre Nutzerinformationen wurden erfolgreich geändert."
-
-msgid "Successfully added the authentication method."
-msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
-
-msgid "Failed to add an authentication method."
-msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
-
-msgid "Failed to add an API token."
-msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
-
-msgid "Successfully updated default permissions."
-msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
-
-msgid "Successfully updated your notification settings."
-msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
-
-msgid "Successfully updated your settings."
-msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
 
 msgid "Successfully removed the webhook."
 msgstr "Der Webhook wurde erfolgreich entfernt."
@@ -7240,6 +7640,18 @@ msgstr "Das Registrieren des Webhooks ist fehlgeschlagen"
 
 msgid "The webhook has been added successfully"
 msgstr "Der Webhook wurde erfolgreich erstellt"
+
+msgid "Successfully updated your notification settings."
+msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully updated default permissions."
+msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully updated your settings."
+msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully deleted your stored Dataverse API Token."
+msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."
@@ -7308,6 +7720,54 @@ msgstr "Unbenannte Aktion (#%(action_id)s)"
 msgid "Database #%(id)s"
 msgstr "Datenbank #%(id)s"
 
+msgid "The signature does not contain a valid URL."
+msgstr "Die Signatur enthält keine gültige URL."
+
+msgid "Missing URL scheme"
+msgstr "URL-Schema fehlt"
+
+#, python-format
+msgid "Invalid URL scheme: %(scheme)s"
+msgstr "Ungültiges URL-Schema: %(scheme)s"
+
+msgid ""
+"The signature does not contain a valid URL pointing to /.well-"
+"known/keys.json."
+msgstr "Die Signatur enthält keine gültige URL auf /.well-known/keys.json."
+
+#, python-format
+msgid "Failed to connect to %(url)s."
+msgstr "Keine Verbindung zu %(url)s möglich."
+
+#, python-format
+msgid "Received an error from %(url)s."
+msgstr "%(url)s gibt einen Fehler zurück."
+
+#, python-format
+msgid "%(url)s did not return a valid JSON object."
+msgstr "Rückgabewert von %(url)s ist kein gültiges JSON-Objekt."
+
+#, python-format
+msgid "%(url)s did not return a valid JSON list."
+msgstr "Rückgabewert von %(url)s ist keine gültige JSON-Liste."
+
+#, python-format
+msgid ""
+"There was an error checking %(num_failed_keys)s of %(num_keys)s public "
+"keys. No matching public key was found."
+msgstr ""
+"Bei der Überprüfung von %(num_failed_keys)s von %(num_keys)s öffentlichen"
+" Schlüsseln ist ein Fehler aufgetreten. Es wurde kein passender "
+"öffentlicher Schlüssel gefunden"
+
+#, python-format
+msgid ""
+"Successfully fetched all %(num_keys)s keys but no matching public key was"
+" found."
+msgstr ""
+"Alle %(num_keys)s Schlüssel überprüft, aber kein passender öffentlicher "
+"Schlüssel gefunden"
+
 #, python-format
 msgid "Failed to import %(file_url)s as URL file"
 msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
@@ -7339,6 +7799,10 @@ msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
 msgid "Imported User"
 msgstr "Importierter Nutzer"
+
+#, python-format
+msgid "Federated login is disabled for %(service_name)s."
+msgstr "Die föderierte Anmeldung ist für %(service_name)s deaktiviert."
 
 #, python-format
 msgid ""

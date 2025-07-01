@@ -235,6 +235,11 @@ $(function () {
     $('#button-show-object-label-modal').click(function () {
       $('#objectLabelModal').modal('show');
     });
+
+    $('.button-workflow-view-modal').on('click', function () {
+      const workflowView = $(this).attr('data-workflow_view');
+      $('#workflowModal-' + workflowView).modal('show');
+    });
     if (window.getTemplateValue('files_enabled')) {
       const changeHandler = function () {
         const files = $('#input-file-upload').get(0).files;
@@ -371,8 +376,12 @@ $(function () {
     updateDataExportLink();
   });
   $('#button-related-objects-select-all').on('click', function () {
-    $('#dataExportModal .related-objects-tree-toggle').prop('checked', true);
-    $('input.data_export_object').prop('checked', true);
+    const exportModal = $('#dataExportModal');
+    for (let toggles = exportModal.find('.related-objects-tree-toggle:not(:checked)'); toggles.length > 0; toggles = exportModal.find('.related-objects-tree-toggle:not(:checked)')) {
+      toggles.prop('checked', true);
+      toggles.trigger('change');
+    }
+    exportModal.find('input.data_export_object').prop('checked', true);
     updateDataExportLink();
   });
   $('#button-related-objects-deselect-all').on('click', function () {
@@ -417,6 +426,96 @@ $(function () {
       }
     );
   });
+
+  if (!window.getTemplateValue('is_archived') && window.getTemplateValue('has_related_objects_tree')) {
+    const relatedObjectEntriesDiv = $('#related-objects-entries');
+    const rootObjectIndex = relatedObjectEntriesDiv.data('sampledbRootObjectIndex');
+    const relatedObjectEntries = relatedObjectEntriesDiv.find('> span').map(function () {
+      return {
+        objectIndex: $(this).data('sampledbObjectIndex'),
+        referencedObjects: $(this).data('sampledbReferencedObjects'),
+        referencingObjects: $(this).data('sampledbReferencingObjects'),
+        isLocal: $(this).data('sampledbIsLocal'),
+        objectName: $(this).data('sampledbObjectName'),
+        objectId: $(this).data('sampledbObjectId'),
+        span: $(this)
+      };
+    });
+    relatedObjectEntries.sort(function (a, b) {
+      if (a.objectIndex < b.objectIndex) {
+        return -1;
+      }
+      if (b.objectIndex < a.objectIndex) {
+        return 1;
+      }
+      return 0;
+    });
+    const rootObjectEntry = relatedObjectEntries[rootObjectIndex];
+    const buildTreeNode = function (objectEntry, inExportDataModal, existingObjectEntryIndices, relationshipElement) {
+      const result = $('<div></div>');
+      const isFirstInstanceOfObject = !existingObjectEntryIndices.includes(objectEntry.objectIndex);
+      if (isFirstInstanceOfObject) {
+        existingObjectEntryIndices.push(objectEntry.objectIndex);
+
+        if (objectEntry.isLocal && (objectEntry.referencedObjects.length > 0 || objectEntry.referencingObjects.length > 0)) {
+          const toggle = $(`<input type="checkbox" class="related-objects-tree-toggle" id="related_object_toggle_${inExportDataModal}_${objectEntry.objectId}">`);
+          const label = $(`<label for="related_object_toggle_${inExportDataModal}_${objectEntry.objectId}" class="fa fa-fw"></label>`);
+          toggle.on('change', function () {
+            if ($(this).parent().find('ul').length === 0) {
+              const list = $('<ul></ul>');
+              $(this).parent().append(list);
+              for (const referencedObjectIndex of objectEntry.referencedObjects) {
+                const referencedObjectEntry = relatedObjectEntries[referencedObjectIndex];
+                const listItem = $('<li></li>');
+                const relationshipText = window.getTemplateValue('translations.referenced_relationship_text').replace('OBJECT_NAME_PLACEHOLDER', objectEntry.objectName).replace('OBJECT_ID_PLACEHOLDER', objectEntry.objectId);
+                listItem.append(buildTreeNode(referencedObjectEntry, inExportDataModal, existingObjectEntryIndices, $(`<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="${relationshipText}"></i>`)));
+                list.append(listItem);
+              }
+              for (const referencingObjectIndex of objectEntry.referencingObjects) {
+                const referencingObjectEntry = relatedObjectEntries[referencingObjectIndex];
+                const listItem = $('<li></li>');
+                const relationshipText = window.getTemplateValue('translations.referencing_relationship_text').replace('OBJECT_NAME_PLACEHOLDER', objectEntry.objectName).replace('OBJECT_ID_PLACEHOLDER', objectEntry.objectId);
+                listItem.append(buildTreeNode(referencingObjectEntry, inExportDataModal, existingObjectEntryIndices, $(`<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="${relationshipText}"></i>`)));
+                list.append(listItem);
+              }
+            }
+          });
+          result.append(toggle);
+          result.append(label);
+        } else {
+          result.append($('<i class="fa fa-fw" aria-hidden="true"></i>'));
+        }
+      } else {
+        result.append($('<i class="fa fa-fw fa-ellipsis-h" aria-hidden="true" style="position: relative; z-index:3; background-color: white;"></i>'));
+      }
+      if (relationshipElement !== null) {
+        result.append(relationshipElement);
+      }
+      if (inExportDataModal && objectEntry.objectId) {
+        const exportToggleTitle = window.getTemplateValue('translations.include_object_in_export').replace('OBJECT_ID_PLACEHOLDER', objectEntry.objectId);
+        const exportToggle = $(`<span class="data_export_object_wrapper"><input type="checkbox" title="${exportToggleTitle}" class="data_export_object data_export_object_${objectEntry.objectId}" /><label for="data_export_object_${objectEntry.objectId}" class="fa fa-fw"><span class="sr-only">${exportToggleTitle}</span></label></span>`);
+        const exportToggleInput = exportToggle.find('input');
+
+        if (isFirstInstanceOfObject) {
+          exportToggleInput.attr('name', `data_export_object_${objectEntry.objectId}`);
+          exportToggleInput.attr('id', `data_export_object_${objectEntry.objectId}`);
+          exportToggleInput.attr('data-object-id', objectEntry.objectId);
+          exportToggleInput.on('change', updateDataExportLink);
+        } else {
+          exportToggleInput.prop('disabled', true);
+        }
+        result.append(' ');
+        result.append(exportToggle);
+      }
+      result.append(objectEntry.span.clone());
+      return result;
+    };
+    $('#related_objects ~ div.related-objects').empty().append(buildTreeNode(rootObjectEntry, false, [], null));
+    $('#dataExportModal div.related-objects').empty().append(buildTreeNode(rootObjectEntry, true, [], null));
+    $(`#related_object_toggle_false_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
+    $(`#related_object_toggle_true_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
+    $(`#data_export_object_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
+  }
 });
 if (!window.getTemplateValue('is_archived') && window.getTemplateValue('labels_enabled')) {
   const validateLabelsForm = function () {

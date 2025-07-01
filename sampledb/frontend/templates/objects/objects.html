@@ -31,8 +31,8 @@
     {% for paper_format in PAGE_SIZES %}
       {% do page_sizes.update({
         paper_format: [
-          PAGE_SIZES[paper_format][0] / mm,
-          PAGE_SIZES[paper_format][1] / mm
+          PAGE_SIZES[paper_format][0],
+          PAGE_SIZES[paper_format][1]
         ]
       }) %}
     {% endfor %}
@@ -60,6 +60,7 @@
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/page/objects/filters.js') }}" type="module"></script>
   {% if edit_location %}
     <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-edit-location.js') }}" type="module"></script>
@@ -118,7 +119,11 @@
       {{ search_tree.input_text }}
       {% elif search_tree | length  == 2 %}
         <span style="display:flex;flex-direction:row;justify-content: center; align-items:center; background-color: rgba(0, 128, 255, 0.075); border-radius:8px;">
+          {% if search_tree[0].operator %}
           <span style="margin:5px; font-weight: 800;">{{ search_tree[0].operator }}</span>
+          {% else %}
+          <span style="margin:5px 0 5px 5px;">{{ search_tree[0].input_text }}</span>
+          {% endif %}
           {% if search_tree[1].input_text %}
             <span style="margin:5px; ">{{ search_tree[1].input_text }}</span>
           {% else %}
@@ -147,9 +152,9 @@
         <span style="padding:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px; background-color: rgba(0, 128, 255, 0.075)">{{ search_tree.input_text }}</span>
       </span>
     {% else %}
-      <span style="display:flex; flex-direction:row;justify-content: center;" id="search-tree">
+      <label style="display:flex; flex-direction:row;justify-content: center; font-weight: normal;" id="search-tree" for="input-search">
         <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree) }}</span>
-      </span>
+      </label>
     {% endif %}
   {% endif %}
   {% endif %}
@@ -383,6 +388,16 @@
               <label style="font-weight: normal">
                 <input type="checkbox" {% if 'responsible_user' in location_info %}checked="checked"{% endif %} name="location_info" value="responsible_user" /> {{ _('Show Responsible User') }}
               </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label">
+                {{ _('Show Topics') }}
+              </label>
+              <div>
+                <label style="font-weight: normal">
+                  <input type="checkbox" {% if 'topics' in topic_info %}checked="checked"{% endif %} name="topic_info" value="topics" /> {{ _('Show Topics') }}
+                </label>
               </div>
             </div>
           </div>
@@ -936,6 +951,9 @@
         {% if 'responsible_user' in location_info %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Responsible User') }}</th>
         {% endif %}
+        {% if 'topics' in topic_info %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Topics') }}</th>
+        {% endif %}
         {% for property_name in display_properties %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} {% if sorting_enabled %}<span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}{% endif %}</th>
         {% endfor %}
@@ -1076,6 +1094,30 @@
               &mdash;
             {% else %}
               {{ user_reference(object.responsible_user_id) }}
+            {% endif %}
+          </td>
+        {% endif %}
+        {% if 'topics' in topic_info %}
+          <td>
+            {% if object.topic_ids %}
+              {% for topic_id in object.topic_ids %}
+                {% set topic = topics_by_id.get(topic_id) %}
+                {% if topic is not none %}
+                  <a class="badge badge-secondary" href="{{ url_for('.topic', topic_id=topic.id) }}"
+                    {% if object.topic_ids[topic_id] %}
+                      data-toggle="tooltip" data-placement="top"
+                      title="{{ _('via') }} {% for topic_source in object.topic_ids[topic_id] -%}
+                        {%- if not loop.first -%}
+                          {% if loop.last %} {{ _('and') }} {% else %}, {% endif -%}
+                        {%- endif -%}
+                         {{ {1: _('Action'), 2: _('Instrument'), 3: _('Locations')}.get(topic_source | int, _('a different source')) }}
+                       {%- endfor %}"
+                    {% endif %}
+                  >{{ topic.name | get_translated_text }}</a>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              &mdash;
             {% endif %}
           </td>
         {% endif %}

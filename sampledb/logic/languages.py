@@ -6,6 +6,7 @@ Logic module for management of languages
 import dataclasses
 import typing
 
+from .caching import cache_per_request
 from .. import db
 from . import errors, settings, locale
 from .. import models
@@ -215,6 +216,7 @@ def get_language_by_lang_code(lang_code: str) -> Language:
     return Language.from_database(language)
 
 
+@cache_per_request(key=lambda user: user.id if user else None)
 def get_user_language(user: typing.Optional['User']) -> Language:
     """
     Return the language of the current user.

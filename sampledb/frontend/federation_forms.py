@@ -88,3 +88,13 @@ class DeleteAliasForm(FlaskForm):
 class ModifyELNIdentityForm(FlaskForm):
     type = StringField(validators=[AnyOf(["remove", "revoke", "enable"])])
     eln_user_id = IntegerField(validators=[InputRequired()])
+
+
+class FederatedUserCreationForm(FlaskForm):
+    username = StringField(validators=[InputRequired()])
+
+    def validate_username(self, field: StringField) -> None:
+        if flask.current_app.config['ENFORCE_SPLIT_NAMES']:
+            username = field.data
+            if ', ' not in username[1:-1]:
+                raise ValidationError(_("Please enter your name as: surname, given names."))

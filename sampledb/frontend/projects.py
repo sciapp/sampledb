@@ -220,7 +220,11 @@ def project(project_id: int) -> FlaskResponseT:
             add_subproject_form = AddSubprojectForm()
         if child_project_ids:
             remove_subproject_form = RemoveSubprojectForm()
-        delete_project_form = DeleteProjectForm()
+        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_PROJECTS'] or (
+                set(project_member_user_ids) == {flask_login.current_user.id} and
+                not project_member_group_ids
+        ) or 'remove_all_permissions' in flask.request.form:
+            delete_project_form = DeleteProjectForm()
         remove_project_member_form = RemoveProjectMemberForm()
         remove_project_group_form = RemoveProjectGroupForm()
 
@@ -408,7 +412,23 @@ def project(project_id: int) -> FlaskResponseT:
                             other_project_ids.append(int(other_project_id_form.project_id.data))
                     except (KeyError, ValueError):
                         pass
-                logic.projects.invite_user_to_project(project_id, invite_user_form.user_id.data, flask_login.current_user.id, other_project_ids, permissions)
+                if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                    logic.projects.add_user_to_project(
+                        project_id=project_id,
+                        user_id=invite_user_form.user_id.data,
+                        other_project_ids=other_project_ids,
+                        permissions=permissions
+                    )
+                    flask.flash(_('The user was successfully added to the project group.'), 'success')
+                else:
+                    logic.projects.invite_user_to_project(
+                        project_id=project_id,
+                        user_id=invite_user_form.user_id.data,
+                        inviter_id=flask_login.current_user.id,
+                        add_to_parent_project_ids=other_project_ids,
+                        permissions=permissions
+                    )
+                    flask.flash(_('The user was successfully invited to the project group.'), 'success')
             except logic.errors.ProjectDoesNotExistError:
                 flask.flash(_('This project group does not exist.'), 'error')
                 return flask.redirect(flask.url_for('.projects'))
@@ -417,7 +437,6 @@ def project(project_id: int) -> FlaskResponseT:
             except logic.errors.UserAlreadyMemberOfProjectError:
                 flask.flash(_('This user is already a member of this project group.'), 'error')
             else:
-                flask.flash(_('The user was successfully invited to the project group.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'add_group' in flask.request.form and Permissions.GRANT in user_permissions and invite_group_form is not None:
         if invite_group_form.validate_on_submit():

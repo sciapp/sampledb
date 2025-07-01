@@ -62,7 +62,7 @@ class User:
     orcid: typing.Optional[str]
     affiliation: typing.Optional[str]
     role: typing.Optional[str]
-    extra_fields: typing.Dict[str, typing.Any]
+    extra_fields: typing.Dict[str, typing.Any] = dataclasses.field(compare=False)
     fed_id: typing.Optional[int]
     component_id: typing.Optional[int]
     last_modified: datetime.datetime
@@ -417,6 +417,14 @@ def get_users(
     return [
         User.from_database(user)
         for user in user_query.all()
+    ]
+
+
+def get_users_by_email(email: str) -> typing.List[User]:
+    return [
+        User.from_database(user)
+        for user in
+        users.User.query.filter_by(email=email).all()
     ]
 
 
@@ -934,7 +942,7 @@ def create_eln_federated_identity(user_id: int, eln_user_id: int) -> typing.Opti
     )
 
 
-def create_sampledb_federated_identity(user_id: int, component: Component, fed_id: int, update_if_inactive: bool = False) -> typing.Optional[FederatedIdentity]:
+def create_sampledb_federated_identity(user_id: int, component: Component, fed_id: int, update_if_inactive: bool = False, use_for_login: bool = False) -> typing.Optional[FederatedIdentity]:
     """
     Create a new federated identity between a user and a federated user.
 
@@ -942,6 +950,7 @@ def create_sampledb_federated_identity(user_id: int, component: Component, fed_i
     :param component: component of the federation
     :param fed_id: federated id of the external user
     :param update_if_inactive: if true, inactive federated identity will be set to active
+    :param use_for_login: if true, the federated identity can be used to login via federated login
     :return: not none if federated identity was successfully created
     """
     db_fed_user = users.User.query.filter_by(type=UserType.FEDERATION_USER, component_id=component.id, fed_id=fed_id).first()
@@ -952,14 +961,19 @@ def create_sampledb_federated_identity(user_id: int, component: Component, fed_i
     else:
         fed_user = User.from_database(db_fed_user)
 
-    return _create_federated_identity(
+    federated_identity = _create_federated_identity(
         user_id=user_id,
         eln_or_fed_user=fed_user,
-        update_if_inactive=update_if_inactive
+        update_if_inactive=update_if_inactive,
+        use_for_login=use_for_login
     )
 
+    if federated_identity and use_for_login:
+        logic.authentication.add_federated_login_authentication(federated_identity)
+    return federated_identity
 
-def _create_federated_identity(user_id: int, eln_or_fed_user: User, update_if_inactive: bool = False) -> typing.Optional[FederatedIdentity]:
+
+def _create_federated_identity(user_id: int, eln_or_fed_user: User, update_if_inactive: bool = False, use_for_login: bool = False) -> typing.Optional[FederatedIdentity]:
     """
     Create a new federated user link between a local and federated or eln imported user.
 
@@ -1005,21 +1019,31 @@ def _create_federated_identity(user_id: int, eln_or_fed_user: User, update_if_in
                 db.session.commit()
                 return identity
 
-    fed_identity = FederatedIdentity(user_id=user_id, local_fed_id=eln_or_fed_user.id)
+    fed_identity = FederatedIdentity(user_id=user_id, local_fed_id=eln_or_fed_user.id, login=use_for_login)
     db.session.add(fed_identity)
     db.session.commit()
     return fed_identity
 
 
-def get_user_by_federated_user(federated_user_id: int) -> typing.Optional[User]:
+def get_user_by_federated_user(federated_user_id: int, login: bool = False) -> typing.Optional[User]:
     """
     Get the local user of a federated identity by a federated user if exists.
 
     :param federated_user_id: local id of the federated user
+    :param login: if true, only users will be returned that are enabled for federated login
     :return: local user or none
     """
-    federated_identity = FederatedIdentity.query.filter_by(local_fed_id=federated_user_id, active=True).first()
-    return get_user(federated_identity.user_id) if federated_identity is not None else None
+    query = FederatedIdentity.query.filter_by(local_fed_id=federated_user_id, active=True)
+    if login:
+        query = query.filter_by(login=True)
+    federated_identity = query.first()
+    user = None
+    if federated_identity:
+        try:
+            user = get_user(federated_identity.user_id)
+        except errors.UserDoesNotExistError:
+            pass
+    return user
 
 
 def get_federated_identity_by_eln_user(federated_user_id: int) -> typing.Optional[FederatedIdentity]:
@@ -1032,21 +1056,25 @@ def get_federated_identity_by_eln_user(federated_user_id: int) -> typing.Optiona
     return FederatedIdentity.query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(FederatedIdentity.local_fed_id == federated_user_id, users.User.type == UserType.ELN_IMPORT_USER).first()
 
 
-def get_federated_identities(user_id: int, component: typing.Optional[Component] = None, eln_import_id: typing.Optional[int] = None, active_status: bool = True) -> list[FederatedIdentity]:
+def get_federated_identities(user_id: typing.Optional[int] = None, component: typing.Optional[Component] = None, eln_import_id: typing.Optional[int] = None, active_status: typing.Optional[bool] = True) -> list[FederatedIdentity]:
     """
-    Get the federated identity of a user within a component or an eln import as a list of user links.
+    Get the federated identities of a user or all within a component or an eln import as a list of user links.
 
-    :param user_id: id of the user
+    :param user_id: id of the user, or none
     :param component: add filter for a component if not none
     :param eln_import_id: add filter for an eln import id if not none
-    :param active_status: active state of the federated identity which should be set
+    :param active_status: active state of the federated identity which should be set, or none for both
     :return: list of filtered federated identities of the specified user
     """
-    query = FederatedIdentity.query.filter(FederatedIdentity.user_id == user_id, FederatedIdentity.active.is_(active_status))
+    query = FederatedIdentity.query
+    if user_id is not None:
+        query = query.filter(FederatedIdentity.user_id == user_id)
     if component is not None:
         query = query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(users.User.component_id == component.id)
     elif eln_import_id is not None:
         query = query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(users.User.eln_import_id == eln_import_id)
+    if active_status is not None:
+        query = query.filter(FederatedIdentity.active.is_(active_status))
     return [row for row in query.all()]
 
 
@@ -1061,6 +1089,16 @@ def get_federated_identity(user_id: int, eln_or_fed_user_id: int) -> FederatedId
     if not identity:
         raise errors.FederatedIdentityNotFoundError()
     return identity
+
+
+def get_active_federated_identity_by_federated_user(federated_user_id: int) -> typing.Optional[FederatedIdentity]:
+    """
+    Get the active federated identity of a federated user.
+
+    :param federated_user_id: local id of the federated user
+    :return: federated identity of the federated user or none
+    """
+    return FederatedIdentity.query.filter_by(local_fed_id=federated_user_id, active=True).first()
 
 
 def get_federated_user_links_by_component_id(component_id: int, only_active: bool = True) -> list[FederatedIdentity]:
@@ -1130,7 +1168,7 @@ def link_users_by_email_hashes(component_id: int, user_informations: list[dict[s
             user_id = user_id_by_credential_hashes.get(email_hash, None)
             fed_id = user_data['user_id']
             if user_id is not None and fed_id not in component_fed_ids:
-                create_sampledb_federated_identity(user_id, component, fed_id)
+                create_sampledb_federated_identity(user_id, component, fed_id, use_for_login=False)
                 create_notification_for_being_automatically_linked(
                     user_id=user_id,
                     component_id=component_id,
@@ -1175,6 +1213,14 @@ def revoke_user_link(user_id: int, eln_or_fed_user_id: int) -> None:
     """
     identity = FederatedIdentity.query.filter_by(user_id=user_id, local_fed_id=eln_or_fed_user_id, active=True).first()
     if identity:
+        if identity.login:
+            auth = Authentication.query.filter(
+                Authentication.user_id == identity.user_id,
+                Authentication.login['fed_user_id'].astext.cast(db.Integer) == identity.local_fed_user.fed_id,
+                Authentication.login['component_id'].astext.cast(db.Integer) == identity.local_fed_user.component_id
+            ).first()
+            if auth is not None:
+                db.session.delete(auth)
         identity.active = False
         db.session.add(identity)
         db.session.commit()
@@ -1188,8 +1234,26 @@ def revoke_user_links_by_fed_ids(user_id: int, component_id: int, fed_ids: typin
     :component_id: federation component
     :fed_ids: federated ids of the external users
     """
-    rows = FederatedIdentity.query.join(users.User, FederatedIdentity.local_fed_id == users.User.id).filter(FederatedIdentity.user_id == user_id, users.User.component_id == component_id, users.User.fed_id.in_(fed_ids)).all()
+    base_query = FederatedIdentity.query.join(users.User, FederatedIdentity.local_fed_id == users.User.id).filter(FederatedIdentity.user_id == user_id, users.User.component_id == component_id)
+    rows = base_query.filter(users.User.fed_id.in_(fed_ids)).all()
+
+    has_other_auth_methods = identity_not_required_for_auth(component_id)
+
+    remaining_rows_with_login = base_query.filter(users.User.fed_id.not_in(fed_ids), FederatedIdentity.login.is_(True)).all()
+    rows_to_delete_with_login = base_query.filter(users.User.fed_id.in_(fed_ids), FederatedIdentity.login.is_(True)).all()
+
+    if not has_other_auth_methods and not remaining_rows_with_login and rows_to_delete_with_login:
+        raise errors.NoAuthenticationMethodError()
+
     for row in rows:
+        if row.login:
+            auth = Authentication.query.filter(
+                Authentication.user_id == row.user_id,
+                Authentication.login['fed_user_id'].astext.cast(db.Integer) == row.local_fed_user.fed_id,
+                Authentication.login['component_id'].astext.cast(db.Integer) == row.local_fed_user.component_id
+            ).first()
+            if auth is not None:
+                db.session.delete(auth)
         row.active = False
         db.session.add(row)
     db.session.commit()
@@ -1207,6 +1271,37 @@ def enable_user_link(user_id: int, eln_or_fed_user_id: int) -> None:
         fed_identity.active = True
         db.session.add(fed_identity)
         db.session.commit()
+
+
+def enable_federated_identity_for_login(identity: FederatedIdentity) -> None:
+    """
+    Allow to use the specified federated identity for the federated login
+
+    :identity: federated identity to be enabled for the login
+    """
+    if not identity.login:
+        try:
+            logic.authentication.add_federated_login_authentication(federated_identity=identity)
+        except errors.AuthenticationMethodAlreadyExists:
+            pass
+        identity.login = True
+        db.session.add(identity)
+        db.session.commit()
+
+
+def identity_not_required_for_auth(component_id: int) -> bool:
+    """
+    Check if the federated identity of the user with users from the specified federation component is required for authentication.
+
+    :component_id: ID of the federation component
+    :return: True if the federated identity is required
+    """
+    return not flask.current_app.config['ENABLE_FEDERATED_LOGIN'] or (
+        Authentication.query.filter(
+            db.and_(Authentication.user_id == flask_login.current_user.id, Authentication.confirmed.is_(True), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN,
+                    db.or_(Authentication.type != AuthenticationType.FEDERATED_LOGIN, db.and_(Authentication.type == AuthenticationType.FEDERATED_LOGIN, Authentication.login['component_id'].astext.cast(db.Integer) != component_id)))
+        ).count() > 0
+    )
 
 
 def _hash_credential(credential: str) -> str:

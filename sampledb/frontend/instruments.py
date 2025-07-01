@@ -32,7 +32,7 @@ from ..logic.languages import get_languages, get_language, Language, get_user_la
 from ..logic.actions import get_actions, get_action
 from ..logic.action_types import ActionType, get_action_types, get_action_type
 from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError, InstrumentObjectLinkAlreadyExistsError
-from ..logic.favorites import get_user_favorite_instrument_ids
+from ..logic.favorites import get_user_favorite_instrument_ids, get_user_favorite_action_ids
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
@@ -266,10 +266,12 @@ def instrument(instrument_id: int) -> FlaskResponseT:
                     ])
     else:
         object_link_form = None
+    user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
 
     template_kwargs = {
         "get_user": get_user_if_exists,
         "get_component": get_component,
+        "user_favorite_action_ids": user_favorite_action_ids,
     }
     linked_object = None
     show_object_title = False
@@ -478,9 +480,12 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         for action in get_actions(instrument_id=instrument.id)
         if Permissions.READ in get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
     ]
+    instrument_actions.sort(key=lambda action: (action.id not in user_favorite_action_ids, get_translated_text(action.name), action.id))
+    instrument_is_favorite = instrument.id in get_user_favorite_instrument_ids(flask_login.current_user.id)
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
+        instrument_is_favorite=instrument_is_favorite,
         instrument_actions=instrument_actions,
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
@@ -588,6 +593,7 @@ def new_instrument() -> FlaskResponseT:
                             flask.flash(_('Please enter an instrument name.'), 'error')
                             return flask.render_template('instruments/instrument_form.html',
                                                          submit_text='Create Instrument',
+                                                         cancel_url=flask.url_for('.instruments'),
                                                          instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                          ENGLISH=get_language(Language.ENGLISH),
                                                          languages=get_languages(only_enabled_for_input=True),
@@ -597,6 +603,7 @@ def new_instrument() -> FlaskResponseT:
                         flask.flash(_('Please enter an instrument name.'), 'error')
                         return flask.render_template('instruments/instrument_form.html',
                                                      submit_text='Create Instrument',
+                                                     cancel_url=flask.url_for('.instruments'),
                                                      instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                      ENGLISH=get_language(Language.ENGLISH),
                                                      languages=get_languages(only_enabled_for_input=True),
@@ -698,6 +705,7 @@ def new_instrument() -> FlaskResponseT:
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text='Create Instrument',
+        cancel_url=flask.url_for('.instruments'),
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
         ENGLISH=get_language(Language.ENGLISH),
         languages=get_languages(only_enabled_for_input=True),
@@ -848,6 +856,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
                         return flask.render_template(
                             'instruments/instrument_form.html',
                             submit_text=_('Save'),
+                            cancel_url=flask.url_for('.instrument', instrument_id=instrument_id),
                             instrument_log_category_themes=sorted(
                                 InstrumentLogCategoryTheme,
                                 key=lambda t: int(t.value)
@@ -956,6 +965,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text=_('Save'),
+        cancel_url=flask.url_for('.instrument', instrument_id=instrument_id),
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: int(t.value)),
         instrument_translations=instrument_translations,
         instrument_language_ids=instrument_language_ids,

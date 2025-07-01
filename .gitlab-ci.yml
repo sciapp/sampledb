@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.12-slim-bookworm
+  image: python:3.13-slim-bookworm
   services:
     - name: postgres:15
       alias: postgres-test
@@ -25,7 +25,7 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext xmlsec1
     - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.12-slim-bookworm
+  image: python:3.13-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.12-slim-bookworm
+  image: python:3.13-slim-bookworm
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -98,13 +98,17 @@ analyze-js:
     - dropdb -h $POSTGRES_HOST -U postgres postgres
     - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out stable version
+    - pip uninstall -y -r <(pip freeze)
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
     - git fetch upstream master
     - git checkout FETCH_HEAD
+    # remove requests dependency due to issue with Flask-MonitoringDashboard
+    - grep -v "requests" requirements.txt > requirements.without_requests.txt
     # set up database with stable version
-    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements.without_requests.txt
     - python3 -m sampledb list_actions
     # check out current version again
+    - pip uninstall -y -r <(pip freeze)
     - git checkout $CI_COMMIT_SHA
     # upgrade database using migrations
     - python3 -m pip install -r requirements.txt
@@ -117,14 +121,18 @@ analyze-js:
     - dropdb -h $POSTGRES_HOST -U postgres postgres
     - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out development version
+    - pip uninstall -y -r <(pip freeze)
     - git fetch upstream develop
     - git checkout FETCH_HEAD
     # do not check migrating from develop to this commit if this commit is not a descendant of develop
     - git merge-base --is-ancestor HEAD $CI_COMMIT_SHA || exit 0
+    # remove requests dependency due to issue with Flask-MonitoringDashboard
+    - grep -v "requests" requirements.txt > requirements.without_requests.txt
     # set up database with development version
-    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements.without_requests.txt
     - python3 -m sampledb list_actions
     # check out current version again
+    - pip uninstall -y -r <(pip freeze)
     - git checkout $CI_COMMIT_SHA
     # upgrade database using migrations
     - python3 -m pip install -r requirements.txt
@@ -192,7 +200,7 @@ check-migrations-postgres-15:
 check-translations:
   stage: test
   needs: []
-  image: python:3.12-slim-bookworm
+  image: python:3.13-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -220,7 +228,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.12-slim-bookworm
+  image: python:3.13-slim-bookworm
   services:
     - name: postgres:15
       alias: postgres-documentation
@@ -407,7 +415,7 @@ deploy-to-dockerhub:
 
 deploy-to-pypi:
   stage: deploy
-  image: python:3.12-slim-bookworm
+  image: python:3.13-slim-bookworm
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
