@@ -79,6 +79,10 @@ def parse_action(
     fed_id = _get_id(action_data.get('action_id'))
     uuid = _get_uuid(action_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            get_action(action_id=fed_id)
+        except errors.ActionDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local action {fed_id} does not exist')
         return None
 
     schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(action_data.get('schema'))

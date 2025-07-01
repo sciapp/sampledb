@@ -915,7 +915,18 @@ def parse_object(
     files = _get_list(object_data.get('files'))
     if files is not None:
         for file in files:
-            if parsed_file := parse_file(file):
+            try:
+                if component_id is None:
+                    local_object_id = get_object(object_id=fed_object_id).id
+                else:
+                    local_object_id = get_fed_object(fed_object_id=fed_object_id, component_id=component_id).id
+            except errors.ObjectDoesNotExistError:
+                if component_id is None:
+                    local_object_id = fed_object_id
+                else:
+                    local_object_id = None
+
+            if parsed_file := parse_file(file, local_object_id):
                 result['files'].append(parsed_file)
 
     assignments = _get_list(object_data.get('object_location_assignments'))
