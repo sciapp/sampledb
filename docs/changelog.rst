@@ -4,7 +4,7 @@ Changelog
 Version 0.31
 ------------
 
-Currently in development.
+Released on July 1st, 2025.
 
 - Added federated login
 - Added OpenID Connect (OIDC) login
