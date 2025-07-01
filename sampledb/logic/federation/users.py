@@ -100,6 +100,10 @@ def parse_user(
     uuid = _get_uuid(user_data.get('component_uuid'))
     fed_id = _get_id(user_data.get('user_id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            get_user(user_id=fed_id)
+        except errors.UserDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local user {fed_id} does not exist')
         return None
     return UserData(
         fed_id=fed_id,
