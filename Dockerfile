@@ -41,7 +41,7 @@ LABEL org.opencontainers.image.licenses=MIT
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y libpangocairo-1.0-0 gettext xmlsec1 && \
+    apt-get install -y libpangocairo-1.0-0 gettext xmlsec1 chromium && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
