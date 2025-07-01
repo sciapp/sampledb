@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools >= 66.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sampledb"
+maintainers = [
+    { name="Florian Rhiem", email="f.rhiem@fz-juelich.de" },
+]
+authors = [
+    { name="Florian Rhiem", email="f.rhiem@fz-juelich.de" },
+    { name="Daniel Kaiser", email="d.kaiser@fz-juelich.de" },
+    { name="Malte Deckers", email="m.deckers@fz-juelich.de" },
+    { name="Jannik Streitberg", email="j.streitberg@fz-juelich.de" },
+    { name="Björn Mayer", email="b.mayer@fz-juelich.de" },
+    { name="René Noffke", email="r.noffke@fz-juelich.de" },
+    { name="Nicolas Carpi", email="nico-git@deltablot.email" },
+    { name="Lukas Engering", email="l.engering@fz-juelich.de" },
+    { name="Maximilian Heuwes", email="m.heuwes@fz-juelich.de" },
+    { name="Tim Hallmann", email="t.hallmann@fz-juelich.de" },
+    { name="Torben Moll", email="t.moll@fz-juelich.de" },
+    { name="Nils Holle", email="nils.holle@uni-muenster.de" },
+    { name="Moritz Hannemann", email="m.hannemann@fz-juelich.de" },
+    { name="Moritz Velde", email="m.velde@fz-juelich.de" },
+    { name="Dorothea Henkel" },
+    { name="Du Kim Nguyen" },
+    { name="Frederik Peters" },
+]
+description = "A sample and measurement metadata database"
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Programming Language :: Python :: 3',
+    'Framework :: Flask',
+    'Topic :: Scientific/Engineering',
+]
+license = "MIT"
+license-files = ["LICENSE"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/sciapp/sampledb"
+Documentation = "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
+Repository = "https://github.com/sciapp/sampledb.git"
+Issues = "https://github.com/sciapp/sampledb/issues"
+Changelog = "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/changelog"
+
+[tool.setuptools.packages.find]
+include = ["sampledb", "sampledb.*"]
+
+[tool.setuptools.package-data]
+sampledb = [
+    'static/*/*.*',
+    'static/*/*/*.*',
+    'static/*/*/*/*.*',
+]
+"sampledb.logic" = [
+    'unit_definitions.txt'
+]
+"sampledb.frontend" = [
+    'templates/*/*.*',
+    'templates/*/*/*.*',
+    'templates/*/*/*/*.*',
+]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {test = { file = ["requirements.test.txt"] }, analyze = { file = ["requirements.analyze.txt"] }, documentation = { file = ["requirements.documentation.txt"] }}
