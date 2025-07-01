@@ -13,9 +13,12 @@ from wtforms.validators import DataRequired, ValidationError
 from flask_babel import _
 
 from . import frontend
+from .locations import sort_location_ids_by_name, filter_location_tree_by_predicate, user_has_read_permissions_for_location, location_has_topic_ids
 from .. import logic
 from .utils import check_current_user_is_not_readonly
 from ..logic.languages import get_language, get_language_by_lang_code
+from ..logic.locations import Location, get_locations_tree
+from ..logic.location_permissions import get_user_location_permissions
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
@@ -86,11 +89,27 @@ def topic(topic_id: int) -> FlaskResponseT:
         user_id=flask_login.current_user.id,
         sort_by_favorite=False
     )
+    locations_map, locations_tree = get_locations_tree()
+    location_permissions_by_id = {
+        location_id: get_user_location_permissions(location_id, flask_login.current_user.id)
+        for location_id in locations_map
+    }
+
+    def locations_filter(location: Location) -> bool:
+        return location_has_topic_ids(location, frozenset({topic_id}))
+    locations_tree = filter_location_tree_by_predicate(locations_tree, locations_map, locations_filter)
+    locations_tree = filter_location_tree_by_predicate(locations_tree, locations_map, lambda location: user_has_read_permissions_for_location(location, location_permissions_by_id))
     return flask.render_template(
         'topics/topic.html',
         topic=topic,
         topic_instruments=topic_instruments,
-        topic_actions=topic_actions
+        topic_actions=topic_actions,
+        locations_map=locations_map,
+        locations_tree=locations_tree,
+        Permissions=Permissions,
+        permissions_by_id=location_permissions_by_id,
+        sort_location_ids_by_name=sort_location_ids_by_name,
+        locations_filter=locations_filter
     )
 
 

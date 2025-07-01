@@ -499,3 +499,39 @@ class ELNUserInFederatedIdentityError(Exception):
 
 class FederatedIdentityNotFoundError(Exception):
     pass
+
+
+class MismatchedResponseToRequestError(Exception):
+    pass
+
+
+class FailedMetadataFetchingError(Exception):
+    pass
+
+
+class InvalidSAMLRequestError(Exception):
+    pass
+
+
+class AuthnRequestParsingError(Exception):
+    pass
+
+
+class UnavailableArtifactError(Exception):
+    pass
+
+
+class IdentityProviderMetadataUnavailableError(Exception):
+    pass
+
+
+class ServiceProviderMetadataUnavailableError(Exception):
+    pass
+
+
+class FederatedLoginError(Exception):
+    pass
+
+
+class InfoPageDoesNotExistError(Exception):
+    pass

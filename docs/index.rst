@@ -53,12 +53,14 @@ Administrator Guide
     administrator_guide/getting_started.rst
     administrator_guide/configuration.rst
     administrator_guide/tls_termination.rst
+    administrator_guide/oidc.rst
     administrator_guide/backup_and_restore.rst
     administrator_guide/upgrading.rst
     administrator_guide/administration_scripts.rst
     administrator_guide/jupyterhub_support.rst
     administrator_guide/dataverse_export.rst
     administrator_guide/scicat_export.rst
+    administrator_guide/info_pages.rst
     administrator_guide/languages.rst
     administrator_guide/federation.rst
     administrator_guide/monitoring_dashboard.rst

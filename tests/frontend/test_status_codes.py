@@ -268,6 +268,18 @@ def test_status_codes(flask_server, user, driver):
             description_is_markdown=True,
             short_description_is_markdown=True
         ).id
+        keypair_id = sampledb.logic.minisign_keys.get_current_key_pair().id
+
+        info_page_id = sampledb.logic.info_pages.create_info_page(
+            title={
+                'en': 'Test Info Page',
+            },
+            content={
+                'en': 'Example Info Page Content'
+            },
+            endpoint='frontend.admin_info_pages',
+            disabled=False,
+        ).id
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -284,6 +296,9 @@ def test_status_codes(flask_server, user, driver):
         f'actions/{other_action_id}/permissions': 200,
         'actions/new/': 200,
         'admin/background_tasks/': 200,
+        'admin/info_pages/': 200,
+        f'admin/info_pages/{info_page_id}': 200,
+        'admin/info_pages/new': 200,
         'admin/warnings/': 200,
         'api/v1/action_types/': 200,
         f'api/v1/action_types/{action_type_id}': 200,
@@ -354,9 +369,16 @@ def test_status_codes(flask_server, user, driver):
         'eln_imports': 200,
         f'eln_imports/{eln_import_id}': 302,
         'favicon.ico': 200,
+        'federated-login/create-account/invalid': 302,
+        'federated-login/idp/metadata.xml': 302,
+        'federated-login/idp/verify': 302,
+        'federated-login/sp/acs': 302,
+        f'federated-login/sp/metadata.xml/{component.uuid}': 302,
+        f'federated-login/sp/{component_id}': 302,
         'federation/v1/shares/components/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
+        'federation/v1/shares/metadata/': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{other_object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         'groups/': 200,
@@ -432,9 +454,11 @@ def test_status_codes(flask_server, user, driver):
         'other-databases/': 200,
         f'other-databases/{component_id}': 200,
         'other-databases/alias/': 200,
-        'other-databases/link-identity/': 302,
-        'other-databases/validate-identity-token/': 400,
         f'other-databases/edit-eln-identity/{eln_import_id}': 405,
+        'other-databases/link-identity/': 302,
+        'other-databases/finalize-link-identity/': 302,
+        f'other-databases/redirect-uuid/{component.uuid}': 302,
+        'other-databases/validate-identity-token/': 400,
         'projects/': 200,
         f'projects/{project_id}': 200,
         f'projects/{project_id}/permissions': 200,
@@ -459,6 +483,8 @@ def test_status_codes(flask_server, user, driver):
         f'users/me/api_token_id/{api_token_id}/log/': 302,
         'users/me/export': 302,
         'users/me/notifications': 302,
+        'users/me/oidc/callback': 302,
+        'users/me/oidc/start': 302,
         'users/me/preferences': 302,
         'users/me/shared_device_state': 200,
         'users/me/refresh_sign_in': 302,
@@ -467,7 +493,9 @@ def test_status_codes(flask_server, user, driver):
         'users/me/two_factor_authentication/fido2_passkey/confirm': 302,
         'users/me/two_factor_authentication/fido2_passkey/setup': 200,
         'users/me/two_factor_authentication/totp/confirm': 302,
-        'users/me/two_factor_authentication/totp/setup': 200
+        'users/me/two_factor_authentication/totp/setup': 200,
+        '.well-known/keys.json': 200,
+        f'.well-known/keys/{keypair_id}': 200,
     }
     for relative_url, expected_status_code in expected_status_codes.items():
         if relative_url.startswith('api/v1/'):
@@ -522,4 +550,6 @@ def test_status_codes(flask_server, user, driver):
         'error_code': 400,
         'eln_import_id': eln_import_id,
         'topic_id': topic_id,
+        'keypair_id': keypair_id,
+        'info_page_id': info_page_id,
     })

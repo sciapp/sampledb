@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Info Pages') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ _('Info Pages') }}</h1>
+<p class="text-muted">{{ _('Info Pages are shown when users visit specific routes for the first time.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/info_pages.html"> {{ _('Read more.') }}</a></p>
+
+<a class="btn btn-primary" href="{{ url_for(".admin_new_info_page") }}">{{ _('Create Info Page') }}</a>
+
+{% if info_pages %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">{{ _('ID') }}</th>
+        <th scope="col">{{ _('Title') }}</th>
+        <th scope="col">{{ _('Routes') }}</th>
+        {% if not current_user.is_readonly %}
+          <th scope="col"></th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for info_page in info_pages %}
+      <tr>
+        <td>
+          <a href="{{ url_for('.admin_info_page', info_page_id=info_page.id) }}">
+            {{ info_page.id }}
+          </a>
+        </td>
+        <td>
+          {{ info_page.title | get_translated_text(default='—') }}
+        </td>
+        <td>
+          {% if info_page.endpoint %}
+            {% set url_rules = url_map.iter_rules(info_page.endpoint) | list %}
+            {% if url_rules %}
+              {%- for rule in url_rules -%}
+                <code>{{ rule }}</code>{% if not loop.last %}, {% endif %}
+              {%- endfor -%}
+            {% else %}
+              {{ _('Unknown route') }}
+            {% endif %}
+          {% else %}
+            {{ _('All routes') }}
+          {% endif %}
+          {% if info_page.disabled %}
+            <span class="label label-default">{{ _('disabled') }}</span>
+          {% endif %}
+        </td>
+        {% if not current_user.is_readonly %}
+        <td>
+          <a href="{{ url_for('.admin_info_page', info_page_id=info_page.id) }}" class="btn btn-xs btn-default">{{ _("View") }}</a>
+          <a href="{{ url_for('.admin_info_page', info_page_id=info_page.id, mode='edit') }}" class="btn btn-xs btn-default">{{ _("Edit") }}</a>
+          <form action="{{ url_for('.admin_info_page', info_page_id=info_page.id) }}" method="post" style="display: inline">
+            {{ set_info_page_disabled_form.csrf_token() }}
+            {% if not info_page.disabled %}
+              <input type="hidden" name="{{ set_info_page_disabled_form.disabled.name }}" value="on" />
+            {% endif %}
+            <button type="submit" class="btn btn-xs btn-default" name="{{ set_info_page_disabled_form.submit_set_info_page_disabled.name }}" value="set_info_page_disabled">
+              {% if info_page.disabled %}
+                {{ _("Enable") }}
+              {% else %}
+                {{ _("Disable") }}
+              {% endif %}
+            </button>
+          </form>
+          <button type="button" class="btn btn-xs btn-danger" data-toggle="modal" data-target="#deleteInfoPageModal" data-info-page-id="{{ info_page.id }}" data-info-page-title="{{ info_page.title | get_translated_text(default='—') }}">
+            {{ _('Delete') }}
+          </button>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="modal fade" id="deleteInfoPageModal" tabindex="-1" role="dialog" aria-labelledby="deleteInfoPageModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="deleteInfoPageModalLabel">{{ _('Delete Info Page') }}</h4>
+        </div>
+        <div class="modal-body">
+          <p>
+            {{ _('Are you sure you want to delete the info page "<span id="deleteInfoPageTitle"></span>"?') }}
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+          <form action="{{ url_for('.admin_info_page', info_page_id=0) }}" method="post" style="display: inline;">
+            {{ delete_info_page_form.csrf_token() }}
+            <button type="submit" class="btn btn-danger"  name="{{ delete_info_page_form.submit_delete_info_page.name }}" value="delete_info_page">{{ _('Delete') }}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <p class="help-block">{{ _('There are no info pages set up at this time.') }}</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('sampledb/js/page/info_pages.js') }}" type="module"></script>
+{% endblock %}

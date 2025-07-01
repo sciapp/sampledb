@@ -4,12 +4,76 @@
 
 {% block content %}
   <h1>{{ _('Locations') }}</h1>
+  {% if filter_topic_infos %}
+    <ul>
+    {% if filter_topic_infos %}
+      <li>
+        {% if filter_topic_infos | length == 1 %}
+          {{ _('for topic:') }}
+        {% else %}
+          {{ _('for topics:') }}
+        {% endif %}
+        {% for topic_info in filter_topic_infos %}
+          <a href="{{ topic_info.url }}">{{ topic_info.name }}</a>{% if loop.index + 1 < filter_topic_infos | length %},{% elif loop.index + 1 == filter_topic_infos | length %} {{ _('or') }} {% endif %}
+        {% endfor %}
+      </li>
+    {% endif %}
+    </ul>
+  {% endif %}
   <p class="text-muted">{{ _('Locations allow users to track where an object can be found.')}} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/locations.html">{{ _('Read more.')}}</a></p>
   <p>
     {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
-    <a href="{{ url_for('.new_location') }}" class="btn btn-default" style="margin-bottom: 10px;">{{ _('Create Location') }}</a>
+      {% if filter_topic_ids %}
+        <a href="{{ url_for('.new_location', topic_ids=filter_topic_ids | join(',')) }}" class="btn btn-default">{{ _('Create Location') }}</a>
+      {% else %}
+        <a href="{{ url_for('.new_location') }}" class="btn btn-default">{{ _('Create Location') }}</a>
+      {% endif %}
+    {% endif %}
+
+    {% if not config['DISABLE_TOPICS'] and topics %}
+      <a class="btn btn-default" data-toggle="modal" data-target="#filtersModal">
+        {{ _('Filters') }}
+      </a>
+
+      <div class="modal fade" id="filtersModal" tabindex="-1" role="dialog" aria-labelledby="filtersModalLabel">
+        <div class="modal-dialog" role="document">
+          <form method="get" class="form">
+            {% for key in request.args %}
+              {% if key not in ['location_list_filters', 'topic_ids'] %}
+                {% for value in request.args.getlist(key) %}
+                  <input type="hidden" name="{{ key }}" value="{{ value }}" />
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+            <input type="hidden" name="location_list_filters" value="" />
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="filtersModalLabel">{{ _('Filters') }}</h4>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="input-topics" class="control-label">{{ _('Filter by Topics') }}</label>
+                  <select class="selectpicker form-control" id="input-topics" name="topic_ids" data-none-selected-text="{{ _('No topic selected') }}" multiple>
+                    {% for topic in topics %}
+                    <option value="{{ topic.id }}"{% if topic.id in filter_topic_ids %}selected="selected"{% endif %}>{{ topic.name | get_translated_text }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-default" name="save_default_location_filters" formmethod="post">{{ _('Save') }}</button>
+                <button type="submit" class="btn btn-default" name="clear_default_location_filters" formmethod="post">{{ _('Clear') }}</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+                <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     {% endif %}
   </p>
+
   {% if locations_tree %}
     <ul>
     {% set location_ids_sorted_by_name = sort_location_ids_by_name(locations_tree.keys(), locations_map) %}
@@ -21,4 +85,14 @@
   {% if has_hidden_locations %}
     <p class="text-muted">{{ _('Some locations have been hidden because you lack the required permissions to access them.')}}</p>
   {% endif %}
+{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}

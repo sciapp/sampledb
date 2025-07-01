@@ -218,8 +218,9 @@ def activity_log(base_url, driver, object):
     else:
         assert False
     y_offset = scroll_to_element(driver, heading)
-    activity_log = driver.find_element(By.ID, 'activity_log')
-    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log_dontblock.png', (0, heading.location['y'] - y_offset, width, min(activity_log.location['y'] - y_offset + activity_log.rect['height'], max_height)))
+
+    activity_log_table = driver.find_element(By.ID, 'activity_log_table')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/activity_log_dontblock.png', (0, heading.location['y'] - y_offset, width, min(activity_log_table.location['y'] - y_offset + activity_log_table.rect['height'], max_height)))
 
 
 def location_assignments(base_url, driver, object, room_42):

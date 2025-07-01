@@ -8,7 +8,9 @@ import sampledb
 from sampledb.frontend.objects import object_form_parser
 
 
-def test_parse_time_input(mock_current_user):
+def test_parse_time_input(flask_server, mock_current_user):
+    mock_current_user.id = 1
+
     schema = {
         'type': 'quantity',
         'title': 'Duration',
@@ -126,21 +128,24 @@ def test_parse_time_input(mock_current_user):
 
     mock_current_user.set_language_by_lang_code('de')
 
-    form_data['object__duration__magnitude'][0] = '10:05:17.321'  # locale de_DE expects , as decimal point
-    form_data['object__duration__units'][0] = 'h'
-    assert object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors, file_names_by_id={}) is None
-    assert len(errors) == 2  # two errors, for magnitude and units
-    form_data['object__duration__magnitude'][0] = '30:15:30,10'
-    form_data['object__duration__units'][0] = 'h'
-    data = object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
-    assert abs(data['magnitude'] - (30 + 15 / 60 + 30.1 / 3600)) <= 1e-12
-    assert abs(data['magnitude_in_base_units'] - (((30 * 60) + 15) * 60 + 30.1)) <= 1e-12
-    assert data['units'] == 'h'
-    assert data['dimensionality'] == '[time]'
+    with flask_server.app.app_context():
+        form_data['object__duration__magnitude'][0] = '10:05:17.321'  # locale de_DE expects , as decimal point
+        form_data['object__duration__units'][0] = 'h'
+        assert object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors, file_names_by_id={}) is None
+        assert len(errors) == 2  # two errors, for magnitude and units
+        form_data['object__duration__magnitude'][0] = '30:15:30,10'
+        form_data['object__duration__units'][0] = 'h'
+        data = object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+        assert abs(data['magnitude'] - (30 + 15 / 60 + 30.1 / 3600)) <= 1e-12
+        assert abs(data['magnitude_in_base_units'] - (((30 * 60) + 15) * 60 + 30.1)) <= 1e-12
+        assert data['units'] == 'h'
+        assert data['dimensionality'] == '[time]'
 
 
 @pytest.mark.parametrize("lang_code,decimal_separator,group_separator", [('en', '.', ','), ('de', ',', '.')])
 def test_parse_quantity_input(mock_current_user, lang_code, decimal_separator, group_separator):
+    mock_current_user.id = 1
+
     id_prefix = 'object__quantity'
     schema = {
         'type': 'quantity',

@@ -86,6 +86,14 @@
           &mdash;
         {% endif %}
     </dd>
+    <dt>{{ _('Signed by') }}</dt>
+    <dd>
+      {% if eln_import.signed_by != None %}
+        <a href="{{ eln_import.signed_by }}">{{ eln_import.signed_by }}</a>
+      {% else %}
+        &mdash;
+      {% endif %}
+    </dd>
     {% endif %}
   </dl>
 {% endblock %}

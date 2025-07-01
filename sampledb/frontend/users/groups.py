@@ -230,7 +230,7 @@ def group(group_id: int) -> FlaskResponseT:
             (str(category.id), category)
             for category in group_categories
         ]
-        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_GROUPS']:
+        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_GROUPS'] or set(group_member_ids) == {flask_login.current_user.id}:
             delete_group_form = DeleteGroupForm()
         else:
             delete_group_form = None
@@ -323,7 +323,19 @@ def group(group_id: int) -> FlaskResponseT:
             check_current_user_is_not_readonly()
             if invite_user_form.validate_on_submit():
                 try:
-                    logic.groups.invite_user_to_group(group_id, invite_user_form.user_id.data, flask_login.current_user.id)
+                    if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                        logic.groups.add_user_to_group(
+                            group_id=group_id,
+                            user_id=invite_user_form.user_id.data
+                        )
+                        flask.flash(_('The user was successfully added to the basic group.'), 'success')
+                    else:
+                        logic.groups.invite_user_to_group(
+                            group_id=group_id,
+                            user_id=invite_user_form.user_id.data,
+                            inviter_id=flask_login.current_user.id
+                        )
+                        flask.flash(_('The user was successfully invited to the basic group.'), 'success')
                 except logic.errors.GroupDoesNotExistError:
                     flask.flash(_('This basic group does not exist.'), 'error')
                     return flask.redirect(flask.url_for('.groups'))
@@ -332,7 +344,6 @@ def group(group_id: int) -> FlaskResponseT:
                 except logic.errors.UserAlreadyMemberOfGroupError:
                     flask.flash(_('This user is already a member of this basic group.'), 'error')
                 else:
-                    flask.flash(_('The user was successfully invited to the basic group.'), 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'leave' in flask.request.form and leave_group_form is not None:
             if user_can_leave and leave_group_form.validate_on_submit():

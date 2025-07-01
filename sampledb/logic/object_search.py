@@ -1,5 +1,6 @@
 # coding: utf-8
 import functools
+import itertools
 import typing
 
 from sqlalchemy import String, and_, or_
@@ -10,6 +11,7 @@ from . import where_filters
 from . import datatypes
 from . import object_search_parser
 from .. import db
+from ..models.objects import Objects
 
 
 class Attribute:
@@ -1213,80 +1215,121 @@ def _(
 
 
 def transform_literal_to_query(
-        data: typing.Any,
+        db_obj: typing.Any,
         literal: object_search_parser.Literal,
-        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]
+        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
+        use_permissions_filter_for_referenced_objects: bool,
+        subquery_id_generator: typing.Iterator[int]
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
     if isinstance(literal, object_search_parser.Tag):
-        return Expression(literal.input_text, literal.start_position, where_filters.tags_contain(data[('tags',)], literal.value)), None
+        return Expression(literal.input_text, literal.start_position, where_filters.tags_contain(db_obj[('tags',)], literal.value)), None
 
     if isinstance(literal, object_search_parser.Attribute):
         attributes = literal.value
-        # covert any numeric arguments to integers (array indices)
-        for i, attribute in enumerate(attributes):
-            try:
-                attributes[i] = int(attribute)
-            except ValueError:
-                pass
-        if '?' in attributes:
-            array_placeholder_index = attributes.index('?')
-            # no danger of SQL injection as attributes may only consist of
-            # characters and underscores at this point
-            jsonb_selector = ''
-            for i, attribute in enumerate(attributes[:array_placeholder_index]):
-                if isinstance(attribute, int):
-                    attribute = str(attribute)
-                else:
-                    attribute = "'" + attribute + "'"
-                if i > 0:
-                    jsonb_selector += " -> "
-                jsonb_selector += attribute
-            data_name = str(data).split('.', maxsplit=1)[-1]  # "data" or "data_full", depending on the column name used
-            array_items = select(db.text(f'value FROM jsonb_array_elements_text(({data_name} -> {jsonb_selector})::jsonb)'))
-            db_obj = db.literal_column('value').cast(postgresql.JSONB)
-            for attribute in attributes[array_placeholder_index + 1:]:
-                db_obj = db_obj[attribute]
-            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text(f'jsonb_typeof({data_name} -> {jsonb_selector}) = \'array\''), filter)).exists()
-        reference_attribute_indices = [
-            index
-            for index, attribute in enumerate(attributes)
-            if isinstance(attribute, str) and attribute.startswith('*')
-        ]
-        if len(reference_attribute_indices) == 1:
-            reference_placeholder_index = reference_attribute_indices[0]
-            # no danger of SQL injection as attributes may only consist of
-            # characters and underscores at this point
-            jsonb_selector = ''
-            for i, attribute in enumerate(attributes[:reference_placeholder_index + 1]):
-                if i == reference_placeholder_index:
-                    attribute = attribute[1:]
-                if isinstance(attribute, int):
-                    attribute = str(attribute)
-                else:
-                    attribute = "'" + attribute + "'"
-                if i > 0:
-                    jsonb_selector += " -> "
-                jsonb_selector += attribute
-            data_name = str(data).split('.', maxsplit=1)[-1]  # "data" or "data_full", depending on the column name used
-            referenced_object_table = select(db.text('referenced_object.object_id, referenced_object.value FROM (SELECT object_id, data AS value FROM objects_current) AS referenced_object'))
-            object_id_column = db.literal_column('referenced_object.object_id')
-            db_obj = db.literal_column('referenced_object.value').cast(postgresql.JSONB)
-            for attribute in attributes[reference_placeholder_index + 1:]:
-                db_obj = db_obj[attribute]
-            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: referenced_object_table.filter(
-                db.and_(
-                    db.and_(
-                        db.or_(
-                            db.text(f'({data_name} -> {jsonb_selector} ->> \'_type\') = \'object_reference\'::text'),
-                            db.text(f'({data_name} -> {jsonb_selector} ->> \'_type\') = \'measurement\'::text'),
-                            db.text(f'({data_name} -> {jsonb_selector} ->> \'_type\') = \'sample\'::text'),
+        outer_filter_stack = []
+        for attribute in attributes:
+            follow_object_reference = attribute.startswith('*')
+            if follow_object_reference:
+                attribute = attribute[1:]
+            if attribute == '?':
+                subquery_id = next(subquery_id_generator)
+                outer_filter_stack.append(
+                    functools.partial(
+                        lambda filter, db_obj, subquery_id: (
+                            db.and_(
+                                db.func.jsonb_typeof(db_obj) == 'array',
+                                select(
+                                    1
+                                ).select_from(
+                                    select(
+                                        db.literal_column('value').label(f'array_{subquery_id}_data')
+                                    ).select_from(
+                                        db.func.jsonb_array_elements(db_obj)
+                                    ).subquery()
+                                ).filter(
+                                    filter
+                                ).exists()
+                            )
                         ),
-                        db.text(f'({data_name} -> {jsonb_selector} ->> \'object_id\')::integer') == object_id_column
-                    ),
-                    filter
+                        db_obj=db_obj,
+                        subquery_id=subquery_id,
+                    )
                 )
-            ).exists()
-        return Attribute(literal.input_text, literal.start_position, data[attributes]), None
+                db_obj = db.literal_column(f'array_{subquery_id}_data').cast(postgresql.JSONB)
+            else:
+                try:
+                    attribute = int(attribute)
+                except ValueError:
+                    pass
+                db_obj = db_obj[attribute]
+            if follow_object_reference:
+                subquery_id = next(subquery_id_generator)
+                if use_permissions_filter_for_referenced_objects:
+                    permissions_filter = select(
+                        1
+                    ).select_from(
+                        db.text('user_object_permissions_by_all')
+                    ).where(
+                        db.and_(
+                            db.literal_column('user_object_permissions_by_all.object_id') == db.literal_column(f'referenced_object_{subquery_id}_id'),
+                            db.or_(
+                                db.literal_column('user_object_permissions_by_all.user_id') == db.text(':user_id'),
+                                db.literal_column('user_object_permissions_by_all.user_id') == db.null()
+                            ),
+                            db.or_(
+                                db.literal_column('user_object_permissions_by_all.requires_anonymous_users') == db.false(),
+                                db.text(':enable_anonymous_users') == db.true()
+                            ),
+                            db.or_(
+                                db.literal_column('user_object_permissions_by_all.requires_instruments') == db.false(),
+                                db.text(':enable_instruments') == db.true()
+                            )
+                        )
+                    ).having(
+                        db.func.max(db.literal_column('user_object_permissions_by_all.permissions_int')) > 0
+                    ).exists()
+                else:
+                    permissions_filter = db.true()
+                outer_filter_stack.append(
+                    functools.partial(
+                        lambda filter, db_obj, subquery_id, permissions_filter: (
+                            db.and_(
+                                db.or_(
+                                    db_obj['_type'].astext == 'object_reference',
+                                    db_obj['_type'].astext == 'measurement',
+                                    db_obj['_type'].astext == 'sample'
+                                ),
+                                select(
+                                    1
+                                ).select_from(
+                                    select(
+                                        Objects.object_id_column.label(f'referenced_object_{subquery_id}_id'),
+                                        Objects.data_column.label(f'referenced_object_{subquery_id}_data')
+                                    ).subquery()
+                                ).filter(
+                                    db.and_(
+                                        db_obj['object_id'].cast(db.Integer) == db.literal_column(f'referenced_object_{subquery_id}_id'),
+                                        permissions_filter,
+                                        filter
+                                    )
+                                ).exists()
+                            )
+                        ),
+                        db_obj=db_obj,
+                        subquery_id=subquery_id,
+                        permissions_filter=permissions_filter,
+                    )
+                )
+                db_obj = db.literal_column(f'referenced_object_{subquery_id}_data').cast(postgresql.JSONB)
+        outer_filter: typing.Optional[typing.Callable[[typing.Any], typing.Any]]
+        if outer_filter_stack:
+            def outer_filter(filter: typing.Any) -> typing.Any:
+                for partial_outer_filter in outer_filter_stack[::-1]:
+                    filter = partial_outer_filter(filter)
+                return filter
+        else:
+            outer_filter = None
+        return Attribute(literal.input_text, literal.start_position, db_obj), outer_filter
 
     if isinstance(literal, object_search_parser.Null):
         return literal, None
@@ -1311,10 +1354,12 @@ def transform_literal_to_query(
 
 
 def transform_unary_operation_to_query(
-        data: typing.Any,
+        db_obj: typing.Any,
         operator: object_search_parser.Operator,
         operand: typing.Union[Attribute, Expression, object_search_parser.Literal, typing.List[typing.Any]],
-        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]
+        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
+        use_permissions_filter_for_referenced_objects: bool,
+        subquery_id_generator: typing.Iterator[int]
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
     start_token = operator
     start = start_token.start_position
@@ -1322,7 +1367,7 @@ def transform_unary_operation_to_query(
     while isinstance(end_token, list):
         end_token = end_token[0]
     end = end_token.start_position + len(end_token.input_text)
-    operand_query, outer_filter = transform_tree_to_query(data, operand, search_notes)
+    operand_query, outer_filter = transform_tree_to_query(db_obj, operand, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
     if not outer_filter:
         def outer_filter(filter: typing.Any) -> typing.Any:
             return filter
@@ -1359,11 +1404,13 @@ def transform_unary_operation_to_query(
 
 
 def transform_binary_operation_to_query(
-        data: typing.Any,
+        db_obj: typing.Any,
         left_operand: typing.Union[Attribute, Expression, object_search_parser.Literal, typing.List[typing.Any]],
         operator: object_search_parser.Operator,
         right_operand: typing.Union[Attribute, Expression, object_search_parser.Literal, typing.List[typing.Any]],
-        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]
+        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
+        use_permissions_filter_for_referenced_objects: bool,
+        subquery_id_generator: typing.Iterator[int]
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
     start_token = left_operand
     while isinstance(start_token, list):
@@ -1374,8 +1421,8 @@ def transform_binary_operation_to_query(
         end_token = end_token[-1]
     end = end_token.start_position + len(end_token.input_text)
 
-    left_operand, left_outer_filter = transform_tree_to_query(data, left_operand, search_notes)
-    right_operand, right_outer_filter = transform_tree_to_query(data, right_operand, search_notes)
+    left_operand, left_outer_filter = transform_tree_to_query(db_obj, left_operand, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
+    right_operand, right_outer_filter = transform_tree_to_query(db_obj, right_operand, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
 
     if left_outer_filter and right_outer_filter:
         search_notes.append(('error', "Multiple array placeholders", start, end))
@@ -1447,17 +1494,17 @@ def transform_binary_operation_to_query(
         if str_operator.strip() in ('in', '==') and isinstance(left_operand, object_search_parser.Text) and isinstance(right_operand, Attribute) and right_operand.input_text.strip() == 'file_name':
             if str_operator.strip() == 'in':
                 expression.value = db.or_(
-                    where_filters.file_name_contains(data, left_operand.value),
+                    where_filters.file_name_contains(db_obj, left_operand.value),
                     expression.value
                 )
             else:
                 expression.value = db.or_(
-                    where_filters.file_name_equals(data, left_operand.value),
+                    where_filters.file_name_equals(db_obj, left_operand.value),
                     expression.value
                 )
         if str_operator.strip() == '==' and isinstance(right_operand, object_search_parser.Text) and isinstance(left_operand, Attribute) and left_operand.input_text.strip() == 'file_name':
             expression.value = db.or_(
-                where_filters.file_name_equals(data, right_operand.value),
+                where_filters.file_name_equals(db_obj, right_operand.value),
                 expression.value
             )
         return expression, outer_filter
@@ -1469,28 +1516,46 @@ def transform_binary_operation_to_query(
 
 
 def transform_tree_to_query(
-        data: typing.Any,
+        db_obj: typing.Any,
         tree: typing.Union[Attribute, Expression, object_search_parser.Operator, object_search_parser.Literal, typing.List[typing.Any]],
-        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]
+        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
+        use_permissions_filter_for_referenced_objects: bool,
+        subquery_id_generator: typing.Optional[typing.Iterator[int]] = None
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
+    if subquery_id_generator is None:
+        subquery_id_generator = itertools.count(1)
     if isinstance(tree, object_search_parser.Literal):
-        return transform_literal_to_query(data, tree, search_notes)
+        return transform_literal_to_query(db_obj, tree, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
     if not isinstance(tree, list):
         search_notes.append(('error', "Invalid search query", 0, None))
         return false(), None
     if len(tree) == 1:
         value, = tree
-        return transform_tree_to_query(data, value, search_notes)
+        return transform_tree_to_query(db_obj, value, search_notes, use_permissions_filter_for_referenced_objects)
     if len(tree) == 2:
+        if isinstance(tree[0], object_search_parser.Attribute) and tree[0].is_partial_attribute and isinstance(tree[1], list):
+            partial_attribute, subtree = tree
+            partial_attribute_transformed, partial_attribute_outer_filter = transform_literal_to_query(db_obj, partial_attribute, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
+            print(partial_attribute_transformed)
+            filter_func, outer_filter = transform_tree_to_query(partial_attribute_transformed.value, subtree, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
+            if outer_filter is None:
+                outer_filter = partial_attribute_outer_filter
+            if partial_attribute_outer_filter is not None and outer_filter is not None:
+                outer_filter = functools.partial(
+                    lambda filter, outer_filter1, outer_filter2: outer_filter2(outer_filter1(filter)),
+                    outer_filter1=outer_filter,
+                    outer_filter2=partial_attribute_outer_filter
+                )
+            return filter_func, outer_filter
         operator, operand = tree
         if isinstance(operator, object_search_parser.Operator):
-            return transform_unary_operation_to_query(data, operator, operand, search_notes)
+            return transform_unary_operation_to_query(db_obj, operator, operand, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
         search_notes.append(('error', "Invalid search query (missing operator)", 0, None))
         return false(), None
     if len(tree) == 3:
         left_operand, operator, right_operand = tree
         if isinstance(operator, object_search_parser.Operator):
-            return transform_binary_operation_to_query(data, left_operand, operator, right_operand, search_notes)
+            return transform_binary_operation_to_query(db_obj, left_operand, operator, right_operand, search_notes, use_permissions_filter_for_referenced_objects, subquery_id_generator)
         search_notes.append(('error', "Invalid search query (missing operator)", 0, None))
         return false(), None
     search_notes.append(('error', "Invalid search query", 0, None))
@@ -1526,16 +1591,21 @@ def should_use_advanced_search(
 
 def generate_filter_func(
         query_string: str,
-        use_advanced_search: bool
+        use_advanced_search: bool,
+        use_permissions_filter_for_referenced_objects: bool = False
 ) -> typing.Tuple[typing.Callable[[typing.Any, typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]], typing.Any], typing.Any, bool]:
     """
     Generates a filter function for use with SQLAlchemy and the JSONB data
     attribute in the object tables.
 
-    The generated filter functions can be used for objects.get_objects()
+    The generated filter functions can be used for objects.get_objects() if
+    use_permissions_filter_for_referenced_objects is False, or with
+    object_permissions.get_objects_with_permissions() otherwise.
 
     :param query_string: the query string
     :param use_advanced_search: whether to use simple text search (False) or advanced search (True)
+    :param use_permissions_filter_for_referenced_objects: whether to apply a
+        permissions filter when searching via object references
     :return: filter func, search tree and whether the advanced search was used
     """
     filter_func: typing.Callable[[typing.Any, typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]], typing.Any]
@@ -1626,7 +1696,10 @@ def generate_filter_func(
                     tree: typing.Any = tree
             ) -> typing.Any:
                 """ Filter objects based on search query string """
-                filter_func, outer_filter = transform_tree_to_query(data, tree, search_notes)
+
+                data_name = str(data).split('.', maxsplit=1)[-1]  # "data" or "data_full", depending on the column name used
+                db_obj = db.literal_column(data_name).cast(postgresql.JSONB)
+                filter_func, outer_filter = transform_tree_to_query(db_obj, tree, search_notes, use_permissions_filter_for_referenced_objects)
                 # check bool if filter_func is only an attribute
                 if isinstance(filter_func, Expression):
                     filter_func = filter_func.value

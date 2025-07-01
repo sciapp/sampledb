@@ -67,6 +67,41 @@ LDAP
 
 If you use LDAP for user management, you can use these variables to configure how SampleDB should connect to your LDAP server.
 
+.. _oidc_configuration:
+
+OpenID Connect (OIDC)
+----
+
+.. list-table:: OIDC Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_OIDC_NAME
+     - The name of the OIDC provider shown to the users
+   * - SAMPLEDB_OIDC_ISSUER
+     - The issuer value of the OIDC provider server. Configuration will be requested from ``$SAMPLEDB_OIDC_ISSUER/.well-known/openid-configuration``
+   * - SAMPLEDB_OIDC_CLIENT_ID
+     - The statically registered client_id at the OIDC provider.
+   * - SAMPLEDB_OIDC_CLIENT_SECRET
+     - The corresponding secret key.
+   * - SAMPLEDB_OIDC_SCOPES
+     - The scopes to request, defaults to ``openid profile email``. Must include the ``email``, ``email_verified`` and ``name`` properties.
+   * - SAMPLEDB_OIDC_DISABLE_NONCE
+     - If set, the ``nonce`` parameter, which protects against replay attacks, will not be used. This is not recommended but allowed for compatibility.
+   * - SAMPLEDB_OIDC_ROLES
+     - If set, reads roles using this attribute path.
+   * - SAMPLEDB_OIDC_ONLY
+     - If set, other login methods and invitations will be disabled. This does not affect API keys.
+   * - SAMPLEDB_OIDC_CREATE_ACCOUNT
+     - Which method should be used to create or link accounts. If ``auto_link`` (the default), new accounts will be automatically created and existing accounts linked via email. If ``deny_existing``, new accounts will be automatically created, but existing accounts must be manually configured to use OIDC. If ``no``, authentication methods must be manually added.
+   * - OIDC_ACCESS_TOKEN_AS_API_KEY
+     - If set, then OIDC Access Tokens may be used as API keys using ``Bearer Authentication``. Depending on the Access Token, validation may require an HTTP request to the OIDC provider, which can be enabled using ``OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION``.
+   * - OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION
+     - If set, then Access Tokens may be validated by making an HTTP request to the OIDC provider. Otherwise, they can only be validated if they are a JWT.
+
+If you use OIDC for user management, you can use these variables to configure how SampleDB should use your OIDC provider. See :ref:`OIDC<oidc>` for a detailed explanation.
+
 .. _customization_configuration:
 
 Customization
@@ -218,6 +253,10 @@ Federation
      - If set, users will have aliases using their profile information by default (default: False). This will not apply to bot users or imported users.
    * - SAMPLEDB_ENABLE_FEDERATION_DISCOVERABILITY
      - If set, this instance will be discoverable by other databases in the same federation. (default: True).
+   * - SAMPLEDB_ENABLE_FEDERATED_LOGIN
+     - If set, users can authenticate using the login of an other database in the same federation. (default: False).
+   * - SAMPLEDB_ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER
+     - If set, users can create a new user as the local user for the federated identity when using federation login. (default: False).
 
 .. _monitoring_dashboard_configuration:
 
@@ -261,9 +300,11 @@ Miscellaneous
    * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_GROUPS
      - If set, only administrators will be able to create basic groups.
    * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_GROUPS
-     - If set, only administrators will be able to delete non-empty basic groups.
+     - If set, only administrators will be able to delete non-empty basic groups. Group members can still remove all other group members and then delete the group.
    * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_PROJECTS
      - If set, only administrators will be able to create project groups.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_PROJECTS
+     - If set, only administrators will be able to delete non-empty project groups. Group members with GRANT permissions can still remove all other group members (or revoke their permissions) and then delete the group.
    * - SAMPLEDB_DISABLE_USE_IN_MEASUREMENT
      - If set, the "Use in Measurement" button will not be shown.
    * - SAMPLEDB_DISABLE_SUBPROJECTS
@@ -310,6 +351,8 @@ Miscellaneous
      - Time that temporary files uploaded when editing an object are stored, in seconds (default: 604800 seconds / 7 days).
    * - SAMPLEDB_ENABLE_ELN_FILE_IMPORT
      - If set, .eln files can be imported by users (default: False). :ref:`Importing .eln files <eln_import>` is currently experimental and not recommended for production systems, as the file format is still a work in progress.
+   * - SAMPLEDB_ELN_FILE_IMPORT_ALLOW_HTTP
+     - If set, .eln files with a signature will be checked even if the specified signing URL uses http (default: False).
    * - SAMPLEDB_ENABLE_WEBHOOKS_FOR_USERS
      - If set, "normal" users can register webhooks (default: False). If this option is not set or set to ``false`` only administrators are allowed to register webhooks. See :ref:`Webhooks <webhooks>`.
    * - SAMPLEDB_WEBHOOKS_ALLOW_HTTP
@@ -326,5 +369,11 @@ Miscellaneous
      - Specifies label paper formats that can be used for qr code labels. For more information, see :ref:`Label Paper Formats <labels>`. (default: ``[]``)
    * - SAMPLEDB_MIN_NUM_TEXT_CHOICES_FOR_SEARCH
      - The minimum number of choices a text field needs to have for search to be enabled (default: 10). Set to 0 to enable search for all choice text fields or to -1 to disable search for them.
+   * - SAMPLEDB_DEFAULT_NOTIFICATION_MODES
+     - A JSON object mapping notification types (``"OTHER"``, ``"ASSIGNED_AS_RESPONSIBLE_USER"``, ``"INVITED_TO_GROUP"``, ``"INVITED_TO_PROJECT"``, ``"ANNOUNCEMENT"``, ``"RECEIVED_OBJECT_PERMISSIONS_REQUEST"``, ``"INSTRUMENT_LOG_ENTRY_CREATED"``, ``"REFERENCED_BY_OBJECT_METADATA"``, ``"INSTRUMENT_LOG_ENTRY_EDITED"``, ``"RESPONSIBILITY_ASSIGNMENT_DECLINED"``, ``"REMOTE_OBJECT_IMPORT_FAILED"``, ``"REMOTE_OBJECT_IMPORT_NOTES"``, ``"AUTOMATIC_USER_FEDERATION"``, or ``"DEFAULT"`` as a default) to the desired default notification mode (``"EMAIL"``, ``"WEBAPP"`` or ``"IGNORE"``), e.g. ``{"ANNOUNCEMENT": "EMAIL", "DEFAULT": "WEBAPP"}`` to set only announcement notifications to email while setting every other notification type to web app.
+   * - SAMPLEDB_WORKFLOW_VIEW_MODALS
+     - Use modals to display workflow views by default if set to True, else the workflow views are displayed directly on the objects page (default: False)
+   * - SAMPLEDB_WORKFLOW_VIEW_COLLAPSED
+     - Sets if objects in a workflow view should be collapsed or expanded. Set to True to collapse objects, False to expand object contents (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

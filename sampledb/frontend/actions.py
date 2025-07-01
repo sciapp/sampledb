@@ -186,6 +186,9 @@ def actions() -> FlaskResponseT:
     else:
         filter_topic_ids = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_ACTION_LIST_FILTERS'].get('filter_topic_ids', [])
 
+    if filter_topic_ids is None:
+        filter_topic_ids = []
+
     if filter_topic_ids:
         actions = [
             action
@@ -287,9 +290,11 @@ def action(action_id: int) -> FlaskResponseT:
             return flask.abort(403)
         return show_action_form(action, action_schema=action_schema)
 
+    action_is_favorite = action.id in get_user_favorite_action_ids(flask_login.current_user.id)
     return flask.render_template(
         'actions/action.html',
         action=action,
+        action_is_favorite=action_is_favorite,
         may_edit=may_edit,
         may_grant=may_grant,
         is_public=Permissions.READ in get_action_permissions_for_all_users(action_id),
@@ -318,6 +323,27 @@ def new_action() -> FlaskResponseT:
             topic_ids = None
     else:
         topic_ids = None
+    instrument_id_str = flask.request.args.get('instrument_id', None)
+    if instrument_id_str is not None:
+        try:
+            instrument_id = int(instrument_id_str)
+        except ValueError:
+            instrument_id = None
+    else:
+        instrument_id = None
+    if instrument_id:
+        try:
+            user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
+            if instrument_id in user_instrument_ids:
+                instrument = get_instrument(instrument_id)
+                if instrument.component_id is not None:
+                    flask.flash(_('Using imported instruments to create actions is not supported.'), 'error')
+                    instrument_id = None
+            else:
+                flask.flash(_('Insufficient permissions to use the requested instrument.'), 'error')
+                instrument_id = None
+        except errors.InstrumentDoesNotExistError:
+            flask.flash(_('The requested instrument does not exist.'), 'error')
     previous_action = None
     previous_action_id_str = flask.request.args.get('previous_action_id', None)
     if previous_action_id_str is not None:
@@ -344,7 +370,7 @@ def new_action() -> FlaskResponseT:
                 elif previous_action.type.admin_only and not flask_login.current_user.is_admin:
                     flask.flash(_('Only administrators can create actions of this type.'), 'error')
                     return flask.redirect(flask.url_for('.action', action_id=previous_action_id))
-    return show_action_form(None, previous_action, action_type_id, topic_ids=topic_ids)
+    return show_action_form(None, previous_action, action_type_id, topic_ids=topic_ids, instrument_id=instrument_id)
 
 
 def _get_lines_for_path(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Set[int]]:
@@ -407,6 +433,7 @@ def show_action_form(
         action_type_id: typing.Optional[int] = None,
         action_schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
         topic_ids: typing.Optional[typing.List[int]] = None,
+        instrument_id: typing.Optional[int] = None,
 ) -> FlaskResponseT:
     action_translations = []
     load_translations = False
@@ -517,6 +544,8 @@ def show_action_form(
             if action_form.instrument.data is None or action_form.instrument.data == str(None):
                 if previous_action is not None and previous_action.instrument_id in user_instrument_ids:
                     action_form.instrument.data = str(previous_action.instrument_id)
+                elif instrument_id is not None:
+                    action_form.instrument.data = str(instrument_id)
                 else:
                     action_form.instrument.data = '-1'
     form_is_valid = False

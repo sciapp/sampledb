@@ -6,6 +6,9 @@
   <h1>
     {{ _('Instrument') }} #{{ instrument.id }}: {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}
     {{ import_information_symbol(instrument) }}
+    {% if instrument_is_favorite or not current_user.is_readonly %}
+      <button type="button" class="fa {% if instrument_is_favorite %}fav-star-on{% else %}fav-star-off{% endif %}" value="" {% if not current_user.is_readonly %}data-instrument-id="{{ instrument.id }}"{% endif %}></button>
+    {% endif %}
   </h1>
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.')}}</p>
@@ -44,6 +47,9 @@
     {% if (current_user.is_admin or current_user in instrument.responsible_users) and instrument.fed_id is none %}
       <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">{{ _('Edit Instrument') }}</a>
     {% endif %}
+  {% endif %}
+  {% if is_instrument_responsible_user and not current_user.is_readonly and (not action_type or not action_type.admin_only or current_user.is_admin) and not instrument.component_id and not instrument.is_hidden %}
+    <a href="{{ url_for('.new_action', instrument_id=instrument.id) }}" class="btn btn-default">{{ _("Create Action") }}</a>
   {% endif %}
   {% if not current_user.is_readonly and is_instrument_responsible_user and object_link_form %}
     {% if instrument.object_id %}
@@ -106,6 +112,9 @@
       <h3>
         <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text }}"> {{ action.name | get_translated_text }}</a>
         {{ import_information_symbol(action) }}
+        {% if action.id in user_favorite_action_ids or not current_user.is_readonly %}
+          <button type="button" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value="" {% if not current_user.is_readonly %}data-action-id="{{ action.id }}"{% endif %}></button>
+        {% endif %}
       </h3>
       {% if action.short_description | get_translated_text %}
         <div class="action-user-content">
@@ -643,5 +652,6 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeline_arrays.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/page/instrument.js') }}" type="module"></script>
 {% endblock %}

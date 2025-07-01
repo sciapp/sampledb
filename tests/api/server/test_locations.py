@@ -72,7 +72,8 @@ def test_get_location(flask_server, auth, user):
         'description': "This is an example location",
         'parent_location_id': None,
         'type_id': location.type_id,
-        'is_hidden': False
+        'is_hidden': False,
+        'enable_object_assignments': True,
     }
 
     parent_location = sampledb.logic.locations.create_location(
@@ -90,6 +91,7 @@ def test_get_location(flask_server, auth, user):
         user_id=user.id,
         type_id=location.type_id,
         is_hidden=True,
+        enable_object_assignments=True,
     )
     r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
@@ -99,7 +101,8 @@ def test_get_location(flask_server, auth, user):
         'description': "This is an example location",
         'parent_location_id': parent_location.id,
         'type_id': location.type_id,
-        'is_hidden': True
+        'is_hidden': True,
+        'enable_object_assignments': True,
     }
 
 
@@ -129,7 +132,8 @@ def test_get_locations(flask_server, auth, user):
             'description': "This is an example location",
             'parent_location_id': None,
             'type_id': location.type_id,
-            'is_hidden': False
+            'is_hidden': False,
+            'enable_object_assignments': True,
         }
     ]
 

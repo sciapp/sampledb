@@ -22,6 +22,7 @@ def location_to_json(location: locations.Location) -> typing.Dict[str, typing.An
         'parent_location_id': location.parent_location_id,
         'type_id': location.type_id,
         'is_hidden': location.is_hidden,
+        'enable_object_assignments': location.enable_object_assignments,
     }
 
 

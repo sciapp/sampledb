@@ -55,7 +55,9 @@ Property Names
 
 To search for objects which have property fulfilling some condition, the internal name of that property must be known. Property names are set in an action's schema and the easiest way to find a property is to use the search button shown above. When searching for properties inside an object or array, dots are used as separators and a question mark can be used as wildcard for an array index, e.g. ``layers.?.name == "Base Layer"``.
 
-Search queries can also search through referenced objects by prefixing the ``object_reference``, ``sample`` or ``measurement`` property with an asterisk and otherwise treating the referenced object as if it was simply part of the object you are searching, e.g. ``*sample.name == "Test"`` will find all objects with a property called ``sample`` that references an object with the name ``"Test"``. Only a single object reference like this can be included in a search query and this cannot be combined with array index placeholders.
+Search queries can also search through referenced objects by prefixing the ``object_reference``, ``sample`` or ``measurement`` property with an asterisk and otherwise treating the referenced object as if it was simply part of the object you are searching, e.g. ``*sample.name == "Test"`` will find all objects with a property called ``sample`` that references an object with the name ``"Test"``.
+
+When combining multiple search clauses with the same property, e.g. when searching for objects that contain an array item with a name equal to ``"Test"`` and a checkbox set to ``True``, you could do the following: ``array.?.(name == "Test" and checkbox == True)``. Using the regular syntax, in this example ``array.?.name == "Test" and array.?.checkbox == True`` would not limit the result to objects where both conditions are fulfilled in the same array item.
 
 Boolean operators
 `````````````````

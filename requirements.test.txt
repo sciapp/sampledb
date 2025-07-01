@@ -7,5 +7,5 @@ pytest-cov
 pytest-xdist
 requests-mock
 rocrate
-roc-validator
+roc-validator==0.5.0
 selenium

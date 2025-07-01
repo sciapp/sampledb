@@ -20,6 +20,8 @@ import sampledb.logic
 from sampledb.logic.authentication import add_email_authentication
 from sampledb.logic import object_permissions, default_permissions, groups, projects
 
+from ..conftest import wait_for_page_load
+
 
 @pytest.fixture
 def user(flask_server):
@@ -993,7 +995,8 @@ def test_delete_api_token_selenium(flask_server, driver, user):
     rows = driver.find_elements(By.CSS_SELECTOR, "#api_tokens + div tbody tr")
     assert len(rows) == 2
     assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'Example API Token'
-    rows[0].find_element(By.CSS_SELECTOR, "td button").click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, "td button").click()
 
     rows = driver.find_elements(By.CSS_SELECTOR, "#api_tokens + div tbody tr")
     assert len(rows) == 1
@@ -1019,7 +1022,8 @@ def test_user_add_email_authentication_method_selenium(flask_server, driver, use
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('user@example.com', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
         WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#authentication_methods + div tbody tr:nth-child(2)')))
 
     # check if the authentication method got added
@@ -1070,7 +1074,8 @@ def test_user_add_email_authentication_method_already_exists_selenium(flask_serv
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('user@example.com', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
     assert len(outbox) == 0
     assert 'Failed to add an authentication method.' in driver.find_element(By.CSS_SELECTOR, '.alert-danger').get_attribute('innerText')
 
@@ -1100,7 +1105,8 @@ def test_user_add_email_authentication_method_empty_email_selenium(flask_server,
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
     assert len(outbox) == 0
     assert 'Failed to add an authentication method.' in driver.find_element(By.CSS_SELECTOR, '.alert-danger').get_attribute('innerText')
 
@@ -1123,7 +1129,8 @@ def test_user_preferences_change_password_selenium(flask_server, driver, user):
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw')))
     driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw').send_keys('password', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw-confirmation').send_keys('password', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
 
     sampledb.db.session.refresh(authentication_method)
     assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'password')
@@ -1140,7 +1147,8 @@ def test_user_preferences_change_password_too_short_selenium(flask_server, drive
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw')))
     driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw').send_keys('pw', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw-confirmation').send_keys('pw', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
 
     sampledb.db.session.refresh(authentication_method)
     assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'abc.123')
@@ -1165,7 +1173,8 @@ def test_user_remove_authentication_method_selenium(flask_server, driver, user):
     assert rows[0].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
     assert rows[1].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'user@example.com'
     assert rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
-    rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').click()
+    with wait_for_page_load(driver):
+        rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').click()
 
     assert {
            authentication_method.login['login']
@@ -1206,7 +1215,8 @@ def test_user_remove_authentication_method_already_removed_selenium(flask_server
     assert rows[0].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
     assert rows[1].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'user@example.com'
     assert rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
-    rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').click()
+    with wait_for_page_load(driver):
+        rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').click()
 
     assert {
            authentication_method.login['login']
@@ -1228,7 +1238,8 @@ def test_user_preferences_change_name_selenium(flask_server, driver, user):
 
     driver.find_element(By.CSS_SELECTOR, '#input-username').clear()
     driver.find_element(By.CSS_SELECTOR, '#input-username').send_keys('Renamed User', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
 
     assert driver.find_element(By.CSS_SELECTOR, '#input-username').get_attribute('value') == 'Renamed User'
     user = sampledb.logic.users.get_user(user.id)
@@ -1244,7 +1255,8 @@ def test_user_preferences_change_email_selenium(flask_server, driver, user):
     driver.find_element(By.CSS_SELECTOR, '#input-email').clear()
     driver.find_element(By.CSS_SELECTOR, '#input-email').send_keys('user@example.com', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
 
     assert driver.find_element(By.CSS_SELECTOR, '#input-email').get_attribute('value') == 'example@example.com'
     user = sampledb.logic.users.get_user(user.id)
@@ -1273,7 +1285,8 @@ def test_user_preferences_change_orcid_id_selenium(flask_server, driver, user):
 
     driver.find_element(By.CSS_SELECTOR, '#input-orcid').clear()
     driver.find_element(By.CSS_SELECTOR, '#input-orcid').send_keys('0000-0002-1825-0097', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
 
     assert driver.find_element(By.CSS_SELECTOR, '#input-orcid').get_attribute('value') == '0000-0002-1825-0097'
     user = sampledb.logic.users.get_user(user.id)
@@ -1287,7 +1300,8 @@ def test_user_preferences_change_affiliation_selenium(flask_server, driver, user
 
     driver.find_element(By.CSS_SELECTOR, '#input-affiliation').clear()
     driver.find_element(By.CSS_SELECTOR, '#input-affiliation').send_keys('Example University', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
 
     assert driver.find_element(By.CSS_SELECTOR, '#input-affiliation').get_attribute('value') == 'Example University'
     user = sampledb.logic.users.get_user(user.id)
@@ -1301,7 +1315,8 @@ def test_user_preferences_change_role_selenium(flask_server, driver, user):
 
     driver.find_element(By.CSS_SELECTOR, '#input-role').clear()
     driver.find_element(By.CSS_SELECTOR, '#input-role').send_keys('Example User', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
 
     assert driver.find_element(By.CSS_SELECTOR, '#input-role').get_attribute('value') == 'Example User'
     user = sampledb.logic.users.get_user(user.id)
@@ -1318,7 +1333,8 @@ def test_user_preferences_change_extra_field_selenium(flask_server, driver, user
 
     driver.find_element(By.CSS_SELECTOR, '#extra_field_location').clear()
     driver.find_element(By.CSS_SELECTOR, '#extra_field_location').send_keys('Building A, Room 1', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
 
     assert driver.find_element(By.CSS_SELECTOR, '#extra_field_location').get_attribute('value') == 'Building A, Room 1'
     user = sampledb.logic.users.get_user(user.id)
@@ -1343,7 +1359,8 @@ def test_user_preferences_change_notification_modes_selenium(flask_server, drive
 
         assert driver.find_element(By.CSS_SELECTOR, f'[name="notification_mode_for_type_{notification_type.name.lower()}"]:checked').get_attribute('id') == f'notification_mode_for_type_{notification_type.name.lower()}_webapp'
         driver.find_element(By.CSS_SELECTOR, f'#notification_mode_for_type_{notification_type.name.lower()}_email').click()
-        driver.find_element(By.CSS_SELECTOR, 'button[name="edit_notification_settings"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, 'button[name="edit_notification_settings"]').click()
 
         assert driver.find_element(By.CSS_SELECTOR, f'[name="notification_mode_for_type_{notification_type.name.lower()}"]:checked').get_attribute('id') == f'notification_mode_for_type_{notification_type.name.lower()}_email'
         user = sampledb.logic.users.get_user(user.id)
@@ -1376,7 +1393,8 @@ def test_change_other_settings_radio_buttons_selenium(flask_server, driver, user
     assert driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_before}"]').get_attribute("checked")
     assert not driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').get_attribute("checked")
     driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').click()
-    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
 
     assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
 
@@ -1427,7 +1445,8 @@ def test_change_other_settings_selectpicker_selenium(flask_server, driver, user,
     input_text_after = driver.find_element(By.CSS_SELECTOR, f'[name="{select_name}"] option[value="{input_value_after}"]').get_attribute("innerText")
     driver.find_element(By.CSS_SELECTOR, f'[data-id="{select_name}"]').click()
     driver.find_element(By.XPATH, f'//span[text()="{input_text_after}"]').click()
-    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
 
     assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
 
@@ -1444,7 +1463,8 @@ def test_change_locale_notification_selenium(flask_server, driver, user):
     input_text_after = driver.find_element(By.CSS_SELECTOR, '[name="select-locale"] option[value="de"]').get_attribute("innerText")
     driver.find_element(By.CSS_SELECTOR, '[data-id="select-locale"]').click()
     driver.find_element(By.XPATH, f'//span[text()="{input_text_after}"]').click()
-    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
 
     assert sampledb.logic.settings.get_user_setting(user.id, 'LOCALE') == 'de'
 
@@ -1475,7 +1495,8 @@ def test_change_admin_settings_radio_buttons_selenium(flask_server, driver, user
     assert driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_before}"]').get_attribute("checked")
     assert not driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').get_attribute("checked")
     driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').click()
-    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
 
     assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
 
@@ -1506,7 +1527,8 @@ def test_add_webhook_selenium(flask_server, driver, user):
     driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
     assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
-    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#webhook-secret input')))
     assert len(sampledb.logic.webhooks.get_webhooks(user_id=user.id)) == 1
     webhook = sampledb.logic.webhooks.get_webhooks(user_id=user.id)[0]
@@ -1545,7 +1567,8 @@ def test_add_webhook_exist_already_selenium(flask_server, driver, user):
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
     driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
     assert 'A webhook of this type with this target address already exists' in driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget + .help-block').get_attribute('innerText')
     assert len(sampledb.logic.webhooks.get_webhooks(user_id=user.id)) == 1
 
@@ -1571,7 +1594,8 @@ def test_add_webhook_http_selenium(flask_server, driver, user):
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
     driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
     assert 'Only secure communication via https is allowed' in driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget + .help-block').get_attribute('innerText')
     assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
 
@@ -1597,7 +1621,8 @@ def test_add_webhook_invalid_url_selenium(flask_server, driver, user):
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
     driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys("example", Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
     assert 'This webhook address is invalid' in driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget + .help-block').get_attribute('innerText')
     assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
 
@@ -1624,7 +1649,8 @@ def test_add_webhook_admin_only_selenium(flask_server, driver, user):
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
     driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys("example", Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
     assert "You are not allowed to create Webhooks." in driver.find_element(By.CSS_SELECTOR, ".alert-danger").get_attribute("innerText")
     assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
 
@@ -1650,7 +1676,8 @@ def test_add_webhook_blank_name_selenium(flask_server, driver, user):
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
     driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#webhook-secret input')))
     assert len(sampledb.logic.webhooks.get_webhooks(user_id=user.id)) == 1
     webhook = sampledb.logic.webhooks.get_webhooks(user_id=user.id)[0]
@@ -1682,7 +1709,8 @@ def test_remove_webhook_selenium(flask_server, driver, user):
     assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == 'https://example.com'
 
     assert sampledb.logic.webhooks.get_webhooks(user_id=user.id)
-    driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(4) button').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(4) button').click()
     assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
 
 
@@ -1696,7 +1724,8 @@ def test_add_totp_two_factor_authentication_selenium(flask_server, driver, user)
     for _ in range(2):
         form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
         form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
-        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        with wait_for_page_load(driver):
+            form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
         if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1:
             break
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1
@@ -1716,14 +1745,16 @@ def test_disable_totp_two_factor_authentication_selenium(flask_server, driver, u
     assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
     assert not rows[0].find_elements(By.CSS_SELECTOR, 'button[value="enable"]')
     assert rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').get_attribute("disabled")
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="disable"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="disable"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 0
 
     for _ in range(2):
         form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
         form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
-        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        with wait_for_page_load(driver):
+            form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
         # the form might have failed if the code expired in just the wrong moment
         if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0:
             break
@@ -1742,14 +1773,16 @@ def test_enable_totp_two_factor_authentication_selenium(flask_server, driver, us
     assert len(rows) == 1
     assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
     assert not rows[0].find_elements(By.CSS_SELECTOR, 'button[value="disable"]')
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="enable"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="enable"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 1
 
     for _ in range(2):
         form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
         form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
-        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        with wait_for_page_load(driver):
+            form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
         # the form might have failed if the code expired in just the wrong moment
         if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1:
             break
@@ -1768,7 +1801,8 @@ def test_delete_totp_two_factor_authentication_selenium(flask_server, driver, us
     assert len(rows) == 1
     assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 0
 
 
@@ -1785,7 +1819,8 @@ def test_delete_active_totp_two_factor_authentication_selenium(flask_server, dri
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
 
     sampledb.logic.authentication.activate_two_factor_authentication_method(method.id)
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
     assert "You cannot delete an active two-factor authentication method." in driver.find_element(By.CSS_SELECTOR, ".alert-danger").get_attribute("innerText")
 
@@ -1797,7 +1832,8 @@ def test_reset_email_password_selenium(flask_server, driver, user):
     driver.get(flask_server.base_url + 'users/me/preferences')
     driver.find_element(By.CSS_SELECTOR, '#input-email').send_keys("example@example.com", Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.XPATH, f'//button[text()="Send Recovery Email"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.XPATH, f'//button[text()="Send Recovery Email"]').click()
 
     # check if a recovery mail was sent
     assert len(outbox) == 1
@@ -1808,7 +1844,8 @@ def test_reset_email_password_selenium(flask_server, driver, user):
     recovery_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     driver.get(recovery_url)
     driver.find_element(By.CSS_SELECTOR, "#form-password-recovery #input-password").send_keys('password', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '#form-password-recovery button[type="submit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '#form-password-recovery button[type="submit"]').click()
 
     sampledb.db.session.refresh(authentication_method)
     assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'password')
@@ -1822,7 +1859,8 @@ def test_delete_dataverse_api_token_selenium(flask_server, driver, user):
     driver.get(flask_server.base_url + 'users/me/preferences')
 
     assert sampledb.logic.settings.get_user_setting(user.id, 'DATAVERSE_API_TOKEN') == 'api_token'
-    driver.find_element(By.CSS_SELECTOR, '[name="delete_dataverse_api_token"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="delete_dataverse_api_token"]').click()
     assert not sampledb.logic.settings.get_user_setting(user.id, 'DATAVERSE_API_TOKEN')
 
 
@@ -1864,7 +1902,8 @@ def test_add_user_to_default_permissions_selenium(flask_server, driver, user):
     add_user_form.find_element(By.CSS_SELECTOR, '.dropdown-toggle').click()
     add_user_form.find_element(By.XPATH, f'//span[contains(text(), "(#{other_users[1].id})")]').click()
     add_user_form.find_element(By.CSS_SELECTOR, 'input[type="radio"][name="permissions"][value="write"]').click()
-    add_user_form.find_element(By.CSS_SELECTOR, '[name="add_user_permissions"]').click()
+    with wait_for_page_load(driver):
+        add_user_form.find_element(By.CSS_SELECTOR, '[name="add_user_permissions"]').click()
     assert sampledb.logic.default_permissions.get_default_permissions_for_users(user.id) == {
         user.id: sampledb.models.Permissions.GRANT,
         other_users[1].id: sampledb.models.Permissions.WRITE
@@ -1888,7 +1927,8 @@ def test_add_basic_group_to_default_permissions_selenium(flask_server, driver, u
     add_group_form.find_element(By.CSS_SELECTOR, '.dropdown-toggle').click()
     add_group_form.find_element(By.XPATH, f'//span[contains(text(), "Basic Group 1")]').click()
     add_group_form.find_element(By.CSS_SELECTOR, 'input[type="radio"][name="permissions"][value="grant"]').click()
-    add_group_form.find_element(By.CSS_SELECTOR, '[name="add_group_permissions"]').click()
+    with wait_for_page_load(driver):
+        add_group_form.find_element(By.CSS_SELECTOR, '[name="add_group_permissions"]').click()
     assert sampledb.logic.default_permissions.get_default_permissions_for_groups(user.id) == {
         basic_groups[1].id: sampledb.models.Permissions.GRANT
     }
@@ -1911,7 +1951,8 @@ def test_add_project_group_to_default_permissions_selenium(flask_server, driver,
     add_group_form.find_element(By.CSS_SELECTOR, '.dropdown-toggle').click()
     add_group_form.find_element(By.XPATH, f'//span[contains(text(), "Project Group 1")]').click()
     add_group_form.find_element(By.CSS_SELECTOR, 'input[type="radio"][name="permissions"][value="grant"]').click()
-    add_group_form.find_element(By.CSS_SELECTOR, '[name="add_project_permissions"]').click()
+    with wait_for_page_load(driver):
+        add_group_form.find_element(By.CSS_SELECTOR, '[name="add_project_permissions"]').click()
     assert sampledb.logic.default_permissions.get_default_permissions_for_projects(user.id) == {
         project_groups[1].id: sampledb.models.Permissions.GRANT
     }
@@ -1990,7 +2031,8 @@ def test_edit_default_permissions_selenium(flask_server, driver, user):
         row = id_field.find_element(By.XPATH, "./ancestor::tr")
         row.find_element(By.CSS_SELECTOR, f'[name^="project_permissions-"][name$="-permissions"][value="{permissions}"]').click()
 
-    default_preferences_form.find_element(By.CSS_SELECTOR, '[name="edit_permissions"]').click()
+    with wait_for_page_load(driver):
+        default_preferences_form.find_element(By.CSS_SELECTOR, '[name="edit_permissions"]').click()
 
     assert sampledb.logic.default_permissions.get_default_permissions_for_users(user.id) == {
         user.id: sampledb.models.Permissions.GRANT,

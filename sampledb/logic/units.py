@@ -9,10 +9,25 @@ import json
 import os
 import typing
 import pint
+import pint.compat
+import pint.facets.nonmultiplicative.definitions
 
 from . import errors
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+@functools.wraps(pint.compat.log)  # type: ignore
+def _decimal_compatible_log(x: typing.Any) -> typing.Any:
+    if isinstance(x, decimal.Decimal):
+        return x.ln()
+    return pint.compat.log(x)  # type: ignore
+
+
+# monkey patch the log function used for non-multiplicative units in pint, as
+# numpy.log (used by pint) expects the presence of a method log(), but the
+# (natural) logarithm of a decimal.Decimal instance is calculated using ln().
+pint.facets.nonmultiplicative.definitions.log = _decimal_compatible_log  # type: ignore
 
 ureg = pint.UnitRegistry(non_int_type=decimal.Decimal)
 ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))

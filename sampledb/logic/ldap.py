@@ -50,7 +50,7 @@ def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[
         connection = ldap3.Connection(server_pool, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS, client_strategy=ldap3.SAFE_SYNC)
         object_def = ldap3.ObjectDef(object_def, connection)
         reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(ldap3.utils.conv.escape_filter_chars(user_ldap_uid)))
-        reader.search(attributes)
+        reader.search(attributes)  # type: ignore[no-untyped-call]
         # search if uid matches exactly one user, not more
         if len(reader) != 1:
             return None

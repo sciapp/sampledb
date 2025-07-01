@@ -137,7 +137,9 @@ def test_validate_text_translated_choices():
     validate(instance, schema)
 
 
-def test_validate_text_invalid_choice(mock_current_user):
+def test_validate_text_invalid_choice(flask_server, mock_current_user):
+    mock_current_user.id = 1
+
     schema = {
         'title': 'Example',
         'type': 'text',
@@ -147,14 +149,16 @@ def test_validate_text_invalid_choice(mock_current_user):
         '_type': 'text',
         'text': 'D'
     }
-    with pytest.raises(ValidationError) as exception_info:
-        validate(instance, schema)
-    assert str(exception_info.value) == 'The text must be one of: A, B, C_en.'
+    with flask_server.app.app_context():
+        with pytest.raises(ValidationError) as exception_info:
+            validate(instance, schema)
+        assert str(exception_info.value) == 'The text must be one of: A, B, C_en.'
     mock_current_user.set_language_by_lang_code('de')
-    with pytest.raises(ValidationError) as exception_info:
-        validate(instance, schema)
-    # english general text as the mock user language doesn't apply there
-    assert str(exception_info.value) == 'The text must be one of: A, B, C_de.'
+    with flask_server.app.app_context():
+        with pytest.raises(ValidationError) as exception_info:
+            validate(instance, schema)
+        # english general text as the mock user language doesn't apply there
+        assert str(exception_info.value) == 'The text must be one of: A, B, C_de.'
 
 
 def test_validate_text_pattern():
@@ -533,6 +537,33 @@ def test_validate_quantity_min_and_max_magnitude():
     instance['magnitude'] = 3
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_quantity_with_logarithmic_units():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'dBm'
+    }
+    instance = {
+        '_type': 'quantity',
+        'units': 'dBm',
+        'magnitude': 0
+    }
+    validate(instance, schema)
+    instance = {
+        '_type': 'quantity',
+        'units': 'dBm',
+        'magnitude_in_base_units': sampledb.logic.datatypes.Quantity(0, 'dBm').magnitude_in_base_units
+    }
+    validate(instance, schema)
+    instance = {
+        '_type': 'quantity',
+        'units': 'dBm',
+        'magnitude': 0,
+        'magnitude_in_base_units': 0.001
+    }
+    validate(instance, schema)
 
 
 def test_validate_datetime():

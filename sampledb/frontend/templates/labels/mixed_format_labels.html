@@ -1,0 +1,366 @@
+{% extends "labels/base.html" %}
+
+{% block style %}
+  @page {
+      size: {{ paper_width }}mm {{ paper_height }}mm;
+      margin: 8.4mm 5mm 8.5mm 5.2mm;
+  }
+  /* Prevent outputting more than one page (workaround) */
+  body {
+      height: {{body_height}};
+  }
+  .name {
+      border-bottom: 1.5px solid black;
+      display: flex;
+      flex-direction: column;
+      min-height: 4mm;
+      text-align: center;
+      overflow-wrap: break-word;
+  }
+  .info {
+      border-bottom: 1.5px solid black;
+      text-align: center;
+      overflow-wrap: break-word;
+  }
+  .qrcodebox {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 8px;
+      padding-top: 1mm;
+  }
+  .innerbox {
+    display: flex;
+    align-items: center;
+  }
+  .qrcodebox span {
+    width: 100%;
+    display: block;
+    text-align: center;
+  }
+  .thirdbox .qrcodebox div {
+      width: 15.25mm;
+      height: 16mm;
+      background-size: contain;
+      margin: 0mm -0.5mm -0.75mm;
+      background-repeat: no-repeat;
+  }
+  .fourthbox .qrcodebox div {
+      width: 17mm;
+      height: 17.5mm;
+      background-size: contain;
+  }
+  .fifthbox .qrcodebox div {
+      width: 17mm;
+      height: 17mm;
+      background-size: contain;
+  }
+  .sixthbox .qrcodebox div {
+      width: 17mm;
+      height: 17mm;
+      background-size: contain;
+  }
+  .firstbox {
+      margin: {{horizontal_label_margin - 0.2}}mm {{vertical_label_margin}}mm {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
+      display: flex;
+      align-items: center;
+      border: 1.5px solid black;
+      height: 8.6mm;
+  }
+  .secondbox {
+      margin: {{vertical_label_margin - 0.45}}mm {{vertical_label_margin}}mm;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      border: 1.5px solid black;
+      height: 12.6mm;
+  }
+  .firstbox, .secondbox {
+      max-width: {{ paper_width - 16.9 }}mm;
+  }
+  .firstbox .labeltext, .secondbox .labeltext {
+      overflow-x: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+  }
+  .thirdbox {
+      margin: 2.5mm 1.95mm 0mm 0mm;
+      border: 1.5px solid black;
+      display: inline-block;
+      flex-direction: column;
+      align-items: center;
+      min-height: 51.5mm;
+  }
+  .thirdbox .name {
+      width: {{third_box_width - 0.4}}mm;
+      padding: 0.5mm 0.2mm 0.5mm 0.2mm;
+  }
+  .thirdbox .info {
+      min-height: 9mm;
+      width: {{third_box_width}}mm;
+      padding: 0.75mm 0mm;
+  }
+  .ghsbox {
+      position: relative;
+  }
+  .centeredghsbox {
+    position: relative;
+    width: {{ ghs_width * 2 }}mm;
+    margin: 0 auto;
+  }
+  .fourthbox {
+      margin: 2.5mm {{vertical_label_margin - 0.55}}mm;
+      display: inline-block;
+      flex-direction: column;
+      align-items: center;
+      border: none;
+      margin-bottom: 0mm;
+      border: 1.5px solid black;
+      min-height: 51.65mm;
+  }
+  .fourthbox .name {
+      width: {{forth_box_width - 0.4}}mm;
+      padding: 0.5mm 0.2mm 0.5mm 0.2mm;
+  }
+  .fourthbox .info {
+      min-height: 4mm;
+      padding: 0.75mm 0mm;
+  }
+  .fourthbox .qrcodebox {
+      border-top: none;
+  }
+  .fifthbox {
+      margin: 2.5mm {{vertical_label_margin - 0.55}}mm;
+      border: 1.5px solid black;
+      align-items: center;
+      display: inline-block;
+      min-height: 30mm
+  }
+  .fifthbox .name {
+      width: {{fifth_box_width - 0.4}}mm;
+      padding: 0.5mm 0.2mm 0.4mm 0.2mm;
+  }
+  .fifthbox .info {
+      min-height: 7.25mm;
+      padding-top: 0.75mm;
+  }
+  .sixthbox {
+      margin: {{horizontal_label_margin}}mm {{vertical_label_margin - 0.5}}mm;
+      align-items: center;
+      min-height: 30mm;
+      display: inline-block;
+      border: 1.5px solid black;
+      width: {{sixth_box_width}}mm;
+  }
+  .sixthbox .name {
+      width: {{sixth_box_width - 0.4}}mm;
+      padding: 0.5mm 0.2mm 0.4mm 0.2mm;
+  }
+  .sixthbox .info {
+      min-height: 7.25mm;
+      padding-top: 0.75mm;
+  }
+  .sixthbox .qrcodebox {
+      border-right: 1.5px solid black;
+      width: {{sixth_box_qrcode_box_width}}mm;
+  }
+  .sixthbox .ghsbox {
+      border-right: 1.5px solid black;
+      width: {{sixth_box_ghs_box_width}}mm;
+  }
+  .ghsbox .ghs {
+      position: absolute;
+  }
+  .ghsbox .ghs:nth-child(1) {
+      top: 1.5mm;
+  }
+  .ghsbox .ghs:nth-child(2), .ghsbox .ghs:nth-child(3) {
+      top: 6mm;
+  }
+  .ghsbox .ghs:nth-child(4) {
+      top: 10.5mm;
+  }
+  .ghsbox .ghs:nth-child(5), .ghsbox .ghs:nth-child(6) {
+      top: 15mm;
+  }
+  .ghsbox .ghs:nth-child(7) {
+      top: 19.5mm;
+  }
+  .ghsbox .ghs:nth-child(8), .ghsbox .ghs:nth-child(9) {
+      top: 24mm;
+  }
+  .ghsbox .ghs:nth-child(1), .ghsbox .ghs:nth-child(4), .ghsbox .ghs:nth-child(7) {
+      left: {{ ghs_width / 2 }}mm;
+  }
+  .ghsbox .ghs:nth-child(3), .ghsbox .ghs:nth-child(6), .ghsbox .ghs:nth-child(9) {
+      left: {{ ghs_width }}mm;
+  }
+  /* special case with only two GHS symbols */
+  .centeredghsbox .ghs:nth-child(1):nth-last-child(2), .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
+    top: 1.5mm;
+  }
+  .centeredghsbox .ghs:nth-child(1):nth-last-child(2) {
+    left: 0;
+  }
+  .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
+    left: {{ ghs_width }}mm;
+  }
+  .outerbox_first_or_second_label {
+    display: flex;
+  }
+  .extrabox {
+    position: absolute;
+    display: flex;
+    align-items: center;
+  }
+  .firstbox .extrabox {
+    top: -0.75mm;
+}
+  .secondbox .extrabox {
+    top: -0.9mm;
+}
+  .extrabox .qrcode {
+    background-position: right center;
+    margin-right:-1.25mm;
+  }
+  .outerbox {
+      margin: 0.125mm 2.5mm 0.25mm;
+      border: none;
+      width: {{outer_box_width}}mm;
+      min-height: 52mm;
+  }
+  .outerbox > div {
+      display: inline-block;
+      vertical-align: top;
+  }
+  .groupbox {
+      width: {{ paper_width - 2 * horizontal_label_margin}}mm;
+      break-inside: avoid;
+      line-height: 3.325mm;
+  }
+{% endblock %}
+
+{% block body %}
+  {% for object_index in range(0,object_amount) %}
+    {% for i in range(0,set_amount) %}
+      <div class="groupbox" style="min-height: {{group_box_height_list[object_index]}}mm">
+      <div class="outerbox_first_or_second_label">
+        <div class="firstbox" style="min-width: {{first_box_min_width_list[object_index]}}mm; white-space: nowrap;">
+          <div class="labeltext" style="padding:1mm {{ text_extra_width_list[object_index]}}mm 0 0.8mm; position:relative;">
+              <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
+                  {{ username_list[object_index] }} &bullet; {{ creation_date_list[object_index] }}
+            <div class="extrabox" style="right: {{ text_extra_width_list[object_index] - 9 }}mm;">
+              {% for hazard_code in hazard_list[object_index] %}
+                  <div class="ghs ghs0{{hazard_code}}"></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="outerbox_first_or_second_label">
+        <div class="secondbox" style="min-width: {{second_box_min_width_list[object_index]}}mm">
+          <div class="labeltext" style="padding-left: 0.75mm; padding-right:{{ text_extra_width_list_qr[object_index] + 2.25 }}mm; padding-top: 0.75mm; position:relative;">
+              <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
+                  {{ username_list[object_index] }}
+                  <br>
+                  {{ creation_date_list[object_index] }}
+            <div class="extrabox"  style="right: {{ text_extra_width_list_qr[object_index] - 11.2 }}mm;">
+              {% for hazard_code in hazard_list[object_index] %}
+                  <div class="ghs ghs0{{hazard_code}}"></div>
+              {% endfor %}
+              <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="outerbox">
+      <div class="thirdbox" style="width: {{third_box_width}}mm;">
+        <div class="name"><b>{{ object_name_list[object_index] }}</b></div>
+        <div class="info">
+            {{ username_list[object_index] }}<br>
+            {{ creation_date_list[object_index] }}
+        </div>
+        <div class="qrcodebox" style="width: {{third_box_width}}mm; height: {{third_box_qrcode_box_height_list[object_index]}}mm; {% if has_ghs_list[object_index] %} border-bottom: 1.5px solid black; {%- endif -%}">
+        <div style="background-image: url({{ qr_code_uri_list[object_index] }});"></div>
+            <span>#{{ sample_code_list[object_index] }}</span>
+        </div>
+        {%- if has_ghs_list[object_index] -%}
+        <div class="ghsbox" style="width: {{third_box_width}}mm; height: {{third_box_ghs_box_height_list[object_index]}}mm">
+          <div class="centeredghsbox" style="margin-left: -0.25mm;">
+              {%- for hazard_code in hazard_list[object_index] -%}
+                  <div class="ghs ghs0{{hazard_code}}"></div>
+              {%- endfor -%}
+          </div>
+        </div>
+        {%- endif -%}
+      </div>
+        <div class="fourthbox" style="width: {{forth_box_width}}mm;">
+        <div class="name"><b>{{ object_name_list[object_index] }}</b></div>
+        <div class="info" style="width: {{forth_box_width}}mm">
+            {{ username_list[object_index] }}<br>
+            {{ creation_date_list[object_index] }}
+        </div>
+        <div class="qrcodebox" style="width: {{forth_box_width}}mm; height: {{fourth_box_qrcode_box_height_list[object_index]}}mm; {% if has_ghs_list[object_index] %} border-bottom: 1.5px solid black; {%- endif -%}">
+        <div style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm"></div>
+          <span>#{{ sample_code_list[object_index] }}</span>
+        </div>
+        {%- if has_ghs_list[object_index] -%}
+        <div class="ghsbox" style="width: {{forth_box_width}}mm; height: {{fourth_box_ghs_box_height_list[object_index]}}mm">
+          <div class="centeredghsbox">
+            {%- for hazard_code in hazard_list[object_index] -%}
+                <div class="ghs ghs0{{hazard_code}}"></div>
+            {%- endfor -%}
+        </div>
+        </div>
+        {%- endif -%}
+      </div>
+        <div class="fifthbox" style="width: {{fifth_box_width}}mm;">
+          <div class="name"><b>{{ object_name_list[object_index] }}</b></div>
+          <div class="info" style="width: {{fifth_box_width}}mm">
+              {{ username_list[object_index] }}<br>
+              {{ creation_date_list[object_index] }}
+          </div>
+          <div class="innerbox" style="width: {{fifth_box_width}}mm; height: {{fifth_inner_box_height_list[object_index] - 0.5}}mm">
+          <div class="qrcodebox" style="width: {{fifth_box_qrcode_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index] - 1}}mm;
+                                      {% if ghs_amount_list[object_index] > 0 %}
+                                          border-right: 1.5px solid black;
+                                      {% endif %}">
+              <div style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm; margin-top: 0.5mm;"></div>
+            <span>#{{ sample_code_list[object_index] }}</span>
+          </div>
+              <div class="ghsbox" style="width: {{fifth_box_ghs_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
+                <div class="centeredghsbox">
+                    {%- for hazard_code in hazard_list[object_index] -%}
+                      <div class="ghs ghs0{{hazard_code}}"></div>
+                    {%- endfor -%}
+                </div>
+              </div>
+          </div>
+      </div>
+        <div class="sixthbox">
+          <div class="name"><b>{{ object_name_list[object_index] }}</b></div>
+          <div class="info" style="width: {{sixth_box_width}}mm">
+              {{ username_list[object_index] }}<br>
+              {{ creation_date_list[object_index] }}
+          </div>
+          <div class="innerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index] - 0.5}}mm; top: 2mm;">
+          <div class="qrcodebox" style="height: {{sixth_inner_box_height_list[object_index] - 0.75}}mm;">
+              <div style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm; margin-top: 0.5mm;"></div>
+            <span>#{{ sample_code_list[object_index] }}</span>
+          </div>
+              {% if has_ghs_list[object_index] %}
+              <div class="ghsbox" style="height: {{sixth_inner_box_height_list[object_index] - 0.25}}mm;">
+                <div class="centeredghsbox">
+                  {%- for hazard_code in hazard_list[object_index] -%}
+                    <div class="ghs ghs0{{hazard_code}}"></div>
+                  {%- endfor -%}
+                </div>
+              </div>
+              {% endif %}
+          </div>
+      </div>
+      </div>
+      </div>
+    {% endfor %}
+  {% endfor %}
+{% endblock %}

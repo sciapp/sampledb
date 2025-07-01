@@ -16,6 +16,9 @@
     {% endif %}
     {{ action.name | get_translated_text }}
     {{ import_information_symbol(action) }}
+    {% if action_is_favorite or not current_user.is_readonly %}
+      <button type="button" class="fa {% if action_is_favorite %}fav-star-on{% else %}fav-star-off{% endif %}" value="" {% if not current_user.is_readonly %}data-action-id="{{ action.id }}"{% endif %}></button>
+    {% endif %}
   </h1>
   {% if action.user_id is not none %}
     <p class="text-muted"><i class="fa {% if is_public %}fa-unlock{% else %}fa-lock{% endif %} fa-fw" aria-hidden="true"></i> {% if not is_public %} {{ _("This custom action is not public.") }} {% else %}  {{ _("This custom action is public.") }} {% endif %}</p>
@@ -72,4 +75,5 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
 {% endblock %}

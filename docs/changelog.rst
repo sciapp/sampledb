@@ -1,6 +1,28 @@
 Changelog
 =========
 
+Version 0.31
+------------
+
+Released on July 1st, 2025.
+
+- Added federated login
+- Added OpenID Connect (OIDC) login
+- Added setting for disabling object assignments for individual locations
+- Added setting for default notification types
+- Added info pages
+- Added query placeholder
+- Refactored related objects tree to improve performance
+- Improved support of array index placeholders and object references in search queries
+- Allow searching for multiple conditions inside a subtree of an object's properties
+- Allow notes on arrays in schema
+- Allow administrators to add users to groups without an invitation
+- Allow disabling project group deletion by non-administrators
+- Added signed export and import for .eln files
+- Added topics to locations
+- Fix handling of quantities with logarithmic units
+
+
 Version 0.30
 ------------
 
@@ -18,7 +40,6 @@ Released on December 9th, 2024.
 - Fixed notification for user languages change
 - Changed PostgreSQL version in the documentation and the docker-compose.yml.dist from 12 to 15, as PostgreSQL 12 is now end-of-life
 - Fixed handling of parentheses and chained operators in advanced search
-
 
 Version 0.29.1
 --------------

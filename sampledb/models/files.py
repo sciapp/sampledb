@@ -41,7 +41,7 @@ class File(Model):
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     uploader: Mapped[typing.Optional['User']] = relationship('User')
     component: Mapped[typing.Optional['Component']] = relationship('Component')
-    preview_image_binary_data: Mapped[typing.Optional[bytes]] = db.deferred(db.Column(db.LargeBinary, nullable=True))  # TODO: migration
+    preview_image_binary_data: Mapped[typing.Optional[bytes]] = db.deferred(db.Column(db.LargeBinary, nullable=True))
     preview_image_mime_type: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
 
     if typing.TYPE_CHECKING:

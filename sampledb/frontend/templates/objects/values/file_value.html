@@ -4,29 +4,25 @@
   {% else %}
     {% set component_uuid = none %}
   {% endif %}
-  {% set ns = namespace(found=false) %}
-  {% for file in files %}
-    {% if (component_uuid is none and file.id == data.file_id) or (component_uuid is not none and file.fed_id == data.file_id) %}
-      {% set ns.found = true %}
-      {% if file.is_hidden %}
-        {{ _('Hidden File') }}
-      {% else %}
-        <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">{{ file.title }}</a>
-        {% if file | has_preview_image and schema.preview %}
-          <br />
-          <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:{% if container_style %}100px{% else %}100%{% endif %};" class="show-fullscreen-image-preview"/>
-          <span class="fullscreen-image-preview">
-            <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
-            <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">
-              <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
-            </a>
-            <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ _('Fullscreen Image Preview')}}">
-          </span>
-        {% endif %}
+  {% set file = get_file(data.file_id, object_id, component_uuid) %}
+  {% if file is not none %}
+    {% if file.is_hidden %}
+      {{ _('Hidden File') }}
+    {% else %}
+      <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">{{ file.title }}</a>
+      {% if file | has_preview_image and schema.preview %}
+        <br />
+        <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:{% if container_style %}100px{% else %}100%{% endif %};" class="show-fullscreen-image-preview"/>
+        <span class="fullscreen-image-preview">
+          <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
+          <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">
+            <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
+          </a>
+          <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ _('Fullscreen Image Preview')}}">
+        </span>
       {% endif %}
     {% endif %}
-  {% endfor %}
-  {% if not ns.found %}
+  {% else %}
     {% if component_uuid is none %}
       {{ _('File') }} #{{ data.file_id }}
     {% else %}

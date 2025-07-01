@@ -6,7 +6,10 @@ import os.path
 import typing
 
 import flask
+import minisign
+from flask import url_for
 
+from . import minisign_keys
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
@@ -59,7 +62,7 @@ def generate_ro_crate_metadata(
                 "sdPublisher": {
                     "@id": "SampleDB"
                 },
-                "version": "1.0",
+                "version": "1.1",
                 "dateCreated": date_created
             },
             {
@@ -155,6 +158,12 @@ def generate_ro_crate_metadata(
             "variableMeasured": property_value_references,
             "mentions": [],
             "comment": [],
+            "isBasedOn": [
+                {
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
+                }
+                for version_info in object_info['versions']
+            ],
             "hasPart": [
                 {
                     "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
@@ -232,6 +241,14 @@ def generate_ro_crate_metadata(
                     }
                 ]
             })
+            previous_version_refs = []
+            for other_version_info in object_info['versions']:
+                if other_version_info['id'] < version_info['id']:
+                    previous_version_refs.append({
+                        "@id": f"./objects/{object_info['id']}/versions/{other_version_info['id']}/"
+                    })
+            if previous_version_refs:
+                ro_crate_metadata["@graph"][-1]['isBasedOn'] = previous_version_refs
 
             schema_json = json.dumps(version_info['schema'], indent=2).encode('utf-8')
             result_files[f"sampledb_export/objects/{object_info['id']}/versions/{version_info['id']}/schema.json"] = schema_json
@@ -340,7 +357,17 @@ def generate_ro_crate_metadata(
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
 
     result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
+    result_files['sampledb_export/ro-crate-metadata.json.minisig'] = _sign_ro_crate_metadata(result_files['sampledb_export/ro-crate-metadata.json'])
     return result_files
+
+
+def _sign_ro_crate_metadata(
+    data: bytes
+) -> bytes:
+    kp = minisign_keys.get_current_key_pair()
+    secret_key = minisign.SecretKey.from_bytes(kp.sk_bytes)
+    sig = secret_key.sign(data, trusted_comment=url_for('frontend.key_list_json', _external=True))
+    return bytes(sig)
 
 
 def _convert_metadata_to_property_values(

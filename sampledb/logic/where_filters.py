@@ -22,6 +22,7 @@ from flask_login import current_user
 from . import datatypes
 from . import languages
 from .utils import get_translated_text, get_postgres_timezone_alias
+from ..models import Objects
 from ..models.files import File
 from ..models.file_log import FileLogEntry
 
@@ -292,7 +293,7 @@ def _has_file(db_obj: typing.Any, file_filter: db.ColumnElement[bool]) -> typing
         ) == 0
     ).subquery()
     return db.and_(
-        db_obj.object_id_column == matching_files.c.object_id,
+        Objects.object_id_column == matching_files.c.object_id,
     )
 
 

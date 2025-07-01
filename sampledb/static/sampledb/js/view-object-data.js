@@ -18,12 +18,22 @@ function toggleShowMore (btn) {
   }
 }
 
-$(document).ready(function () {
-  $('.show-more-button').on('click', function () {
+/**
+ * Set up "Show more" buttons.
+ * @param container a DOM element
+ */
+function setUpShowMoreButtons (container) {
+  $(container).find('.show-more-button').on('click', function () {
     toggleShowMore($(this));
   });
+}
 
-  $('[data-sampledb-plotly-chart]').each(function () {
+/**
+ * Set up Plotly charts.
+ * @param container a DOM element
+ */
+function setUpPlotlyCharts (container) {
+  $(container).find('[data-sampledb-plotly-chart]').each(function () {
     const plotDivID = $(this).data('sampledb-plotly-chart');
     Plotly.newPlot(plotDivID, JSON.parse($(this).text()));
     const toggleLinkID = $(this).data('sampledb-plotly-chart-toggle');
@@ -40,6 +50,13 @@ $(document).ready(function () {
       });
     }
   });
+}
+
+$(document).ready(function () {
+  setUpShowMoreButtons(document);
+  window.setUpFunctions.push(setUpShowMoreButtons);
+  setUpPlotlyCharts(document);
+  window.setUpFunctions.push(setUpPlotlyCharts);
 });
 
 export {

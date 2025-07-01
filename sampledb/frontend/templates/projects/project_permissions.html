@@ -40,22 +40,23 @@
   {% if user_may_edit %}
     <div class="modal fade" id="deleteProjectModal" tabindex="-1" role="dialog" aria-labelledby="deleteProjectModalLabel">
       <div class="modal-dialog" role="document">
-        <form action="{{ url_for('.project', project_id=project.id) }}" method="post">
-        {{ delete_project_form.csrf_token }}
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="deleteProjectModalLabel">{{ _('Delete Project Group') }}</h4>
-          </div>
-          <div class="modal-body">
-            {{ _('If you remove all users and groups from a project group, it will be deleted.') }}
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
-            <button type="submit" class="btn btn-danger" id="button-delete-project" name="delete" value="delete">{{ _('Delete Project Group') }}</button>
-          </div>
-        </div>
-        </form>
+          <form action="{{ url_for('.project', project_id=project.id) }}" method="post">
+            {{ delete_project_form.csrf_token }}
+            <input type="hidden" name="remove_all_permissions" value="on" />
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="deleteProjectModalLabel">{{ _('Delete Project Group') }}</h4>
+              </div>
+              <div class="modal-body">
+                {{ _('If you remove all users and groups from a project group, it will be deleted.') }}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-danger" id="button-delete-project" name="delete" value="delete">{{ _('Delete Project Group') }}</button>
+              </div>
+            </div>
+          </form>
       </div>
     </div>
     <div class="container">

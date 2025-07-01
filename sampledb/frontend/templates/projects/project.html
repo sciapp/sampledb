@@ -348,6 +348,17 @@
                 {{ _('Permissions limit what a user can do, regarding the project group itself as well as objects that the project group has permissions for.<br />These can also be changed later on by using the <strong>Edit Permissions</strong> button.') }}
               </div>
             </div>
+            {% if current_user.is_admin %}
+              <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="{{ invite_user_form.add_directly.name }}"> {{ _('Add user directly, without sending an invitation') }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
             {% if not config['DISABLE_SUBPROJECTS'] %}
             {% if invite_user_form.other_project_ids %}
             <strong>{{ _('Invite user to parent project groups:') }}</strong>
@@ -517,6 +528,8 @@
   {% do set_template_value("language_info.english_id", ENGLISH.id) %}
 
   {% do set_template_value("translations", translations) %}
+  {% do set_template_value("translations.invite_user", _('Invite User')) %}
+  {% do set_template_value("translations.add_user", _('Add User')) %}
   {% do set_template_value("name_language_ids", name_language_ids) %}
   {% do set_template_value("description_language_ids", description_language_ids) %}
   {% do set_template_value("show_edit_form", show_edit_form) %}

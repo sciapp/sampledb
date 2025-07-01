@@ -7,7 +7,7 @@ Export and Import
 
 The PDF file consists of the :ref:`PDF files <pdf_export>` for the individual objects. As a result, only the current metadata versions and only those uploaded files that can be represented in the PDF are included.
 
-The ELN file is a zip archive compatible to the `ELN file format <https://github.com/TheELNConsortium/TheELNFileFormat>`_.
+The ELN file is a zip archive compatible to the `ELN file format <https://github.com/TheELNConsortium/TheELNFileFormat>`_, which is signed by the exporting SampleDB instance.
 
 The archive contains a file ``data.json`` with information on objects in JSON format, including all metadata versions, comments, publications, location history and basic information on uploaded files, alongside information on relevant actions, instruments, users and locations. The uploaded files themselves are in subdirectories, grouped by the individual objects, so the first file uploaded for an object with the ID #42 would be located in the directory ``objects/42/files/0`` under its original upload name. It also contains a ``.rdf`` file containing Dublin Core metadata in RDF/XML format for each object.
 
@@ -18,4 +18,6 @@ Importing  .eln Files
 
 Administrators can enable the import of .eln files using the ``SAMPLEDB_ENABLE_ELN_FILE_IMPORT`` :ref:`configuration environment variable <configuration>`. This feature is experimental and as the ELN file format is currently work in progress, this is not recommended for production systems.
 
-Objects imported from .eln files will be marked as 'imported' since their data provenance cannot be guaranteed. Additionally, for each imported file, any users referenced within the file will be created as hidden users. This approach prevents confusion between activities performed by imported users and those recorded within SampleDB, even though it may result in duplicate internal user records.
+Objects imported from .eln files will be marked as 'imported' since in general their data provenance cannot be guaranteed. If the imported ELN file contains a file ``ro-crate-metadata.json.minisig``, this signature will be checked to confirm the source of the imported data. If the public key of the exporting instance can be fetched successfully and the included signature is valid, objects added from this ELN file will be marked as 'signed import' instead.
+
+Additionally, for each imported file, any users referenced within the file will be created as hidden users. This approach prevents confusion between activities performed by imported users and those recorded within SampleDB, even though it may result in duplicate internal user records.

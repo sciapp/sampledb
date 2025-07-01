@@ -46,6 +46,9 @@
       {% if 'note' in schema['items'] %}
         <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['items']['note'] | get_translated_text }}</span>
       {% endif %}
+      {% if 'note' in schema %}
+        <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>
+      {% endif %}
     </div>
     <div style="flex-grow: 0; flex-basis: 4em;"></div>
     <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="list_array_add" style="height:34px;"><i class="fa fa-plus fa-fw"></i></button>

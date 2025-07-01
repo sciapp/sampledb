@@ -10,7 +10,7 @@
         {% set object_id = referenced_object.object_id %}
         {% set object_reference_counter.value = object_reference_counter.value + 1 %}
         {% set id_prefix_root = "object_reference_" ~ object_reference_counter.value ~ "_" ~ referenced_object.object_id %}
-        {% set search_property_path_prefix = property_path[:-1] + ('*' + property_path[-1],) %}
+        {% set search_property_path_prefix = (search_property_path_prefix or ()) + property_path[:-1] + ('*' + property_path[-1] | string,) %}
         {% set property_path = () %}
         {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
         {% set data = referenced_object.data %}

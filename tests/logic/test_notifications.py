@@ -65,20 +65,32 @@ def test_delete_notification(user):
         sampledb.logic.notifications.mark_notification_as_read(notification.id)
 
 
-def test_set_notification_mode(user):
+def test_set_notification_mode(app, user):
     assert all(
         mode == sampledb.models.NotificationMode.WEBAPP
         for mode in sampledb.logic.notifications.get_notification_modes(user.id).values()
     )
-    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.WEBAPP
+    app.config['DEFAULT_NOTIFICATION_MODES'] = {'DEFAULT': 'EMAIL'}
+    assert all(
+        mode == sampledb.models.NotificationMode.EMAIL
+        for mode in sampledb.logic.notifications.get_notification_modes(user.id).values()
+    )
+    app.config['DEFAULT_NOTIFICATION_MODES'] = {'OTHER': 'IGNORE'}
+    assert all(
+        mode == (sampledb.models.NotificationMode.IGNORE if type == sampledb.models.NotificationType.OTHER else sampledb.models.NotificationMode.WEBAPP)
+        for type, mode in sampledb.logic.notifications.get_notification_modes(user.id).items()
+    )
+    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.IGNORE
     sampledb.logic.notifications.set_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id, sampledb.models.NotificationMode.EMAIL)
     assert all(
         mode == (sampledb.models.NotificationMode.EMAIL if type == sampledb.models.NotificationType.OTHER else sampledb.models.NotificationMode.WEBAPP)
         for type, mode in sampledb.logic.notifications.get_notification_modes(user.id).items()
     )
+    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.EMAIL
     sampledb.logic.notifications.set_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id, sampledb.models.NotificationMode.IGNORE)
     assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.IGNORE
-    sampledb.logic.notifications.set_notification_mode_for_all_types(user.id, sampledb.models.NotificationMode.EMAIL)
+    for notification_type in sampledb.models.NotificationType:
+        sampledb.logic.notifications.set_notification_mode_for_type(notification_type, user.id, sampledb.models.NotificationMode.EMAIL)
     assert all(
         mode == sampledb.models.NotificationMode.EMAIL
         for mode in sampledb.logic.notifications.get_notification_modes(user.id).values()
@@ -87,7 +99,8 @@ def test_set_notification_mode(user):
 
 
 def test_send_notification(app, user):
-    sampledb.logic.notifications.set_notification_mode_for_all_types(user.id, sampledb.models.NotificationMode.EMAIL)
+    for notification_type in sampledb.models.NotificationType:
+        sampledb.logic.notifications.set_notification_mode_for_type(notification_type, user.id, sampledb.models.NotificationMode.EMAIL)
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
 
     server_name = app.config['SERVER_NAME']
@@ -108,6 +121,7 @@ def test_send_notification(app, user):
 
 def test_create_announcement_notification(user):
     assert sampledb.logic.notifications.get_num_notifications(user.id) == 0
+    assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.ANNOUNCEMENT, user.id) == sampledb.models.NotificationMode.WEBAPP
     sampledb.logic.notifications.create_announcement_notification_for_all_users('This is a test message', 'This is an html test message')
     assert sampledb.logic.notifications.get_num_notifications(user.id) == 1
     notification = sampledb.logic.notifications.get_notifications(user.id)[0]

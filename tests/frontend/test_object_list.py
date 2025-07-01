@@ -9,12 +9,18 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from urllib.parse import urlparse, parse_qs
-from reportlab.lib.pagesizes import A4, LETTER
 
 import sampledb
 import sampledb.logic
 import sampledb.models
 
+from ..conftest import wait_for_page_load
+
+
+inch = 72.0
+mm = (inch / 2.54) * 0.1
+A4 = (210*mm,297*mm)
+LETTER = (8.5*inch, 11*inch)
 
 @pytest.fixture
 def user(flask_server):
@@ -78,7 +84,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     filters_modal.find_element(By.CSS_SELECTOR, '[data-id="filter_permissions"]').click()
     filters_modal.find_element(By.XPATH, '//select[@id="filter_permissions"]/parent::div/descendant::span[contains(text(), "Write")]').click()
 
-    filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_FILTERS'] == {}
@@ -93,7 +100,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Save")]').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Save")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_FILTERS'] == {
@@ -120,7 +128,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['user'] == [str(user.id)]
@@ -132,7 +141,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Clear")]').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Clear")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_FILTERS'] == {}
@@ -147,7 +157,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert 'user' not in query_params or query_params['user'] == [str(user.id)]
@@ -171,7 +182,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     options_modal.find_element(By.CSS_SELECTOR, 'input[name="last_edit_info"][value="user"]').click()
     options_modal.find_element(By.CSS_SELECTOR, 'input[name="action_info"][value="instrument"]').click()
 
-    options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_OPTIONS'] == {}
@@ -182,6 +194,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert query_params['action_info'] == ['action']
     assert 'other_databases_info' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
     assert 'display_properties' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
@@ -190,7 +203,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(options_modal, element_locations))
 
-    options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Save")]').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Save")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_OPTIONS'] == {
@@ -199,6 +213,7 @@ def test_object_list_filters_options(flask_server, driver, user):
         "action_info": ["action"],
         "other_databases_info": False,
         "location_info": [],
+        "topic_info": [],
         "display_properties": [],
     }
 
@@ -208,6 +223,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert 'action_info' not in query_params
     assert 'display_properties' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
 
@@ -215,7 +231,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(options_modal, element_locations))
 
-    options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['creation_info'] == ['user']
@@ -223,6 +240,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert query_params['action_info'] == ['action']
     assert 'display_properties' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
 
@@ -230,7 +248,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(options_modal, element_locations))
 
-    options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Clear")]').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Clear")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_OPTIONS'] == {}
@@ -241,6 +260,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert 'action_info' not in query_params
     assert 'other_databases_info' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
     assert 'display_properties' not in query_params
 
 
@@ -296,8 +316,8 @@ def test_object_list_generate_multiple_labels_mixed_formats(object, flask_server
         reader = pypdf.PdfReader(file)
         assert len(reader.pages) == 1
         assert reader.pages[0].extract_text().count(object.name) == 6
-        assert float(reader.pages[0].mediabox.width) == round(A4[0], 4)
-        assert float(reader.pages[0].mediabox.height) == round(A4[1], 4)
+        assert round(float(reader.pages[0].mediabox.width), 4) == round(A4[0], 4)
+        assert round(float(reader.pages[0].mediabox.height), 4) == round(A4[1], 4)
 
 
 def test_object_list_generate_multiple_labels_fixed_widths(object, flask_server, driver, user):
@@ -382,8 +402,8 @@ def test_object_list_generate_multiple_labels_fixed_widths(object, flask_server,
         reader = pypdf.PdfReader(file)
         assert len(reader.pages) == 1
         assert reader.pages[0].extract_text().count(object.name) == 5
-        assert float(reader.pages[0].mediabox.width) == round(A4[1], 4)
-        assert float(reader.pages[0].mediabox.height) == round(A4[0], 4)
+        assert round(float(reader.pages[0].mediabox.width), 4) == round(A4[1], 4)
+        assert round(float(reader.pages[0].mediabox.height), 4) == round(A4[0], 4)
 
 
 def test_object_list_generate_multiple_labels_minimal_height(object, flask_server, driver, user):
@@ -456,8 +476,8 @@ def test_object_list_generate_multiple_labels_minimal_height(object, flask_serve
         reader = pypdf.PdfReader(file)
         assert len(reader.pages) == 1
         assert reader.pages[0].extract_text().count(object.name) == 5
-        assert float(reader.pages[0].mediabox.width) == round(LETTER[0], 4)
-        assert float(reader.pages[0].mediabox.height) == round(LETTER[1], 4)
+        assert round(float(reader.pages[0].mediabox.width), 4) == round(LETTER[0], 4)
+        assert round(float(reader.pages[0].mediabox.height), 4) == round(LETTER[1], 4)
 
 
 def test_object_list_change_signed_in_min_permission(object, flask_server, driver, user):
@@ -483,7 +503,8 @@ def test_object_list_change_signed_in_min_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -509,7 +530,8 @@ def test_object_list_change_signed_in_max_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
 
@@ -541,7 +563,8 @@ def test_object_list_change_anonymous_min_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -571,7 +594,8 @@ def test_object_list_change_anonymous_max_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
 
@@ -610,7 +634,8 @@ def test_object_list_change_user_min_permission(object, flask_server, driver, us
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
     assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.WRITE
 
 
@@ -649,7 +674,8 @@ def test_object_list_change_user_max_permission(object, flask_server, driver, us
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -684,7 +710,8 @@ def test_object_list_change_group_min_permission(object, flask_server, driver, u
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
     assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.WRITE
 
 
@@ -722,7 +749,8 @@ def test_object_list_change_group_max_permission(object, flask_server, driver, u
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -757,7 +785,8 @@ def test_object_list_change_project_group_min_permission(object, flask_server, d
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
     assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
-    driver.find_element(By.ID, "multiselect-submit").click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.WRITE
 
 
@@ -795,5 +824,6 @@ def test_object_list_change_project_group_max_permission(object, flask_server, d
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
-    driver.find_element(By.ID, "multiselect-submit").click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.READ

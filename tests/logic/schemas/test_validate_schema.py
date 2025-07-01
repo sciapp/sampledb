@@ -1132,6 +1132,33 @@ def test_validate_array_schema_with_invalid_style():
         validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_array_schema_note():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'note': 'This is an array. You can add multiple entries.',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_array_schema_invalid_note():
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'note': False,
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        }
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_object_schema():
     schema = {
         'title': 'Example',

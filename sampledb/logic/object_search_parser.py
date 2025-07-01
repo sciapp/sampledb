@@ -53,11 +53,12 @@ class Boolean(Literal):
 
 
 class Attribute(Literal):
-    def __init__(self, input_text: str, start_position: int, value: typing.List[str]) -> None:
+    def __init__(self, input_text: str, start_position: int, value: typing.List[str], is_partial_attribute: bool) -> None:
         super().__init__(input_text, start_position, value)
+        self.is_partial_attribute = is_partial_attribute
 
     def __repr__(self) -> str:
-        return f'<Attribute({self.value})>'
+        return f'<Attribute({self.value}, {self.is_partial_attribute})>'
 
 
 class Null(Literal):
@@ -299,6 +300,31 @@ def apply_unary_operator(
     return new_tokens
 
 
+def apply_partial_attributes(
+        tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]],
+) -> typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]]:
+    previous_tokens = tokens
+    new_tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]] = []
+    for token in reversed(list(previous_tokens)):
+        if isinstance(token, list):
+            new_tokens.insert(0, apply_partial_attributes(token))
+            continue
+        if isinstance(token, Attribute) and token.is_partial_attribute:
+            if not new_tokens or not isinstance(new_tokens[0], list):
+                raise ParseError("Partial attribute without inner clause", token.start_position, token.start_position + len(token.input_text))
+            inner_clause = new_tokens[0]
+            while isinstance(inner_clause, list) and len(inner_clause) == 1:
+                inner_clause = inner_clause[0]
+            if not isinstance(inner_clause, list):
+                raise ParseError("Partial attribute with invalid inner clause", token.start_position, token.start_position + len(token.input_text))
+            expression = [token, new_tokens[0]]
+            new_tokens[0] = expression
+        else:
+            new_tokens.insert(0, token)
+            continue
+    return new_tokens
+
+
 def remove_redundant_lists(
         tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]]
 ) -> typing.Union[Text, Operator, Literal, typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]]]:
@@ -414,19 +440,21 @@ def parse_null(text: str) -> typing.Optional[str]:
     return None
 
 
-def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.List[str]]:
+def parse_attribute(text: str, start: int, end: int) -> typing.Tuple[typing.Optional[typing.List[str]], bool]:
     text = text.strip()
     if text[:1] not in string.ascii_letters + '*':
-        return None
-    if text.count('*') > 1:
-        raise ParseError("Multiple object references", start, end)
-    if '*' in text and '?' in text:
-        raise ParseError("Query cannot contain both an array placeholder (?) and an object reference (*)", start, end)
+        return None, False
     attributes = text.split('.')
+    is_partial_attribute = len(attributes) > 1 and not attributes[-1]
+    if is_partial_attribute:
+        attributes.pop()
     for attribute in attributes:
         # empty attributes
         if not attribute:
             raise ParseError("Invalid attribute name", start, end)
+        # object reference dereferencing
+        if attribute.startswith('*'):
+            attribute = attribute[1:]
         # array placeholder
         if '?' in attribute:
             if attribute == '?':
@@ -439,9 +467,6 @@ def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.L
                 continue
             else:
                 raise ParseError("Invalid array index", start, end)
-        # object reference dereferencing
-        if attribute.startswith('*'):
-            attribute = attribute[1:]
         # attribute name
         if attribute[0] in string.ascii_letters:
             if all(character in (string.ascii_letters + string.digits + '_') for character in attribute):
@@ -449,9 +474,7 @@ def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.L
             else:
                 raise ParseError("Invalid attribute name", start, end)
         raise ParseError("Invalid attribute name", start, end)
-    if attributes.count('?') > 1:
-        raise ParseError("Multiple array placeholders", start, end)
-    return attributes
+    return attributes, is_partial_attribute
 
 
 def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator]]) -> typing.List[typing.Union[Text, Operator, Literal]]:
@@ -498,9 +521,9 @@ def convert_literals(tokens: typing.List[typing.Union[Token, Text, Operator]]) -
             new_tokens.append(Quantity(token.input_text, token.start_position, quantity))
             continue
 
-        attributes = parse_attribute(token.input_text, start, end)
+        attributes, is_partial_attribute = parse_attribute(token.input_text, start, end)
         if attributes is not None:
-            new_tokens.append(Attribute(token.input_text, token.start_position, attributes))
+            new_tokens.append(Attribute(token.input_text, token.start_position, attributes, is_partial_attribute))
             continue
 
         raise ParseError("Unable to parse literal", start, end)
@@ -513,6 +536,7 @@ def parse_query_string(text: str) -> typing.Union[Text, Operator, Literal, typin
     tokens3: typing.List[typing.Union[Token, Text, Operator]] = split_by_operators(tokens2, ['(', ')', ' in ', '==', '!=', '<=', '>=', '=', '<', '>', ' after ', ' on ', ' before ', '!', ' not ', ' and ', ' or ', ' && ', ' || '])
     tokens4: typing.List[typing.Union[Text, Operator, Literal]] = convert_literals(tokens3)
     tokens5: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]] = apply_parentheses(tokens4)
+    tokens5 = apply_partial_attributes(tokens5)
     for operator in ['in', '==', '!=', '>=', '<=', '>', '<', 'after', 'on', 'before']:
         tokens5 = apply_binary_operator(tokens5, operator)
     for operator in ['not', '!']:

@@ -12,12 +12,12 @@ from flask_babel import _
 
 from .. import frontend
 from ...logic.users import create_user, get_user_invitation, set_user_invitation_accepted
-from ...logic.authentication import add_email_authentication
+from ...logic.authentication import add_email_authentication, check_authentication_method_with_login_exists
 from ...logic.utils import send_user_invitation_email
 from ...logic.security_tokens import verify_token
 
 from ...models import users
-from ...models import Authentication, UserType
+from ...models import UserType
 
 from ... import db
 
@@ -115,10 +115,8 @@ def registration() -> FlaskResponseT:
         if registration_form.validate_on_submit():
             name = registration_form.name.data
             password = registration_form.password.data
-            # check, if email in authentication-method already exists
-            authentication_method = Authentication.query.filter(Authentication.login['login'].astext == email).first()
             # no user with this name and contact email in db => add to db
-            if authentication_method is None:
+            if not check_authentication_method_with_login_exists(email):
                 user = create_user(name=name, email=email, type=UserType.PERSON)
                 add_email_authentication(user.id, email, password)
                 if invitation_id is not None:

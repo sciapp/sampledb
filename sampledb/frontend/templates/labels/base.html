@@ -1,0 +1,69 @@
+<html lang="en">
+    <head>
+        <title>{{ service_name }}</title>
+        <style>
+            {% block style %}{% endblock %}
+            @font-face {
+                font-family: NimbusSans;
+                src: url({{ FONT_URIS["NimbusSans-Regular.otf"] }});
+            }
+            @font-face {
+                font-family: NimbusSans;
+                src: url({{ FONT_URIS["NimbusSans-Bold.otf"] }});
+                font-weight: bold;
+            }
+            body {
+                font-size: 8pt;
+                font-family: NimbusSans, sans-serif;
+                line-height: 125%;
+            }
+            .ghs00 {
+                background-image: url({{ GHS_IMAGE_URIS[0] }});
+            }
+            .ghs01 {
+                background-image: url({{ GHS_IMAGE_URIS[1] }});
+            }
+            .ghs02 {
+                background-image: url({{ GHS_IMAGE_URIS[2] }});
+            }
+            .ghs03 {
+                background-image: url({{ GHS_IMAGE_URIS[3] }});
+            }
+            .ghs04 {
+                background-image: url({{ GHS_IMAGE_URIS[4] }});
+            }
+            .ghs05 {
+                background-image: url({{ GHS_IMAGE_URIS[5] }});
+            }
+            .ghs06 {
+                background-image: url({{ GHS_IMAGE_URIS[6] }});
+            }
+            .ghs07 {
+                background-image: url({{ GHS_IMAGE_URIS[7] }});
+            }
+            .ghs08 {
+                background-image: url({{ GHS_IMAGE_URIS[8] }});
+            }
+            .ghs09 {
+                background-image: url({{ GHS_IMAGE_URIS[9] }});
+            }
+            .ghs {
+                width: {{ghs_width}}mm;
+                height: {{ghs_width}}mm;
+                background-size: contain;
+                flex: 0 0 {{ghs_width}}mm;
+                background-repeat: no-repeat;
+            }
+            .qrcode {
+                width: {{qrcode_width}}mm;
+                height: {{qrcode_width}}mm;
+                background-size: contain;
+                flex: 0 0 {{qrcode_width}}mm;
+                background-repeat: no-repeat;
+            }
+        </style>
+    </head>
+<body>
+    {% block body %}{% endblock %}
+</body>
+</html>

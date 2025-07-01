@@ -20,10 +20,10 @@ import pytz.exceptions
 import requests
 import sqlalchemy
 from PIL import Image
-from reportlab.lib.units import mm
 
 from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
 from .frontend.labels import PAGE_SIZE_KEYS, PAGE_SIZES
+from .models.notifications import NotificationMode, NotificationType
 
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'SQLALCHEMY_DATABASE_URI',
@@ -40,6 +40,13 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'LDAP_NAME_ATTRIBUTE',
     'LDAP_MAIL_ATTRIBUTE',
     'LDAP_OBJECT_DEF',
+}
+
+OIDC_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
+    'OIDC_NAME',
+    'OIDC_ISSUER',
+    'OIDC_CLIENT_ID',
+    'OIDC_CLIENT_SECRET',
 }
 
 
@@ -79,7 +86,13 @@ def parse_configuration_values() -> None:
                 pass
 
     # parse values as json
-    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST', 'LABEL_PAPER_FORMATS']:
+    for config_name in [
+        'SERVICE_DESCRIPTION',
+        'EXTRA_USER_FIELDS',
+        'DOWNLOAD_SERVICE_WHITELIST',
+        'LABEL_PAPER_FORMATS',
+        'DEFAULT_NOTIFICATION_MODES'
+    ]:
         value = globals().get(config_name)
         if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
             try:
@@ -94,6 +107,7 @@ def parse_configuration_values() -> None:
         'ONLY_ADMINS_CAN_CREATE_GROUPS',
         'ONLY_ADMINS_CAN_DELETE_GROUPS',
         'ONLY_ADMINS_CAN_CREATE_PROJECTS',
+        'ONLY_ADMINS_CAN_DELETE_PROJECTS',
         'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
         'DISABLE_USE_IN_MEASUREMENT',
         'DISABLE_SUBPROJECTS',
@@ -115,12 +129,21 @@ def parse_configuration_values() -> None:
         'ENABLE_FUNCTION_CACHES',
         'ENABLE_CONTENT_SECURITY_POLICY',
         'ENABLE_ELN_FILE_IMPORT',
+        'ELN_FILE_IMPORT_ALLOW_HTTP',
         'ENABLE_FEDERATION_DISCOVERABILITY',
         'ENABLE_WEBHOOKS_FOR_USERS',
         'WEBHOOKS_ALLOW_HTTP',
         'ENABLE_FIDO2_PASSKEY_AUTHENTICATION',
         'DISABLE_OUTDATED_USE_AS_TEMPLATE',
         'DISABLE_TOPICS',
+        'ENABLE_FEDERATED_LOGIN',
+        'ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER',
+        'OIDC_ONLY',
+        'OIDC_DISABLE_NONCE',
+        'OIDC_ACCESS_TOKEN_AS_API_KEY',
+        'OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION',
+        'WORKFLOW_VIEW_MODALS',
+        'WORKFLOW_VIEW_COLLAPSED',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -215,8 +238,8 @@ def is_label_paper_formats_valid() -> bool:
             print(ansi_color(f'LABEL_PAPER_FORMATS: invalid paper_format in format definition {i}.\n', color=31))
             return False
         page_size = PAGE_SIZES[PAGE_SIZE_KEYS[format_definition['paper_format']]]
-        page_width = page_size[0] / mm
-        page_height = page_size[1] / mm
+        page_width = page_size[0]
+        page_height = page_size[1]
         used_page_width = format_definition['labels_in_row'] * format_definition['label_width'] + (format_definition['labels_in_row'] - 1) * format_definition['margin_horizontal']
         used_page_height = format_definition['labels_in_col'] * format_definition['label_height'] + (format_definition['labels_in_col'] - 1) * format_definition['margin_vertical']
         if page_width < used_page_width or page_height < used_page_height:
@@ -224,6 +247,27 @@ def is_label_paper_formats_valid() -> bool:
             return False
 
     return is_valid
+
+
+def is_default_notification_modes_valid() -> bool:
+    """
+    Check if the default notification mode dict is valid.
+    """
+    if DEFAULT_NOTIFICATION_MODES is None:
+        return True
+    if not isinstance(DEFAULT_NOTIFICATION_MODES, dict):
+        print(ansi_color(f'DEFAULT_NOTIFICATION_MODES must be dict, but got {type(DEFAULT_NOTIFICATION_MODES)}.\n', color=31))
+        return False
+    for key, value in DEFAULT_NOTIFICATION_MODES.items():
+        valid_keys = [notification_type.name.upper() for notification_type in NotificationType] + ["DEFAULT"]
+        if key not in valid_keys:
+            print(ansi_color(f'DEFAULT_NOTIFICATION_MODES keys must be one of {valid_keys!r}, but got {key!r}.\n', color=31))
+            return False
+        valid_modes = [notification_mode.name.upper() for notification_mode in NotificationMode]
+        if value not in valid_modes:
+            print(ansi_color(f'DEFAULT_NOTIFICATION_MODES values must be one of {valid_modes!r}, but got {value!r}.\n', color=31))
+            return False
+    return True
 
 
 def check_config(
@@ -267,6 +311,17 @@ def check_config(
     if missing_config_keys:
         print(
             'LDAP authentication will be disabled, because the following '
+            'configuration values are missing:\n -',
+            '\n - '.join(missing_config_keys),
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    missing_config_keys = OIDC_REQUIRED_CONFIG_KEYS - defined_config_keys
+    if missing_config_keys:
+        print(
+            'OIDC authentication will be disabled, because the following '
             'configuration values are missing:\n -',
             '\n - '.join(missing_config_keys),
             '\n',
@@ -324,6 +379,15 @@ def check_config(
             'value DOWNLOAD_SERVICE_SECRET is missing.\n'
             '\n',
             file=sys.stderr
+        )
+        show_config_info = True
+
+    if 'ENABLE_FEDERATED_LOGIN' not in defined_config_keys and 'ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER' in defined_config_keys:
+        print(
+            'The configuration value ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER '
+            'will have no effect, because the configuration value '
+            'ENABLE_FEDERATED_LOGIN is missing.\n'
+            '\n'
         )
         show_config_info = True
 
@@ -615,6 +679,14 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not is_default_notification_modes_valid():
+        can_run = False
+        show_config_info = True
+
+    if config['OIDC_CREATE_ACCOUNT'] not in ('no', 'deny_existing', 'auto_link'):
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -660,6 +732,19 @@ LDAP_CONNECT_TIMEOUT = 5
 # LDAP credentials, may both be None if anonymous access is enabled
 LDAP_USER_DN = None
 LDAP_PASSWORD = None
+
+# OIDC settings
+OIDC_NAME = None
+OIDC_ISSUER = None
+OIDC_CLIENT_ID = None
+OIDC_CLIENT_SECRET = None
+OIDC_SCOPES = 'openid profile email'
+OIDC_DISABLE_NONCE = False
+OIDC_ROLES = None
+OIDC_ONLY = False
+OIDC_CREATE_ACCOUNT = 'auto_link'
+OIDC_ACCESS_TOKEN_AS_API_KEY = False
+OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION = False
 
 # email settings
 MAIL_SERVER = None
@@ -737,6 +822,7 @@ ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 ONLY_ADMINS_CAN_CREATE_GROUPS = False
 ONLY_ADMINS_CAN_DELETE_GROUPS = False
 ONLY_ADMINS_CAN_CREATE_PROJECTS = False
+ONLY_ADMINS_CAN_DELETE_PROJECTS = False
 ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES = True
 
 DISABLE_USE_IN_MEASUREMENT = False
@@ -758,6 +844,8 @@ SHOW_PREVIEW_WARNING = False
 DISABLE_INLINE_EDIT = False
 
 SHOW_OBJECT_TITLE = False
+WORKFLOW_VIEW_MODALS = False
+WORKFLOW_VIEW_COLLAPSED = False
 
 FULL_WIDTH_OBJECTS_TABLE = True
 
@@ -770,6 +858,8 @@ ENABLE_FEDERATION_DISCOVERABILITY = True
 ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False
+ENABLE_FEDERATED_LOGIN = False
+ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER = False
 
 ENABLE_WEBHOOKS_FOR_USERS = False
 WEBHOOKS_ALLOW_HTTP = False
@@ -797,6 +887,7 @@ TEMPORARY_FILE_TIME_LIMIT = 7 * 24 * 60 * 60
 ENABLE_CONTENT_SECURITY_POLICY = True
 
 ENABLE_ELN_FILE_IMPORT = False
+ELN_FILE_IMPORT_ALLOW_HTTP = False
 
 ENABLE_FIDO2_PASSKEY_AUTHENTICATION = False
 
@@ -807,6 +898,8 @@ DISABLE_OUTDATED_USE_AS_TEMPLATE = False
 DISABLE_TOPICS = False
 
 MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
+
+DEFAULT_NOTIFICATION_MODES = None
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
@@ -824,3 +917,6 @@ if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
 # remove trailing slashes from Download Service url
 if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
     DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]  # pylint: disable=unsubscriptable-object
+
+if OIDC_ONLY:
+    DISABLE_INVITATIONS = True

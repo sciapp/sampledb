@@ -36,9 +36,10 @@ import pytz
 import numpy as np
 
 from ..logic import errors
+from ..logic.caching import cache_per_request
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
-from ..logic.eln_import import get_eln_import_for_object
+from ..logic.eln_import import get_eln_import_for_object, get_import_signed_by
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
@@ -51,6 +52,7 @@ from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.schemas import get_default_data
 from ..logic.actions import Action
 from ..logic.action_types import ActionType
+from ..logic.info_pages import InfoPage, get_info_pages_for_endpoint
 from ..logic.instruments import Instrument
 from ..logic.instrument_log_entries import InstrumentLogFileAttachment
 from ..logic.action_permissions import get_sorted_actions_for_user, get_actions_with_permissions
@@ -64,9 +66,10 @@ from ..logic.objects import get_object
 from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
-from ..logic.files import File
+from ..logic.files import File, get_file as get_file_logic
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
+from .info_pages import InfoPageAcknowledgementForm
 
 
 class JinjaFilter:
@@ -115,7 +118,8 @@ JinjaFunction()(zip_longest)
 JinjaFunction()(get_default_data)
 JinjaFunction()(apply_diff)
 JinjaFunction()(invert_diff)
-
+JinjaFunction()(get_import_signed_by)
+JinjaFunction()(InfoPageAcknowledgementForm)
 
 qrcode_cache: typing.Dict[str, str] = {}
 
@@ -138,6 +142,19 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
     if should_cache:
         qrcode_cache[url] = qrcode_url
     return qrcode_url
+
+
+@JinjaFunction()
+def get_file(
+        file_id: int,
+        object_id: int,
+        component_uuid: typing.Optional[str] = None
+) -> typing.Optional[File]:
+    component_id = get_component_id_by_uuid(component_uuid)
+    try:
+        return get_file_logic(file_id, object_id, component_id)
+    except errors.FileDoesNotExistError:
+        return None
 
 
 @JinjaFilter()
@@ -1711,6 +1728,7 @@ def current_utc_datetime() -> datetime:
 
 
 @JinjaFunction()
+@cache_per_request()
 def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User]]:
     if isinstance(user, int):
         user = get_user(user)
@@ -1879,3 +1897,14 @@ def get_action_type_ids_with_usable_actions() -> typing.Set[int]:
                 continue
             action_type_ids_with_usable_actions.add(action.type.id)
     return action_type_ids_with_usable_actions
+
+
+@JinjaFunction()
+def get_info_pages() -> typing.Sequence[InfoPage]:
+    if not current_user.is_authenticated or current_user.is_readonly:
+        return []
+    return get_info_pages_for_endpoint(
+        endpoint=flask.request.endpoint,
+        user_id=current_user.id,
+        exclude_disabled=True
+    )

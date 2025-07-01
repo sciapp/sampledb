@@ -229,7 +229,7 @@ def _validate_array_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'items', 'style', 'tooltip', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions'}
+    valid_keys = {'type', 'title', 'items', 'style', 'tooltip', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions', 'note'}
     required_keys = {'type', 'title', 'items'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -276,6 +276,7 @@ def _validate_array_schema(
         if has_default_items:
             raise ValidationError('default and defaultItems are mutually exclusive', path)
         validate(schema['default'], schema, path + ['(default)'], strict=strict)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_tags_schema(
@@ -474,35 +475,35 @@ def _validate_object_schema(
     if 'recipes' in schema:
         if not isinstance(schema['recipes'], list):
             raise ValidationError('recipes must be list', path)
-        for recipe in schema['recipes']:
+        for i, recipe in enumerate(schema['recipes']):
             if 'name' not in recipe:
-                raise ValidationError('missing recipe name', path + ['(recipes)'])
+                raise ValidationError('missing recipe name', path + ['(recipes)', f'[{i}]'])
             if not isinstance(recipe['name'], str) and not isinstance(recipe['name'], dict):
-                raise ValidationError('recipe name must be str or dict', path + ['(recipes)'])
+                raise ValidationError('recipe name must be str or dict', path + ['(recipes)', f'[{i}]'])
             if isinstance(recipe['name'], dict):
                 if 'en' not in recipe['name']:
-                    raise ValidationError('recipe name must include an english translation', path + ['(recipes)'])
+                    raise ValidationError('recipe name must include an english translation', path + ['(recipes)', f'[{i}]'])
                 for lang_code in recipe['name'].keys():
                     if lang_code not in all_language_codes:
-                        raise ValidationError('recipe name must only contain known languages', path + ['(recipes)'])
+                        raise ValidationError('recipe name must only contain known languages', path + ['(recipes)', f'[{i}]'])
                 for name_text in recipe['name'].values():
                     if not isinstance(name_text, str):
-                        raise ValidationError('recipe name must only contain text', path + ['(recipes)'])
+                        raise ValidationError('recipe name must only contain text', path + ['(recipes)', f'[{i}]'])
             if 'property_values' not in recipe:
-                raise ValidationError('missing property_values', path + ['(recipes)'])
+                raise ValidationError('missing property_values', path + ['(recipes)', f'[{i}]'])
             for property_name in recipe['property_values']:
                 if property_name not in schema['properties'].keys():
-                    raise ValidationError(f'unknown property: {property_name}', path + ['(recipes)'])
+                    raise ValidationError(f'unknown property: {property_name}', path + ['(recipes)', f'[{i}]'])
                 if schema['properties'][property_name]['type'] not in ['text', 'quantity', 'datetime', 'bool']:
-                    raise ValidationError('unsupported type in recipe', path + ['(recipes)', property_name])
+                    raise ValidationError('unsupported type in recipe', path + ['(recipes)', f'[{i}]', property_name])
                 if recipe['property_values'][property_name] is not None:
-                    validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name], strict=strict)
+                    validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', f'[{i}]', property_name], strict=strict)
                     if recipe['property_values'][property_name]['_type'] == 'quantity' and \
                        ((isinstance(schema['properties'][property_name]['units'], str) and recipe['property_values'][property_name]['units'] != schema['properties'][property_name]['units']) or
                        (recipe['property_values'][property_name]['units'] not in schema['properties'][property_name]['units'])):
-                        raise ValidationError(f'Invalid unit {recipe["property_values"][property_name]["units"]}, allowed unit(s): {schema["properties"][property_name]["units"]}', path + ['(recipes)', property_name])
+                        raise ValidationError(f'Invalid unit {recipe["property_values"][property_name]["units"]}, allowed unit(s): {schema["properties"][property_name]["units"]}', path + ['(recipes)', f'[{i}]', property_name])
                 elif schema['properties'][property_name]['type'] == 'bool':
-                    raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
+                    raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', f'[{i}]', property_name])
 
     for show_more_key in ['show_more', 'workflow_show_more']:
         if show_more_key in schema:

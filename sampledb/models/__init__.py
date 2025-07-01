@@ -13,6 +13,7 @@ from . import files
 from . import file_log
 from . import groups
 from . import group_categories
+from . import info_pages
 from . import instruments
 from . import instrument_log_entries
 from . import instrument_translation
@@ -35,7 +36,7 @@ from .actions import Action, ActionType, SciCatExportType
 from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .api_log import APILogEntry, HTTPMethod
-from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod
+from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, SAMLArtifacts, SAMLMetadata, SAMLMetadataType
 from .background_tasks import BackgroundTask, BackgroundTaskStatus
 from .comments import Comment
 from .components import Component
@@ -50,6 +51,7 @@ from .files import File
 from .file_log import FileLogEntry, FileLogEntryType
 from .groups import Group
 from .group_categories import GroupCategory
+from .info_pages import InfoPage, InfoPageAcknowledgement
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .instrument_translation import InstrumentTranslation
@@ -59,6 +61,7 @@ from .location_log import LocationLogEntry, LocationLogEntryType
 from .location_permissions import AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
 from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
+from .minisign_keys import KeyPair
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
@@ -89,6 +92,7 @@ __all__ = [
     'file_log',
     'groups',
     'group_categories',
+    'info_pages',
     'instruments',
     'instrument_log_entries',
     'instrument_translation',
@@ -134,6 +138,8 @@ __all__ = [
     'Group',
     'GroupCategory',
     'HTTPMethod',
+    'InfoPage',
+    'InfoPageAcknowledgement',
     'Instrument',
     'InstrumentTranslation',
     'InstrumentLogEntry',
@@ -180,6 +186,9 @@ __all__ = [
     'TemporaryFile',
     'Topic',
     'TwoFactorAuthenticationMethod',
+    'SAMLArtifacts',
+    'SAMLMetadata',
+    'SAMLMetadataType',
     'User',
     'UserFederationAlias',
     'FederatedIdentity',
@@ -213,4 +222,5 @@ __all__ = [
     'FedObjectLocationAssignmentLogEntryType',
     'Webhook',
     'WebhookType',
+    'KeyPair'
 ]

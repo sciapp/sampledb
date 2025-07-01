@@ -8,7 +8,7 @@ import flask
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 
-from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
+from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, login_via_oidc_access_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
 from ...logic.users import User
 from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic
@@ -27,9 +27,18 @@ multi_auth_for_access_tokens = MultiAuth(http_basic_auth, http_api_token_or_refr
 def verify_api_token_or_access_token(api_token: typing.Optional[str]) -> typing.Optional[User]:
     if not api_token:
         return None
+
+    # login_via_oidc_access_token should be the last method to be called,
+    # otherwise, if OIDC is configured, even the login using other types of
+    # API tokens would be blocked on an HTTP request.
+    # Additionally, this avoids unnecessarily sharing valid API tokens with
+    # the provider, even if the provider is trusted.
     user = login_via_api_token(api_token)
     if user is None:
         user = login_via_api_access_token(api_token)
+    if user is None:
+        user = login_via_oidc_access_token(api_token)
+
     if user is None or not user.is_active:
         return None
     flask.g.user = user

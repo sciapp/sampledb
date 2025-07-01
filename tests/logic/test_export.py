@@ -11,6 +11,7 @@ import tarfile
 import tempfile
 import zipfile
 
+import minisign
 import pytest
 import rocrate_validator.models
 import rocrate_validator.services
@@ -18,6 +19,7 @@ import rocrate_validator.utils
 from rocrate.rocrate import ROCrate
 
 import sampledb
+from sampledb.logic.eln_import import _json_has_valid_signature
 from sampledb.models import User
 from sampledb.logic import export, objects, actions, files
 
@@ -323,6 +325,11 @@ def test_eln_export(user, app):
     app.config['SERVER_NAME'] = server_name
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
         assert zip_file.testzip() is None
+
+        with zip_file.open('sampledb_export/ro-crate-metadata.json.minisig') as sig_file:
+            ro_crate_metadata_sig = minisign.Signature.from_bytes(sig_file.read())
+            assert ro_crate_metadata_sig.trusted_comment == 'http://localhost/.well-known/keys.json'
+
         with zip_file.open('sampledb_export/ro-crate-metadata.json') as data_file:
             json.load(data_file)
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -332,17 +339,12 @@ def test_eln_export(user, app):
             for severity in [
                 rocrate_validator.models.Severity.REQUIRED
             ]:
-                result = rocrate_validator.services.validate({
-                    "profiles_path": rocrate_validator.utils.get_profiles_path(),
-                    "profile_identifier": "ro-crate",
-                    "requirement_severity": severity.name,
-                    "requirement_severity_only": False,
-                    "inherit_profiles": True,
-                    "verbose": True,
-                    "data_path": rocrate_dir,
-                    "ontology_path": None,
-                    "abort_on_first": False
-                })
+                result = rocrate_validator.services.validate(rocrate_validator.models.ValidationSettings(
+                    profiles_path=rocrate_validator.utils.get_profiles_path(),
+                    profile_identifier="ro-crate-1.1",
+                    requirement_severity=severity.name,
+                    rocrate_uri=rocrate_validator.utils.URI(rocrate_dir),
+                ))
                 result_dict = result.to_dict()
                 assert result_dict['issues'] == []
                 assert result_dict['passed']

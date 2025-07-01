@@ -29,6 +29,7 @@ class NotificationType(enum.Enum):
     REMOTE_OBJECT_IMPORT_FAILED = 10
     REMOTE_OBJECT_IMPORT_NOTES = 11
     AUTOMATIC_USER_FEDERATION = 12
+    # Document any additional values in docs/administrator_guide/configuration.rst
 
 
 @enum.unique
@@ -74,7 +75,7 @@ class NotificationModeForType(Model):
     __tablename__ = 'notification_mode_for_types'
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    type: Mapped[typing.Optional[NotificationType]] = db.Column(db.Enum(NotificationType), nullable=True)
+    type: Mapped[NotificationType] = db.Column(db.Enum(NotificationType), nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     mode: Mapped[NotificationMode] = db.Column(db.Enum(NotificationMode), nullable=False)
 
@@ -87,7 +88,7 @@ class NotificationModeForType(Model):
 
     def __init__(
             self,
-            type: typing.Optional[NotificationType],
+            type: NotificationType,
             user_id: int,
             mode: NotificationMode
     ) -> None:

@@ -29,7 +29,7 @@
 {% block content %}
 <h1>{{ _('Preferences') }}</h1>
 <h2 id="account_information">{{ _('Account Information') }}</h2>
-<form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+<form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
     {{ change_user_form.csrf_token() }}
     <div class="form-group {% if change_user_form.name.errors %} has-error{% endif %}">
         <label for="input-username" class="col-sm-4 control-label">{{ _('Name') }}</label>
@@ -85,7 +85,7 @@
     <div class="form-group">
         <label for="extra_field_{{ extra_field_id }}" class="col-sm-4 control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (user.extra_fields or {}).get(extra_field_id, '') }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (current_user.extra_fields or {}).get(extra_field_id, '') }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
         </div>
     </div>
     {% endfor %}
@@ -107,23 +107,45 @@
          </thead>
          <tbody>
            {% for authentication in authentications %}
+           {% if authentication.type.name.lower() != 'federated_login' or (authentication.type.name.lower() == 'federated_login' and config["ENABLE_FEDERATED_LOGIN"]) %}
            <tr>
-               <td style="vertical-align: middle;">{{authentication.login.get('login', authentication.login.get('description', ''))}}</td>
-               <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other'), 'fido2_passkey': _('FIDO2 Passkey')}[authentication.type.name.lower()] }}</td>
+               <td style="vertical-align: middle;">
+                  {% if authentication.type.name.lower() != 'federated_login' %}
+                    {{authentication.login.get('login', authentication.login.get('description', ''))}}
+                  {% else %}
+                    {% set fed_user = get_user(user_id=authentication.login.get('fed_user_id'), component_id=authentication.login.get('component_id')) %}
+                    <a href="{{ url_for('.user_profile', user_id=fed_user.id) }}">{{ fed_user.get_name() }}</a> (<a href="{{ url_for('.component', component_id=fed_user.component.id) }}">{{ fed_user.component.get_name() }}</a>)
+                    {{ import_information_symbol(fed_user) }}
+                  {% endif %}
+               </td>
+               <td style="vertical-align: middle;">{{
+                  {
+                    'ldap': 'LDAP',
+                    'email': _('Email'),
+                    'other': _('Other'),
+                    'fido2_passkey': _('FIDO2 Passkey'),
+                    'federated_login': _('Federated Login'),
+                    'oidc': _('OIDC'),
+                  }[authentication.type.name.lower()]
+               }}</td>
                <td class="text-right">
-                   <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+                   <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
                        <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
                        {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                        {% if authentications|length > 1 %}
                           {% if confirmed_authentication_methods > 1 %}
-                             {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
+                             {% if authentication.type.name.lower() not in ('ldap', 'fido2_passkey', 'federated_login', 'oidc') %}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                              {% endif %}
-                             <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+                             {% if authentication.type.name.lower() != 'federated_login' %}
+                               <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+                             {% else %}
+                               <button type="submit" class="btn btn-danger" name="remove" value="Remove" data-toggle="tooltip" data-placement="top" title="{{ _('To remove this authentication method, revoke the corresponding federated identity.') }}" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
+                             {% endif %}
                           {% else %}
                                {% if authentication.confirmed  %}
-                                 {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
+                                 {% if authentication.type.name.lower() not in ('ldap', 'fido2_passkey', 'federated_login', 'oidc') %}
                                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                  {% endif %}
                                  <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -132,7 +154,7 @@
                                {% endif %}
                           {% endif %}
                        {% else %}
-                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
+                         {% if authentication.confirmed and authentication.type.name.lower() not in ('ldap', 'fido2_passkey', 'federated_login', 'oidc') %}
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                          {% endif %}
                          <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -140,15 +162,18 @@
                    </form>
               </td>
            </tr>
+           {% endif %}
            {% endfor %}
          </tbody>
-         <tfoot>
-           <tr>
-             <td></td>
-             <td></td>
-             <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#addAuthenticationMethodModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
-           </tr>
-         </tfoot>
+         {% if not is_oidc_only_auth_method %}
+          <tfoot>
+            <tr>
+              <td></td>
+              <td></td>
+              <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#addAuthenticationMethodModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+            </tr>
+          </tfoot>
+         {% endif %}
        </table>
     </div>
 
@@ -172,7 +197,7 @@
              <td>{{ authentication.login['description'] }}</td>
              <td><a href="{{ url_for('.current_user_api_log', api_token_id=authentication.id) }}">{{ _('View Log')}}</a></td>
              <td class="text-right">
-               <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+               <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
                  {{ authentication_method_form.csrf_token() }}
                  <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
                  <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -214,7 +239,7 @@
          <td>{{ authentication.login['expiration_utc_datetime'] | babel_format_datetime }}</td>
          <td style="white-space: nowrap"><a href="{{ url_for('.current_user_api_log', api_token_id=authentication.id) }}">{{ _('View Log')}}</a></td>
          <td class="text-right">
-           <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+           <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
              {{ authentication_method_form.csrf_token() }}
              <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
              <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -361,9 +386,9 @@
             <td style="vertical-align: middle">{{ notification_description }}</td>
             {% for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL] %}
             <td class="text-center" style="vertical-align: middle">
-              {% if notification_mode != NotificationMode.IGNORE or notification_can_be_ignored %}
+              {% if notification_mode != NotificationMode.IGNORE or notification_can_be_ignored or notification_modes.get(notification_type) == notification_mode%}
                 <label for="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" class="sr-only">{{ notification_mode.name.lower() }}</label>
-                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.IGNORE if (notification_type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED and not is_instrument_responsible_user) else NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
+                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, NotificationMode.WEBAPP) == notification_mode %}checked="checked"{% endif %}/>
               {% endif %}
             </td>
             {% endfor %}
@@ -492,6 +517,52 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-workflow-view-modals-yes">
+        {{ _('Show workflow views in popup windows') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-workflow-view-modals" id="input-workflow-view-modals-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_MODALS"] is true %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Show workflow views in popup windows.') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-modals" id="input-workflow-view-modals-no" value="no" {% if user_settings["WORKFLOW_VIEW_MODALS"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Show workflow views directly on the object page.') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-modals" id="input-workflow-view-modals-default" value="default" {% if user_settings["WORKFLOW_VIEW_MODALS"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-workflow-view-collapsed-collapsible">
+        {{ _('Collapse objects in workflow views') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Collapse objects in workflow views') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-no" value="no" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Expand objects in workflow views') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-default" value="default" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
       <label class="col-md-4 control-label" for="select-locale">
         {{ _('Language') }}
       </label>
@@ -536,7 +607,7 @@
         </select>
       </span>
     </div>
-    {% if user.is_admin %}
+    {% if current_user.is_admin %}
   <h2 id="administrator_settings">{{ _('Administrator Settings') }}</h2>
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-use-admin-permissions-yes">
@@ -573,7 +644,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="col-md-4 control-label" for="input-show-hidden-users-as-admin">
+      <label class="col-md-4 control-label" for="input-show-hidden-users-as-admin-yes">
         {{ _('Show hidden users in user lists') }}
       </label>
       <div class="radio col-md-4">
@@ -599,7 +670,7 @@
 <div class="modal fade" id="addAuthenticationMethodModal" tabindex="-1" role="dialog" aria-labelledby="addAuthenticationMethodModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form class="form-horizontal" id="form-add-authentication-methods" method="post" name="form-add-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <form class="form-horizontal" id="form-add-authentication-methods" method="post" name="form-add-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="addAuthenticationMethodModalLabel">{{ _('Add Authentication Method') }}</h4>
@@ -658,7 +729,7 @@
 <div class="modal fade" id="pwModal{{authentication.id}}" tabindex="-1" role="dialog" aria-labelledby="pwModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form class="form-horizontal" id="form-change-password" method="post" name="form-change-password" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <form class="form-horizontal" id="form-change-password" method="post" name="form-change-password" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="pwModalLabel">{{ _('Change Password') }}</h4>
@@ -698,7 +769,7 @@
 <div class="modal fade" id="createApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="createApiTokenModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form class="form-horizontal" id="form-add-api-token" method="post" name="form-add-api-token" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <form class="form-horizontal" id="form-add-api-token" method="post" name="form-add-api-token" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="createApiTokenModalLabel">{{ _('Create API Token') }}</h4>
@@ -758,7 +829,7 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
           <h4 class="modal-title" id="addWebhookModalLabel">{{ _('Add Webhook') }}</h4>
         </div>
-        <form method="post" action="{{ url_for('.user_preferences', user_id=user.id) }}" class="form-horizontal">
+        <form method="post" action="{{ url_for('.user_preferences', user_id=current_user.id) }}" class="form-horizontal">
           {{ add_webhook_form.csrf_token() }}
           <div class="modal-body">
             <div class="form-group {% if add_webhook_form.name.errors %}has-error{% endif %}">

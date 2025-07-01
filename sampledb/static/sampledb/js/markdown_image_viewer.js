@@ -1,9 +1,12 @@
 'use strict';
 /* eslint-env jquery */
 
-// Sets event handlers for showing previews of markdown images when clicking on them.
-$(function () {
-  $('.action-user-content img, .instrument-user-content img, .object-user-content img, .topic-user-content img').each(function (_, img) {
+/**
+ * Set up event handlers for viewing markdown images.
+ * @param container a DOM element
+ */
+function setUpMarkdownImageViewerHandlers (container) {
+  $(container).find('.action-user-content img, .instrument-user-content img, .object-user-content img, .topic-user-content img, .info-page-user-content img').each(function (_, img) {
     $(img).click(function () {
       const preview = $(
         '<span class="fullscreen-image-preview">' +
@@ -29,4 +32,9 @@ $(function () {
       preview.show();
     });
   });
+}
+
+$(function () {
+  setUpMarkdownImageViewerHandlers(document);
+  window.setUpFunctions.push(setUpMarkdownImageViewerHandlers);
 });

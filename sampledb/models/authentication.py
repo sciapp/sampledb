@@ -3,6 +3,7 @@
 
 """
 
+from datetime import datetime, timezone
 import enum
 import typing
 
@@ -24,6 +25,8 @@ class AuthenticationType(enum.Enum):
     API_TOKEN = 4
     API_ACCESS_TOKEN = 5
     FIDO2_PASSKEY = 6
+    FEDERATED_LOGIN = 7
+    OIDC = 8
 
 
 class Authentication(Model):
@@ -67,3 +70,44 @@ class TwoFactorAuthenticationMethod(Model):
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["TwoFactorAuthenticationMethod"]]
+
+
+class SAMLArtifacts(Model):
+    __tablename__ = 'saml_artifacts'
+
+    artifact: Mapped[str] = db.Column(db.String, nullable=False, primary_key=True)
+    message: Mapped[str] = db.Column(db.Text, nullable=False)
+    since: Mapped[datetime] = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["SAMLArtifacts"]]
+
+    def __init__(self, artifact: str, message: str):
+        super().__init__(artifact=artifact, message=message, since=datetime.now(timezone.utc))
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}(artifact={self.artifact})>"
+
+
+@enum.unique
+class SAMLMetadataType(enum.Enum):
+    SERVICE_PROVIDER_METADATA = enum.auto()
+    IDENTITY_PROVIDER_METADATA = enum.auto()
+
+
+class SAMLMetadata(Model):
+    __tablename__ = 'saml_metadata'
+
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey("components.id"), primary_key=True)
+    type: Mapped[SAMLMetadataType] = db.Column(db.Enum(SAMLMetadataType), nullable=False, primary_key=True)
+    metadata_xml: Mapped[str] = db.Column(db.Text, nullable=False)
+    since: Mapped[datetime] = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["SAMLMetadata"]]
+
+    def __init__(self, component_id: int, metadata_xml: str, type: SAMLMetadataType):
+        super().__init__(component_id=component_id, metadata_xml=metadata_xml, since=datetime.now(timezone.utc), type=type)
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}(component_id={self.component_id}, since={self.since})>"

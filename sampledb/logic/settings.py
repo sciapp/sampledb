@@ -27,6 +27,8 @@ DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE": None,
     "SHOW_OBJECT_TITLE": None,
     "FULL_WIDTH_OBJECTS_TABLE": None,
+    "WORKFLOW_VIEW_MODALS": None,
+    "WORKFLOW_VIEW_COLLAPSED": None,
     "USE_ADMIN_PERMISSIONS": False,
     "SHOW_INVITATION_LOG": False,
     "SHOW_HIDDEN_USERS_AS_ADMIN": True,
@@ -38,6 +40,7 @@ DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "DEFAULT_ACTION_LIST_FILTERS": {},
     "DEFAULT_OBJECT_LIST_FILTERS": {},
     "DEFAULT_OBJECT_LIST_OPTIONS": {},
+    "DEFAULT_LOCATION_LIST_FILTERS": {},
     "AUTO_LC": True,
     "TIMEZONE": "UTC",
     "AUTO_TZ": True,
@@ -136,7 +139,7 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
             return key in {'OBJECTS_PER_PAGE'}
         return isinstance(value, type(default_value))
     # custom data type verification can be included here
-    if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'FULL_WIDTH_OBJECTS_TABLE'}:
+    if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'FULL_WIDTH_OBJECTS_TABLE', 'WORKFLOW_VIEW_MODALS', 'WORKFLOW_VIEW_COLLAPSED'}:
         return value is None or isinstance(value, bool)
     return False
 

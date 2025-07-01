@@ -25,6 +25,7 @@ class ELNImport(Model):
     import_utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     invalid_reason: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
     user: Mapped['User'] = relationship('User', foreign_keys=[user_id])
+    signed_by: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
     objects: Mapped[typing.List['ELNImportObject']] = relationship('ELNImportObject', back_populates='eln_import')
 
     if typing.TYPE_CHECKING:
