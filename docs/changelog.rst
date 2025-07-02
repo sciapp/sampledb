@@ -12,6 +12,7 @@ Currently in development.
 - Enabled background tasks by default
 - Rerun background tasks that were unable to finish when the SampleDB process is killed
 - Limit new passwords to 72 bytes to match bcrypt length limit
+- Added write access for shared objects
 
 
 Version 0.31.1
