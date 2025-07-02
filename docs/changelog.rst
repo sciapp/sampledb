@@ -40,6 +40,7 @@ Released on April 7th, 2026.
 - Added HTTP API endpoints for bulk object permission management
 - Added documentation for differential backups using borgmatic
 - Added HTTP API endpoints for managing basic group and project group memberships
+- Added write access for shared objects
 
 
 Version 0.32
