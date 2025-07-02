@@ -9,7 +9,6 @@ import urllib.parse
 
 import bcrypt
 import flask
-import fido2.features
 from fido2.server import Fido2Server
 from fido2.webauthn import AttestationConveyancePreference, PublicKeyCredentialRpEntity, AttestedCredentialData
 
@@ -17,9 +16,6 @@ from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
 from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod, FederatedIdentity
 from . import errors, api_log
-
-# enable JSON mapping for webauthn options
-fido2.features.webauthn_json_mapping.enabled = True
 
 
 # number of rounds for generating new salts for hashing passwords with crypt

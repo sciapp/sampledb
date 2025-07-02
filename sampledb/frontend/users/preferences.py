@@ -200,7 +200,7 @@ def _handle_authentication_methods_forms(
             user_id=flask_login.current_user.id,
             authentication_types={AuthenticationType.API_ACCESS_TOKEN}
         ),
-        options=options,
+        options=dict(options),
     )
 
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':

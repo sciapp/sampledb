@@ -236,7 +236,7 @@ def setup_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
     return flask.render_template(
         'two_factor_authentication/set_up_fido2_passkey.html',
         setup_form=setup_form,
-        options=options
+        options=dict(options),
     ), 200, {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -357,7 +357,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
     return flask.render_template(
         'two_factor_authentication/confirm_fido2_passkey.html',
         confirm_form=confirm_form,
-        options=options,
+        options=dict(options),
         method_id=method_id,
         user=user,
         description=method.data.get('description'),
