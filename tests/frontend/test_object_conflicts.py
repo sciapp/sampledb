@@ -141,7 +141,8 @@ def conflict(object, component, user, component_user, action):
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=sampledb.logic.federation.conflicts.calculate_data_hash(data_imported, action.schema),
-        hash_metadata=sampledb.logic.federation.conflicts.calculate_metadata_hash(user_id=component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=sampledb.logic.federation.conflicts.calculate_metadata_hash(user_id=component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = sampledb.logic.federation.conflicts.create_object_version_conflict(
