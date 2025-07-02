@@ -193,7 +193,7 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
         has_errors=has_errors,
         passkey_form=passkey_form,
         components=federated_logins,
-        options=options,
+        options=dict(options),
         saml_user_creation=False,
         federated_login_authentication=bool(flask.session.get('SAMLRequest', None)),
     )

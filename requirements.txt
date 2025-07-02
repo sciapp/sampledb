@@ -23,7 +23,7 @@ defusedxml==0.7.1
 dnspython==2.7.0
 elementpath==4.8.0
 email_validator==2.2.0
-fido2==1.2.0
+fido2==2.0.0
 Flask==3.1.1
 flask-babel==4.0.0
 flask-cors==6.0.1
