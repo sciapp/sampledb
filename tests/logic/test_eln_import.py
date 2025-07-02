@@ -738,7 +738,7 @@ def _get_reference_eln_file_paths():
 
 
 @pytest.mark.parametrize(['eln_file_path'], [[eln_file_path] for eln_file_path in _get_reference_eln_file_paths()])
-def test_import_reference_eln_files(user, eln_file_path):
+def test_import_reference_eln_files(user, eln_file_path, app):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files', eln_file_path), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
@@ -756,7 +756,8 @@ def test_import_reference_eln_files(user, eln_file_path):
                 }
             else:
                 assert import_notes == ['The .eln file did not contain any valid flexible metadata for this object.']
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context():
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) >= 1
     assert len(users_by_id) >= 1

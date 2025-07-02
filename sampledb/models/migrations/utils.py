@@ -250,6 +250,20 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "authentication_type_add_oidc",
         "notification_mode_for_types_add_not_null_constraint",
         'eln_imports_add_signed_by',
+        "languages_add_columns_fed_lang_id_component_id",
+        "languages_lang_code_remove_unique_constraint",
+        "objects_current_add_version_component_id_update_constraint",
+        "objects_previous_add_version_component_id_update_constraint",
+        "objects_subversions_add_version_component_id",
+        "objects_current_add_hash_data_metadata",
+        "objects_previous_add_hash_data_metadata",
+        "objects_subversions_add_hash_data_metadata",
+        "objects_update_hash_data_metadata",
+        "components_add_is_hidden",
+        "object_log_entry_type_add_import_version_conflict",
+        "object_log_entry_type_add_solve_version_conflict",
+        "object_log_user_id_remove_not_null",
+        "fed_object_log_entry_types_add_conflict_types",
     ]
 
     migrations = []
@@ -304,6 +318,28 @@ def column_is_nullable(table_name: str, column_name: str) -> bool:
             'column_name': column_name
         }
     ).scalar() == 'YES')
+
+
+def column_is_unique(table_name: str, column_name: str) -> bool:
+    """
+    Return whether a column is unique.
+
+    :param table_name: the name of the table
+    :param column_name: the namem of the column to check
+    :return: whether the column is unique
+    """
+
+    return db.session.execute(
+        db.text("""
+            SELECT conname
+            FROM pg_constraint
+            WHERE conrelid = :table_name ::regclass::oid AND contype = 'u' AND conname = :column_name;
+        """),
+        params={
+            'table_name': table_name,
+            'column_name': f'{table_name}_{column_name}_key'
+        }
+    ).first() is not None
 
 
 def enum_has_value(enum_name: str, value_name: str) -> bool:

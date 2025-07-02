@@ -103,6 +103,8 @@ function updateObjectPickers () {
     const actionIDs = idsToArray($x.data('sampledbValidActionIds'));
     const requiredPermissions = $x.data('sampledbRequiredPerm') || 1;
     const idsToRemove = idsToArray($x.data('sampledbRemove'));
+    const isConflicting = $x.data('sampledbConflicting');
+
     const objectsToAdd = referencableObjects
       .filter(function (el) {
         return el.max_permission >= requiredPermissions && $.inArray(el.id, idsToRemove) === -1;
@@ -110,7 +112,7 @@ function updateObjectPickers () {
         return actionIDs.length === 0 || $.inArray(el.action_id, actionIDs) !== -1;
       });
     if (isSelectpicker) {
-      $x.find('option[value != ""][value != "-1"]').remove();
+      $x.find('option[value != ""][value != "-1"][data-conflict-relation != "true"]').remove();
       $x.append(
         objectsToAdd.map(function (el) {
           let dataTokens = '';
@@ -129,7 +131,15 @@ function updateObjectPickers () {
           if (el.is_eln_imported) {
             isELNImported = ' data-icon="fa fa-file-archive-o" ';
           }
-          return '<option' + isFederationImported + isELNImported + 'value="' + el.id + '" ' + dataTokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
+          let subtext = '';
+          if (isConflicting) {
+            if (el.id === $x.data('sampledbConflictImportedId')) {
+              subtext = ` data-subtext="${$x.data('sampledbConflictImportedSubtext')}" `;
+            } else if (el.id === $x.data('sampledbConflictLocalId')) {
+              subtext = ` data-subtext="${$x.data('sampledbConflictLocalSubtext')}" `;
+            }
+          }
+          return '<option' + isFederationImported + isELNImported + subtext + 'value="' + el.id + '" ' + dataTokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
         }).join(''));
     } else {
       $x.typeahead('destroy');
@@ -166,7 +176,22 @@ function updateObjectPickers () {
               is_fed: $x.data('sampledbCurrentValueIsFed') === true,
               is_eln_imported: false
             });
+          } else if ($x.data('sampledbDefaultSelected') === -2) {
+            results.unshift({
+              text: $x.data('sampledbConflictLocalValueText').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
+              unescaped_text: $x.data('sampledbConflictLocalValueText'),
+              is_fed: true,
+              is_eln_imported: false
+            });
+          } else if ($x.data('sampledbDefaultSelected') === -3) {
+            results.unshift({
+              text: $x.data('sampledbConflictImportedValueText').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
+              unescaped_text: $x.data('sampledbConflictImportedValueText'),
+              is_fed: true,
+              is_eln_imported: false
+            });
           }
+
           if (!$x.prop('required')) {
             // add placeholder for not selecting an object
             results.unshift({
@@ -330,7 +355,7 @@ function updateObjectPickers () {
       if (isSelectpicker) {
         $x.selectpicker('val', data);
       } else {
-        if (data === -1) {
+        if ([-1, -2, -3].includes(data)) {
           $x.typeahead('val', $x.data('sampledbCurrentValueText'));
         } else {
           for (const object of objectsToAdd) {

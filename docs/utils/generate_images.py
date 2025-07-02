@@ -1088,7 +1088,7 @@ def save_cropped_screenshot_as_file(driver, file_name, box):
 
 
 app = tests.conftest.create_app()
-with app.app_context():
+with app.app_context(), app.test_request_context():
     user = sampledb.models.User(
         name="Example User",
         email="example@example.com",

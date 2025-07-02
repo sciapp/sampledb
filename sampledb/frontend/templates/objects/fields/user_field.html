@@ -1,26 +1,87 @@
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+{% set conflicting = 'imported' in data %}
+  {% if conflicting %}
+    {% set imported_data = data['imported']%}
+    {% set local_data = data['local'] %}
+    {% set data = data['local'] %}
+  {% endif %}
+{% endif %}
+
 {% set selected_user_id = none %}
+{% set selected_user_component = none %}
+
 {% if form_data[id_prefix+'_uid'] %}
   {% set selected_user_id = form_data[id_prefix+'_uid'] | int(None) %}
 {% endif %}
 {% if selected_user_id is none and data is not none and data.user_id %}
   {% set selected_user_id = data.user_id %}
+  {% if 'component_uuid' in data %}
+    {% set selected_user_component = get_component_by_uuid(data.component_uuid) %}
+  {% endif %}
 {% endif %}
 {% if selected_user_id is none %}
   {% set selected_user = None %}
 {% else %}
-  {% set selected_user = get_user_if_exists(selected_user_id) %}
+  {% set selected_user_component_id = selected_user_component.id if selected_user_component is not none else none %}
+  {% set selected_user = get_user_if_exists(selected_user_id, component_id=selected_user_component_id) %}
+{% endif %}
+
+{% if conflicting %}
+  {% set local_user = none %}
+  {% if local_data is not none and 'user_id' in local_data and local_data.user_id is not none %}
+  {% set local_user = get_user_if_exists(local_data.user_id) %}
+  {% endif %}
+
+  {% set imported_user = none %}
+  {% set imported_user_id = none %}
+  {% set imported_user_component = none %}
+
+  {% if imported_data is not none and 'user_id' in imported_data and imported_data.user_id is not none %}
+    {% if 'component_uuid' in imported_data %}
+      {% set imported_user_component = get_component_by_uuid(imported_data.component_uuid) %}
+    {% endif %}
+    {% set imported_user_id = imported_data.user_id %}
+    {% set imported_user_component_id = imported_user_component.id if imported_user_component is not none else none %}
+    {% set imported_user = get_user_if_exists(imported_data.user_id, component_id=imported_user_component_id) %}
+
+  {% endif %}
+{% endif %}
+
+{% if conflicting %}
+  <div class="has-conflict">
 {% endif %}
 
 <select {% if is_template %} class="template-select" data-template-class="form-control selectpicker" {% else %} class="form-control selectpicker" {% endif %} name="{{ id_prefix }}_uid" data-live-search="true">
-  <option value="" {% if selected_user is none %}selected="selected"{% endif %}>&mdash;</option>
+  <option value="" {% if selected_user is none and selected_user_component is none %}selected="selected"{% endif %}>&mdash;</option>
+  <>
+  {% if selected_user is none and selected_user_component is not none %}
+    <option {% if conflicting %} value="-2" {% else %} value="-1" {% endif %} selected="selected" data-subtext="{{ _('Local Selection') }}" data-icon="fa fa-share-alt">{{ _('Unknown User') }} #{{ selected_user_id }} @ {{ selected_user_component.get_name() }}</option>
+  {% endif %}
+  {% if imported_user is none and imported_user_id is not none and imported_user_component is not none %}
+    <option value="-3" data-icon="fa fa-share-alt" data-subtext="{{ _('Imported Selection') }}">{{ _('Unknown User') }} #{{ imported_user_id }} @ {{ imported_user_component.get_name() }}</option>
+  {% endif %}
+
   {% if selected_user is not none and selected_user not in users %}
     <option {% if selected_user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ selected_user_id }}" selected="selected">
       {{ selected_user.get_name(include_ref=True) }}
     </option>
   {% endif %}
+
   {% for user in users %}
-      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% elif user.eln_import_id is not none %}data-icon="fa fa-file-archive-o"{% endif %} value="{{ user.id }}" {% if user == selected_user %}selected="selected"{% endif %}>
-        {{ user.get_name(include_ref=True) }}
-      </option>
+    {% set subtext = "" %}
+    {% if conflicting %}
+      {% if local_data is not none and 'user_id' in local_data and (local_data.user_id == user.id and 'component_uuid' not in local_data or user.component_id is not none and local_data.component_uuid == user.component.uuid and local_data.user_id == user.fed_id) %}
+        {% set subtext = _('Local Selection') %}
+    component_uuid == local component uuid
+      {% elif imported_data is not none and 'user_id' in imported_data and (imported_data.user_id == user.id and 'component_uuid' not in imported_data or user.component_id is not none and imported_data.component_uuid == user.component.uuid and imported_data.user_id == user.fed_id) %}
+        {% set subtext = _('Imported Selection') %}
+      {% endif %}
+    {% endif %}
+    <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% elif user.eln_import_id is not none %}data-icon="fa fa-file-archive-o"{% endif %} value="{{ user.id }}" {% if user == selected_user %}selected="selected"{% endif %} data-subtext="{{ subtext }}">
+      {{ user.get_name(include_ref=True) }}
+    </option>
   {% endfor %}
 </select>

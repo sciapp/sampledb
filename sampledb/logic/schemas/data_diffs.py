@@ -341,3 +341,34 @@ def invert_diff(
             inverted_data_diff['_before'] = generic_diff['_after']
         return inverted_data_diff
     return None
+
+
+def extract_diff_paths(
+        data_diff: typing.Optional[DataDiff],
+        current_path: typing.Optional[list[str | int]] = None
+) -> list[list[str | int]]:
+    if current_path is None:
+        current_path = []
+
+    diff_type = _guess_type_of_diff(data_diff)
+
+    paths = []
+
+    if diff_type is GenericDiff:
+        return [current_path]
+    elif diff_type is ObjectDiff:
+        object_diff = typing.cast(ObjectDiff, data_diff)
+        for key, val in object_diff.items():
+            new_path = current_path + [key]
+            paths.extend(extract_diff_paths(val, new_path))
+    elif diff_type is ArrayDiff:
+        array_diff = typing.cast(ArrayDiff, data_diff)
+        for idx, val in enumerate(array_diff):
+            new_path = current_path + [idx]
+            paths.extend(extract_diff_paths(val, new_path))
+    elif diff_type is ArrayIndexDiff:
+        array_index_diff = typing.cast(ArrayIndexDiff, data_diff)
+        for key, val in array_index_diff.items():
+            new_path = current_path + [idx]
+            paths.extend(extract_diff_paths(val, new_path))
+    return paths
