@@ -1390,14 +1390,24 @@
             {% if 'previous_object_id' in object_log_entry.data %}
               {% set ns.object_log_entry_message = _('%(user_ref)s created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_ref=user_reference(object_log_entry.user), previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) %}
             {% else %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s created the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s created the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% else %}
+                {% set component = get_component(object_log_entry.data['imported_from_component_id']) %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s created the object according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) %}
+              {% endif %}
             {% endif %}
-              {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
+            {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
             {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) %}
             {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% else %}
+                {% set component = get_component(object_log_entry.data['imported_from_component_id']) %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s edited the object according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) %}
+              {% endif %}
               {% if 'version_id' in object_log_entry.data %}
                 {% set ns.object_log_entry_view_html = _('<a href="%(view_version_url)s">View&nbsp;Version</a>&nbsp;/&nbsp;<a href="%(view_version_url_with_diff)s">View&nbsp;Changes</a>', view_version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']),view_version_url_with_diff=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id'], diff='')) %}
               {% endif %}

@@ -264,6 +264,9 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "object_log_entry_type_add_solve_version_conflict",
         "object_log_user_id_remove_not_null",
         "fed_object_log_entry_types_add_conflict_types",
+        "objects_current_add_imported_from_component_id",
+        "objects_previous_add_imported_from_component_id",
+        "objects_subversions_add_imported_from_component_id",
     ]
 
     migrations = []

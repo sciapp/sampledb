@@ -97,7 +97,8 @@ def fed_object(fed_user, fed_action, component_token):
         schema=fed_action.schema,
         data=data,
         user_id=fed_user.id,
-        utc_datetime=datetime.datetime.now()
+        utc_datetime=datetime.datetime.now(),
+        imported_from_component_id=component.id,
     )
     assert o is not None
     specification = models.ObjectImportSpecification(

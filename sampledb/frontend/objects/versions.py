@@ -46,6 +46,9 @@ def object_version(object_id: int, version_id: int) -> FlaskResponseT:
     else:
         object = get_object(object_id=object_id, version_id=version_id)
 
+    if object.imported_from_component_id is not None:
+        imported_from_component = get_component(component_id=object.imported_from_component_id)
+        flask.flash(_("This object version was imported from %(component_name)s.", component_name=imported_from_component.get_name()), 'info')
     previous_version_data_diff = None
     previous_version_schema = None
     if not is_fed and 'diff' in flask.request.args and object.data is not None:

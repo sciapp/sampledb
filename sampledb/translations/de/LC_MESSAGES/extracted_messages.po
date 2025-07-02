@@ -1568,6 +1568,10 @@ msgstr ""
 msgid "Successfully updated object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
+#, python-format
+msgid "This object version was imported from %(component_name)s."
+msgstr "Diese Objektversion wurde von %(component_name)s importiert."
+
 msgid "This version contains invalid data and cannot be restored."
 msgstr ""
 "Diese Version enthält ungültige Daten und kann nicht wiederhergestellt "
@@ -6761,6 +6765,14 @@ msgstr "%(user_ref)s hat das Objekt erstellt."
 
 #, python-format
 msgid ""
+"%(user_ref)s created the object according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> erzeugt."
+
+#, python-format
+msgid ""
 "%(user_ref)s created the object as part of a <a "
 "href=\"%(batch_url)s\">batch</a>."
 msgstr ""
@@ -6770,6 +6782,14 @@ msgstr ""
 #, python-format
 msgid "%(user_ref)s edited the object."
 msgstr "%(user_ref)s hat das Objekt bearbeitet."
+
+#, python-format
+msgid ""
+"%(user_ref)s edited the object according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> bearbeitet."
 
 #, python-format
 msgid ""

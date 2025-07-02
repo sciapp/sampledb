@@ -511,6 +511,10 @@ def object(object_id: int) -> FlaskResponseT:
         "get_shares_for_object": get_shares_for_object,
     })
 
+    if object.imported_from_component_id is not None:
+        imported_from_component = get_component(object.imported_from_component_id)
+        flask.flash(_("This object version was imported from %(component_name)s.", component_name=imported_from_component.get_name()), 'info')
+
     if mode in {'', 'inline_edit'} and not flask.current_app.config['DISABLE_INLINE_EDIT'] and user_may_edit and (import_specification is None or import_specification.data):
         template_kwargs.update({
             "errors": {},

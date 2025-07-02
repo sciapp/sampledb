@@ -1571,7 +1571,8 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
         user_id=fed_user.id,
         data=fed_data,
         schema=simple_object.schema,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        imported_from_component_id=component.id,
     )
     object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=object_permissions.Permissions.READ)
     data = deepcopy(REFERENCES_TABLE_LIST_DATA_FRAME)

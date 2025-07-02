@@ -41,7 +41,8 @@ def create_object(
         validate_data: bool = True,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
         hash_data: typing.Optional[str] = None,
-        hash_metadata: typing.Optional[str] = None
+        hash_metadata: typing.Optional[str] = None,
+        imported_from_component_id: typing.Optional[int] = None,
 ) -> Object:
     """
     Creates an object using the given action and its schema. This function
@@ -66,6 +67,8 @@ def create_object(
         validator
     :param hash_data: the hash value of the data and schema
     :param hash_metadata: the hash value of the metadata (user and timestamp)
+    :param imported_from_component_id: the ID of the component from which the
+        version was imported
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -91,7 +94,8 @@ def create_object(
         validate_data=validate_data,
         data_validator_arguments=data_validator_arguments,
         hash_data=hash_data,
-        hash_metadata=hash_metadata
+        hash_metadata=hash_metadata,
+        imported_from_component_id=imported_from_component_id,
     )
     if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
@@ -136,7 +140,7 @@ def create_eln_import_object(
         utc_datetime=utc_datetime,
         eln_import_id=eln_import_id,
         eln_object_id=eln_object_id,
-        data_validator_arguments=data_validator_arguments
+        data_validator_arguments=data_validator_arguments,
     )
     if user_id:
         _update_object_references(object, user_id=user_id)
@@ -156,6 +160,7 @@ def insert_fed_object_version(
         data: typing.Optional[typing.Dict[str, typing.Any]],
         user_id: typing.Optional[int],
         utc_datetime: typing.Optional[datetime.datetime],
+        imported_from_component_id: int,
         version_component_id: typing.Optional[int] = None,
         hash_data: typing.Optional[str] = None,
         hash_metadata: typing.Optional[str] = None,
@@ -174,6 +179,7 @@ def insert_fed_object_version(
     :param data: the object's data, which must fit to the action's schema, optional
     :param user_id: the ID of the user who created the object, optional
     :param utc_datetime: the creation datetime of the version to insert
+    :param imported_from_component_id: the ID of the component from which the version was imported
     :param version_component_id: the ID of the component where the version was created
     :param hash_data: hash value of the data of the object version
     :param hash_metadata: hash value of the metadata of the object version
@@ -206,6 +212,7 @@ def insert_fed_object_version(
         version_component_id=version_component_id,
         hash_data=hash_data,
         hash_metadata=hash_metadata,
+        imported_from_component_id=imported_from_component_id,
         allow_disabled_languages=allow_disabled_languages,
         get_missing_schema_from_action=get_missing_schema_from_action
     )
@@ -303,10 +310,11 @@ def update_object(
         version_component_id: typing.Optional[int] = None,
         hash_data: typing.Optional[str] = None,
         hash_metadata: typing.Optional[str] = None,
+        imported_from_component_id: typing.Optional[int] = None,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
         create_log_entries: bool = True,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        created_by_automerge: bool = False
+        created_by_automerge: bool = False,
 ) -> None:
     """
     Updates the object to a new version. This function also handles logging
@@ -319,6 +327,7 @@ def update_object(
     :param version_component_id: the ID of the component where the version was created
     :param hash_data: hash value of the data of the object version
     :param hash_metadata: hash value of the metadata of the object version
+    :param imported_from_component_id: the ID of the component from which the version was imported
     :param data_validator_arguments: additional keyword arguments to the data
         validator
     :param create_log_entries: whether log entries should be created
@@ -347,7 +356,8 @@ def update_object(
         utc_datetime=utc_datetime,
         version_component_id=version_component_id,
         hash_data=hash_data,
-        hash_metadata=hash_metadata
+        hash_metadata=hash_metadata,
+        imported_from_component_id=imported_from_component_id,
     )
     if object is None:
         raise errors.ObjectDoesNotExistError()
@@ -372,6 +382,7 @@ def update_object_version(
         hash_metadata: typing.Optional[str] = None,
         hash_data_none_replacement: typing.Optional[str] = None,
         version_component_id: typing.Optional[int] = None,
+        imported_from_component_id: typing.Optional[int] = None,
         allow_disabled_languages: bool = False,
         get_missing_schema_from_action: bool = True
 ) -> Object:
@@ -386,6 +397,7 @@ def update_object_version(
         hash_metadata=hash_metadata,
         hash_data_none_replacement=hash_data_none_replacement,
         version_component_id=version_component_id,
+        imported_from_component_id=imported_from_component_id,
         allow_disabled_languages=allow_disabled_languages,
         get_missing_schema_from_action=get_missing_schema_from_action
     )
@@ -407,6 +419,7 @@ def add_subversion(
     utc_datetime: typing.Optional[datetime.datetime],
     version_component_id: typing.Optional[int],
     hash_metadata: typing.Optional[str],
+    imported_from_component_id: typing.Optional[int] = None,
     allow_disabled_languages: bool = False,
     get_missing_schema_from_action: bool = True
 ) -> bool:
@@ -422,6 +435,7 @@ def add_subversion(
     :param utc_datetime: the datetime (in UTC) when the object was updated
     :param version_component_id: the ID of the component where the object version was created
     :param hash_metadata: the hash value of the object metadata
+    :param imported_from_component_id: the ID of the component from which the version was imported
     :param allow_disabled_languages: whether using disabled languages should be allowed in this update
     :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
     :return: True if a new subversion was added
@@ -437,6 +451,7 @@ def add_subversion(
         version_component_id=version_component_id,
         hash_metadata=hash_metadata,
         utc_datetime_subversion=None,
+        imported_from_component_id=imported_from_component_id,
         allow_disabled_languages=allow_disabled_languages,
         get_missing_schema_from_action=get_missing_schema_from_action
     )
@@ -821,6 +836,7 @@ def create_conflicting_federated_object(
     local_parent: typing.Optional[int],
     hash_data: typing.Optional[str],
     hash_metadata: typing.Optional[str],
+    imported_from_component_id: int,
 ) -> FederatedObject:
     """
     Create a conflicting version.
@@ -836,6 +852,7 @@ def create_conflicting_federated_object(
     :param local_parent: the ID of the local parent object version (None if parent is a conflicting version)
     :param hash_data: the hash of the data and schema
     :param hash_metadata: the hash of the metadata (user and time)
+    :param imported_from_component_id: the ID of the component from which the version was imported
     :return: the created federated object
     """
     return Objects.create_conflicting_federated_object(
@@ -849,7 +866,8 @@ def create_conflicting_federated_object(
         user_id=user_id,
         local_parent=local_parent,
         hash_data=hash_data,
-        hash_metadata=hash_metadata
+        hash_metadata=hash_metadata,
+        imported_from_component_id=imported_from_component_id,
     )
 
 
@@ -861,7 +879,8 @@ def update_conflicting_federated_object_version(
     schema: typing.Optional[dict[str, typing.Any]],
     action_id: typing.Optional[int],
     utc_datetime: typing.Optional[datetime.datetime],
-    user_id: typing.Optional[int]
+    user_id: typing.Optional[int],
+    imported_from_component_id: int,
 ) -> FederatedObject:
     """
     Update a conflicting object version.
@@ -874,6 +893,7 @@ def update_conflicting_federated_object_version(
     :param action_id: the ID of the action
     :param utc_datetime: the datetime (in UTC) when the object version was created
     :param user_id: the ID of the user who created the object version
+    :param imported_from_component_id: the ID of the component from which the version was imported
     :return: the updated federated object
     :raise errors.FederatedObjectVersionDoesNotExistError: when the federated object version to update does not exist
     """
@@ -885,7 +905,8 @@ def update_conflicting_federated_object_version(
         schema=schema,
         action_id=action_id,
         utc_datetime=utc_datetime,
-        user_id=user_id
+        user_id=user_id,
+        imported_from_component_id=imported_from_component_id,
     )
 
     if object is None:
@@ -922,6 +943,7 @@ def update_federated_object_version(
     action_id: typing.Optional[int],
     user_id: typing.Optional[int],
     utc_datetime: typing.Optional[datetime.datetime],
+    imported_from_component_id: int,
 ) -> FederatedObject:
     """
     Update a conflicting object version and add updated version to the federated subversions table.
@@ -934,6 +956,7 @@ def update_federated_object_version(
     :param action_id: the ID of the action
     :param utc_datetime: the datetime (in UTC) when the object version was created
     :param user_id: the ID of the user who created the object version
+    :param imported_from_component_id: the ID of the component from which the version was imported
     :return: the created federated object
     :raise errors.FederatedObjectVersionDoesNotExistError: when the federated object version to update does not exist
     """
@@ -945,7 +968,8 @@ def update_federated_object_version(
         schema,
         action_id,
         user_id,
-        utc_datetime
+        utc_datetime,
+        imported_from_component_id=imported_from_component_id,
     ):
         return object
     raise errors.FederatedObjectVersionDoesNotExistError()
