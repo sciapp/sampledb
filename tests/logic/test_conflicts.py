@@ -254,7 +254,8 @@ def test_solving_strategy_automerge_success(object, component, action, user, com
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -295,7 +296,8 @@ def test_solving_strategy_automerge_fail(object, component, action, user, compon
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -333,7 +335,8 @@ def test_solving_strategy_apply_local(object, component, action, user, component
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -372,7 +375,8 @@ def test_solving_strategy_apply_imported(object, component, action, user, compon
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -416,7 +420,8 @@ def test_differing_version_length_local_higher(object, component, action, user, 
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -457,7 +462,8 @@ def test_differing_version_length_imported_higher(object, component, action, use
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported_1, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflicting_version = sampledb.logic.objects.create_conflicting_federated_object(
@@ -471,7 +477,8 @@ def test_differing_version_length_imported_higher(object, component, action, use
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported_2, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -508,7 +515,8 @@ def test_automerge_partial_changes(object, component, action, user, component_us
         user_id=component_user.id,
         local_parent=object.version_id,
         hash_data=conflicts.calculate_data_hash(data_modified_imported, action.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(component_user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -554,7 +562,8 @@ def test_merge_array_conflict_automerge_successful(object_array, component, acti
         user_id=user.id,
         local_parent=object_array.version_id,
         hash_data=conflicts.calculate_data_hash(data=data_modified_local, schema=action_array.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(user_id=user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(user_id=user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(
@@ -599,7 +608,8 @@ def test_merge_array_conflict_automerge_unsuccessful(object_array, component, ac
         user_id=user.id,
         local_parent=object_array.version_id,
         hash_data=conflicts.calculate_data_hash(data=data_modified_imported, schema=object_array.schema),
-        hash_metadata=conflicts.calculate_metadata_hash(user_id=user.id, utc_datetime=datetime.datetime.now())
+        hash_metadata=conflicts.calculate_metadata_hash(user_id=user.id, utc_datetime=datetime.datetime.now()),
+        imported_from_component_id=component.id,
     )
 
     conflict = conflicts.create_object_version_conflict(

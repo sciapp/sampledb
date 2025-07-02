@@ -230,6 +230,7 @@ def import_object(
                         utc_datetime=version['utc_datetime'],
                         version_component_id=version['version_component_id'],
                         hash_metadata=version['hash_metadata'],
+                        imported_from_component_id=import_context['component'].id,
                         allow_disabled_languages=True,
                         get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
                     ):
@@ -248,6 +249,7 @@ def import_object(
                         hash_metadata=version['hash_metadata'],
                         hash_data_none_replacement=version['hash_data'],
                         version_component_id=version['version_component_id'],
+                        imported_from_component_id=import_context['component'].id,
                     )
                     import_context['current_local_version_id'] += 1
                     import_context['base_version_id'] = object.version_id
@@ -285,6 +287,7 @@ def import_object(
                         utc_datetime=version['utc_datetime'],
                         hash_metadata=version['hash_metadata'],
                         version_component_id=version['version_component_id'],
+                        imported_from_component_id=import_context['component'].id,
                     )
                 import_context['current_local_version_id'] += 1
                 import_context['base_version_id'] = object.version_id
@@ -312,14 +315,15 @@ def import_object(
                     user_id=import_context['user_id'],
                     local_parent=None,
                     hash_data=version['hash_data'],
-                    hash_metadata=version['hash_metadata']
+                    hash_metadata=version['hash_metadata'],
+                    imported_from_component_id=import_context['component'].id,
                 )
                 if import_context['user_id'] is not None:
                     object_log.import_conflicting_version(
                         user_id=import_context['user_id'],
                         object_id=import_context['local_object_id'],
                         fed_version_id=version['fed_version_id'],
-                        component_id=version['version_component_id']
+                        component_id=version['version_component_id'],
                     )
             elif conflicting_object_version.data != version['data']:
                 update_federated_object_version(
@@ -331,6 +335,7 @@ def import_object(
                     action_id=action_id,
                     user_id=import_context['user_id'],
                     utc_datetime=version['utc_datetime'],
+                    imported_from_component_id=import_context['component'].id,
                 )
 
     last_version = object_data['versions'][-1]
@@ -451,7 +456,8 @@ def _add_or_update_conflicting_version(version: ObjectVersionData, import_contex
                 user_id=import_context['user_id'],
                 local_parent=None,
                 hash_data=version['hash_data'],
-                hash_metadata=version['hash_metadata']
+                hash_metadata=version['hash_metadata'],
+                imported_from_component_id=import_context['component'].id,
             )
             if import_context['user_id'] is not None:
                 object_log.import_conflicting_version(
@@ -471,6 +477,7 @@ def _add_or_update_conflicting_version(version: ObjectVersionData, import_contex
                     action_id=import_context['action_id'],
                     utc_datetime=version['utc_datetime'],
                     user_id=import_context['user_id'],
+                    imported_from_component_id=import_context['component'].id,
                 )
 
 
@@ -503,6 +510,7 @@ def _add_federated_conflict_solution(
         version_component_id=version['version_component_id'],
         hash_data=version['hash_data'],
         hash_metadata=version['hash_metadata'],
+        imported_from_component_id=import_context['component'].id,
         allow_disabled_languages=True,
         get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
     )
@@ -585,7 +593,8 @@ def _update_federated_conflict_solution(
                 user_id=import_context['user_id'],
                 utc_datetime=version['utc_datetime'],
                 version_component_id=version['version_component_id'],
-                hash_metadata=version['hash_metadata']
+                hash_metadata=version['hash_metadata'],
+                imported_from_component_id=import_context['component'].id,
             )
 
     else:
@@ -631,6 +640,7 @@ def _add_new_local_version(
         version_component_id=version['version_component_id'],
         hash_data=version['hash_data'],
         hash_metadata=version['hash_metadata'],
+        imported_from_component_id=import_context['component'].id,
         allow_disabled_languages=True,
         get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
     )
@@ -645,7 +655,8 @@ def _add_new_local_version(
                     user_id=import_context['user_id'],
                     object_id=object.id,
                     utc_datetime=version['utc_datetime'],
-                    is_imported=True
+                    is_imported=True,
+                    imported_from_component_id=import_context['component'].id,
                 )
             else:
                 object_log.edit_object(
@@ -653,7 +664,8 @@ def _add_new_local_version(
                     object_id=object.id,
                     version_id=object.version_id,
                     utc_datetime=version['utc_datetime'],
-                    is_imported=True
+                    is_imported=True,
+                    imported_from_component_id=import_context['component'].id,
                 )
     return object
 
@@ -697,7 +709,8 @@ def _check_conflicting_version_exists(version: ObjectVersionData, import_context
             user_id=import_context['user_id'],
             local_parent=import_context['base_version_id'],
             hash_data=version['hash_data'],
-            hash_metadata=version['hash_metadata']
+            hash_metadata=version['hash_metadata'],
+            imported_from_component_id=import_context['component'].id,
         )
         if import_context['user_id'] is not None:
             object_log.import_conflicting_version(
@@ -720,6 +733,7 @@ def _check_conflicting_version_exists(version: ObjectVersionData, import_context
             action_id=conflicting_object_version.action_id,
             utc_datetime=version['utc_datetime'],
             user_id=import_context['user_id'],
+            imported_from_component_id=import_context['component'].id,
         )
 
 
