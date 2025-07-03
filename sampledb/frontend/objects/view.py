@@ -22,6 +22,7 @@ from ...logic import object_log, comments, errors
 from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_user_action_permissions
+from ...logic.caching import cache_per_request
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
 from ...logic.object_relationships import get_workflow_references
@@ -441,15 +442,14 @@ def object(object_id: int) -> FlaskResponseT:
 
     # various getters
     template_kwargs.update({
-        "get_object": get_object,
         "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
         "get_fed_object_if_current_user_has_read_permissions": get_fed_object_if_current_user_has_read_permissions,
-        "get_user": get_user_if_exists,
-        "get_location": get_location,
+        "get_user": cache_per_request()(get_user_if_exists),
+        "get_location": cache_per_request()(get_location),
         "get_object_location_assignment": get_object_location_assignment,
         "get_project": get_project_if_it_exists,
-        "get_action_type": get_action_type,
-        "get_component": get_component,
+        "get_action_type": cache_per_request()(get_action_type),
+        "get_component": cache_per_request()(get_component),
         "get_shares_for_object": get_shares_for_object,
     })
 
