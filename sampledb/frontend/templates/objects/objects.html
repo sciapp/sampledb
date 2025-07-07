@@ -74,8 +74,6 @@
 {% endblock %}
 
 {% block content %}
-  {# counter for plotly_chart_plots #}
-  {% set plot_counter = namespace(value=0) %}
   {% if search_notes is defined %}
   {% for category, note, start, end in search_notes %}
     {% if category == "error" %}
