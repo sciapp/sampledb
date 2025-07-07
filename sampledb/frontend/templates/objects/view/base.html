@@ -748,6 +748,14 @@
                     {% endwith %}
                   </div>
                   {% endif %}
+                  {% if file.imported_from_component_id is not none %}
+                  <div class="row">
+                    <div class="col-sm-3 text-right"><label>{{ _('Imported from') }}:</label></div>
+                    {% with imported_from_component = get_component(file.imported_from_component_id) %}
+                      <div class="col-sm-9"><a href="{{ url_for('.component', component_id=imported_from_component.id) }}">{{ imported_from_component.get_name() }}</a></div>
+                    {% endwith %}
+                  </div>
+                  {% endif %}
                   {% if file.hash is not none %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Checksum (%(algorithm)s)', algorithm=file.hash.algorithm.upper()) }}:</label></div>
@@ -1442,17 +1450,47 @@
               {% if file.id == object_log_entry.data['file_id'] %}
                 {% if file.storage == 'database' or file.storage == 'federation' %}
                   {% if action is not none and action.type.enable_files %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a> according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name, component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% else %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name, component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% endif %}
                 {% elif file.storage == 'url' %}
-                  {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) %}
+                  {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                    {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) %}
+                  {% else %}
+                    {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a> according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url, component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                    {% endwith %}
+                  {% endif %}
                 {% else %}
                   {% if action is not none and action.type.enable_files %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a> according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id'], component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% else %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s posted a file according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% endif %}
                 {% endif %}
               {% endif %}

@@ -6842,12 +6842,36 @@ msgid "%(user_ref)s uploaded <a href=\"%(file_url)s\">%(file_name)s</a>."
 msgstr "%(user_ref)s hat <a href=\"%(file_url)s\">%(file_name)s</a> hochgeladen."
 
 #, python-format
+msgid ""
+"%(user_ref)s uploaded <a href=\"%(file_url)s\">%(file_name)s</a> "
+"according to <a href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat <a href=\"%(file_url)s\">%(file_name)s</a> laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> hochgeladen."
+
+#, python-format
 msgid "%(user_ref)s uploaded %(file_name)s."
 msgstr "%(user_ref)s hat %(file_name)s hochgeladen."
 
 #, python-format
+msgid ""
+"%(user_ref)s uploaded %(file_name)s according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat %(file_name)s laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> hochgeladen."
+
+#, python-format
 msgid "%(user_ref)s linked <a href=\"%(link_url)s\">%(link_url)s</a>."
 msgstr "%(user_ref)s hat <a href=\"%(link_url)s\">%(link_url)s</a> verlinkt."
+
+#, python-format
+msgid ""
+"%(user_ref)s linked <a href=\"%(link_url)s\">%(link_url)s</a> according "
+"to <a href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat <a href=\"%(link_url)s\">%(link_url)s</a> laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> verlinkt."
 
 #, python-format
 msgid "%(user_ref)s posted <a href=\"%(file_url)s\">file #%(file_id)s</a>."
@@ -6856,8 +6880,24 @@ msgstr ""
 "eingetragen."
 
 #, python-format
+msgid ""
+"%(user_ref)s posted <a href=\"%(file_url)s\">file #%(file_id)s</a> "
+"according to <a href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat <a href=\"%(file_url)s\">Datei #%(file_id)s</a> laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> eingetragen."
+
+#, python-format
 msgid "%(user_ref)s posted a file."
 msgstr "%(user_ref)s hat eine Datei eingetragen."
+
+#, python-format
+msgid ""
+"%(user_ref)s posted a file according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat eine Datei laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> eingetragen."
 
 #, python-format
 msgid ""
