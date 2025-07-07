@@ -88,7 +88,7 @@ def test_create_comment_invalid_user(user, object):
 def test_create_fed_comment(user, object, component):
     dt = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
-    comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id))
+    comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id, imported_from_component_id=component.id))
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
     assert comment.user_id == user.id
     assert comment.author == user
@@ -96,13 +96,14 @@ def test_create_fed_comment(user, object, component):
     assert comment.content == "Comment text"
     assert comment.fed_id == 1
     assert comment.component_id == component.id
+    assert comment.imported_from_component_id == component.id
     assert comment.utc_datetime == dt
 
 
 def test_create_fed_comment_missing_user_id(object, component):
     dt = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
-    comment = comments.get_comment(comments.create_comment(object.object_id, None, 'Comment text', dt, fed_id=1, component_id=component.id))
+    comment = comments.get_comment(comments.create_comment(object.object_id, None, 'Comment text', dt, fed_id=1, component_id=component.id, imported_from_component_id=component.id))
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
     assert comment.user_id is None
     assert comment.author is None
@@ -110,26 +111,27 @@ def test_create_fed_comment_missing_user_id(object, component):
     assert comment.content == "Comment text"
     assert comment.fed_id == 1
     assert comment.component_id == component.id
+    assert comment.imported_from_component_id == component.id
     assert comment.utc_datetime == dt
 
 
 def test_get_fed_comment(object, user, component):
     dt = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
-    comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id))
+    comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id, imported_from_component_id=component.id))
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
     assert comment == comments.get_comment(1, component.id)
 
 
 def test_get_fed_comment_missing_component(object, user, component):
     dt = datetime.datetime.now(datetime.timezone.utc)
-    comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id)
+    comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id, imported_from_component_id=component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         comments.get_comment(1, component.id + 1)
 
 
 def test_get_fed_comment_missing_comment(object, user, component):
     dt = datetime.datetime.now(datetime.timezone.utc)
-    comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id)
+    comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id, imported_from_component_id=component.id)
     with pytest.raises(errors.CommentDoesNotExistError):
         comments.get_comment(2, component.id)
