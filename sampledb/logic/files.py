@@ -59,6 +59,7 @@ class File:
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
     preview_image_mime_type: typing.Optional[str] = None
+    imported_from_component_id: typing.Optional[int] = None
 
     @dataclasses.dataclass(frozen=True)
     class HashInfo:
@@ -121,7 +122,8 @@ class File:
             component_id=file.component_id,
             hash=hash,
             preview_image_mime_type=file.preview_image_mime_type,
-            _mutable_file=file
+            _mutable_file=file,
+            imported_from_component_id=file.imported_from_component_id
         )
 
     @property
@@ -544,7 +546,8 @@ def create_fed_file(
         save_content: typing.Optional[typing.Callable[[typing.BinaryIO], None]],
         utc_datetime: datetime.datetime,
         fed_id: int,
-        component_id: int
+        component_id: int,
+        imported_from_component_id: int,
 ) -> files.File:
     """
     Creates a new file referencing a federated file.
@@ -557,11 +560,13 @@ def create_fed_file(
     :param utc_datetime: the time of file-creation
     :param fed_id: the federated ID of the file
     :param component_id: the components ID (source)
+    :param imported_from_component_id: the ID of the component the file
+        was imported from
     :return: the created File object
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    file = _create_db_file(object_id, user_id, data, utc_datetime, fed_id, component_id)
+    file = _create_db_file(object_id, user_id, data, utc_datetime, fed_id, component_id, imported_from_component_id)
     if save_content:
         binary_data_file = io.BytesIO()
         save_content(binary_data_file)
@@ -591,7 +596,8 @@ def _create_db_file(
         data: typing.Optional[typing.Dict[str, typing.Any]],
         utc_datetime: typing.Optional[datetime.datetime] = None,
         fed_id: typing.Optional[int] = None,
-        component_id: typing.Optional[int] = None
+        component_id: typing.Optional[int] = None,
+        imported_from_component_id: typing.Optional[int] = None
 ) -> files.File:
     """
     Creates a new file in the database.
@@ -605,6 +611,8 @@ def _create_db_file(
         has been imported
     :param component_id: the components ID (source), only if file
         has been imported
+    :param imported_from_component_id: the ID of the component the file
+        was imported from
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
@@ -614,7 +622,7 @@ def _create_db_file(
     :raise errors.ComponentDoesNotExistError: when there is no component with the
         given ID
     """
-    if (component_id is not None and (fed_id is None or utc_datetime is None)) or (component_id is None and (user_id is None or data is None or fed_id is not None)):
+    if (component_id is not None and (fed_id is None or utc_datetime is None)) or (component_id is None and (user_id is None or data is None or fed_id is not None)) or (component_id is not None and imported_from_component_id is None) or (component_id is None and imported_from_component_id is not None):
         raise TypeError('Invalid parameter combination.')
 
     # ensure that the object exists
@@ -625,6 +633,7 @@ def _create_db_file(
     if component_id is not None:
         # ensure that the component exists
         components.check_component_exists(component_id)
+        components.check_component_exists(imported_from_component_id)
     # calculate the next file id
     previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
     if previous_file_id is None:
@@ -640,7 +649,8 @@ def _create_db_file(
         data=data,
         utc_datetime=utc_datetime,
         fed_id=fed_id,
-        component_id=component_id
+        component_id=component_id,
+        imported_from_component_id=imported_from_component_id,
     )
     db.session.add(db_file)
     db.session.commit()
@@ -693,7 +703,8 @@ def hide_file(
         file_id: int,
         user_id: int,
         reason: str,
-        utc_datetime: typing.Optional[datetime.datetime] = None
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        imported_from_component_id: typing.Optional[int] = None,
 ) -> None:
     """
     Hides a file.
@@ -703,6 +714,7 @@ def hide_file(
     :param user_id: the ID of an existing user
     :param reason: the reason for hiding the file
     :param utc_datetime: the time when the file was hidden or None to select the current time
+    :param imported_from_component_id: the ID of the component the hide action was imported from
     :raise errors.FileDoesNotExistError: when no file with the given object ID
         and file ID exists
     """
@@ -711,9 +723,12 @@ def hide_file(
         raise FileDoesNotExistError()
     if not reason:
         reason = ''
-    log_entry = FileLogEntry(type=FileLogEntryType.HIDE_FILE, object_id=object_id, file_id=file_id, user_id=user_id, data={
+    data: typing.Dict[str, typing.Any] = {
         'reason': reason
-    }, utc_datetime=utc_datetime)
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
+    log_entry = FileLogEntry(type=FileLogEntryType.HIDE_FILE, object_id=object_id, file_id=file_id, user_id=user_id, data=data, utc_datetime=utc_datetime)
     db.session.add(log_entry)
     db.session.commit()
 

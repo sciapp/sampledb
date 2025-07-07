@@ -264,15 +264,19 @@ def upload_file(
         object_id: int,
         file_id: int,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        is_imported: bool = False
+        is_imported: bool = False,
+        imported_from_component_id: typing.Optional[int] = None
 ) -> None:
+    data = {
+        'file_id': file_id
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=ObjectLogEntryType.UPLOAD_FILE,
         object_id=object_id,
         user_id=user_id,
-        data={
-            'file_id': file_id
-        },
+        data=data,
         utc_datetime=utc_datetime,
         is_imported=is_imported
     )

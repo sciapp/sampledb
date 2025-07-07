@@ -460,23 +460,27 @@ def _store_new_fed_file_log_entry(
     db.session.commit()
 
 
-def import_file(file_id: int, object_id: int, component_id: int) -> None:
+def import_file(file_id: int, object_id: int, component_id: int, imported_from_component_id: int) -> None:
     _store_new_fed_file_log_entry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file_id,
         object_id=object_id,
         component_id=component_id,
-        data={}
+        data={
+            'imported_from_component_id': imported_from_component_id,
+        }
     )
 
 
-def update_file(file_id: int, object_id: int, component_id: int) -> None:
+def update_file(file_id: int, object_id: int, component_id: int, imported_from_component_id: int) -> None:
     _store_new_fed_file_log_entry(
         type=models.FedFileLogEntryType.UPDATE_FILE,
         file_id=file_id,
         object_id=object_id,
         component_id=component_id,
-        data={}
+        data={
+            'imported_from_component_id': imported_from_component_id,
+        }
     )
 
 
