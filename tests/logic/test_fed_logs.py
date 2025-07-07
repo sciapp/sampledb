@@ -857,13 +857,15 @@ def test_update_comment_missing_data(comment_id, component):
 def test_import_file(file, object, component):
     start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedFileLogEntry.query.all()) == 0
-    fed_logs.import_file(file.id, object.object_id, component.id)
+    fed_logs.import_file(file.id, object.object_id, component.id, imported_from_component_id=component.id)
     log_entries = models.FedFileLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedFileLogEntryType.IMPORT_FILE
     assert log_entries[0].file_id == file.id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {}
+    assert log_entries[0].data == {
+        'imported_from_component_id': component.id,
+    }
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
@@ -871,24 +873,26 @@ def test_import_file(file, object, component):
 def test_import_file_missing_data(file, object, component):
     assert len(models.FedFileLogEntry.query.all()) == 0
     with pytest.raises(errors.FileDoesNotExistError):
-        fed_logs.import_file(file.id + 1, object.object_id, component.id)
+        fed_logs.import_file(file.id + 1, object.object_id, component.id, component.id)
     with pytest.raises(errors.ObjectDoesNotExistError):
-        fed_logs.import_file(file.id, object.object_id + 1, component.id)
+        fed_logs.import_file(file.id, object.object_id + 1, component.id, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.import_file(file.id, object.object_id, component.id + 1)
+        fed_logs.import_file(file.id, object.object_id, component.id + 1, component.id)
     assert len(models.FedFileLogEntry.query.all()) == 0
 
 
 def test_update_file(file, object, component):
     start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedFileLogEntry.query.all()) == 0
-    fed_logs.update_file(file.id, object.object_id, component.id)
+    fed_logs.update_file(file.id, object.object_id, component.id, component.id)
     log_entries = models.FedFileLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedFileLogEntryType.UPDATE_FILE
     assert log_entries[0].file_id == file.id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {}
+    assert log_entries[0].data == {
+        'imported_from_component_id': component.id
+    }
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
@@ -896,11 +900,11 @@ def test_update_file(file, object, component):
 def test_update_file_missing_data(file, object, component):
     assert len(models.FedFileLogEntry.query.all()) == 0
     with pytest.raises(errors.FileDoesNotExistError):
-        fed_logs.update_file(file.id + 1, object.object_id, component.id)
+        fed_logs.update_file(file.id + 1, object.object_id, component.id, component.id)
     with pytest.raises(errors.ObjectDoesNotExistError):
-        fed_logs.update_file(file.id, object.object_id + 1, component.id)
+        fed_logs.update_file(file.id, object.object_id + 1, component.id, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.update_file(file.id, object.object_id, component.id + 1)
+        fed_logs.update_file(file.id, object.object_id, component.id + 1, component.id)
     assert len(models.FedFileLogEntry.query.all()) == 0
 
 
