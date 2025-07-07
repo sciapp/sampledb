@@ -242,7 +242,8 @@ def test_create_fed_url_file(object, user, component):
         save_content=None,
         utc_datetime=dt,
         fed_id=1,
-        component_id=component.id
+        component_id=component.id,
+        imported_from_component_id=component.id,
     )
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
     file = files.get_files_for_object(object_id=object.object_id)[-1]
@@ -260,7 +261,8 @@ def test_create_fed_url_file(object, user, component):
         save_content=None,
         utc_datetime=dt,
         fed_id=2,
-        component_id=component.id
+        component_id=component.id,
+        imported_from_component_id=component.id,
     )
     assert len(files.get_files_for_object(object_id=object.object_id)) == 2
     file = files.get_files_for_object(object_id=object.object_id)[-1]
@@ -278,7 +280,8 @@ def test_create_fed_url_file(object, user, component):
         save_content=None,
         utc_datetime=dt,
         fed_id=3,
-        component_id=component.id
+        component_id=component.id,
+        imported_from_component_id=component.id,
     )
     assert len(files.get_files_for_object(object_id=object.object_id)) == 3
     file = files.get_files_for_object(object_id=object.object_id)[-1]
@@ -300,7 +303,8 @@ def test_create_fed_url_file_invalid_params(object, user, component):
             save_content=None,
             utc_datetime=dt,
             fed_id=1,
-            component_id=None
+            component_id=None,
+            imported_from_component_id=component.id,
         )
     with pytest.raises(TypeError):
         files.create_fed_file(
@@ -310,7 +314,8 @@ def test_create_fed_url_file_invalid_params(object, user, component):
             save_content=None,
             utc_datetime=dt,
             fed_id=None,
-            component_id=component.id
+            component_id=component.id,
+            imported_from_component_id=component.id,
         )
     with pytest.raises(errors.ComponentDoesNotExistError):
         files.create_fed_file(
@@ -320,7 +325,8 @@ def test_create_fed_url_file_invalid_params(object, user, component):
             save_content=None,
             utc_datetime=dt,
             fed_id=1,
-            component_id=component.id + 1
+            component_id=component.id + 1,
+            imported_from_component_id=component.id,
         )
     with pytest.raises(errors.ObjectDoesNotExistError):
         files.create_fed_file(
@@ -330,7 +336,8 @@ def test_create_fed_url_file_invalid_params(object, user, component):
             save_content=None,
             utc_datetime=dt,
             fed_id=1,
-            component_id=component.id
+            component_id=component.id,
+            imported_from_component_id=component.id,
         )
     with pytest.raises(errors.UserDoesNotExistError):
         files.create_fed_file(
@@ -340,7 +347,8 @@ def test_create_fed_url_file_invalid_params(object, user, component):
             save_content=None,
             utc_datetime=dt,
             fed_id=1,
-            component_id=component.id
+            component_id=component.id,
+            imported_from_component_id=component.id,
         )
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
 
@@ -356,7 +364,8 @@ def test_create_fed_binary_file(object, user, component):
         save_content=lambda stream: stream.write(binary_data),
         utc_datetime=dt,
         fed_id=1,
-        component_id=component.id
+        component_id=component.id,
+        imported_from_component_id=component.id,
     )
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
     file = files.get_files_for_object(object_id=object.object_id)[-1]
@@ -375,7 +384,8 @@ def test_create_fed_binary_file(object, user, component):
         save_content=lambda stream: stream.write(binary_data),
         utc_datetime=dt,
         fed_id=2,
-        component_id=component.id
+        component_id=component.id,
+        imported_from_component_id=component.id,
     )
     assert len(files.get_files_for_object(object_id=object.object_id)) == 2
     file = files.get_files_for_object(object_id=object.object_id)[-1]

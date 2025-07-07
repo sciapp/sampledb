@@ -111,14 +111,14 @@ def import_file(
             db_file.data = file_data['data']
             db_file.utc_datetime = file_data['utc_datetime']
             db.session.commit()
-            fed_logs.update_file(db_file.id, object.object_id, component.id)
+            fed_logs.update_file(db_file.id, object.object_id, component_id, component.id)
             changes = True
     except errors.FileDoesNotExistError:
         assert component_id is not None
-        db_file = create_fed_file(object.object_id, user_id, file_data['data'], None, file_data['utc_datetime'], file_data['fed_id'], component_id)
-        fed_logs.import_file(db_file.id, db_file.object_id, component.id)
+        db_file = create_fed_file(object.object_id, user_id, file_data['data'], None, file_data['utc_datetime'], file_data['fed_id'], component_id, component.id)
+        fed_logs.import_file(db_file.id, db_file.object_id, component_id, component.id)
         if user_id is not None:
-            object_log.upload_file(user_id=user_id, object_id=object.object_id, file_id=db_file.id, utc_datetime=file_data['utc_datetime'], is_imported=True)
+            object_log.upload_file(user_id=user_id, object_id=object.object_id, file_id=db_file.id, utc_datetime=file_data['utc_datetime'], is_imported=True, imported_from_component_id=component.id)
         changes = True
 
     file = File.from_database(db_file)
@@ -129,7 +129,8 @@ def import_file(
             file_id=file.id,
             user_id=hide_user,
             reason=file_data['hide']['reason'],
-            utc_datetime=file_data['hide']['utc_datetime']
+            utc_datetime=file_data['hide']['utc_datetime'],
+            imported_from_component_id=component.id
         )
         changes = True
     return file, changes
