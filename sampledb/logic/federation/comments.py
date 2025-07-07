@@ -61,7 +61,7 @@ def import_comment(
                 content=comment_data['content'],
                 utc_datetime=comment_data['utc_datetime']
             )
-            fed_logs.update_comment(comment.id, component.id)
+            fed_logs.update_comment(comment.id, component_id, component.id)
             changes = True
     except errors.CommentDoesNotExistError:
         assert component_id is not None
@@ -71,11 +71,12 @@ def import_comment(
             content=comment_data['content'],
             utc_datetime=comment_data['utc_datetime'],
             fed_id=comment_data['fed_id'],
-            component_id=component_id
+            component_id=component_id,
+            imported_from_component_id=component.id,
         ))
-        fed_logs.import_comment(comment.id, component.id)
+        fed_logs.import_comment(comment.id, component_id, imported_from_component_id=component.id)
         if user_id is not None:
-            object_log.post_comment(user_id=user_id, object_id=comment.object_id, comment_id=comment.id, utc_datetime=comment_data['utc_datetime'], is_imported=True)
+            object_log.post_comment(user_id=user_id, object_id=comment.object_id, comment_id=comment.id, utc_datetime=comment_data['utc_datetime'], is_imported=True, imported_from_component_id=component.id)
         changes = True
     return comment, changes
 

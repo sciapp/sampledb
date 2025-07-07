@@ -811,13 +811,15 @@ def test_create_ref_instrument_missing_data(instrument, component):
 def test_import_comment(comment_id, component):
     start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedCommentLogEntry.query.all()) == 0
-    fed_logs.import_comment(comment_id, component.id)
+    fed_logs.import_comment(comment_id, component.id, imported_from_component_id=component.id)
     log_entries = models.FedCommentLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedCommentLogEntryType.IMPORT_COMMENT
     assert log_entries[0].comment_id == comment_id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {}
+    assert log_entries[0].data == {
+        'imported_from_component_id': component.id,
+    }
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
@@ -825,22 +827,24 @@ def test_import_comment(comment_id, component):
 def test_import_comment_missing_data(comment_id, component):
     assert len(models.FedCommentLogEntry.query.all()) == 0
     with pytest.raises(errors.CommentDoesNotExistError):
-        fed_logs.import_comment(comment_id + 1, component.id)
+        fed_logs.import_comment(comment_id + 1, component.id, imported_from_component_id=component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.import_comment(comment_id, component.id + 1)
+        fed_logs.import_comment(comment_id, component.id + 1, imported_from_component_id=component.id)
     assert len(models.FedCommentLogEntry.query.all()) == 0
 
 
 def test_update_comment(comment_id, component):
     start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedCommentLogEntry.query.all()) == 0
-    fed_logs.update_comment(comment_id, component.id)
+    fed_logs.update_comment(comment_id, component.id, imported_from_component_id=component.id)
     log_entries = models.FedCommentLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedCommentLogEntryType.UPDATE_COMMENT
     assert log_entries[0].comment_id == comment_id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {}
+    assert log_entries[0].data == {
+        'imported_from_component_id': component.id
+    }
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
@@ -848,9 +852,9 @@ def test_update_comment(comment_id, component):
 def test_update_comment_missing_data(comment_id, component):
     assert len(models.FedCommentLogEntry.query.all()) == 0
     with pytest.raises(errors.CommentDoesNotExistError):
-        fed_logs.update_comment(comment_id + 1, component.id)
+        fed_logs.update_comment(comment_id + 1, component.id, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.update_comment(comment_id, component.id + 1)
+        fed_logs.update_comment(comment_id, component.id + 1, component.id)
     assert len(models.FedCommentLogEntry.query.all()) == 0
 
 
