@@ -1338,6 +1338,9 @@
                 <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ federated_user.get_name() }}</a>
                 {{ import_information_symbol(comment.author) }}
               {% endif %}, <span data-utc-datetime="{{ comment.utc_datetime | generic_format_datetime }}">{{ comment.utc_datetime | babel_format_datetime }}</span>
+              {% if comment.imported_from_component_id is not none %}
+                <i class="fa fa-exclamation-circle" data-toggle="tooltip" data-placement="top" title="{{ _('The comment was imported from %(component_name)s.', component_name=comment.imported_from_component.get_name()) }}"></i>
+              {% endif %}
             </div>
           </div>
         {% endfor %}
@@ -1439,7 +1442,13 @@
               {% set ns.object_log_entry_message = _('%(user_ref)s used the object to create a sample.', user_ref=user_reference(object_log_entry.user)) %}
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
-            {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) %}
+            {% if object_log_entry.data.get('imported_from_component_id') is none %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) %}
+            {% else %}
+              {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+              {% endwith %}
+            {% endif %}
             {% if action is not none and action.type.enable_comments %}
               {% if 'comment_id' in object_log_entry.data %}
                 {% set ns.object_log_entry_view_url = "#comment-" + (object_log_entry.data['comment_id'] | string) %}

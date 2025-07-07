@@ -6735,6 +6735,10 @@ msgstr "Bitte geben Sie eine gültige DOI ein."
 msgid "Link Publication"
 msgstr "Publikation verknüpfen"
 
+#, python-format
+msgid "The comment was imported from %(component_name)s."
+msgstr "Der Kommentar wurde von %(component_name)s importiert."
+
 msgid "There are no comments for this object."
 msgstr "Es gibt keine Kommentare für dieses Objekt."
 
@@ -6836,6 +6840,14 @@ msgstr "%(user_ref)s hat das Objekt zur Erstellung einer Probe verwendet."
 #, python-format
 msgid "%(user_ref)s posted a comment for this object."
 msgstr "%(user_ref)s hat einen Kommentar für dieses Objekt eingetragen."
+
+#, python-format
+msgid ""
+"%(user_ref)s posted a comment for this object according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat einen Kommentar für dieses Objekt laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> eingetragen."
 
 #, python-format
 msgid "%(user_ref)s uploaded <a href=\"%(file_url)s\">%(file_name)s</a>."
