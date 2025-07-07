@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.31.1
+--------------
+
+Currently in development.
+
+- Fixed object location assignment for locations with capacities
+
 Version 0.31
 ------------
 
