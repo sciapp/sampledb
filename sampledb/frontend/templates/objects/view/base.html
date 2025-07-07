@@ -99,7 +99,6 @@
   {% block includes %}
       {# counter for plotly_chart_plots #}
       {% set plot_counter = namespace(value=0) %}
-      {% set object_reference_counter = namespace(value=0) %}
       {% set indent_level = 0 %}
       {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
@@ -322,7 +321,6 @@
         </div>
         {# counter for plotly_chart_plots #}
         {% set plot_counter = namespace(value=0) %}
-        {% set object_reference_counter = namespace(value=0) %}
         {% for elem in workflow %}
           {% set wfpath_object = namespace(name=name, id=object_id) %}
           <div>
