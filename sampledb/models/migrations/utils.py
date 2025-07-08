@@ -271,6 +271,8 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "files_init_imported_from_component_id",
         "comments_add_imported_from_component_id",
         "comments_init_imported_from_component_id",
+        "object_location_assignments_add_imported_from_component_id",
+        "object_location_assignments_init_imported_from_component_id",
     ]
 
     migrations = []

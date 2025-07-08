@@ -180,8 +180,10 @@ class ObjectLocationAssignment(Model):
     location: Mapped[typing.Optional['Location']] = relationship('Location')
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    component: Mapped[typing.Optional['Component']] = relationship('Component', foreign_keys=[component_id])
     declined: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    imported_from_component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    imported_from_component: Mapped[typing.Optional['Component']] = relationship('Component', foreign_keys=[imported_from_component_id])
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ObjectLocationAssignment"]]
@@ -197,7 +199,8 @@ class ObjectLocationAssignment(Model):
             confirmed: bool = False,
             declined: bool = False,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            imported_from_component_id: typing.Optional[int] = None,
     ) -> None:
         super().__init__(
             object_id=object_id,
@@ -209,7 +212,8 @@ class ObjectLocationAssignment(Model):
             confirmed=confirmed,
             fed_id=fed_id,
             component_id=component_id,
-            declined=declined
+            declined=declined,
+            imported_from_component_id=imported_from_component_id,
         )
 
     def __repr__(self) -> str:

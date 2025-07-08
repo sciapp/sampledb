@@ -6714,6 +6714,10 @@ msgstr "Der Nutzer hat die Verantwortungszuweisung abgelehnt."
 msgid "The user has not confirmed this responsibility assignment yet."
 msgstr "Der Nutzer hat die Verantwortungszuweisung noch nicht bestätigt."
 
+#, python-format
+msgid "The assignment was imported from %(component_name)s."
+msgstr "Die Zuweisung wurde von %(component_name)s importiert."
+
 msgid "This object has not been assigned to a location yet."
 msgstr "Diesem Objekt wurde noch kein Ort zugewiesen."
 
@@ -6932,6 +6936,36 @@ msgstr ""
 #, python-format
 msgid "%(user_ref)s assigned this object to user %(other_user_ref)s."
 msgstr "%(user_ref)s hat das Objekt dem Nutzer %(other_user_ref)s zugewiesen."
+
+#, python-format
+msgid ""
+"%(user_ref)s assigned this object to location <a "
+"href=\"%(location_url)s\">%(location_name)s</a> and user "
+"%(other_user_ref)s according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt dem Ort <a "
+"href=\"%(location_url)s\">%(location_name)s</a> und dem Nutzer "
+"%(other_user_ref)s laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> zugewiesen."
+
+#, python-format
+msgid ""
+"%(user_ref)s assigned this object to location <a "
+"href=\"%(location_url)s\">%(location_name)s</a> according to <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt dem Ort <a "
+"href=\"%(location_url)s\">%(location_name)s</a> laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> zugewiesen."
+
+#, python-format
+msgid ""
+"%(user_ref)s assigned this object to user %(other_user_ref)s according to"
+" <a href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt dem Nutzer %(other_user_ref)s laut <a "
+"href=\"%(component_url)s\">%(component_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
