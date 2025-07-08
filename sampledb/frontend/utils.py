@@ -67,6 +67,7 @@ from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
 from ..logic.files import File, get_file as get_file_logic
+from ..logic.object_data_to_html import object_data_to_html
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
 from .info_pages import InfoPageAcknowledgementForm
@@ -120,6 +121,7 @@ JinjaFunction()(apply_diff)
 JinjaFunction()(invert_diff)
 JinjaFunction()(get_import_signed_by)
 JinjaFunction()(InfoPageAcknowledgementForm)
+JinjaFunction()(object_data_to_html)
 
 qrcode_cache: typing.Dict[str, str] = {}
 
