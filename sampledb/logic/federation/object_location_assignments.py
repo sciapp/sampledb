@@ -54,6 +54,22 @@ def import_object_location_assignment(
         if user_id:
             object_log.assign_location(user_id, object_id=object.object_id, object_location_assignment_id=assignment.id, utc_datetime=assignment.utc_datetime, is_imported=True, imported_from_component_id=component.id)
         changes = True
+    elif assignment.component_id is None and assignment.responsible_user_id is not None and (assignment.confirmed != assignment_data['confirmed'] or assignment.declined != assignment_data.get('declined', False)):
+        if responsible_user_id is not None:
+            try:
+                responsible_user = get_user(assignment.responsible_user_id)
+            except errors.UserDoesNotExistError:
+                responsible_user = None
+        else:
+            responsible_user = None
+
+        if responsible_user is not None and responsible_user.component_id is not None:
+            assignment.confirmed = assignment_data['confirmed']
+            assignment.declined = assignment_data.get('declined', False)
+            db.session.commit()
+            fed_logs.update_object_location_assignment(assignment.id, component.id)
+            changes = True
+
     elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.declined != assignment_data.get('declined', False) or assignment.utc_datetime != assignment_data['utc_datetime']:
         assignment.location_id = location_id
         assignment.responsible_user_id = responsible_user_id
@@ -92,7 +108,7 @@ def parse_object_location_assignment(
             get_object_location_assignment(object_location_assignment_id=id_or_fed_id)
         except errors.ObjectLocationAssignmentDoesNotExistError:
             raise errors.InvalidDataExportError(f'Local object location assignment {id_or_fed_id} does not exist')
-        return None
+
     if responsible_user_data is None and location_data is None and description is None:
         raise errors.InvalidDataExportError(f'Empty object location assignment {id_or_fed_id} @ {uuid}')
 
