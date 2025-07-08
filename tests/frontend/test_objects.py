@@ -2,16 +2,19 @@
 """
 
 """
-
+import copy
 import datetime
 import os
 import json
+import uuid
 from copy import deepcopy
 
 import requests
 import pytest
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
 import sampledb
 import sampledb.models
@@ -2547,3 +2550,376 @@ def test_update_recipes_for_input(mock_current_user):
         'value': True
     }
     assert schema == original_schema
+
+
+def test_object_data_to_html(flask_server, app, driver, user):
+    component = sampledb.logic.components.add_component(
+        str(uuid.uuid4()), "Example Component", "https://example.com", ""
+    )
+
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "type": "object",
+            "title": "Object Information",
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": "Name",
+                    "languages": "all"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
+    referenced_object = sampledb.logic.objects.create_object(
+        data={
+            "name": {
+                "_type": "text",
+                "text": {
+                    "en": "Referenced Object",
+                    "de": "Referenziertes Objekt"
+                }
+            }
+        },
+        user_id=user.id,
+        action_id=action.id
+    )
+    with open(os.path.abspath(os.path.join(os.path.dirname(sampledb.__file__), 'scripts', 'demo_data', 'objects', 'plotly-example-data1.sampledb.json')), 'r', encoding='utf-8') as plotly_chart_file:
+        plotly_chart = json.load(plotly_chart_file)
+    schema = {
+        "type": "object",
+        "title": "Object Information",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "text": {
+                "type": "text",
+                "title": {
+                    "en": "Other Property",
+                    "de": "Andere Eigenschaft"
+                },
+                "languages": ["en", "de"]
+            },
+            "datetime": {
+                "type": "datetime",
+                "title": {
+                    "en": "Datetime",
+                    "de": "Zeitpunkt"
+                }
+            },
+            "object": {
+                "type": "object_reference",
+                "title": {
+                    "en": "Object Reference",
+                    "de": "Objektreferenz"
+                }
+            },
+            "fed_object1": {
+                "type": "object_reference",
+                "title": {
+                    "en": "Object Reference with unknown component UUID",
+                    "de": "Objektreferenz"
+                }
+            },
+            "fed_object2": {
+                "type": "object_reference",
+                "title": {
+                    "en": "Object Reference with known component UUID",
+                    "de": "Objektreferenz"
+                }
+            },
+            "user": {
+                "type": "user",
+                "title": "User Reference"
+            },
+            "file": {
+                "type": "file",
+                "title": "File Reference"
+            },
+            "timeseries": {
+                "title": "Example Timeseries",
+                "type": "timeseries",
+                "units": ["m"]
+            },
+            "plot": {
+                "title": "Example Plotly Chart",
+                "type": "plotly_chart"
+            }
+        },
+        "required": ["name"]
+    }
+    data = {
+        "name": {
+            "_type": "text",
+            "text": "Name"
+        },
+        "text": {
+            "_type": "text",
+            "text": {
+                "en": "Other Text",
+                "de": "Anderer Text"
+            }
+        },
+        "datetime": {
+            "_type": "datetime",
+            "utc_datetime": "2025-01-02 03:04:05"
+        },
+        "object": {
+            "_type": "object_reference",
+            "object_id": referenced_object.object_id,
+        },
+        "fed_object1": {
+            "_type": "object_reference",
+            "object_id": 1,
+            "component_uuid": str(uuid.uuid4())
+        },
+        "fed_object2": {
+            "_type": "object_reference",
+            "object_id": 1,
+            "component_uuid": component.uuid
+        },
+        "user": {
+            "_type": "user",
+            "user_id": user.id,
+        },
+        "timeseries": {
+            "_type": "timeseries",
+            "units": "m",
+            "data": [
+                ["2025-01-02 03:04:05.678900", 1, 1],
+                ["2025-01-02 03:04:06.678900", 2, 2]
+            ]
+        }
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
+    object = sampledb.logic.objects.create_object(
+        data=data,
+        user_id=user.id,
+        action_id=action.id
+    )
+    file = sampledb.logic.files.create_database_file(
+        object_id=object.id,
+        user_id=user.id,
+        file_name='test.txt',
+        save_content=lambda stream: stream.write(b"Test Content")
+    )
+    data['file'] = {
+        "_type": "file",
+        "file_id": file.id
+    }
+    sampledb.logic.objects.update_object(
+        object.id,
+        data,
+        user.id
+    )
+    object = sampledb.logic.objects.get_object(object.id)
+
+    # limit to READ permissions to ensure view rather than inline_edit
+    sampledb.logic.object_permissions.set_user_object_permissions(object.object_id, user.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.set_window_size(1920, 1080)
+
+    for settings_data in [
+        {
+            'AUTO_LC': False,
+            'LOCALE': 'en',
+            'AUTO_TZ': False,
+            'TIMEZONE': 'UTC',
+        },
+        {
+            'AUTO_LC': False,
+            'LOCALE': 'en',
+            'AUTO_TZ': False,
+            'TIMEZONE': 'Europe/Berlin',
+        },
+        {
+            'AUTO_LC': False,
+            'LOCALE': 'de',
+            'AUTO_TZ': False,
+            'TIMEZONE': 'UTC',
+        },
+        {
+            'AUTO_LC': False,
+            'LOCALE': 'de',
+            'AUTO_TZ': False,
+            'TIMEZONE': 'Europe/Berlin',
+        },
+    ]:
+        sampledb.logic.settings.set_user_settings(user.id, settings_data)
+
+        flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+        driver.get(flask_server.base_url + f'objects/{object.object_id}')
+        object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+        flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
+        driver.get(flask_server.base_url + f'objects/{object.object_id}')
+        object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+        assert object_data_html_included == object_data_html_rendered
+
+        for language_code in ['en', 'de']:
+            flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+            driver.get(flask_server.base_url + f'objects/{object.object_id}?language={language_code}')
+            object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
+            driver.get(flask_server.base_url + f'objects/{object.object_id}?language={language_code}')
+            object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            assert object_data_html_included == object_data_html_rendered
+
+        for function in [
+            lambda: sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.NONE),
+            lambda: sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.READ),
+            lambda: sampledb.logic.users.update_user(user.id, user.id, name="Test User"),
+            lambda: sampledb.logic.users.update_user(user.id, user.id, name="Basic User"),
+            lambda: sampledb.logic.components.update_component(component.id, "Test Component", component.address, component.description),
+            lambda: sampledb.logic.components.update_component(component.id, "Example Component", component.address, component.description),
+            lambda: sampledb.logic.components.update_component(component.id, component.name, "https://example.org", component.description),
+            lambda: sampledb.logic.components.update_component(component.id, component.name, "https://example.com", component.description),
+            lambda: sampledb.logic.files.update_file_information(object_id=object.id, file_id=file.id, user_id=user.id, title="Test File", description=""),
+            lambda: sampledb.logic.files.update_file_information(object_id=object.id, file_id=file.id, user_id=user.id, title="Example File", description=""),
+        ]:
+            function()
+
+            flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+            driver.get(flask_server.base_url + f'objects/{object.object_id}')
+            object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
+            driver.get(flask_server.base_url + f'objects/{object.object_id}')
+            object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            assert object_data_html_included == object_data_html_rendered
+
+            driver.get(flask_server.base_url + f'objects/{object.object_id}')
+            object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            assert object_data_html_included == object_data_html_rendered
+
+        for style in ['include', {'view': 'include'}]:
+            schema['properties']['object']['style'] = style
+            sampledb.logic.objects.update_object(
+                object.id,
+                data,
+                user.id,
+                schema
+            )
+            object = sampledb.logic.objects.get_object(object.id)
+
+            flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+            driver.get(flask_server.base_url + f'objects/{object.object_id}')
+            object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
+            driver.get(flask_server.base_url + f'objects/{object.object_id}')
+            object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+            assert object_data_html_included == object_data_html_rendered
+
+        del schema['properties']['object']['style']
+        sampledb.logic.objects.update_object(
+            object.id,
+            data,
+            user.id,
+            schema
+        )
+        object = sampledb.logic.objects.get_object(object.id)
+
+        num_workflow_views = 3
+        referenced_schema = referenced_object.schema
+        referenced_schema["workflow_views"] = [
+            {
+                "referencing_action_type_id": -99,
+                "referenced_action_type_id": -99,
+                "title": {"en": f"Workflow View #{i + 1}", "de": f"Workflow View #{i + 1}"}
+            }
+            for i in range(num_workflow_views)
+        ]
+        sampledb.logic.objects.update_object(
+            referenced_object.id,
+            referenced_object.data,
+            user.id,
+            referenced_schema
+        )
+        referenced_object = sampledb.logic.objects.get_object(referenced_object.id)
+
+        flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+        driver.get(flask_server.base_url + f'objects/{referenced_object.object_id}')
+        object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div").get_attribute("outerHTML")
+        assert object.data['text']['text'][settings_data['LOCALE']] in object_data_html_included
+
+        flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
+        driver.get(flask_server.base_url + f'objects/{referenced_object.object_id}')
+        object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div").get_attribute("outerHTML")
+
+        assert object_data_html_included == object_data_html_rendered
+
+        driver.get(flask_server.base_url + f'objects/{referenced_object.object_id}')
+        object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div").get_attribute("outerHTML")
+
+        assert object_data_html_included == object_data_html_rendered
+
+        data = copy.deepcopy(object.data)
+        data["plot"] = {
+            "_type": "plotly_chart",
+            "plotly": plotly_chart
+        }
+        sampledb.logic.objects.update_object(
+            object.id,
+            data,
+            user.id,
+            object.schema
+        )
+        object = sampledb.logic.objects.get_object(object.id)
+
+        flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+        driver.get(flask_server.base_url + f'objects/{referenced_object.object_id}')
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.plotly .svg-container')))
+        plotly_id_included = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div .plotly defs").get_attribute("id").split('-')[1]
+        object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div").get_attribute("outerHTML")
+        assert object.data['text']['text'][settings_data['LOCALE']] in object_data_html_included
+
+        flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
+        driver.get(flask_server.base_url + f'objects/{referenced_object.object_id}')
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.plotly .svg-container')))
+        plotly_id_rendered = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div .plotly defs").get_attribute("id").split('-')[1]
+        object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div").get_attribute("outerHTML")
+
+        assert object_data_html_included == object_data_html_rendered.replace(plotly_id_rendered, plotly_id_included)
+        del data["plot"]
+        sampledb.logic.objects.update_object(
+            object.id,
+            data,
+            user.id,
+            object.schema
+        )
+        object = sampledb.logic.objects.get_object(object.id)
+
+        del referenced_schema["workflow_views"]
+        sampledb.logic.objects.update_object(
+            referenced_object.id,
+            referenced_object.data,
+            user.id,
+            referenced_schema
+        )
+        referenced_object = sampledb.logic.objects.get_object(referenced_object.id)
