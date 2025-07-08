@@ -355,7 +355,7 @@ def files(objects, users):
 
 @pytest.fixture
 def object_location_assignment(component, object, location, user):
-    object_location_assignment = create_fed_assignment(1, component.id, object.id, location.id, user.id, user.id, {'en': 'Assigned Location'}, None, None)
+    object_location_assignment = create_fed_assignment(1, component.id, object.id, location.id, user.id, user.id, {'en': 'Assigned Location'}, None, component.id, None)
     return object_location_assignment
 
 
@@ -365,9 +365,9 @@ def object_location_assignments(components, objects, locations, users):
     user1, user2 = users
     location1, location2 = locations
     component1, component2 = components
-    object_location_assignment1 = create_fed_assignment(1, component1.id, object1.id, location1.id, user1.id, user1.id, {'en': 'Assigned Location 1'}, None, None)
-    object_location_assignment2 = create_fed_assignment(2, component1.id, object2.id, location1.id, user2.id, user2.id, {'en': 'Assigned Location 2'}, None, None)
-    object_location_assignment3 = create_fed_assignment(3, component1.id, object1.id, location2.id, user1.id, user2.id, {'en': 'Assigned Location 3'}, None, None)
+    object_location_assignment1 = create_fed_assignment(1, component1.id, object1.id, location1.id, user1.id, user1.id, {'en': 'Assigned Location 1'}, None, component1.id, None)
+    object_location_assignment2 = create_fed_assignment(2, component1.id, object2.id, location1.id, user2.id, user2.id, {'en': 'Assigned Location 2'}, None, component1.id, None)
+    object_location_assignment3 = create_fed_assignment(3, component1.id, object1.id, location2.id, user1.id, user2.id, {'en': 'Assigned Location 3'}, None, component1.id, None)
     return object_location_assignment1, object_location_assignment2, object_location_assignment3
 
 
