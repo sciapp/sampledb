@@ -97,9 +97,6 @@
     </div>
   </div>
   {% block includes %}
-      {# counter for plotly_chart_plots #}
-      {% set plot_counter = namespace(value=0) %}
-      {% set object_reference_counter = namespace(value=0) %}
       {% set indent_level = 0 %}
       {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
@@ -320,9 +317,6 @@
           <button class="btn btn-default btn-xs expand-all-button" data-collapse-group-id="{{ workflow_id }}"><i class="fa fa-plus-square-o"></i> {{ _('Expand All') }}</button>
           <button class="btn btn-default btn-xs collapse-all-button" data-collapse-group-id="{{ workflow_id }}"><i class="fa fa-minus-square-o"></i> {{ _('Collapse All') }}</button>
         </div>
-        {# counter for plotly_chart_plots #}
-        {% set plot_counter = namespace(value=0) %}
-        {% set object_reference_counter = namespace(value=0) %}
         {% for elem in workflow %}
           {% set wfpath_object = namespace(name=name, id=object_id) %}
           <div>
