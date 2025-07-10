@@ -2,6 +2,7 @@
 """
 
 """
+import copy
 import itertools
 import json
 import typing
@@ -677,8 +678,8 @@ def objects() -> FlaskResponseT:
     for property_name in display_properties:
         if display_property_titles.get(property_name) is None:
             property_titles = set()
-            for object_id in action_ids:
-                property_info = search_paths_by_action.get(object_id, {}).get(property_name)
+            for action_id in action_ids:
+                property_info = search_paths_by_action.get(action_id, {}).get(property_name)
                 if property_info is not None and 'titles' in property_info:
                     property_titles.update(property_info['titles'])
             if property_titles:
@@ -782,8 +783,7 @@ def objects() -> FlaskResponseT:
                 component_address = action.component.address
                 if not component_address.endswith('/'):
                     component_address = component_address + '/'
-                filter_action_infos[-1]['fed_url'] = component_address + relative_url_for('.action',
-                                                                                          action_id=action.fed_id)
+                filter_action_infos[-1]['fed_url'] = component_address + relative_url_for('.action', action_id=action.fed_id)
 
     filter_instrument_infos = []
     if filter_instrument_ids:
@@ -802,6 +802,35 @@ def objects() -> FlaskResponseT:
                 if not component_address.endswith('/'):
                     component_address = component_address + '/'
                 filter_instrument_infos[-1]['fed_url'] = component_address + relative_url_for('.instrument', instrument_id=instrument.fed_id)
+
+    filter_actions = all_actions
+    if filter_action_type_ids:
+        filter_actions = [
+            action
+            for action in filter_actions
+            if action.type_id in filter_action_type_ids
+        ]
+    if filter_action_ids:
+        filter_actions = [
+            action
+            for action in filter_actions
+            if action.id in filter_action_ids
+        ]
+    if filter_instrument_ids:
+        filter_actions = [
+            action
+            for action in filter_actions
+            if action.instrument_id in filter_instrument_ids
+        ]
+    if len(filter_actions) != len(all_actions):
+        search_paths = {}
+        for filter_action in filter_actions:
+            for property_name, search_path_info in search_paths_by_action.get(filter_action.id, {}).items():
+                if property_name not in search_paths:
+                    search_paths[property_name] = copy.deepcopy(search_path_info)
+                else:
+                    search_paths[property_name]['types'].extend(search_path_info['types'])
+                    search_paths[property_name]['titles'].extend(search_path_info['titles'])
 
     filter_location_infos = []
     if filter_location_ids:

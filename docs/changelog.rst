@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.32
+------------
+
+Currently in development.
+
+- Improved selection of additional properties to show in object lists
+
 Version 0.31
 ------------
 
