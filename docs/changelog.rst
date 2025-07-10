@@ -7,6 +7,7 @@ Version 0.32
 Currently in development.
 
 - Improved selection of additional properties to show in object lists
+- Added automatic schema update for administrators
 - Enabled background tasks by default
 - Rerun background tasks that were unable to finish when the SampleDB process is killed
 

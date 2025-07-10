@@ -23,6 +23,7 @@ from ...utils import ansi_color
 from ...models import BackgroundTask, BackgroundTaskStatus
 from .. import errors
 from .background_dataverse_export import handle_dataverse_export_task
+from .automatic_schema_updates import handle_check_for_automatic_schema_updates_task, handle_perform_automatic_schema_updates_task
 from .send_mail import handle_send_mail_task
 from .poke_components import handle_poke_components_task
 from .trigger_webhooks import handle_trigger_object_log_webhooks, handle_webhook_send
@@ -36,6 +37,8 @@ HANDLERS: typing.Dict[str, typing.Callable[[typing.Dict[str, typing.Any], typing
     'poke_components': handle_poke_components_task,
     'trigger_object_log_webhooks': handle_trigger_object_log_webhooks,
     'webhook_send': handle_webhook_send,
+    'check_for_automatic_schema_updates': handle_check_for_automatic_schema_updates_task,
+    'perform_automatic_schema_updates': handle_perform_automatic_schema_updates_task,
 }
 
 should_stop = False

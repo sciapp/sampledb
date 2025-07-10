@@ -1,3 +1,4 @@
+from . import automatic_schema_updates
 from . import files
 from . import forms
 from . import objects
@@ -10,6 +11,7 @@ from . import view
 
 
 __all__ = [
+    'automatic_schema_updates',
     'files',
     'forms',
     'objects',

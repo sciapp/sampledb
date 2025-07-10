@@ -535,3 +535,19 @@ class FederatedLoginError(Exception):
 
 class InfoPageDoesNotExistError(Exception):
     pass
+
+
+class UpdatableObjectsCheckAlreadyInProgressError(Exception):
+    pass
+
+
+class UpdatableObjectsCheckDoesNotExistError(Exception):
+    pass
+
+
+class AutomaticSchemaUpdateAlreadyInProgressError(Exception):
+    pass
+
+
+class AutomaticSchemaUpdateDoesNotExistError(Exception):
+    pass

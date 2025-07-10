@@ -10,6 +10,7 @@ from . import action_types
 from . import action_type_translations
 from . import api_log
 from . import authentication
+from . import automatic_schema_updates
 from . import background_tasks
 from . import caching
 from . import comments
@@ -82,6 +83,7 @@ __all__ = [
     'action_type_translations',
     'api_log',
     'authentication',
+    'automatic_schema_updates',
     'background_tasks',
     'caching',
     'comments',

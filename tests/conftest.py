@@ -115,6 +115,7 @@ def flask_server(worker_id):
 
 
 def create_app():
+    sampledb.config.ENABLE_BACKGROUND_TASKS = False
     logging.getLogger('flask.app').setLevel(logging.WARNING)
     sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI, **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS), only_delete=True)
     sampledb_app = sampledb.create_app()

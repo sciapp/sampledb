@@ -4,6 +4,7 @@ Script for setting up demo data in a previously unused SampleDB installation.
 
 Usage: sampledb set_up_demo
 """
+import copy
 import datetime
 import io
 import json
@@ -1809,6 +1810,12 @@ This example shows how Markdown can be used for instrument Notes.
                 }
             },
             user_id=instrument_responsible_user.id
+        )
+        horizontal_object_action_schema = copy.deepcopy(typing.cast(typing.Dict[str, typing.Any], horizontal_object_action.schema))
+        horizontal_object_action_schema['displayProperties'] = ['name']
+        sampledb.logic.actions.update_action(
+            action_id=horizontal_object_action.id,
+            schema=horizontal_object_action_schema,
         )
 
     print("Success: set up demo data", flush=True)

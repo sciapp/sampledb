@@ -8,10 +8,52 @@ import typing
 from flask_babel import _
 
 from .generate_placeholder import generate_placeholder
+from .data_diffs import calculate_diff, iter_diff
 from .utils import get_dimensionality_for_units
 from ..utils import get_translated_text
 from ...models import ActionType
 from .. import actions, errors, objects
+
+
+def is_converting_to_schema_necessary(
+        data: typing.Dict[str, typing.Any],
+        previous_schema: typing.Dict[str, typing.Any],
+        new_schema: typing.Dict[str, typing.Any]
+) -> typing.Tuple[bool, typing.Sequence[str]]:
+    """
+    Check whether data is changed by converting it to the new schema.
+
+    :param data: the sampledb object data
+    :param previous_schema: the sampledb object schema for the given data
+    :param new_schema: the target sampledb object schema
+    :return: whether converting the data is necessary and messages about the conversion
+    """
+    new_data, messages = convert_to_schema(
+        data=data,
+        previous_schema=previous_schema,
+        new_schema=new_schema
+    )
+    if data == new_data:
+        return False, messages
+    data_diff = calculate_diff(data_before=data, data_after=new_data)
+    messages = list(messages)
+    added_property_paths = []
+    removed_property_paths = []
+    modified_property_paths = []
+    for property_path, property_diff in sorted(iter_diff(data_diff)):
+        if '_before' in property_diff and 'after' in property_diff:
+            modified_property_paths.append(list(property_path))
+        elif '_before' in property_diff:
+            removed_property_paths.append(list(property_path))
+        elif '_after' in property_diff:
+            added_property_paths.append(list(property_path))
+    if modified_property_paths:
+        messages.append(_("Modified properties: %(property_paths)s.", property_paths=', '.join(repr('.'.join(map(str, property_path))) for property_path in modified_property_paths)))
+    if added_property_paths:
+        messages.append(_("Added properties: %(property_paths)s.", property_paths=', '.join(repr('.'.join(map(str, property_path))) for property_path in added_property_paths)))
+    if removed_property_paths:
+        messages.append(_("Removed properties: %(property_paths)s.", property_paths=', '.join(repr('.'.join(map(str, property_path))) for property_path in removed_property_paths)))
+    return data != new_data, messages
 
 
 def convert_to_schema(
@@ -29,7 +71,23 @@ def convert_to_schema(
     """
     result: typing.Optional[typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[str]]], typing.Sequence[str]]]
 
-    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'object_reference', 'quantity', 'array', 'objects', 'hazards', 'timeseries', 'file'):
+    if new_schema == previous_schema and new_schema['type'] in (
+            'bool',
+            'text',
+            'datetime',
+            'tags',
+            'sample',
+            'measurement',
+            'object_reference',
+            'quantity',
+            'array',
+            'object',
+            'hazards',
+            'timeseries',
+            'user',
+            'file',
+            'plotly_chart',
+    ):
         return data, []
 
     if new_schema['type'] == 'tags' and previous_schema['type'] == 'text' and isinstance(data, dict):
