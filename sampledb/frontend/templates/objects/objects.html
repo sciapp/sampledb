@@ -697,7 +697,7 @@
         </div>
       {% else %}
         <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
-          <button type="submit" class="btn btn-primary" id="multiselect-submit" disabled data-action-type-id="{{ use_in_action_type.id }}">{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
+          <button type="submit" class="btn btn-primary" id="multiselect-submit" disabled data-action-type-id="{{ use_in_action_type.id }}" name="{{ use_in_action_form.action_type_id.name }}" value="{{ use_in_action_type.id }}">{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
         </span>
       {% endif %}
     </div>
