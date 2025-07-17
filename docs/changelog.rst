@@ -7,6 +7,7 @@ Version 0.31.1
 Currently in development.
 
 - Fixed object location assignment for locations with capacities
+- Updated used version of simple_openid_connect to fix issues with OIDC login
 
 Version 0.31
 ------------
