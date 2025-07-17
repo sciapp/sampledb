@@ -82,8 +82,6 @@ def create_components_from_data(data: typing.Dict[str, typing.Any] | list[typing
     if isinstance(data, dict):
         type = data.get('_type')
         if type is None:
-            if component_uuid := data.get('component_uuid'):
-                _get_or_create_component_id(component_uuid)
             for key in data:
                 create_components_from_data(data[key])
         elif component_uuid := data.get('component_uuid'):
