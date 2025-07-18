@@ -74,17 +74,16 @@ def handle_dataverse_export_task(
     if not credentials_are_valid:
         if task_id:
             expiration_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
-            task_result = {
-                "error_message": validation_error,
-                "expiration_date": expiration_date
-            }
-            BackgroundTask.query.filter_by(id=task_id).update({"result": task_result})
 
             db.session.delete(
                 DataverseExport.query.filter_by(object_id=object_id).first()
             )
             db.session.commit()
-            return False, None
+
+            return False, {
+                "error_message": validation_error,
+                "expiration_date": expiration_date
+            }
         else:
             return False, {
                 "status": BackgroundTaskStatus.FAILED,
@@ -107,24 +106,17 @@ def handle_dataverse_export_task(
             url_or_error = '%(service_name)s cannot reach the %(dataverse_name)s API at this time. Please try again later.'
 
         result_key = "url" if success else "error_message"
+        result: typing.Dict[str, typing.Any] = {
+            result_key: url_or_error
+        }
         if task_id:
             # background tasks enabled
             if not success:
                 db.session.delete(
                     DataverseExport.query.filter_by(object_id=object_id).first()
                 )
-
+                db.session.commit()
             expiration_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
-            BackgroundTask.query.filter_by(id=task_id).update({
-                "result": {
-                    f"{result_key}": url_or_error
-                },
-                "expiration_date": expiration_date
-            })
-            db.session.commit()
-            return success, None
-        else:
-            # background tasks disabled
-            return success, {
-                f"{result_key}": url_or_error
-            }
+            result['expiration_date'] = expiration_date
+
+        return success, result

@@ -87,7 +87,7 @@ def post_background_task(
         start_handler_threads(flask.current_app)
         return BackgroundTaskStatus.POSTED, task
     else:
-        return _handle_background_task(type, data, None), None
+        return _handle_background_task(type, data, None)[0], None
 
 
 def start_handler_threads(app: flask.Flask) -> None:
@@ -211,7 +211,8 @@ def _handle_background_tasks(app: flask.Flask, should_delete_expired_tasks: bool
                 task = None
             if task is not None:
                 if _claim_background_task(task):
-                    _set_background_task_status(task, _handle_background_task(task.type, task.data, task.id))
+                    status, result = _handle_background_task(task.type, task.data, task.id)
+                    _set_background_task_status_with_result(task, status, result)
                 else:
                     # another thread might have claimed the task first
                     continue
@@ -246,22 +247,32 @@ def _handle_background_task(
         type: str,
         data: typing.Dict[str, typing.Any],
         task_id: typing.Optional[int]
-) -> BackgroundTaskStatus:
+) -> typing.Tuple[BackgroundTaskStatus, typing.Optional[typing.Dict[str, typing.Any]]]:
     handler = HANDLERS.get(type)
     try:
-        if handler is not None and handler(data, task_id)[0]:
-            return BackgroundTaskStatus.DONE
+        if handler is not None:
+            success, result = handler(data, task_id)
+            if success:
+                return BackgroundTaskStatus.DONE, result
+            else:
+                return BackgroundTaskStatus.FAILED, result
     except Exception:
         print("Exception during handler for task:\n", traceback.format_exc(), file=sys.stderr)
-    return BackgroundTaskStatus.FAILED
+    return BackgroundTaskStatus.FAILED, None
 
 
-def _set_background_task_status(
+def _set_background_task_status_with_result(
         task: BackgroundTask,
-        task_status: BackgroundTaskStatus
+        task_status: BackgroundTaskStatus,
+        result: typing.Optional[typing.Dict[str, typing.Any]]
 ) -> None:
     try:
         task.status = task_status
+        if result is not None:
+            if 'expiration_date' in result:
+                task.expiration_date = result['expiration_date']
+                del result['expiration_date']
+            task.result = result
         if task_status.is_final() and task.auto_delete:
             db.session.delete(task)
         else:
