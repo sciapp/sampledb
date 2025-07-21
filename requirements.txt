@@ -80,7 +80,7 @@ qrcode==8.2
 requests==2.32.4
 scipy==1.16.0
 setuptools==80.9.0
-simple_openid_connect==2.1.0
+simple_openid_connect==2.3.1
 simplejson==3.20.1
 six==1.17.0
 soupsieve==2.7
