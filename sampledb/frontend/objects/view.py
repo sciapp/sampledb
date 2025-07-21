@@ -262,16 +262,16 @@ def object(object_id: int) -> FlaskResponseT:
 
         if usable_in_action_types:
             all_favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
-            for action_type in usable_in_action_types:
-                all_action_type_actions = logic.actions.get_actions(action_type_id=action_type.id)
+            for usable_action_type in usable_in_action_types:
+                all_action_type_actions = logic.actions.get_actions(action_type_id=usable_action_type.id)
 
-                favorite_actions_by_action_type_id[action_type.id] = [
+                favorite_actions_by_action_type_id[usable_action_type.id] = [
                     action
                     for action in all_action_type_actions
                     if action.id in all_favorite_action_ids and not action.is_hidden
                 ]
 
-                favorite_actions_by_action_type_id[action_type.id].sort(
+                favorite_actions_by_action_type_id[usable_action_type.id].sort(
                     key=lambda action: (
                         action.user.name.lower() if action.user and action.user.name else '',
                         get_translated_text(action.instrument.name).lower() if action.instrument else '',
