@@ -421,6 +421,7 @@ def test_status_codes(flask_server, user, driver):
         f'objects/{object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
         f'objects/{object_id}/label': 200,
         f'objects/{object_id}/permissions': 200,
+        f'objects/{object_id}/related_objects_entries': 200,
         f'objects/{object_id}/timeseries_data/{timeseries_id}': 200,
         f'objects/{object_id}/scicat_export/': 200,
         f'objects/{object_id}/versions/': 200,
@@ -437,6 +438,7 @@ def test_status_codes(flask_server, user, driver):
         f'objects/{other_object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
         f'objects/{other_object_id}/label': 403,
         f'objects/{other_object_id}/permissions': 200,
+        f'objects/{other_object_id}/related_objects_entries': 404,
         f'objects/{other_object_id}/timeseries_data/{timeseries_id}': 404,
         f'objects/{other_object_id}/scicat_export/': 302,
         f'objects/{other_object_id}/versions/': 200,

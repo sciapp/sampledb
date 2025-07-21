@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.32
+------------
+
+Currently in development.
+
+- Improved selection of additional properties to show in object lists
+
+
 Version 0.31.1
 --------------
 
@@ -8,6 +16,7 @@ Released on July 21st, 2025.
 
 - Fixed object location assignment for locations with capacities
 - Updated used version of simple_openid_connect to fix issues with OIDC login
+
 
 Version 0.31
 ------------
