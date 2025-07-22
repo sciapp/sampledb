@@ -673,7 +673,7 @@ def _apply_action_to_form_data(action: str, form_data: typing.Dict[str, typing.A
 
 
 def get_object_form_template_kwargs(object_id: typing.Optional[int], component_id: typing.Optional[int]) -> typing.Dict[str, typing.Any]:
-    languages = get_languages_by_component(component_id=component_id, english=True, replace_with_local=True)
+    languages = get_languages_by_component(component_id=component_id, replace_with_local=True)
     template_kwargs = {
         'datetime': datetime,
         'languages': languages

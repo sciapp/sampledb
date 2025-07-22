@@ -1163,12 +1163,6 @@ def get_federation_url(obj: typing.Any) -> str:
         return component_address + relative_url_for(endpoint, **{param_name: obj.fed_id})
 
 
-@JinjaFunction()
-def is_federated_version(object_id: int, version_id: int) -> bool:
-    object_version = get_object(object_id=object_id, version_id=version_id)
-    return object_version.version_component is not None
-
-
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class LocationFormInformation:
     id: int
