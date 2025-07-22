@@ -153,7 +153,7 @@ This allows sharing an object without data to use it by reference or without use
 Solving Conflicts
 `````````````````
 
-When an object is shared with other databases that support editing shared objects than it may occur that an object was edited while the other database was not reachable.
+When an object is shared with other databases that support editing shared objects then it may occur that an object was edited while the other database was not reachable.
 If in this case another user edits the object differently on the other database it might happen that the changes cannot automatically be merged.
 In this case the conflict must be solved by a user with **Write** permissions.
 Therefore, the user can choose one of the following strategies:

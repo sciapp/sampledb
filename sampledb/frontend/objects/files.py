@@ -219,7 +219,7 @@ def post_object_files(object_id: int) -> FlaskResponseT:
                 else:
                     file_name = 'file'
                 logic.files.create_database_file(object_id, flask_login.current_user.id, file_name, typing.cast(typing.Callable[[typing.BinaryIO], None], lambda stream, file_storage=file_storage: file_storage.save(dst=stream)))
-                poke_affected_components(get_object(object_id))
+            poke_affected_components(get_object(object_id))
             flask.flash(_('Successfully uploaded files.'), 'success')
         else:
             flask.flash(_('Failed to upload files.'), 'error')
