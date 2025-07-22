@@ -150,3 +150,43 @@ def get_unit_for_un_cefact_code(
     except Exception:
         return None
     return unit
+
+
+@functools.cache
+def get_old_dimensionality(units: typing.Optional[str]) -> str:
+    """
+    Get the dimensionality string in the style of pint 0.23 and earlier.
+
+    :param units: the units string to get the dimensionality for
+    :return: the dimensionality string
+    """
+    if units is None:
+        return 'dimensionless'
+    pint_units = int_ureg.Unit(units)
+    dimensionality = pint_units.dimensionality
+    numerator_items = []
+    denominator_items = []
+    for dimension, exponent in dimensionality.items():
+        if exponent > 0:
+            numerator_items.append((dimension, exponent))
+        else:
+            denominator_items.append((dimension, -exponent))
+    # sort by dimension, rather than by exponent
+    numerator_items.sort()
+    denominator_items.sort()
+    numerator_str = ' * '.join([
+        f'{dimension} ** {int(exponent)}' if exponent > 1 else str(dimension)
+        for dimension, exponent in numerator_items
+    ])
+    denominator_str = ' / '.join([
+        f'{dimension} ** {int(exponent)}' if exponent > 1 else str(dimension)
+        for dimension, exponent in denominator_items
+    ])
+    if denominator_str and numerator_str:
+        return numerator_str + ' / ' + denominator_str
+    elif numerator_str:
+        return numerator_str
+    elif denominator_str:
+        return '1 / ' + denominator_str
+    else:
+        return 'dimensionless'

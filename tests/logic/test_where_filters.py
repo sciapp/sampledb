@@ -191,6 +191,43 @@ def test_quantity_between_excluding(objects):
     assert [object1] == objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(-1.1, 'meter'), datatypes.Quantity(-10, 'centimeters'), including=False))
 
 
+def test_quantity_old_dimensionality(engine, objects):
+    object1 = objects.create_object(
+        action_id=0,
+        data={
+            "q": {
+                "_type": "quantity",
+                "magnitude": 1,
+                "magnitude_in_base_units": 1,
+                "units": "W",
+                "dimensionality": "[length] ** 2 * [mass] / [time] ** 3"
+            }
+        },
+        schema={},
+        user_id=0
+    )
+    object2 = objects.create_object(
+        action_id=0,
+        data={
+            "q": {
+                "_type": "quantity",
+                "magnitude": 1,
+                "magnitude_in_base_units": 1,
+                "units": "W",
+                "dimensionality": "[mass] * [length] ** 2 / [time] ** 3"
+            }
+        },
+        schema={},
+        user_id=0
+    )
+    assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(1, 'W')))}
+    assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_greater_than(data['q'], datatypes.Quantity(0.5, 'W')))}
+    assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_greater_than_equals(data['q'], datatypes.Quantity(0.5, 'W')))}
+    assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_less_than(data['q'], datatypes.Quantity(1.5, 'W')))}
+    assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_less_than_equals(data['q'], datatypes.Quantity(1.5, 'W')))}
+    assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_between(data['q'], datatypes.Quantity(0.5, 'W'),  datatypes.Quantity(1.5, 'W')))}
+
+
 def test_datetime_equals(objects):
     utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
