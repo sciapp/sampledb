@@ -1071,6 +1071,11 @@ def objects() -> FlaskResponseT:
 
     object_conflicts = get_object_ids_with_conflicts_by_object_ids([object['object_id'] for object in objects])
 
+    user_conflicting_object_permissions = logic.object_permissions.get_user_permissions_for_multiple_objects(
+        user_id=flask_login.current_user.id,
+        object_ids=object_conflicts,
+    )
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -1160,7 +1165,7 @@ def objects() -> FlaskResponseT:
         projects_treepicker_info=projects_treepicker_info,
         sorted_action_topics=sorted_action_topics,
         sorted_instrument_topics=sorted_instrument_topics,
-        get_user_object_permissions=logic.object_permissions.get_user_object_permissions
+        user_conflicting_object_permissions=user_conflicting_object_permissions,
     )
 
 
