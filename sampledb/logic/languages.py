@@ -221,7 +221,6 @@ def get_languages_by_component(
         component_id: typing.Optional[int],
         only_enabled_for_input: bool = False,
         replace_with_local: bool = True,
-        english: bool = False
 ) -> typing.List[Language]:
     """
     Return all languages from a specific component
@@ -261,10 +260,9 @@ def get_languages_by_component(
     else:
         languages = component_languages
 
-    if english:
-        english_language = get_language(Language.ENGLISH)
-        if english_language not in languages:
-            languages.insert(0, english_language)
+    english_language = get_language(Language.ENGLISH)
+    if english_language not in languages:
+        languages.insert(0, english_language)
     return languages
 
 
@@ -357,7 +355,7 @@ def filter_translations(
 ) -> typing.Dict[str, str]:
     allowed_language_codes = {
         language.lang_code
-        for language in get_languages_by_component(component_id=component_id, only_enabled_for_input=True, english=True)
+        for language in get_languages_by_component(component_id=component_id, only_enabled_for_input=True)
     }
 
     filtered_translations = {}

@@ -318,7 +318,7 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         if max_length is not None and len(instance['text']) > max_length:
             raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
     elif not choices:
-        all_languages = languages.get_languages_by_component(component_id=component_id, english=True)
+        all_languages = languages.get_languages_by_component(component_id=component_id)
         language_names = {
             language.lang_code: get_translated_text(language.names)
             for language in all_languages

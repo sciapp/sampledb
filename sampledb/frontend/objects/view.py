@@ -170,7 +170,7 @@ def object(object_id: int) -> FlaskResponseT:
 
     # languages
     english = get_language(Language.ENGLISH)
-    all_languages = get_languages_by_component(component_id=object.component_id, replace_with_local=True, english=True)
+    all_languages = get_languages_by_component(component_id=object.component_id, replace_with_local=True)
     languages_by_lang_code = {
         language.lang_code: language
         for language in all_languages
