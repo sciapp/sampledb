@@ -21,7 +21,7 @@ from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError, InvalidURLError
 from .utils import units_are_valid
 from ..utils import get_translated_text, parse_url
-from ..units import get_dimensionality_for_units, get_magnitude_in_base_units
+from ..units import get_dimensionality_for_units, get_magnitude_in_base_units, get_old_dimensionality
 
 OPT_IMPORT_KEYS = {'export_edit_note', 'component_uuid', 'eln_source_url', 'eln_object_url', 'eln_user_url'}
 
@@ -499,7 +499,7 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
         raise ValidationError('dimensionality must be str', path)
     if quantity_magnitude.dimensionality != schema_quantity.dimensionality:
         raise ValidationError(f'Invalid units, expected units for dimensionality "{str(schema_quantity.dimensionality)}"', path)
-    if str(quantity_magnitude.dimensionality) != instance['dimensionality']:
+    if str(quantity_magnitude.dimensionality) != instance['dimensionality'] and get_old_dimensionality(quantity_magnitude.units) != instance['dimensionality']:
         raise ValidationError(f'Invalid dimensionality, expected "{str(schema_quantity.dimensionality)}"', path)
 
 
