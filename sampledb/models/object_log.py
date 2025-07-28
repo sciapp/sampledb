@@ -62,7 +62,7 @@ class ObjectLogEntry(Model):
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     type: Mapped[ObjectLogEntryType] = db.Column(db.Enum(ObjectLogEntryType), nullable=False)
     object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
-    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
     utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     is_imported: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
@@ -74,7 +74,7 @@ class ObjectLogEntry(Model):
             self,
             type: ObjectLogEntryType,
             object_id: int,
-            user_id: int,
+            user_id: typing.Optional[int],
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None,
             is_imported: bool = False

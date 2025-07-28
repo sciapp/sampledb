@@ -69,7 +69,7 @@ def process_object_log_entries(object_log_entries: typing.List[ObjectLogEntry], 
             object_id_value = object_log_entry.data.get(using_object_id)
             if type(object_id_value) is int:
                 referenced_object_ids[object_log_entry.id] = object_id_value
-        if object_log_entry.user_id not in users_by_id:
+        if object_log_entry.user_id not in users_by_id and object_log_entry.user_id is not None:
             users_by_id[object_log_entry.user_id] = users.get_user(object_log_entry.user_id)
         object_log_entry.user = users_by_id[object_log_entry.user_id]
         # remove the modified log entry from the session to avoid an
@@ -116,7 +116,7 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
 def _store_new_log_entry(
         type: ObjectLogEntryType,
         object_id: int,
-        user_id: int,
+        user_id: typing.Optional[int],
         data: typing.Dict[str, typing.Any],
         utc_datetime: typing.Optional[datetime.datetime] = None,
         is_imported: bool = False
@@ -204,7 +204,17 @@ def import_conflicting_version(user_id: int, object_id: int, fed_version_id: int
     )
 
 
-def solve_version_conflict(user_id: int, object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = False) -> None:
+@typing.overload
+def solve_version_conflict(user_id: None, object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = True) -> None:
+    ...
+
+
+@typing.overload
+def solve_version_conflict(user_id: int, object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = True) -> None:
+    ...
+
+
+def solve_version_conflict(user_id: typing.Optional[int], object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = False) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.SOLVE_VERSION_CONFLICT,
         object_id=object_id,
