@@ -1586,7 +1586,7 @@
             {% else %}
               {% set ns.object_log_entry_message = _('The conflict with imported version #%(version_id)s from %(component_name)s was solved by %(user_ref)s.', user_ref=user_reference(object_log_entry.user), component_name=get_component(object_log_entry.data['component_id']).name, version_id=object_log_entry.data['version_id']) %}
             {% endif %}
-            {% set ns.object_log_entry_view_html = _('<a href="%(view_url)s">View Conflict</a>', view_url=url_for('.conflict_overview', object_id=object_log_entry.object_id, component_id=object_log_entry.data['component_id'], solved_in=object_log_entry.data['solved_in'])) %}
+            {% set ns.object_log_entry_view_html = _('<a href="%(view_version_url)s">View&nbsp;Version</a>&nbsp;/&nbsp;<a href="%(view_version_url_with_diff)s">View&nbsp;Changes</a>&nbsp;/&nbsp;<a href="%(conflict_url)s">View&nbsp;Conflict</a>', view_version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['solved_in']),view_version_url_with_diff=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['solved_in'], diff=''), conflict_url=url_for('.conflict_overview', object_id=object_log_entry.object_id, component_id=object_log_entry.data['component_id'], solved_in=object_log_entry.data['solved_in'])) %}
           {% else %}
             {% set ns.object_log_entry_message = _('Unknown event') %}
           {% endif %}

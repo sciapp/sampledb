@@ -61,6 +61,8 @@ def create_html_for_pdfexport(
         if 'activity_log' in sections:
             object_log_entries = object_log.get_object_log_entries(object_id=object.id, user_id=user_id)
             for object_log_entry in reversed(object_log_entries):
+                if object_log_entry.user_id is None:
+                    continue
                 user_url = markupsafe.escape(flask.url_for('.user_profile', user_id=object_log_entry.user_id, _external=True))
                 user_name = markupsafe.escape(get_user(object_log_entry.user_id).get_name())
 

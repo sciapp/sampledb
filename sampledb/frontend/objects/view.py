@@ -936,7 +936,7 @@ def print_object_label(object_id: int) -> FlaskResponseT:
     object = get_object(object_id=object_id)
     object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
     for object_log_entry in object_log_entries:
-        if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH):
+        if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH) and object_log_entry.user_id is not None:
             creation_date = object_log_entry.utc_datetime.strftime('%Y-%m-%d')
             creation_user = get_user(object_log_entry.user_id).get_name(include_id=False)
             break
@@ -1111,7 +1111,7 @@ def multiselect_labels() -> FlaskResponseT:
 
         object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
         for object_log_entry in object_log_entries:
-            if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH):
+            if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH) and object_log_entry.user_id is not None:
                 creation_date = object_log_entry.utc_datetime.strftime("%Y-%m-%d")
                 creation_user = get_user(object_log_entry.user_id).get_name(include_id=False)
                 break

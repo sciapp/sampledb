@@ -416,7 +416,7 @@ def solve_conflict(
     db.session.add(conflict)
     db.session.commit()
 
-    if add_object_log and solver_id is not None:
+    if add_object_log:
         solve_version_conflict(
             user_id=solver_id,
             object_id=conflict.object_id,
@@ -642,7 +642,6 @@ def automerge_conflict(
         fed_version_id=object_version_conflict.fed_version_id,
         version_component_id=object_version_conflict.component_id
     )
-
     if base_version.data is None or local_version.data is None or imported_version.data is None:
         raise errors.FailedSolvingByStrategyError()
 
