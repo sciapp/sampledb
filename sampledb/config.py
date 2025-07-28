@@ -142,6 +142,7 @@ def parse_configuration_values() -> None:
         'OIDC_DISABLE_NONCE',
         'OIDC_ACCESS_TOKEN_AS_API_KEY',
         'OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION',
+        'OIDC_USE_SESSION',
         'WORKFLOW_VIEW_MODALS',
         'WORKFLOW_VIEW_COLLAPSED',
     ]:
@@ -745,6 +746,7 @@ OIDC_ONLY = False
 OIDC_CREATE_ACCOUNT = 'auto_link'
 OIDC_ACCESS_TOKEN_AS_API_KEY = False
 OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION = False
+OIDC_USE_SESSION = False
 
 # email settings
 MAIL_SERVER = None

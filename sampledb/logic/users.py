@@ -73,6 +73,7 @@ class User:
     language_cache: typing.List[typing.Optional[typing.Any]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
     # for use by the settings property
     _settings_cache: typing.List[typing.Optional[typing.Dict[str, typing.Any]]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
+    login_session_id: typing.Optional[int] = dataclasses.field(default=None)
 
     @classmethod
     def from_database(cls, user: users.User) -> 'User':
@@ -97,6 +98,11 @@ class User:
             eln_object_id=user.eln_object_id,
         )
 
+    def with_login_session(self, login_session_id: int) -> typing.Self:
+        values = dataclasses.asdict(self)
+        values['login_session_id'] = login_session_id
+        return self.__class__(**values)
+
     @property
     def component(self) -> typing.Optional[Component]:
         if self.component_id is None:
@@ -110,8 +116,15 @@ class User:
 
         return logic.eln_import.get_eln_import(self.eln_import_id)
 
-    def get_id(self) -> int:
-        return self.id
+    def get_id(self) -> str:
+        """
+        Returns the login session id or user id.
+
+        Use `self.id` for the user id.
+        """
+        if self.login_session_id is not None:
+            return f'l{self.login_session_id}'
+        return f'{self.id}'
 
     @property
     def is_authenticated(self) -> bool:
@@ -122,8 +135,8 @@ class User:
         return False
 
     def __eq__(self, other: typing.Any) -> bool:
-        if isinstance(other, (flask_login.UserMixin, User)):
-            return bool(self.get_id() == other.get_id())
+        if isinstance(other, (AnonymousUser, User)):
+            return bool(self.id == other.id)
         return NotImplemented
 
     def __ne__(self, other: typing.Any) -> bool:

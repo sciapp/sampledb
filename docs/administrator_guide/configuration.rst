@@ -99,6 +99,8 @@ OpenID Connect (OIDC)
      - If set, then OIDC Access Tokens may be used as API keys using ``Bearer Authentication``. Depending on the Access Token, validation may require an HTTP request to the OIDC provider, which can be enabled using ``OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION``.
    * - OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION
      - If set, then Access Tokens may be validated by making an HTTP request to the OIDC provider. Otherwise, they can only be validated if they are a JWT.
+   * - SAMPLEDB_OIDC_USE_SESSION
+     - If set, then the sessions lifetime will be bound to the that of the ID Token and Back-Channel Logouts will end the session.
 
 If you use OIDC for user management, you can use these variables to configure how SampleDB should use your OIDC provider. See :ref:`OIDC<oidc>` for a detailed explanation.
 

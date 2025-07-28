@@ -16,7 +16,7 @@ import werkzeug.wrappers.response
 
 from .. import frontend
 from ...logic import oidc
-from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server
+from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server, get_login_session, AuthenticationType
 from ...logic.users import get_user, User, create_sampledb_federated_identity, get_federated_identity, enable_federated_identity_for_login
 from ...logic.components import get_component, get_federated_login_components
 from ...logic.errors import FederatedUserInFederatedIdentityError, UserDoesNotExistError, FederatedIdentityNotFoundError
@@ -49,10 +49,17 @@ def load_user(user_id: typing.Any) -> typing.Optional[User]:
                     flask.flash(_('You have been signed out after %(idle_sign_out_minutes)s minutes of inactivity.', idle_sign_out_minutes=idle_sign_out_minutes), 'info')
                 return None
     try:
-        user_id = int(user_id)
-    except ValueError:
+        if typing.cast(str, user_id).startswith('l'):
+            login_session = get_login_session(int(user_id[1:]))
+            if login_session.type == AuthenticationType.OIDC and not oidc.validate_login_session(login_session):
+                flask.session.clear()
+                flask.flash(_('You have been signed out due to inactivity or a remote sign out.'), 'info')
+                return None
+            user = get_user(login_session.user_id).with_login_session(login_session.id)
+        else:
+            user = get_user(int(user_id))
+    except Exception:
         return None
-    user = get_user(user_id)
     if not user.is_active:
         flask.flash(_('Your user account has been deactivated. Please contact an administrator.'), 'error')
         return None
@@ -207,7 +214,6 @@ def complete_sign_in(
         *,
         next_url: typing.Optional[str] = None,
         federated_login_token: typing.Optional[str] = None,
-        oidc_id_token_hint: typing.Optional[str] = None,
 ) -> FlaskResponseT:
     if not user:
         flask.flash(_('Please sign in again.'), 'error')
@@ -239,10 +245,6 @@ def complete_sign_in(
         flask_login.login_user(user, remember=remember_me)
         refresh()
     flask.session['using_shared_device'] = shared_device
-    if oidc_id_token_hint:
-        flask.session['oidc_id_token_hint'] = oidc_id_token_hint
-    else:
-        flask.session.pop('oidc_id_token_hint', None)
     response = _redirect_to_next_url(next_url)
     response.set_cookie('SAMPLEDB_LAST_ACTIVITY_DATETIME', '', samesite='Lax')
     return response
@@ -270,11 +272,16 @@ def refresh_sign_in() -> FlaskResponseT:
 def sign_out() -> FlaskResponseT:
     form = SignoutForm()
     if form.validate_on_submit():
+        login_session_id = getattr(flask_login.current_user, 'login_session_id', None)
         flask_login.logout_user()
         redirect_uri = flask.url_for('.index', _external=True)
-        id_token_hint = flask.session.pop('oidc_id_token_hint', None)
-        if id_token_hint:
-            return flask.redirect(oidc.logout(id_token_hint, redirect_uri))
+
+        if login_session_id is not None:
+            login_session = get_login_session(login_session_id)
+
+            if login_session.type == AuthenticationType.OIDC:
+                return flask.redirect(oidc.logout(login_session, redirect_uri))
+
         return flask.redirect(redirect_uri)
     return flask.render_template('sign_out.html')
 
@@ -323,7 +330,7 @@ def oidc_callback() -> FlaskResponseT:
         flask_login.logout_user()
         return flask.redirect(flask.url_for('.index'))
 
-    user, id_token_hint, next = result
+    user, next = result
 
     # While the check in the user_loader would prevent a login, ensure this is
     # handled as soon as possible with a reliable message.
@@ -337,5 +344,14 @@ def oidc_callback() -> FlaskResponseT:
         remember_me=False,
         shared_device=False,
         next_url=next,
-        oidc_id_token_hint=id_token_hint
     )
+
+@frontend.route('/users/me/oidc/backchannel_logout', methods={'POST'})
+def oidc_backchannel_logout() -> FlaskResponseT:
+    try:
+        if not oidc.is_oidc_configured():
+            raise RuntimeError('OIDC not configured')
+        oidc.handle_backchannel_logout(flask.request.form['logout_token'])
+        return '', 200
+    except Exception:
+        return '', 401

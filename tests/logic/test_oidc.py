@@ -170,7 +170,7 @@ def auth_helper(
 
 
 def test_oidc(setup):
-    user, _, returned_next = auth_helper(setup)
+    user, returned_next = auth_helper(setup)
     assert returned_next == setup[2]
     assert user.name == "Test"
     assert user.email == "test@example.net"

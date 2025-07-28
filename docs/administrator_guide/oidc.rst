@@ -19,16 +19,36 @@ compatibility with some providers, the use of the parameter can be disabled
 using a configuration variable. If a provider supports neither PKCE with
 method ``S256``, nor ``nonce``, using it is not recommended.
 
-RP-Initiated Logout will be used if the provider indicates support.
-Back-Channel and Front-Channel Logout are not currently implemented.
+RP-Initiated Logout will be used if the provider indicates support. If
+configured, the sessions lifetime will be bound to the that of the ID Token
+and Back-Channel Logouts will end the session. Refresh Tokens will be used to
+transparently refresh the ID Token after its expiration, if provided by the
+OIDC provider. Front-Channel Logout is not currently implemented.
 
-The redirect URL for the authentication callback is set to the external URL of
-the path ``/users/me/oidc/callback``, e.g.
-``https://example.net/users/me/oidc/callback``, while the redirect URL for the
-logout redirect is set to the external URL of the path ``/``, e.g.
-``https://example.net/``. This can be configured using the `SERVER_NAME`
-variable, see :ref:`Miscellaneous Configuration Environment Variables
-<miscellaneous_config>`.
+The following URLs can or must be configured at the OIDC provider:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Type
+     - URL
+     - Required
+
+   * - Authentication callback
+     - ``/users/me/oidc/callback``
+     - Yes
+
+   * - Post logout redirect
+     - ``/``
+     - Yes
+
+   * - Back-Channel Logout
+     - ``/users/me/oidc/backchannel_logout``
+     - No
+
+For example, if the SampleDB is hosted at ``https://samples.example.net``,
+then the authentication callback would be
+``https://samples.example.net/users/me/oidc/callback``.
 
 OIDC roles
 ^^^^^^^^^^

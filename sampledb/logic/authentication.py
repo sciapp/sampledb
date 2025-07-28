@@ -14,7 +14,7 @@ from fido2.webauthn import AttestationConveyancePreference, PublicKeyCredentialR
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod, FederatedIdentity
+from ..models import Authentication, AuthenticationType, Login, TwoFactorAuthenticationMethod, HTTPMethod, FederatedIdentity
 from . import errors, api_log
 
 
@@ -45,6 +45,26 @@ class AuthenticationMethod:
             type=authentication_method.type,
             confirmed=authentication_method.confirmed,
             user=logic.users.get_user(authentication_method.user_id)
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class LoginSession:
+    """
+    This class provides an immutable wrapper around models.authentication.Login.
+    """
+    id: int
+    user_id: int
+    data: typing.Dict[str, typing.Any]
+    type: AuthenticationType
+
+    @classmethod
+    def from_database(cls, login: Login) -> 'LoginSession':
+        return LoginSession(
+            id=login.id,
+            user_id=login.user_id,
+            data=copy.deepcopy(login.data),
+            type=login.type,
         )
 
 
@@ -398,6 +418,106 @@ def get_webauthn_server() -> Fido2Server:
         attestation=AttestationConveyancePreference.NONE,
         verify_origin=_verify_origin
     )
+
+def get_login_session(login_session_id: int) -> LoginSession:
+    """
+    Get a login session by its ID. Does not validate the session.
+
+    :param login_session_id: the ID of an existing login session
+    :return: the login session
+    :raise errors.LoginSessionDoesNotExistError: if the login session does not exist
+    :raise errors.LoginSessionExpiredError: if the login session has expired
+    """
+    login = Login.query.filter_by(id=login_session_id).first()
+    if login is None:
+        raise errors.LoginSessionDoesNotExistError()
+    if login.expires_at <= datetime.datetime.now():
+        raise errors.LoginSessionHasExpiredError()
+    login_session = LoginSession.from_database(login)
+    return login_session
+
+
+def get_active_login_session(user_id: int) -> list[LoginSession]:
+    return [
+        LoginSession.from_database(login)
+        for login in
+        Login.query.filter(
+            db.and_(
+                Login.user_id == user_id,
+                Login.expires_at > datetime.datetime.now()
+            )
+        ).all()
+    ]
+
+
+def add_login_session(
+        user_id: int,
+        authentication_type: AuthenticationType,
+        expires_at: datetime.datetime,
+        data: dict[str, typing.Any] | None = None,
+) -> LoginSession:
+    """
+    Create a login session.
+
+    :param user_id: the ID of the user
+    :param authentication_type: the authentication type
+    :param data: additional data specific to the authentication type
+    :return: the login session
+    """
+    login = Login(
+        user_id=user_id,
+        authentication_type=authentication_type,
+        expires_at=expires_at,
+        data=data or {},
+    )
+    db.session.add(login)
+    db.session.commit()
+    return LoginSession.from_database(login)
+
+
+def update_login_session(
+        login_session_id: int,
+        data: dict[str, typing.Any] | None = None,
+        expires_at: datetime.datetime | None = None,
+) -> None:
+    """
+    Update a login session.
+
+    :param login_session_id: the ID of the login session
+    :param data: additional data specific to the authentication type
+    """
+    login = Login.query.filter_by(id=login_session_id).first()
+    if not login:
+        raise errors.LoginSessionDoesNotExistError()
+    if data is not None:
+        login.data = data
+    if expires_at is not None:
+        login.expires_at = expires_at
+    db.session.add(login)
+    db.session.commit()
+
+
+def expire_login_sessions(login_session_ids: typing.Iterable[int]) -> None:
+    (
+        db.session
+        .query(Login)
+        .filter(Login.id.in_(login_session_ids))
+        .update(
+            {Login.expires_at: db.func.current_date()},
+            synchronize_session=False,
+        )
+    )
+    db.session.commit()
+
+
+def delete_expired_login_session() -> None:
+    (
+        db.session
+        .query(Login)
+        .filter(Login.expires_at < db.func.now() - db.func.interval('1 month'))
+        .delete(synchronize_session=False)
+    )
+    db.session.commit()
 
 
 def login(login: str, password: str) -> typing.Optional[logic.users.User]:

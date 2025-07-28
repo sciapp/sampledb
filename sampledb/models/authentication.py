@@ -9,6 +9,7 @@ import typing
 
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, Query, Mapped
+from sqlalchemy.sql import func
 
 from .. import db
 from .utils import Model
@@ -54,6 +55,38 @@ class Authentication(Model):
             login=login,
             type=authentication_type,
             confirmed=confirmed
+        )
+
+    def __repr__(self) -> str:
+        return f'<{type(self).__name__}(id={self.id})>'
+
+
+class Login(Model):
+    __tablename__ = "login"
+
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    type: Mapped[AuthenticationType] = db.Column(db.Enum(AuthenticationType), nullable=False)
+    created_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False, default=func.now())
+    expires_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
+    user: Mapped['User'] = relationship('User')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Login"]]
+
+    def __init__(
+            self,
+            user_id: int,
+            authentication_type: AuthenticationType,
+            expires_at: datetime,
+            data: typing.Dict[str, typing.Any],
+    ) -> None:
+        super().__init__(
+            user_id=user_id,
+            type=authentication_type,
+            expires_at=expires_at,
+            data=data,
         )
 
     def __repr__(self) -> str:
