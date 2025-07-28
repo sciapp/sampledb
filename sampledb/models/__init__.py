@@ -37,7 +37,7 @@ from .actions import Action, ActionType, SciCatExportType
 from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .api_log import APILogEntry, HTTPMethod
-from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, SAMLArtifacts, SAMLMetadata, SAMLMetadataType
+from .authentication import Authentication, AuthenticationType, Login, TwoFactorAuthenticationMethod, SAMLArtifacts, SAMLMetadata, SAMLMetadataType
 from .automatic_schema_updates import UpdatableObjectsCheck, UpdatableObjectsCheckStatus, AutomaticSchemaUpdate, AutomaticSchemaUpdateStatus
 from .background_tasks import BackgroundTask, BackgroundTaskStatus
 from .comments import Comment
@@ -154,6 +154,7 @@ __all__ = [
     'LocationType',
     'LocationLogEntry',
     'LocationLogEntryType',
+    'Login',
     'AllUserLocationPermissions',
     'UserLocationPermissions',
     'GroupLocationPermissions',

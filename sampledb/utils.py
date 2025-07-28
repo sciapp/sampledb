@@ -39,7 +39,7 @@ def ansi_color(text: str, color: int) -> str:
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
-        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.get_id() if flask_login.current_user else None,
+        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.id if flask_login.current_user else None,
         on_unauthorized: typing.Callable[[int], FlaskResponseT] = lambda object_id: flask.abort(403),
         may_enable_anonymous_users: bool = True
 ) -> typing.Callable[[typing.Any], typing.Any]:
