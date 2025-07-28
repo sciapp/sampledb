@@ -921,4 +921,4 @@ if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
     DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]  # pylint: disable=unsubscriptable-object
 
 if OIDC_ONLY:
-    DISABLE_INVITATIONS = True
+    DISABLE_USER_INVITATIONS = True
