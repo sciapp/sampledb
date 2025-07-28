@@ -1414,7 +1414,7 @@
             {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) %}
             {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
-              {% if object_log_entry.data.get('imported_from_component_id') is none %}
+              {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
                 {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}
               {% else %}
                 {% set component = get_component(object_log_entry.data['imported_from_component_id']) %}
@@ -1443,7 +1443,7 @@
               {% set ns.object_log_entry_message = _('%(user_ref)s used the object to create a sample.', user_ref=user_reference(object_log_entry.user)) %}
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
-            {% if object_log_entry.data.get('imported_from_component_id') is none %}
+            {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
               {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) %}
             {% else %}
               {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
@@ -1460,7 +1460,7 @@
               {% if file.id == object_log_entry.data['file_id'] %}
                 {% if file.storage == 'database' or file.storage == 'federation' %}
                   {% if action is not none and action.type.enable_files %}
-                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
                       {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) %}
                     {% else %}
                       {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
@@ -1468,7 +1468,7 @@
                       {% endwith %}
                     {% endif %}
                   {% else %}
-                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
                       {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) %}
                     {% else %}
                       {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
@@ -1477,7 +1477,7 @@
                     {% endif %}
                   {% endif %}
                 {% elif file.storage == 'url' %}
-                  {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                  {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
                     {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) %}
                   {% else %}
                     {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
@@ -1486,7 +1486,7 @@
                   {% endif %}
                 {% else %}
                   {% if action is not none and action.type.enable_files %}
-                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
                       {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) %}
                     {% else %}
                       {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
@@ -1494,7 +1494,7 @@
                       {% endwith %}
                     {% endif %}
                   {% else %}
-                    {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
                       {% set ns.object_log_entry_message = _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) %}
                     {% else %}
                       {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
@@ -1512,7 +1512,7 @@
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
             {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
-            {% if object_log_entry.data.get('imported_from_component_id') is none %}
+            {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
               {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
                 {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id))) %}
               {% elif object_location_assignment.location_id is not none %}
@@ -1594,11 +1594,11 @@
             {% if any_object_log_entry_is_imported %}
               <td style="white-space: nowrap;width: 1%;">
                 {% if object_log_entry.is_imported %}
-                  {% if object.component or (object_log_entry.user is not none and object_log_entry.user.component_id is not none) %}
-                    {% if object.component is none %}
+                  {% if object.imported_from_component or (object_log_entry.user is not none and object_log_entry.user.component_id is not none) %}
+                    {% if object.imported_from_component is none %}
                       {% set log_component = get_component(object_log_entry.user.component_id) %}
                     {% else %}
-                      {% set log_component = object.component %}
+                      {% set log_component = object.imported_from_component %}
                     {% endif %}
                     <i class="fa fa-fw fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from %(component_name)s', component_name=log_component.get_name()) }}"></i>
                   {% elif object.eln_import %}
