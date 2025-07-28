@@ -22,7 +22,7 @@ from simple_openid_connect.pkce import generate_pkce_pair
 
 from ..config import OIDC_REQUIRED_CONFIG_KEYS
 from ..models import AuthenticationType, UserType
-from . import authentication, users
+from . import authentication, errors, users
 
 
 def is_oidc_configured() -> bool:
@@ -159,11 +159,11 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str]:
     data = _Data.model_validate_json(token)
 
     if current_url.args['state'] != data.state:
-        raise RuntimeError('Incorrect state value')
+        raise errors.TemporaryLoginAttemptError('Incorrect state value')
 
     # Make the timeout configurable if necessary.
     if data.started < time.time() - 10 * 60:
-        raise RuntimeError('Request timed out')
+        raise errors.TemporaryLoginAttemptError('Request timed out')
 
     client = _get_client()
 
@@ -174,7 +174,7 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str]:
     )
 
     if isinstance(token_response, TokenErrorResponse):
-        raise RuntimeError('Token Error')
+        raise errors.TemporaryLoginAttemptError('Token Error')
 
     if data.nonce_value is not None:
         nonce = hashlib.sha256(data.nonce_value.encode()).hexdigest()

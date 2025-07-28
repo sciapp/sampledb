@@ -19,7 +19,7 @@ from ...logic import oidc
 from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server, get_login_session, AuthenticationType
 from ...logic.users import get_user, User, create_sampledb_federated_identity, get_federated_identity, enable_federated_identity_for_login
 from ...logic.components import get_component, get_federated_login_components
-from ...logic.errors import FederatedUserInFederatedIdentityError, UserDoesNotExistError, FederatedIdentityNotFoundError
+from ...logic.errors import TemporaryLoginAttemptError, FederatedUserInFederatedIdentityError, UserDoesNotExistError, FederatedIdentityNotFoundError
 from ..users_forms import SigninForm, SignoutForm
 from .forms import WebAuthnLoginForm
 from ... import login_manager
@@ -320,15 +320,20 @@ def oidc_callback() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated and flask_login.login_fresh():
         return _redirect_to_next_url()
 
+    def error(msg: str) -> FlaskResponseT:
+        flask.flash(_(msg), 'error')
+        flask_login.logout_user()
+        return flask.redirect(flask.url_for('.index'))
+
     try:
         result = oidc.handle_authentication(
             flask.request.url,
             flask.session.pop('oidc_token'),
         )
+    except TemporaryLoginAttemptError:
+        return error('Login attempt failed. Please try again. If the error persists, please contact an administrator.')
     except Exception:
-        flask.flash(_('Login failed. Please contact an administrator.'), 'error')
-        flask_login.logout_user()
-        return flask.redirect(flask.url_for('.index'))
+        return error('Login attempt failed. Please contact an administrator.')
 
     user, next = result
 

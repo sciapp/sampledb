@@ -181,6 +181,10 @@ class LoginSessionHasExpiredError(Exception):
     pass
 
 
+class TemporaryLoginAttemptError(Exception):
+    pass
+
+
 class SchemaError(Exception):
     def __init__(self, message: str, path: typing.List[str]) -> None:
         self.raw_message = message
