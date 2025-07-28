@@ -536,15 +536,14 @@ def _add_federated_conflict_solution(
             import_context['sharing_user_id'],
             version['fed_version_id']
         )
-        if import_context['user_id'] is not None:
-            object_log.solve_version_conflict(
-                user_id=import_context['user_id'],
-                object_id=import_context['local_object_id'],
-                component_id=import_context['component'].id,
-                version_id=import_context['conflict_details']['fed_version_id'],
-                solved_in=object.version_id,
-                automerged=import_context['conflict_details']['automerged'],
-            )
+        object_log.solve_version_conflict(
+            user_id=import_context['user_id'],
+            object_id=import_context['local_object_id'],
+            component_id=import_context['component'].id,
+            version_id=import_context['conflict_details']['fed_version_id'],
+            solved_in=object.version_id,
+            automerged=import_context['conflict_details']['automerged'],
+        )
 
     import_context['current_local_version_id'] += 1
     import_context['next_conflict_solution_version_id'] = None
@@ -612,8 +611,7 @@ def _update_federated_conflict_solution(
             )
             notes.append(_("A conflict with version #%(version_id)s occurred.", version_id=version['fed_version_id']))
 
-        if object.fed_object_id is not None and object.component_id is not None:
-            fed_logs.create_version_conflict(object.object_id, object.component_id, fed_version_id=version['fed_version_id'])
+        fed_logs.create_version_conflict(object.object_id, import_context['component'].id, fed_version_id=version['fed_version_id'])
 
 
 def _add_new_local_version(

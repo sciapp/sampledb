@@ -340,7 +340,8 @@ def upload_object(
             ObjectLogEntryType.EDIT_OBJECT,
             ObjectLogEntryType.RESTORE_OBJECT_VERSION,
         }:
-            author_ids.add(entry.user_id)
+            if entry.user_id is not None:
+                author_ids.add(entry.user_id)
 
     authors = [
         users.get_user(author_id)
