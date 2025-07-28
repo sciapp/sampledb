@@ -1006,9 +1006,9 @@
         {{ import_information_symbol(wrap_object_ref(fed_id=object.fed_id, component_uuid=object.component.uuid, eln_import_id=object.eln_import_id, eln_object_id=object.eln_object_id)) }}
         {% if object.object_id in object_conflicts %}
           {% if user_conflicting_object_permissions[object.object_id] >= Permissions.WRITE %}
-            {% set tooltip_title = _('There exist two differing object versions for this object.') %}
+            {% set tooltip_title = _('Two differing object versions exist for this object.') %}
           {% else %}
-            {% set tooltip_title = _('There exist two differing object versions for this object. Ask someone with write permission to solve this conflict.') %}
+            {% set tooltip_title = _('Two differing object versions exist for this object.') + ' ' + _('Ask someone with write permission to solve this conflict.') %}
           {% endif %}
           <span><i class="fa fa-exclamation-triangle" aria-hidden="true" title="{{ tooltip_title }}" data-toggle="tooltip" data-placement="top"></i></span>
         {% endif %}
