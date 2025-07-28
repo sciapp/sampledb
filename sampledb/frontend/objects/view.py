@@ -602,7 +602,7 @@ def conflict_overview(object_id: int, component_id: int) -> FlaskResponseT:
     try:
         object = logic.objects.get_object(object_id=object_id)
     except errors.ObjectDoesNotExistError:
-        flask.flash(_('Object with the id %(object_id)s does not exist.', object_id=object_id), 'error')
+        flask.flash(_('Object #%(object_id)s does not exist.', object_id=object_id), 'error')
         return flask.redirect(flask.url_for('.objects'))
 
     template_kwargs: typing.Dict[str, typing.Any] = {}
@@ -666,7 +666,7 @@ def conflict_overview(object_id: int, component_id: int) -> FlaskResponseT:
                 "version_id": solution_version.version_id,
                 "diff": logic.schemas.calculate_diff(base_object_version.data, solution_version.data),
                 "is_diff_with_base_version": True,
-                "hint": _("Showing the changes between the base version and the final solution of the conflict.")
+                "hint": _("The changes between the base version and the final solution of the conflict are highlighted below.")
             }
         })
 
@@ -684,12 +684,12 @@ def conflict_overview(object_id: int, component_id: int) -> FlaskResponseT:
         }
 
         if version.version_id == base_object_version.version_id + 1:
-            hint = _("Showing the changes between the base version and the local version #%(new_version_id)s.", new_version_id=version.version_id)
+            hint = _("The changes between the base version and the local version #%(new_version_id)s are highlighted below.", new_version_id=version.version_id)
         else:
-            hint = _("Showing the changes between the local versions #%(prev_version_id)s and #%(new_version_id)s.", prev_version_id=version.version_id - 1, new_version_id=version.version_id)
+            hint = _("The changes between the local versions #%(prev_version_id)s and #%(new_version_id)s are highlighted below.", prev_version_id=version.version_id - 1, new_version_id=version.version_id)
 
         local_review_versions[f'local-diff-{version.version_id}'] = {
-            "title": _("Changes Local Version #%(local_version_id)s", local_version_id=version.version_id),
+            "title": _("Changes of Local Version #%(local_version_id)s", local_version_id=version.version_id),
             "previous_schema": previous_schema,
             "schema": version.schema,
             "data": version.data,
@@ -724,12 +724,12 @@ def conflict_overview(object_id: int, component_id: int) -> FlaskResponseT:
         }
 
         if fed_version.local_parent is not None:
-            hint = _("Showing the changes between the base version and the imported version #%(new_version_id)s.", new_version_id=fed_version.fed_version_id)
+            hint = _("The changes between the base version and the imported version #%(new_version_id)s are highlighted below.", new_version_id=fed_version.fed_version_id)
         else:
-            hint = _("Showing the changes between the imported versions #%(prev_version_id)s and #%(new_version_id)s.", prev_version_id=fed_version.fed_version_id - 1, new_version_id=fed_version.fed_version_id)
+            hint = _("The changes between the imported versions #%(prev_version_id)s and #%(new_version_id)s are highlighted below.", prev_version_id=fed_version.fed_version_id - 1, new_version_id=fed_version.fed_version_id)
 
         federated_review_versions[f'fed-diff-{fed_version.fed_version_id}'] = {
-            "title": _("Changes Imported Version #%(fed_version_id)s", fed_version_id=fed_version.fed_version_id),
+            "title": _("Changes of Imported Version #%(fed_version_id)s", fed_version_id=fed_version.fed_version_id),
             "previous_schema": previous_schema,
             "schema": fed_version.schema,
             "data": fed_version.data,

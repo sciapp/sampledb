@@ -75,7 +75,7 @@
     {% if solvable_conflicts|length > 0 %}
       {{ _('The object version is conflicting with an imported object version.') }}
     {% else %}
-      {{ _('The object version is conflicting with an imported object version. The conflict cannot be solved until the data for this object is shared with the federation partner and the data for the conflicting object versions has been imported.') }}
+      {{ _('The object version is conflicting with an imported object version. The conflict cannot be solved until the data for this object is shared with the other database and the data for the conflicting object versions has been imported.') }}
     {% endif %}
   </div>
   {% endif %}
@@ -273,7 +273,7 @@
         </div>
       {% else %}
         <div class="form-group">
-          <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Solve conflicts caused by an import of updates from a federation partner.') }}">
+          <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Solve conflicts caused by an import of updates from another database.') }}">
             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-warning"></i> {{ _('Solve Conflicts') }} <span class="caret"></span></button>
             <ul class="dropdown-menu dropdown-menu-right">
               <li><strong style="padding: 3px 20px">{{ _("Solving Conflicts with...") }}</strong></li>

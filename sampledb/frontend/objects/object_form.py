@@ -100,7 +100,7 @@ def show_object_form(
                 if object is None or object.data is None or object.schema is None:
                     return flask.abort(400)
                 else:
-                    flask.flash(_('The current version of this object contains no data because it was disabled by policies and the latest version was created by a federated database. To edit the latest version edit the policy or alternatively an older version is used for editing.'), 'warning')
+                    flask.flash(_('The current version of this object contains no data because it was disabled by policies and the latest version was created by a federated database. To edit the latest version, edit the policy. Alternatively, an older version is used for editing.'), 'warning')
             else:
                 return flask.abort(400)
         schema = object.schema
@@ -360,7 +360,7 @@ def show_object_form(
             'conflict_version_id': object_conflict.fed_version_id,
             'conflict_component_id': object_conflict.component_id
         })
-        flask.flash(_("Solving conflict between the local latest version and the latest imported version from federation partner %(component_name)s. The fields highlighted in orange are conflicting between the versions.", component_name=object_conflict.component.get_name()), 'info')
+        flask.flash(_("Solve conflict between the local latest version and the latest imported version from database %(component_name)s. The fields highlighted in orange are conflicting between the versions.", component_name=object_conflict.component.get_name()), 'info')
 
     if object is None:
         # alternatives to default permissions
