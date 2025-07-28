@@ -74,7 +74,7 @@
 
 {% block content %}
   {% set component =  get_component(imported_version.component_id if imported_version.component_id else imported_version.version_component_id) %}
-  <h1>{{ current_object.name | get_translated_text }} #{{ current_object.object_id }} {{ import_information_symbol(current_object) }}</h1>
+  <h1>Sample #{{ current_object.object_id }} {{ import_information_symbol(current_object) }}: {{ current_object.name | get_translated_text }}</h1>
   <h2>
     {% if not view_only %}
       {{ _('Solving conflicts from %(component_name)s', component_name=component.get_name()) }}
