@@ -27,6 +27,7 @@ from ..objects import get_fed_object, get_object, update_object_version, insert_
 from ..projects import get_project
 from ..users import get_user, check_user_exists
 from ..components import add_component
+from ..shares import get_share
 from .. import errors, fed_logs, languages, markdown_to_html, object_log
 from ...models import Permissions, Object
 from ...models.file_log import FileLogEntry, FileLogEntryType
@@ -897,6 +898,11 @@ def parse_object(
             component_id = get_component_by_uuid(object_data['component_uuid']).id
         except errors.ComponentDoesNotExistError:
             component_id = add_component(object_data['component_uuid'], is_hidden=True).id
+    else:
+        try:
+            get_share(object_id=fed_object_id, component_id=component.id)
+        except errors.ShareDoesNotExistError:
+            raise errors.InvalidDataExportError(f"Object #{fed_object_id} is not shared with component #{component.id}")
 
     action_ref = _parse_action_ref(_get_dict(object_data.get('action')))
 
