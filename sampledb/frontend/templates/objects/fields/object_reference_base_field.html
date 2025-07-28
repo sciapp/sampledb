@@ -206,3 +206,6 @@
     <input name="{{ id_prefix }}_vid" type="number" value="{% if form_data.get(id_prefix+'_vid') %}{{ form_data.get(id_prefix+'_vid') }}{% elif data and data.get("version_id") is not none %}{{ data.get("version_id") }}{% endif %}" class="form-control" min="0" step="1" data-sampledb-default-object-selected="{{ selected_id }}" data-sampledb-default-version-selected="{% if form_data.get(id_prefix+'_vid') %}{{ form_data.get(id_prefix+'_vid') }}{% elif data and data.get("version_id") is not none %}{{ data.get("version_id") }}{% endif %}"/>
   </div>
 {% endif %}
+{% if conflicting %}
+</div>
+{% endif %}
