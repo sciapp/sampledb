@@ -1576,7 +1576,7 @@
               {% set ns.object_log_entry_view_url = url_for('.eln_import', eln_import_id=object.eln_import_id) %}
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.IMPORT_CONFLICTING_VERSION %}
-            {% set ns.object_log_entry_message = _('The imported version #%(fed_version_id)s from %(component_name)s is conflicting with the local object version.', component_name=get_component(object_log_entry.data["component_id"]).name, fed_version_id=object_log_entry.data['fed_version_id']) %}
+            {% set ns.object_log_entry_message = _('The imported version #%(fed_version_id)s from <a href="%(component_url)s">%(component_name)s</a> is conflicting with the local object version.', component_name=get_component(object_log_entry.data["component_id"]).get_name(), component_url=url_for('.component', component_id=object_log_entry.data["component_id"]), fed_version_id=object_log_entry.data['fed_version_id']) %}
             {% if 'component_id' in object_log_entry.data and 'fed_version_id' in object_log_entry.data %}
               {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object.id, version_id=object_log_entry.data['fed_version_id'], component_id=object_log_entry.data['component_id']) %}
             {% endif %}
