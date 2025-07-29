@@ -362,21 +362,19 @@ def import_object(
                     base_version_id=import_context['conflict_details']['base_version_id']
                 )
                 all_import_notes.append(_("A conflict with version #%(version_id)s occurred.", version_id=last_version['fed_version_id']))
-                if object.fed_object_id is not None and object.component_id is not None:
-                    fed_logs.create_version_conflict(object.object_id, object.component_id, fed_version_id=last_version['fed_version_id'])
+                fed_logs.create_version_conflict(object.object_id, component.id, fed_version_id=last_version['fed_version_id'])
 
             if conflict.local_version_id is None:
                 try:
                     solve_conflict_by_strategy(conflict, SolvingStrategy.AUTOMERGE, None)
                     import_context['changes'] = True
-                    if object.fed_object_id is not None and object.component_id is not None:
-                        fed_logs.solve_version_conflict(
-                            object_id=object.object_id,
-                            component_id=object.component_id,
-                            fed_version_id=last_version['fed_version_id'],
-                            automerged=True,
-                            user_id=None
-                        )
+                    fed_logs.solve_version_conflict(
+                        object_id=object.object_id,
+                        component_id=component.id,
+                        fed_version_id=last_version['fed_version_id'],
+                        automerged=True,
+                        user_id=None
+                    )
                 except errors.FailedSolvingByStrategyError:
                     pass
     elif import_context['local_object_id'] is not None:
