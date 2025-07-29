@@ -783,7 +783,7 @@ def conflict_overview(object_id: int, component_id: int) -> FlaskResponseT:
         component_name=get_component(object_conflict.component_id).get_name(),
         conflict_component_id=object_conflict.component_id,
         files=files,
-        view_only=solved_in is not None,
+        solved_in=solved_in,
         **template_kwargs
     )
 
