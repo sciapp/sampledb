@@ -151,10 +151,10 @@
     <option value="">&mdash;</option>
     {% if conflicting %}
       {% if local_id == '-2' and local_value_text is not none %}
-        <option value="-2" data-conflict-relation="true" {% if selected_id == "-1" or selected_id == "-2" %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %} data-subtext="{{ _('Local Selection') }}">{{ local_value_text }}</option>
+        <option value="-2" {% if selected_id == "-1" or selected_id == "-2" %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %} data-subtext="{{ _('Local Selection') }}">{{ local_value_text }}</option>
       {% endif %}
       {% if imported_id == '-3' and imported_value_text is not none %}
-        <option data-conflict-relation="true" value="-3" {% if selected_id == "-3" %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %} data-subtext="{{ _('Imported Selection') }}">{{ imported_value_text }}</option>
+        <option value="-3" {% if selected_id == "-3" %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %} data-subtext="{{ _('Imported Selection') }}">{{ imported_value_text }}</option>
       {% endif %}
     {% else %}
       {% if selected_id == "-1" and current_value_text is not none %}
