@@ -2,6 +2,7 @@
 {% block title %} {{ _('Solve Conflicts') }} — {{ service_name }} {% endblock %}
 
 {% set plot_counter = namespace(value=0) %}
+{% set view_only = solved_in is not none %}
 
 {% macro diff_container(key, version, name) %}
 <div class="row version-view" id="{{key}}" style="display: none;">
@@ -107,8 +108,8 @@
             <li>
               <a
                 class="disabled"
-                href="{% if view_only %}{{ url_for('.view_conflict', object_id=current_object.object_id, component_id=imported_version.component_id, version=imported_version.version_id, lang=language.lang_code) }}
-                      {% else %}{{ url_for('frontend.conflict_overview', object_id=current_object.object_id, component_id=imported_version.component_id if imported_version.component_id is not none else imported_version.version_component_id, lang=language.lang_code) }}{% endif %}"
+                href="{% if view_only %}{{ url_for('frontend.conflict_overview', object_id=current_object.object_id, component_id=imported_version.version_component_id, solved_in=solved_in, lang=language.lang_code) }}
+                      {% else %}{{ url_for('frontend.conflict_overview', object_id=current_object.object_id, component_id=imported_version.version_component_id, lang=language.lang_code) }}{% endif %}"
               >{{ language.names | get_translated_text }}{% if (metadata_language is none and language.id == get_user_language(current_user).id) or (metadata_language is none and get_user_language(current_user) not in languages and language.lang_code == 'en') or language.lang_code == metadata_language %} <i class="fa fa-check" aria-hidden="true"> </i>{% endif %}</a></li>
           {% endfor %}
         </ul>
