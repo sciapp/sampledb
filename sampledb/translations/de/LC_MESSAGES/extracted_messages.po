@@ -5962,6 +5962,9 @@ msgstr "Version #%(version_id)s"
 msgid "Show Changes"
 msgstr "Änderungen anzeigen"
 
+msgid "Tools"
+msgstr "Werkzeuge"
+
 msgid "Workflow"
 msgstr "Workflow"
 
