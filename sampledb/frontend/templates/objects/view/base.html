@@ -20,6 +20,7 @@
   <nav>
     <ul>
       <li><a href="#information">{{ _('Information') }}</a></li>
+      <li><a href="#tools">{{ _('Tools') }}</a></li>
       {% if workflow_view_modals %}
         {% if not only_empty_workflows %}
           <li><a href="#workflow_views">_('Workflow Views')</a></li>
@@ -120,7 +121,7 @@
       </div>
     </div>
   {% endif %}
-  <div class="object-button-bar">
+  <div class="object-button-bar" id="tools">
     {% if object_languages | length > 1 %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _("View object information in a different language.") }}">
