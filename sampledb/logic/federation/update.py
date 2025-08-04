@@ -29,7 +29,7 @@ from ...models import ComponentAuthenticationType, Object
 from ..background_tasks import post_poke_components_task
 
 PROTOCOL_VERSION_MAJOR = 0
-PROTOCOL_VERSION_MINOR = 1
+PROTOCOL_VERSION_MINOR = 2
 
 FEDERATION_TIMEOUT = 60
 
