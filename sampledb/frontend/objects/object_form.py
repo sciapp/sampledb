@@ -338,7 +338,7 @@ def show_object_form(
                     actual_temporary_file_id_map = logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
                     logic.temporary_files.delete_temporary_files(context_id=context_id)
                     logic.temporary_files.replace_file_reference_ids(object_data, actual_temporary_file_id_map)
-                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema, create_log_entries=False)
+                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema, create_log_entries=not solve_conflicts)
                     flask.flash(_('The object was updated successfully.'), 'success')
                     if solve_conflicts and object_conflict is not None:
                         logic.federation.conflicts.solve_conflict(
