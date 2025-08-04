@@ -112,9 +112,7 @@ function updateObjectPickers () {
         return actionIDs.length === 0 || $.inArray(el.action_id, actionIDs) !== -1;
       });
     if (isSelectpicker) {
-      $x.find('option[value != ""][value != "-1"]').filter(function () {
-        return $(this).val() >= 0;
-      }).remove();
+      $x.find('option[value != ""]:not([value^="-"])').remove();
       $x.append(
         objectsToAdd.map(function (el) {
           let dataTokens = '';
