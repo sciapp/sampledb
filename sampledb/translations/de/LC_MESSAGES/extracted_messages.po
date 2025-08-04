@@ -7054,8 +7054,15 @@ msgstr ""
 "%(component_name)s wurde von %(user_ref)s gelöst."
 
 #, python-format
-msgid "<a href=\"%(view_url)s\">View Conflict</a>"
-msgstr "<a href=\"%(view_url)s\">Zeige Konflikt</a>"
+msgid ""
+"<a href=\"%(view_version_url)s\">View&nbsp;Version</a>&nbsp;/&nbsp;<a "
+"href=\"%(view_version_url_with_diff)s\">View&nbsp;Changes</a>&nbsp;/&nbsp;<a"
+" href=\"%(conflict_url)s\">View&nbsp;Conflict</a>"
+msgstr ""
+"<a href=\"%(view_version_url)s\">Version&nbsp;anzeigen</a>&nbsp;/&nbsp;<a"
+" "
+"href=\"%(view_version_url_with_diff)s\">Änderungen&nbsp;anzeigen</a>&nbsp;/&nbsp;<a"
+" href=\"%(conflict_url)s\">Konflikt&nbsp;anzeigen</a>"
 
 #, python-format
 msgid "Log entry from %(component_name)s"
