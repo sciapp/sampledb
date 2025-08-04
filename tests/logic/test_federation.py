@@ -1398,7 +1398,8 @@ def test_import_object_history_with_conflicts(component, object_history, user):
 
     logic.federation.conflicts.solve_conflict_by_strategy(
         conflict,
-        solving_strategy=logic.federation.conflicts.SolvingStrategy.APPLY_IMPORTED
+        solving_strategy=logic.federation.conflicts.SolvingStrategy.APPLY_IMPORTED,
+        user_id=user.id
     )
 
     solved_conflict_version = get_object(object_id=object_1.id)

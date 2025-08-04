@@ -348,7 +348,7 @@ def test_solving_strategy_apply_local(object, component, action, user, component
 
     sampledb.logic.objects.update_object(object_id=object.id, data=data_modified_local, user_id=user.id)
 
-    conflicts.solve_conflict_by_strategy(conflict=conflict, solving_strategy=conflicts.SolvingStrategy.APPLY_LOCAL)
+    conflicts.solve_conflict_by_strategy(conflict=conflict, solving_strategy=conflicts.SolvingStrategy.APPLY_LOCAL, user_id=user.id)
 
     object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert object.version_id == 2
@@ -388,7 +388,7 @@ def test_solving_strategy_apply_imported(object, component, action, user, compon
 
     sampledb.logic.objects.update_object(object_id=object.id, data=data_modified_local, user_id=user.id)
 
-    conflicts.solve_conflict_by_strategy(conflict=conflict, solving_strategy=conflicts.SolvingStrategy.APPLY_IMPORTED)
+    conflicts.solve_conflict_by_strategy(conflict=conflict, solving_strategy=conflicts.SolvingStrategy.APPLY_IMPORTED, user_id=user.id)
 
     object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert object.version_id == 2
@@ -622,7 +622,7 @@ def test_merge_array_conflict_automerge_unsuccessful(object_array, component, ac
     with pytest.raises(sampledb.logic.errors.FailedSolvingByStrategyError):
         conflicts.solve_conflict_by_strategy(conflict, solving_strategy=conflicts.SolvingStrategy.AUTOMERGE)
 
-    conflicts.solve_conflict_by_strategy(conflict, solving_strategy=conflicts.SolvingStrategy.APPLY_LOCAL)
+    conflicts.solve_conflict_by_strategy(conflict, solving_strategy=conflicts.SolvingStrategy.APPLY_LOCAL, user_id=user.id)
 
     latest_object = sampledb.logic.objects.get_object(object_id=object_array.id)
     assert latest_object.data['array'] == data_modified_local['array']
