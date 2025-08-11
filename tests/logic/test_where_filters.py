@@ -205,7 +205,8 @@ def test_quantity_old_dimensionality(engine, objects):
             }
         },
         schema={},
-        user_id=0
+        user_id=0,
+        calculate_hashes=False
     )
     object2 = objects.create_object(
         action_id=0,
@@ -219,7 +220,8 @@ def test_quantity_old_dimensionality(engine, objects):
             }
         },
         schema={},
-        user_id=0
+        user_id=0,
+        calculate_hashes=False
     )
     assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_equals(data['q'], datatypes.Quantity(1, 'W')))}
     assert {object1.object_id, object2.object_id} == {object.object_id for object in objects.get_current_objects(lambda data: where_filters.quantity_greater_than(data['q'], datatypes.Quantity(0.5, 'W')))}
