@@ -514,6 +514,7 @@ th:hover .search-helper {
 .has-conflict > .bootstrap-tagsinput,
 .has-conflict > .editor-toolbar, .has-conflict > .CodeMirror {
   border-color: #ff6c27 !important;
+  background-color: #ff6c2725 !important;
 }
 
 .conflict-dropdown {
