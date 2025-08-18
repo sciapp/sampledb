@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-test
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -200,7 +200,7 @@ check-migrations-postgres-15:
 check-translations:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -228,7 +228,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-documentation
@@ -329,7 +329,7 @@ pages:
 
 deploy-to-dev:
   stage: deploy
-  image: debian:bookworm
+  image: debian:trixie
   environment: staging
   only:
     - develop@Scientific-IT-Systems/SampleDB
@@ -347,7 +347,7 @@ deploy-to-dev:
 
 deploy-to-github:
   stage: deploy
-  image: debian:bookworm
+  image: debian:trixie
   variables:
     GIT_STRATEGY: none
   only:
@@ -415,7 +415,7 @@ deploy-to-dockerhub:
 
 build-package:
   stage: build
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     - python3 -m pip install setuptools wheel twine build
     - python3 -m build --sdist
@@ -427,7 +427,7 @@ build-package:
 deploy-to-pypi:
   stage: deploy
   needs: ["build-package"]
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
