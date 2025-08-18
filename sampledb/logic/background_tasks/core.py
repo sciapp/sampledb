@@ -19,6 +19,7 @@ import typing
 import flask
 
 from ... import db
+from ...utils import ansi_color
 from ...models import BackgroundTask, BackgroundTaskStatus
 from .. import errors
 from .background_dataverse_export import handle_dataverse_export_task
@@ -281,3 +282,19 @@ def _set_background_task_status_with_result(
     except Exception:
         # task status could not be updated, no way to recover?
         pass
+
+
+def reset_claimed_background_tasks() -> None:
+    """
+    Resets all currently claimed tasks to being posted.
+
+    This should only be used before the handler threads are started, to allow
+    retrying tasks which had been claimed when the app last ran, but did not
+    finish before it was stopped.
+    """
+    claimed_tasks = BackgroundTask.query.filter_by(status=BackgroundTaskStatus.CLAIMED).all()
+    for task in claimed_tasks:
+        print(ansi_color(f"Resetting background task {task} to POSTED.", color=33), file=sys.stderr)
+        task.status = BackgroundTaskStatus.POSTED
+        db.session.add(task)
+    db.session.commit()
