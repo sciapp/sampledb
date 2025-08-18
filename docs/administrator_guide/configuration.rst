@@ -284,7 +284,9 @@ Miscellaneous
    * - Variable Name
      - Description
    * - SAMPLEDB_SERVER_NAME
-     - The server name for Flask. See: https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
+     - The server name for Flask. See: https://flask.palletsprojects.com/en/stable/config/#SERVER_NAME
+   * - SAMPLEDB_PREFERRED_URL_SCHEME
+     - The preferred URL scheme for Flask. See: https://flask.palletsprojects.com/en/stable/config/#PREFERRED_URL_SCHEME
    * - SAMPLEDB_SQLALCHEMY_DATABASE_URI
      - The database URI for SQLAlchemy. See: https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/
    * - SAMPLEDB_SECRET_KEY
