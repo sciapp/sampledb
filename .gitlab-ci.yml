@@ -197,6 +197,28 @@ check-migrations-postgres-15:
     POSTGRES_HOST: postgres15
     SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres15:5432/postgres"
 
+check-migrations-postgres-16:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:16
+      alias: postgres16
+      variables:
+        POSTGRES_HOST: postgres16
+  variables:
+    POSTGRES_HOST: postgres16
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres16:5432/postgres"
+
+check-migrations-postgres-17:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:17
+      alias: postgres17
+      variables:
+        POSTGRES_HOST: postgres17
+  variables:
+    POSTGRES_HOST: postgres17
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres17:5432/postgres"
+
 check-translations:
   stage: test
   needs: []
@@ -285,7 +307,7 @@ test-container-status:
         -e POSTGRES_DB=postgres
         -e POSTGRES_USER=postgres
         -e POSTGRES_PASSWORD=postgres
-        postgres:15
+        postgres:17
     - sleep 5 # allow container to start
     - docker ps
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
