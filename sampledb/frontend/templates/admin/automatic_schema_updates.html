@@ -277,7 +277,11 @@
             </td>
             <td>
               <div class="progress" style="margin-bottom: 0"  data-toggle="tooltip" data-placement="top" title="{{ _('%(num_objects)d objects were updated successfully.', num_objects=updatable_object_check.automatic_schema_update.result.object_ids_success | length) }} {{ _('%(num_objects)d objects could not be updated.', num_objects=updatable_object_check.automatic_schema_update.result.object_ids_failure | length) }}">
-                {% if updatable_object_check.automatic_schema_update.result is none or (updatable_object_check.automatic_schema_update.result.object_ids_failure | length == 0 and updatable_object_check.automatic_schema_update.result.object_ids_success | length == 0) %}
+                {% if updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE  %}
+                  <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0" style="width: 100%;">
+                    {{ _('Done') }}
+                  </div>
+                {% elif updatable_object_check.automatic_schema_update.result is none or (updatable_object_check.automatic_schema_update.result.object_ids_failure | length == 0 and updatable_object_check.automatic_schema_update.result.object_ids_success | length == 0) %}
                   <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ updatable_object_check.automatic_schema_update.object_ids | length }}" style="width: 100%;">
                     {{ _('Starting') }}
                   </div>
