@@ -154,4 +154,33 @@ def automatic_schema_updates() -> FlaskResponseT:
         AutomaticSchemaUpdateStatus=AutomaticSchemaUpdateStatus,
         all_actions=all_actions,
         sorted_action_topics=sorted_action_topics,
+        current_status={
+            'updatable_objects_checks': {
+                updatable_objects_check.id: updatable_objects_check.status == UpdatableObjectsCheckStatus.DONE
+                for updatable_objects_check in updatable_objects_checks
+            },
+            'automatic_schema_updates': {
+                automatic_schema_update.id: automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE
+                for automatic_schema_update in automatic_schema_updates
+            }
+        }
     )
+
+
+@frontend.route('/admin/automatic_schema_updates/status', methods=['GET', 'POST'])
+@flask_login.login_required
+def automatic_schema_updates_status() -> FlaskResponseT:
+    if not flask_login.current_user.is_admin:
+        return flask.abort(HTTPStatus.FORBIDDEN)
+    updatable_objects_checks = get_updatable_objects_checks()
+    automatic_schema_updates = get_automatic_schema_updates()
+    return flask.jsonify({
+        'updatable_objects_checks': {
+            updatable_objects_check.id: updatable_objects_check.status == UpdatableObjectsCheckStatus.DONE
+            for updatable_objects_check in updatable_objects_checks
+        },
+        'automatic_schema_updates': {
+            automatic_schema_update.id: automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE
+            for automatic_schema_update in automatic_schema_updates
+        }
+    })

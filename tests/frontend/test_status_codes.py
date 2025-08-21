@@ -296,6 +296,7 @@ def test_status_codes(flask_server, user, driver):
         f'actions/{other_action_id}/permissions': 200,
         'actions/new/': 200,
         'admin/automatic_schema_updates/': 200,
+        'admin/automatic_schema_updates/status': 200,
         'admin/background_tasks/': 200,
         'admin/info_pages/': 200,
         f'admin/info_pages/{info_page_id}': 200,

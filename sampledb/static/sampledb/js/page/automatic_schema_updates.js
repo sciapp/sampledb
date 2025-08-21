@@ -22,4 +22,22 @@ $(function () {
     });
     submitButtons.prop('disabled', checkboxes.length === 0 || !anyChecked);
   }).change();
+
+  const currentStatus = window.getTemplateValue('automatic_schema_updates.current_status');
+  function checkStatus () {
+    $.get(window.getTemplateValue('application_root_path') + 'admin/automatic_schema_updates/status', function (data) {
+      if (JSON.stringify(data.updatable_objects_checks) !== JSON.stringify(currentStatus.updatable_objects_checks)) {
+        $('#updatableObjectsCheckReloadText').show();
+        $('#automaticSchemaUpdateReloadText').hide();
+        $('#refreshModal').modal('show');
+      } else if (JSON.stringify(data.automatic_schema_updates) !== JSON.stringify(currentStatus.automatic_schema_updates)) {
+        $('#updatableObjectsCheckReloadText').hide();
+        $('#automaticSchemaUpdateReloadText').show();
+        $('#refreshModal').modal('show');
+      } else {
+        setTimeout(checkStatus, 30 * 1000);
+      }
+    });
+  }
+  setTimeout(checkStatus, 30 * 1000);
 });

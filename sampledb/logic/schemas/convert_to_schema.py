@@ -41,7 +41,7 @@ def is_converting_to_schema_necessary(
     removed_property_paths = []
     modified_property_paths = []
     for property_path, property_diff in sorted(iter_diff(data_diff)):
-        if '_before' in property_diff and 'after' in property_diff:
+        if '_before' in property_diff and '_after' in property_diff:
             modified_property_paths.append(list(property_path))
         elif '_before' in property_diff:
             removed_property_paths.append(list(property_path))

@@ -237,7 +237,7 @@
                 data-toggle="tooltip" data-placement="top" title="{{ updatable_object_check.result.previous_object_id }}&nbsp;/&nbsp;{{ max_object_id }}"
               {% endif %}
             >
-              <div class="progress-bar progress-bar-success {% if updatable_object_check.result is none or updatable_object_check.result.previous_object_id < 0 %}progress-bar-striped active{% endif %}" role="progressbar" aria-valuenow="{% if updatable_object_check.result and updatable_object_check.result.previous_object_id > 0 %}{{ updatable_object_check.result.previous_object_id }}{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="{{ max_object_id }}" style="width: {% if updatable_object_check.status == UpdatableObjectsCheckStatus.DONE %}100{% elif updatable_object_check.result and updatable_object_check.result.previous_object_id >= 0 %}{{ updatable_object_check.result.previous_object_id / max_object_id * 100 }}{% else %}100{% endif %}%;">
+              <div class="progress-bar progress-bar-success {% if updatable_object_check.result is none or updatable_object_check.result.previous_object_id < 0 %}progress-bar-striped{% endif %}" role="progressbar" aria-valuenow="{% if updatable_object_check.result and updatable_object_check.result.previous_object_id > 0 %}{{ updatable_object_check.result.previous_object_id }}{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="{{ max_object_id }}" style="width: {% if updatable_object_check.status == UpdatableObjectsCheckStatus.DONE %}100{% elif updatable_object_check.result and updatable_object_check.result.previous_object_id >= 0 %}{{ updatable_object_check.result.previous_object_id / max_object_id * 100 }}{% else %}100{% endif %}%;">
                 {% if updatable_object_check.status == UpdatableObjectsCheckStatus.DONE %}
                   {{ _('Done') }}
                 {% elif updatable_object_check.result is none or updatable_object_check.result.previous_object_id < 0 %}
@@ -282,7 +282,7 @@
                     {{ _('Done') }}
                   </div>
                 {% elif updatable_object_check.automatic_schema_update.result is none or (updatable_object_check.automatic_schema_update.result.object_ids_failure | length == 0 and updatable_object_check.automatic_schema_update.result.object_ids_success | length == 0) %}
-                  <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ updatable_object_check.automatic_schema_update.object_ids | length }}" style="width: 100%;">
+                  <div class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ updatable_object_check.automatic_schema_update.object_ids | length }}" style="width: 100%;">
                     {{ _('Starting') }}
                   </div>
                 {% else %}
@@ -297,7 +297,7 @@
             <td class="text-right">
               {% if updatable_object_check.automatic_schema_update and updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE %}
                 {% if updatable_object_check.automatic_schema_update.result.object_ids_success %}
-                  <a href="{{ url_for(".objects", ids=updatable_object_check.automatic_schema_update.result.object_ids_success) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}</a>
+                  <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_success) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}</a>
                 {% else %}
                   0
                 {% endif %}
@@ -308,7 +308,7 @@
             <td class="text-right">
               {% if updatable_object_check.automatic_schema_update and updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE %}
                 {% if updatable_object_check.automatic_schema_update.result.object_ids_failure %}
-                  <a href="{{ url_for(".objects", ids=updatable_object_check.automatic_schema_update.result.object_ids_failure) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}</a>
+                  <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_failure) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}</a>
                 {% else %}
                   0
                 {% endif %}
@@ -322,10 +322,38 @@
       </tbody>
     </table>
   {% endif %}
+
+  <div class="modal fade" id="refreshModal" tabindex="-1" role="dialog" aria-labelledby="refreshModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="refreshModalLabel">{{ _('Reload Page') }}</h4>
+        </div>
+        <div class="modal-body">
+          <p id="updatableObjectsCheckReloadText">
+            {{ _('The status of a check for automatically updatable objects has changed. Please reload the page.') }}
+          </p>
+          <p id="automaticSchemaUpdateReloadText">
+            {{ _('The status of an automatic schema update has changed. Please reload the page.') }}
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+          <a href="{{ url_for('.automatic_schema_updates') }}" class="btn btn-primary">{{ _('Reload Page') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/page/automatic_schema_updates.js') }}" type="module"></script>
+{% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("automatic_schema_updates.current_status", current_status) %}
+  {{ super() }}
 {% endblock %}
