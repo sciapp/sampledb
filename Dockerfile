@@ -1,5 +1,5 @@
 # Dockerfile for sampledb
-FROM python:3.13-slim-bookworm as builder
+FROM python:3.13-slim-trixie as builder
 
 # Install required system packages
 # GCC is required to build python dependencies on ARM architectures
@@ -27,7 +27,7 @@ COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Final image
-FROM python:3.13-slim-bookworm
+FROM python:3.13-slim-trixie
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
 LABEL org.opencontainers.image.source=https://github.com/sciapp/sampledb

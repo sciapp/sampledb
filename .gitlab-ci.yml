@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-test
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -197,10 +197,32 @@ check-migrations-postgres-15:
     POSTGRES_HOST: postgres15
     SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres15:5432/postgres"
 
+check-migrations-postgres-16:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:16
+      alias: postgres16
+      variables:
+        POSTGRES_HOST: postgres16
+  variables:
+    POSTGRES_HOST: postgres16
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres16:5432/postgres"
+
+check-migrations-postgres-17:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:17
+      alias: postgres17
+      variables:
+        POSTGRES_HOST: postgres17
+  variables:
+    POSTGRES_HOST: postgres17
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres17:5432/postgres"
+
 check-translations:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -228,7 +250,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-documentation
@@ -285,7 +307,7 @@ test-container-status:
         -e POSTGRES_DB=postgres
         -e POSTGRES_USER=postgres
         -e POSTGRES_PASSWORD=postgres
-        postgres:15
+        postgres:17
     - sleep 5 # allow container to start
     - docker ps
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -329,7 +351,7 @@ pages:
 
 deploy-to-dev:
   stage: deploy
-  image: debian:bookworm
+  image: debian:trixie
   environment: staging
   only:
     - develop@Scientific-IT-Systems/SampleDB
@@ -347,7 +369,7 @@ deploy-to-dev:
 
 deploy-to-github:
   stage: deploy
-  image: debian:bookworm
+  image: debian:trixie
   variables:
     GIT_STRATEGY: none
   only:
@@ -415,7 +437,7 @@ deploy-to-dockerhub:
 
 build-package:
   stage: build
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   script:
     - python3 -m pip install setuptools wheel twine build
     - python3 -m build --sdist
@@ -427,7 +449,7 @@ build-package:
 deploy-to-pypi:
   stage: deploy
   needs: ["build-package"]
-  image: python:3.13-slim-bookworm
+  image: python:3.13-slim-trixie
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
