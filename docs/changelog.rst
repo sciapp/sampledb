@@ -7,6 +7,7 @@ Version 0.32
 Currently in development.
 
 - Improved selection of additional properties to show in object lists
+- Rerun background tasks that were unable to finish when the SampleDB process is killed
 
 
 Version 0.31.1

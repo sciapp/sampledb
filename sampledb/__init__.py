@@ -221,8 +221,9 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     with app.app_context():
         sampledb.logic.utils.print_deprecation_warnings()
 
-    if app.config['ENABLE_BACKGROUND_TASKS']:
-        sampledb.logic.background_tasks.start_handler_threads(app)
+        if app.config['ENABLE_BACKGROUND_TASKS']:
+            sampledb.logic.background_tasks.reset_claimed_background_tasks()
+            sampledb.logic.background_tasks.start_handler_threads(app)
 
     def signal_handler(sig: int, _: typing.Any) -> None:
         if sig == signal.SIGTERM:
