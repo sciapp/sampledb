@@ -3,7 +3,7 @@ import json
 import pytest
 
 import sampledb
-from sampledb.logic.schemas.data_diffs import calculate_diff, apply_diff, VALUE_NOT_SET, invert_diff
+from sampledb.logic.schemas.data_diffs import calculate_diff, apply_diff, VALUE_NOT_SET, invert_diff, iter_diff
 from sampledb.logic.errors import DiffMismatchError
 
 
@@ -738,3 +738,73 @@ def test_array_index_diffs():
         }
     }
     assert invert_diff(data_diff=invert_diff(data_diff=data_diff)) == data_diff
+
+def test_iter_diff():
+    data_before = {
+        "array": [
+            {
+                "_type": "text",
+                "text": "A1"
+            },
+            {
+                "_type": "text",
+                "text": "A2"
+            },
+            {
+                "_type": "text",
+                "text": "A3"
+            }
+        ]
+    }
+    data_after = {
+        "a": {
+            "_type": "text",
+            "text": "1"
+        },
+        "array": [
+            {
+                "_type": "text",
+                "text": "B1"
+            },
+            {
+                "_type": "text",
+                "text": "A2"
+            }
+        ]
+    }
+    assert list(sorted(iter_diff(calculate_diff(
+        data_before=data_before,
+        data_after=data_after
+    )))) == [
+        (
+            ('a',),
+            {
+                "_after": {
+                    "_type": "text",
+                    "text": "1"
+                }
+            }
+        ),
+        (
+            ('array', 0),
+            {
+                "_before": {
+                    "_type": "text",
+                    "text": "A1"
+                },
+                "_after": {
+                    "_type": "text",
+                    "text": "B1"
+                }
+            }
+        ),
+        (
+            ('array', 2),
+            {
+                "_before": {
+                    "_type": "text",
+                    "text": "A3"
+                }
+            }
+        )
+    ]

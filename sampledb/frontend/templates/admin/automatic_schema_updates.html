@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Automatic Schema Updates') }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Automatic Schema Updates') }}</h1>
+
+  {% if updatable_object_checks and updatable_object_checks[0].status == UpdatableObjectsCheckStatus.DONE and not updatable_object_checks[0].automatic_schema_update %}
+
+    <div class="modal fade" id="automaticSchemaUpdateModal" tabindex="-1" role="dialog" aria-labelledby="automaticSchemaUpdateModalLabel">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="automaticSchemaUpdateModalLabel">{{ _('Updatable Objects') }}</h4>
+          </div>
+          <div class="modal-body">
+            <h5>{{ _('Automatically Updatable Objects') }}</h5>
+            {% if updatable_object_checks[0].result.automatically_updatable_objects %}
+              <form method="post" action="{{ url_for('.automatic_schema_updates') }}">
+                {% if start_schema_updates_form %}
+                  {{ start_schema_updates_form.csrf_token() }}
+                  <input type="hidden" name="{{ start_schema_updates_form.updatable_objects_check_id.name }}" value="{{ updatable_object_checks[0].id }}" />
+                {% endif %}
+                <input type="hidden" name="" value="{{ updatable_object_checks[0].id }}">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{{ _('ID') }}</th>
+                      <th scope="col">{{ _('Name') }}</th>
+                      <th scope="col">{{ _('Note') }}</th>
+                      <th>
+                        <button type="submit" class="btn btn-primary btn-xs" name="{{ start_schema_updates_form.submit.name }}" value="start_schema_updates_form">{{ _('Start Schema Updates') }}</button>
+                        <button type="button" class="btn btn-default btn-xs" id="selectAllObjectsButton">{{ _('Select all') }}</button>
+                        <button type="button" class="btn btn-default btn-xs" id="deselectAllObjectsButton">{{ _('Deselect all') }}</button>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for object_id, version_id, messages in updatable_object_checks[0].result.automatically_updatable_objects %}
+                      {% set object = updatable_objects_by_id.get(object_id, None) %}
+                      <tr {% if object is none or object.version_id != version_id %}class="text-muted"{% endif %}>
+                        <td><a href="{{ url_for('.object', object_id=object_id) }}">{{ object_id }}</a></td>
+                        <td>{% if object %}{{ object.name | get_translated_text }}{% else %}&mdash;{% endif %}</td>
+                        <td>
+                          {% set messages = messages | list %}
+                          {% if not object %}
+                            {% do messages.insert(0, _('Missing permissions.')) %}
+                          {% elif object.version_id != version_id %}
+                            {% do messages.insert(0, _('New object version.')) %}
+                          {% endif %}
+                          {% if messages %}
+                            <ul>
+                            {% for message in messages %}
+                              <li>{{ message }}</li>
+                            {% endfor %}
+                            </ul>
+                          {% else %}
+                            &mdash;
+                          {% endif %}
+                        </td>
+                        <td>
+                          <div class="checkbox" style="margin: 0">
+                            <label>
+                              <input type="checkbox" name="{{ start_schema_updates_form.object_ids.name }}" value="{{ object_id }}" {% if object is none or object.version_id != version_id or (object_id | string, object_id | string) not in start_schema_updates_form.object_ids.choices %}disabled="disabled"{% endif %}>
+                            </label>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                  {% if start_schema_updates_form %}
+                    <tfoot>
+                      <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                          <button type="submit" class="btn btn-primary btn-xs" name="{{ start_schema_updates_form.submit.name }}" value="start_schema_updates_form">{{ _('Start Schema Updates') }}</button>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  {% endif %}
+                </table>
+              {% else %}
+                <p class="help-block">{{ _('No automatically updatable objects were found during the most recent check for updatable objects.') }}</p>
+              {% endif %}
+              <h5>{{ _('Manually Updatable Objects') }}</h5>
+              {% if updatable_object_checks[0].result.manually_updatable_objects %}
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{{ _('ID') }}</th>
+                      <th scope="col">{{ _('Name') }}</th>
+                      <th scope="col">{{ _('Note') }}</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for object_id, version_id, messages in updatable_object_checks[0].result.manually_updatable_objects %}
+                      {% set object = updatable_objects_by_id.get(object_id, None) %}
+                      <tr {% if object is none or object.version_id != version_id %}class="text-muted"{% endif %}>
+                        <td><a href="{{ url_for('.object', object_id=object_id) }}">{{ object_id }}</a></td>
+                        <td>{% if object %}{{ object.name | get_translated_text }}{% else %}&mdash;{% endif %}</td>
+                        <td style="word-break: break-all">
+                          {% set messages = messages | list %}
+                          {% if not object %}
+                            {% do messages.insert(0, _('Missing permissions.')) %}
+                          {% elif object.version_id != version_id %}
+                            {% do messages.insert(0, _('New object version.')) %}
+                          {% endif %}
+                          {% if messages %}
+                            <ul>
+                            {% for message in messages %}
+                              <li>{{ message }}</li>
+                            {% endfor %}
+                            </ul>
+                          {% else %}
+                            &mdash;
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if object %}
+                            <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-xs btn-primary">{{ _('Update Schema') }}</a>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </form>
+            {% else %}
+              <p class="help-block">{{ _('No objects requiring a manual schema update were found during the most recent check for updatable objects.') }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <p class="text-muted">{{ _('Administrators can use automatic schema updates to update the schemas of all objects which do not need any changes to their data to match the current schema of their action.') }}</p>
+
+  {% if checking_in_progress %}
+    <p class="help-block">{{ _('%(service_name)s is currently checking for objects that can have their schemas updated automatically. This may take a few minutes.', service_name=service_name) }}</p>
+  {% else %}
+    <p class="help-block">{{ _('To be able to perform automatic schema updates, %(service_name)s can check for objects that can have their schemas updated automatically. This may take a few minutes.', service_name=service_name) }}</p>
+    {% if check_for_updatable_objects_form %}
+      <div class="text-center">
+        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#checkUpdatableObjectsModal">
+          {{ _('Check for Updatable Objects') }}
+        </button>
+      </div>
+      <div class="modal fade" id="checkUpdatableObjectsModal" tabindex="-1" role="dialog" aria-labelledby="checkUpdatableObjectsModalLabel">
+        <div class="modal-dialog" role="document">
+          <form method="post" action="{{ url_for('.automatic_schema_updates') }}" class="form text-center">
+            {{ check_for_updatable_objects_form.csrf_token() }}
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="checkUpdatableObjectsModalLabel">{{ _('Check for Updatable Objects') }}</h4>
+              </div>
+              <div class="modal-body">
+                <p class="help-block">{{ _('%(service_name)s will check for objects that can have their schemas updated automatically. This may take a few minutes.', service_name=service_name) }}</p>
+                <div class="form-group">
+                  <label class="control-label" for="filter_action_ids">
+                    {{ _('Filter by Action') }}
+                  </label>
+                  <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">>
+                    {% for topic in sorted_action_topics + [None] %}
+                      {% if sorted_action_topics %}
+                        <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Actions') }}{% endif %}">
+                      {% endif %}
+                      {% for action in all_actions %}
+                        {% if topic is none or topic in action.topics %}
+                          <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
+                            {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
+                            {% if action.user %}{{ action.user.get_name() }} / {% endif %}
+                            {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
+                          </option>
+                        {% endif %}
+                      {% endfor %}
+                      {% if sorted_action_topics %}
+                        </optgroup>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary" name="{{ check_for_updatable_objects_form.submit.name }}" value="check_for_updatable_objects_form">{{ _('Start') }}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {% if updatable_object_checks %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th colspan="5"> {{ _('Updatable Object Check') }}</th>
+          <th colspan="5"> {{ _('Automatic Schema Update') }}</th>
+        </tr>
+        <tr>
+          <th scope="col" rowspan="2">{{ _('User') }}</th>
+          <th scope="col" rowspan="2">{{ _('Datetime') }}</th>
+          <th scope="col" rowspan="2">{{ _('Status') }}</th>
+          <th colspan="2">{{ _('Updatable Objects') }}</th>
+          <th scope="col" rowspan="2" style="border-left: 2px solid #ddd">{{ _('User') }}</th>
+          <th scope="col" rowspan="2">{{ _('Datetime') }}</th>
+          <th scope="col" rowspan="2">{{ _('Status') }}</th>
+          <th colspan="2">{{ _('Updated Objects') }}</th>
+        </tr>
+        <tr>
+          <th scope="col">{{ _('Automatic') }}</th>
+          <th scope="col">{{ _('Manual') }}</th>
+          <th scope="col">{{ _('Success') }}</th>
+          <th scope="col">{{ _('Failure') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for updatable_object_check in updatable_object_checks %}
+        <tr>
+          <td>{{ user_reference(updatable_object_check.user_id) }}</td>
+          <td>{{ updatable_object_check.utc_datetime | babel_format_datetime }}</td>
+          <td>
+            <div class="progress" style="margin-bottom: 0;"
+              {% if updatable_object_check.status != UpdatableObjectsCheckStatus.DONE and updatable_object_check.result and updatable_object_check.result.previous_object_id >= 0 %}
+                data-toggle="tooltip" data-placement="top" title="{{ updatable_object_check.result.previous_object_id }}&nbsp;/&nbsp;{{ max_object_id }}"
+              {% endif %}
+            >
+              <div class="progress-bar progress-bar-success {% if updatable_object_check.result is none or updatable_object_check.result.previous_object_id < 0 %}progress-bar-striped{% endif %}" role="progressbar" aria-valuenow="{% if updatable_object_check.result and updatable_object_check.result.previous_object_id > 0 %}{{ updatable_object_check.result.previous_object_id }}{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="{{ max_object_id }}" style="width: {% if updatable_object_check.status == UpdatableObjectsCheckStatus.DONE %}100{% elif updatable_object_check.result and updatable_object_check.result.previous_object_id >= 0 %}{{ updatable_object_check.result.previous_object_id / max_object_id * 100 }}{% else %}100{% endif %}%;">
+                {% if updatable_object_check.status == UpdatableObjectsCheckStatus.DONE %}
+                  {{ _('Done') }}
+                {% elif updatable_object_check.result is none or updatable_object_check.result.previous_object_id < 0 %}
+                  {{ _('Starting') }}
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="text-right">
+            {% if updatable_object_check.result and 'automatically_updatable_objects' in updatable_object_check.result %}
+              {{ updatable_object_check.result.automatically_updatable_objects | length }}
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td class="text-right">
+            {% if updatable_object_check.result and 'manually_updatable_objects' in updatable_object_check.result %}
+              {{ updatable_object_check.result.manually_updatable_objects | length }}
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          {% if loop.first and updatable_object_check.status == UpdatableObjectsCheckStatus.DONE and updatable_object_check.automatic_schema_update is none and (updatable_object_check.result.automatically_updatable_objects or updatable_object_check.result.manually_updatable_objects) %}
+            <td colspan="5" class="text-center" style="border-left: 2px solid #ddd">
+              <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#automaticSchemaUpdateModal">{{ _('Update Schemas') }}</button>
+            </td>
+          {% elif updatable_object_check.automatic_schema_update is none %}
+            <td colspan="5" class="text-center" style="border-left: 2px solid #ddd">
+              &mdash;
+            </td>
+          {% else %}
+            <td style="border-left: 2px solid #ddd">
+              {{ user_reference(updatable_object_check.automatic_schema_update.user_id) }}
+            </td>
+            <td>
+              {{ updatable_object_check.automatic_schema_update.utc_datetime | babel_format_datetime }}
+            </td>
+            <td>
+              <div class="progress" style="margin-bottom: 0"  data-toggle="tooltip" data-placement="top" title="{{ _('%(num_objects)d objects were updated successfully.', num_objects=updatable_object_check.automatic_schema_update.result.object_ids_success | length) }} {{ _('%(num_objects)d objects could not be updated.', num_objects=updatable_object_check.automatic_schema_update.result.object_ids_failure | length) }}">
+                {% if updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE  %}
+                  <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0" style="width: 100%;">
+                    {{ _('Done') }}
+                  </div>
+                {% elif updatable_object_check.automatic_schema_update.result is none or (updatable_object_check.automatic_schema_update.result.object_ids_failure | length == 0 and updatable_object_check.automatic_schema_update.result.object_ids_success | length == 0) %}
+                  <div class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="{{ updatable_object_check.automatic_schema_update.object_ids | length }}" style="width: 100%;">
+                    {{ _('Starting') }}
+                  </div>
+                {% else %}
+                  <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}" aria-valuemin="0" aria-valuemax="{{ updatable_object_check.automatic_schema_update.object_ids | length }}" style="width: {{ updatable_object_check.automatic_schema_update.result.object_ids_success | length / updatable_object_check.automatic_schema_update.object_ids | length * 100 }}%;">
+                  </div>
+                  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}" aria-valuemin="0" aria-valuemax="{{ updatable_object_check.automatic_schema_update.object_ids | length }}" style="width: {{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length / updatable_object_check.automatic_schema_update.object_ids | length * 100 }}%;">
+                  </div>
+                {% endif %}
+                </div>
+              </div>
+            </td>
+            <td class="text-right">
+              {% if updatable_object_check.automatic_schema_update and updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE %}
+                {% if updatable_object_check.automatic_schema_update.result.object_ids_success %}
+                  <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_success) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}</a>
+                {% else %}
+                  0
+                {% endif %}
+              {% else %}
+                &mdash;
+              {% endif %}
+            </td>
+            <td class="text-right">
+              {% if updatable_object_check.automatic_schema_update and updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE %}
+                {% if updatable_object_check.automatic_schema_update.result.object_ids_failure %}
+                  <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_failure) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}</a>
+                {% else %}
+                  0
+                {% endif %}
+              {% else %}
+                &mdash;
+              {% endif %}
+            </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <div class="modal fade" id="refreshModal" tabindex="-1" role="dialog" aria-labelledby="refreshModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="refreshModalLabel">{{ _('Reload Page') }}</h4>
+        </div>
+        <div class="modal-body">
+          <p id="updatableObjectsCheckReloadText">
+            {{ _('The status of a check for automatically updatable objects has changed. Please reload the page.') }}
+          </p>
+          <p id="automaticSchemaUpdateReloadText">
+            {{ _('The status of an automatic schema update has changed. Please reload the page.') }}
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+          <a href="{{ url_for('.automatic_schema_updates') }}" class="btn btn-primary">{{ _('Reload Page') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/automatic_schema_updates.js') }}" type="module"></script>
+{% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("automatic_schema_updates.current_status", current_status) %}
+  {{ super() }}
+{% endblock %}
