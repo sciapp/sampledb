@@ -70,7 +70,7 @@ If you use LDAP for user management, you can use these variables to configure ho
 .. _oidc_configuration:
 
 OpenID Connect (OIDC)
-----
+---------------------
 
 .. list-table:: OIDC Configuration Environment Variables
    :header-rows: 1

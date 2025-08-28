@@ -27,7 +27,7 @@ version = '.'.join(release.split('.', 2)[:2])
 
 # General configuration
 
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 
 master_doc = 'index'
 
