@@ -665,7 +665,18 @@ def parse_eln_file(
                         )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")
-            _eln_assert(ro_crate_metadata.get('@context') == 'https://w3id.org/ro/crate/1.1/context', "ro-crate-metadata.json @context must be RO-Crate 1.1 context")
+            supported_ro_crate_versions = [
+                '1.0',
+                '1.1',
+                '1.2',
+            ]
+            _eln_assert(
+                any(
+                    ro_crate_metadata.get('@context') == f'https://w3id.org/ro/crate/{supported_ro_crate_version}/context'
+                    for supported_ro_crate_version in supported_ro_crate_versions
+                ),
+                f"ro-crate-metadata.json @context must be RO-Crate context for RO-Crate version {', '.join(supported_ro_crate_versions[:1])} or {supported_ro_crate_versions[-1]}"
+            )
 
             _eln_assert(isinstance(ro_crate_metadata.get('@graph'), list), "ro-crate-metadata.json @graph must be list")
             graph_nodes_by_id: typing.Dict[str, typing.Dict[str, typing.Any]] = {}
@@ -683,11 +694,6 @@ def parse_eln_file(
             metadata_node = graph_nodes_by_id['ro-crate-metadata.json']
             _eln_assert(root_node['@type'] == 'Dataset' or root_node['@type'] == ['Dataset'], "ro-crate-metadata.json @graph root node must be Dataset")
             if 'version' in metadata_node:
-                supported_ro_crate_versions = [
-                    '1.0',
-                    '1.1',
-                    '1.2',
-                ]
                 _eln_assert(metadata_node['version'] in supported_ro_crate_versions or any(metadata_node['version'].startswith(supported_ro_crate_version + '.') for supported_ro_crate_version in supported_ro_crate_versions), f"ro-crate-metadata.json node has unsupported RO-Crate version (supported are: {', '.join(supported_ro_crate_versions)})")
             root_sdpublisher = root_node.get('sdPublisher')
             metadata_sdpublisher = metadata_node.get('sdPublisher')
