@@ -79,6 +79,8 @@ def post_background_task(
     :return: the task status and the task object itself
     """
     if flask.current_app.config['ENABLE_BACKGROUND_TASKS']:
+        if flask.current_app.config['TESTING']:
+            auto_delete = False
         task = BackgroundTask(
             type=type,
             auto_delete=auto_delete,
