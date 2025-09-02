@@ -140,6 +140,11 @@ def app(flask_server):
     app = flask_server.app
     # reset config and database before each test
     app.config = copy.deepcopy(flask_server.initial_config)
+
+    app.config['ENABLE_BACKGROUND_TASKS'] = True
+    sampledb.logic.background_tasks.core.stop_handler_threads(app)
+    app.config['ENABLE_BACKGROUND_TASKS'] = False
+
     _restore_empty_database_copy()
 
     # enable german language for input by default during testing
@@ -165,6 +170,16 @@ def app_context(app):
     with app.app_context():
         # yield to keep the app context active until the test is done
         yield None
+
+
+@pytest.fixture
+def enable_background_tasks(app):
+    app.config['ENABLE_BACKGROUND_TASKS'] = True
+    sampledb.logic.background_tasks.core.should_stop = False
+    sampledb.logic.background_tasks.core.start_handler_threads(app)
+    yield None
+    sampledb.logic.background_tasks.core.stop_handler_threads(app)
+    app.config['ENABLE_BACKGROUND_TASKS'] = False
 
 
 @pytest.fixture(scope='session')
@@ -283,3 +298,13 @@ def wait_for_page_load(driver, timeout=10):
         # https://github.com/SeleniumHQ/selenium/issues/15401
         time.sleep(0.1)
         WebDriverWait(driver, timeout).until(staleness_of(old_page))
+
+
+def wait_for_background_task(task: sampledb.logic.background_tasks.core.BackgroundTask):
+    for _ in range(5):
+        sampledb.db.session.refresh(task)
+        if task.status in (sampledb.logic.background_tasks.core.BackgroundTaskStatus.DONE, sampledb.logic.background_tasks.core.BackgroundTaskStatus.FAILED):
+            break
+        time.sleep(0.1)
+    else:
+        sampledb.db.session.refresh(task)

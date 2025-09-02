@@ -1,9 +1,13 @@
+import time
+
 import sampledb
 import sampledb.models
 import sampledb.logic
 
+from ..conftest import wait_for_background_task
 
-def test_send_confirm_email(app):
+
+def test_send_confirm_email(app, enable_background_tasks):
     # Submit the missing information and complete the registration
 
     server_name = app.config['SERVER_NAME']
@@ -14,6 +18,30 @@ def test_send_confirm_email(app):
         user = sampledb.logic.authentication.login(username, password)
         assert user is not None
 
+        _, task = sampledb.logic.utils.send_email_confirmation_email(user.email, user.id, 'add_login')
+        assert task is not None
+        assert task.type == 'send_mail'
+        assert task.data['subject'] == "SampleDB Email Confirmation"
+
+        wait_for_background_task(task)
+
+        assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+        sampledb.db.session.delete(task)
+        sampledb.db.session.commit()
+
+        sampledb.logic.utils.send_user_invitation_email('test@example.com', 0)
+
+        task = sampledb.models.BackgroundTask.query.filter_by(type="send_mail").first()
+
+        assert task is not None
+        assert task.type == 'send_mail'
+        assert task.data['subject'] == "SampleDB Invitation"
+
+        wait_for_background_task(task)
+
+        assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+        app.config['ENABLE_BACKGROUND_TASKS'] = False
         # email authentication for ldap-user
         with sampledb.mail.record_messages() as outbox:
             sampledb.logic.utils.send_email_confirmation_email(user.email, user.id, 'add_login')
