@@ -208,7 +208,7 @@ def _generate_datetime_placeholder(schema: typing.Dict[str, typing.Any], path: t
     :param path: the path to this subschema
     :return: the generated object or None, if there is no default datetime
     """
-    if 'default' not in schema:
+    if 'default' not in schema or schema['default'] is None:
         return None
     utc_datetime = schema['default']
     return {

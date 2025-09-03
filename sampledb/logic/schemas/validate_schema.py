@@ -737,13 +737,13 @@ def _validate_datetime_schema(
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
 
     if 'default' in schema:
-        if not isinstance(schema['default'], str):
-            raise ValidationError('default must be str', path)
-        else:
+        if isinstance(schema['default'], str):
             try:
                 datetime.datetime.strptime(schema['default'], '%Y-%m-%d %H:%M:%S')
             except ValueError:
                 raise ValidationError('invalid default value', path)
+        elif schema['default'] is not None:
+            raise ValidationError('default must be str or null', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):

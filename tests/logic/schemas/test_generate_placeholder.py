@@ -79,6 +79,16 @@ def test_generate_datetime_object_default():
     }
 
 
+def test_generate_datetime_object_default_none():
+    object_schema = {
+        'title': 'Example Datetime',
+        'type': 'datetime',
+        'default': None
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None
+
+
 def test_generate_quantity_object():
     object_schema = {
         'title': 'Example Quantity',
