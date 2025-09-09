@@ -1,6 +1,7 @@
 
 import base64
 import datetime
+import functools
 import io
 import os
 import typing
@@ -16,16 +17,16 @@ from flask_babel import _, refresh
 from weasyprint import HTML
 
 from .. import logic
-from ..logic import object_log
+from ..logic import object_log, object_permissions
 from ..logic.actions import Action
 from ..logic.objects import get_object
 from ..models import ObjectLogEntryType, Permissions
 from ..logic.users import get_user
 
 from .markdown_images import IMAGE_FORMATS
-from .objects.permissions import get_object_if_current_user_has_read_permissions
 from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
+from ..logic.caching import cache_per_request
 
 SECTIONS = frozenset({
     'activity_log',
@@ -37,6 +38,7 @@ SECTIONS = frozenset({
 
 
 def create_html_for_pdfexport(
+        user_id: int,
         object_ids: typing.Sequence[int],
         sections: typing.Union[typing.Set[str], typing.FrozenSet[str]] = SECTIONS,
         lang_code: str = 'en',
@@ -56,10 +58,9 @@ def create_html_for_pdfexport(
 
         activity_log_entries = []
         if 'activity_log' in sections:
-            object_log_entries = object_log.get_object_log_entries(object_id=object.id, user_id=flask_login.current_user.id)
+            object_log_entries = object_log.get_object_log_entries(object_id=object.id, user_id=user_id)
             for object_log_entry in reversed(object_log_entries):
-                user_id = object_log_entry.user_id
-                user_url = markupsafe.escape(flask.url_for('.user_profile', user_id=user_id, _external=True))
+                user_url = markupsafe.escape(flask.url_for('.user_profile', user_id=object_log_entry.user_id, _external=True))
                 user_name = markupsafe.escape(get_user(object_log_entry.user_id).get_name())
 
                 entry_datetime = markupsafe.escape(custom_format_datetime(object_log_entry.utc_datetime))
@@ -80,7 +81,7 @@ def create_html_for_pdfexport(
                     try:
                         measurement_id = int(object_log_entry.data['measurement_id'])
                         escaped_object_url = markupsafe.escape(flask.url_for('.object', object_id=measurement_id, _external=True))
-                        permissions = logic.object_permissions.get_user_object_permissions(measurement_id, flask_login.current_user.id)
+                        permissions = logic.object_permissions.get_user_object_permissions(measurement_id, user_id)
                         if Permissions.READ in permissions:
                             measurement_name = markupsafe.escape(get_translated_text(get_object(measurement_id).name))
                             text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement %(measurement_name)s (#%(measurement_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, measurement_id=measurement_id, measurement_name=measurement_name)
@@ -92,7 +93,7 @@ def create_html_for_pdfexport(
                     try:
                         sample_id = int(object_log_entry.data['sample_id'])
                         escaped_object_url = markupsafe.escape(flask.url_for('.object', object_id=sample_id, _external=True))
-                        permissions = logic.object_permissions.get_user_object_permissions(sample_id, flask_login.current_user.id)
+                        permissions = logic.object_permissions.get_user_object_permissions(sample_id, user_id)
                         if Permissions.READ in permissions:
                             sample_name = markupsafe.escape(get_translated_text(get_object(sample_id).name))
                             text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample %(sample_name)s (#%(sample_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, sample_id=sample_id, sample_name=sample_name)
@@ -171,7 +172,7 @@ def create_html_for_pdfexport(
                         try:
                             other_object_id = int(object_log_entry.data['object_id'])
                             escaped_object_url = markupsafe.escape(flask.url_for('.object', object_id=other_object_id, _external=True))
-                            permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['object_id'], flask_login.current_user.id)
+                            permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['object_id'], user_id)
                             if Permissions.READ in permissions:
                                 object_name = markupsafe.escape(get_translated_text(get_object(object_log_entry.data['object_id']).name))
                                 text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object %(object_name)s (#%(other_object_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, object_name=object_name, other_object_id=other_object_id)
@@ -269,7 +270,7 @@ def create_html_for_pdfexport(
         'pdfexport/export.html',
         get_object_type_name=get_object_type_name,
         export_date=datetime.datetime.now(datetime.timezone.utc),
-        get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
+        get_object_if_current_user_has_read_permissions=cache_per_request()(functools.partial(object_permissions.get_object_if_user_has_permissions, user_id=user_id, permissions=Permissions.READ)),
         objects=objects,
         get_user=get_user_if_exists,
         metadata_language=lang_code,
@@ -334,7 +335,13 @@ def create_pdfexport(
             url = ''
         return url
 
-    html = create_html_for_pdfexport(object_ids, sections, lang_code, url_mapper=url_mapper)
+    html = create_html_for_pdfexport(
+        user_id=flask_login.current_user.id,
+        object_ids=object_ids,
+        sections=sections,
+        lang_code=lang_code,
+        url_mapper=url_mapper
+    )
     return typing.cast(bytes, HTML(
         string=html,
         base_url=base_url
