@@ -3,6 +3,7 @@ import base64
 import datetime
 import io
 import os
+import sys
 import typing
 import urllib.parse
 
@@ -11,6 +12,7 @@ import flask_login
 import markupsafe
 import qrcode
 import qrcode.image.pil
+from bs4 import BeautifulSoup
 from flask_babel import _, refresh
 from weasyprint import default_url_fetcher, HTML
 
@@ -47,7 +49,7 @@ def create_pdfexport(
 
     base_url = flask.url_for('.index', _external=True)
 
-    def custom_url_fetcher(url: str) -> typing.Dict[str, bytes]:
+    def url_mapper(url: str) -> str:
         # replace URLs of markdown images with Data URLs
         if url.startswith(base_url + 'markdown_images/'):
             file_name = url[len(base_url + 'markdown_images/'):]
@@ -60,11 +62,11 @@ def create_pdfexport(
                     url = 'data:' + IMAGE_FORMATS[file_extension] + ';base64,' + base64.b64encode(image_data).decode('utf-8')
                 else:
                     url = ''
-        if url.startswith(base_url + 'object_files/'):
-            object_id_file_id = url[len(base_url + 'object_files/'):]
+        if url.startswith(base_url + 'objects/') and '/files/' in url[len(base_url + 'objects/'):]:
+            object_id_file_id = url[len(base_url + 'objects/'):]
             url = ''
             try:
-                object_id_str, file_id_str = object_id_file_id.split('/')
+                object_id_str, file_id_str = object_id_file_id.split('/files/')
                 object_id = int(object_id_str)
                 file_id = int(file_id_str)
                 file = exported_files[(object_id, file_id)]
@@ -79,7 +81,7 @@ def create_pdfexport(
         # only allow Data URLs and URLs via http or https
         if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
             url = ''
-        return typing.cast(typing.Dict[str, bytes], default_url_fetcher(url))
+        return url
 
     objects = []
     for object_id in object_ids:
@@ -309,12 +311,19 @@ def create_pdfexport(
         IMAGE_FORMATS=IMAGE_FORMATS
     )
 
+    soup = BeautifulSoup(html, 'html.parser')
+    for tag_name, url_attribute in [('a', 'href'), ('img', 'src')]:
+        for element in soup.findAll(tag_name):
+            url = element.get(url_attribute)
+            if url and not urllib.parse.urlparse(url).netloc:
+                element[url_attribute] = url_mapper(urllib.parse.urljoin(base_url, url))
+    html = str(soup)
+
     # use regular user language again
     delattr(flask.g, 'override_locale')
     refresh()
 
     return typing.cast(bytes, HTML(
         string=html,
-        url_fetcher=custom_url_fetcher,
         base_url=base_url
     ).write_pdf())
