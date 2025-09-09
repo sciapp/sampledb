@@ -3,7 +3,6 @@ import base64
 import datetime
 import io
 import os
-import sys
 import typing
 import urllib.parse
 
@@ -14,7 +13,7 @@ import qrcode
 import qrcode.image.pil
 from bs4 import BeautifulSoup
 from flask_babel import _, refresh
-from weasyprint import default_url_fetcher, HTML
+from weasyprint import HTML
 
 from .. import logic
 from ..logic import object_log
@@ -37,51 +36,19 @@ SECTIONS = frozenset({
 })
 
 
-def create_pdfexport(
+def create_html_for_pdfexport(
         object_ids: typing.Sequence[int],
         sections: typing.Union[typing.Set[str], typing.FrozenSet[str]] = SECTIONS,
-        lang_code: str = 'en'
-) -> bytes:
+        lang_code: str = 'en',
+        *,
+        url_mapper: typing.Callable[[str, typing.Dict[typing.Tuple[int, int], logic.files.File]], str]
+) -> str:
     exported_files: typing.Dict[typing.Tuple[int, int], logic.files.File] = {}
 
     flask.g.override_locale = lang_code
     refresh()
 
     base_url = flask.url_for('.index', _external=True)
-
-    def url_mapper(url: str) -> str:
-        # replace URLs of markdown images with Data URLs
-        if url.startswith(base_url + 'markdown_images/'):
-            file_name = url[len(base_url + 'markdown_images/'):]
-            image_data = logic.markdown_images.get_markdown_image(file_name, flask_login.current_user.id)
-            if image_data is None:
-                url = ''
-            else:
-                file_extension = os.path.splitext(file_name)[1].lower()
-                if file_extension in IMAGE_FORMATS:
-                    url = 'data:' + IMAGE_FORMATS[file_extension] + ';base64,' + base64.b64encode(image_data).decode('utf-8')
-                else:
-                    url = ''
-        if url.startswith(base_url + 'objects/') and '/files/' in url[len(base_url + 'objects/'):]:
-            object_id_file_id = url[len(base_url + 'objects/'):]
-            url = ''
-            try:
-                object_id_str, file_id_str = object_id_file_id.split('/files/')
-                object_id = int(object_id_str)
-                file_id = int(file_id_str)
-                file = exported_files[(object_id, file_id)]
-                if file.storage == 'database' and not file.is_hidden:
-                    for file_extension, mime_type in IMAGE_FORMATS.items():
-                        if file.original_file_name.lower().endswith(file_extension):
-                            image_data = file.open(read_only=True).read()
-                            url = 'data:' + mime_type + ';base64,' + base64.b64encode(image_data).decode('utf-8')
-                            break
-            except Exception:
-                pass
-        # only allow Data URLs and URLs via http or https
-        if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
-            url = ''
-        return url
 
     objects = []
     for object_id in object_ids:
@@ -316,13 +283,58 @@ def create_pdfexport(
         for element in soup.findAll(tag_name):
             url = element.get(url_attribute)
             if url and not urllib.parse.urlparse(url).netloc:
-                element[url_attribute] = url_mapper(urllib.parse.urljoin(base_url, url))
+                element[url_attribute] = url_mapper(urllib.parse.urljoin(base_url, url), exported_files)
     html = str(soup)
 
     # use regular user language again
     delattr(flask.g, 'override_locale')
     refresh()
 
+    return html
+
+
+def create_pdfexport(
+        object_ids: typing.Sequence[int],
+        sections: typing.Union[typing.Set[str], typing.FrozenSet[str]] = SECTIONS,
+        lang_code: str = 'en'
+) -> bytes:
+    base_url = flask.url_for('.index', _external=True)
+
+    def url_mapper(url: str, exported_files: typing.Dict[typing.Tuple[int, int], logic.files.File]) -> str:
+        # replace URLs of markdown images with Data URLs
+        if url.startswith(base_url + 'markdown_images/'):
+            file_name = url[len(base_url + 'markdown_images/'):]
+            image_data = logic.markdown_images.get_markdown_image(file_name, flask_login.current_user.id)
+            if image_data is None:
+                url = ''
+            else:
+                file_extension = os.path.splitext(file_name)[1].lower()
+                if file_extension in IMAGE_FORMATS:
+                    url = 'data:' + IMAGE_FORMATS[file_extension] + ';base64,' + base64.b64encode(image_data).decode('utf-8')
+                else:
+                    url = ''
+        if url.startswith(base_url + 'objects/') and '/files/' in url[len(base_url + 'objects/'):]:
+            object_id_file_id = url[len(base_url + 'objects/'):]
+            url = ''
+            try:
+                object_id_str, file_id_str = object_id_file_id.split('/files/')
+                object_id = int(object_id_str)
+                file_id = int(file_id_str)
+                file = exported_files[(object_id, file_id)]
+                if file.storage == 'database' and not file.is_hidden:
+                    for file_extension, mime_type in IMAGE_FORMATS.items():
+                        if file.original_file_name.lower().endswith(file_extension):
+                            image_data = file.open(read_only=True).read()
+                            url = 'data:' + mime_type + ';base64,' + base64.b64encode(image_data).decode('utf-8')
+                            break
+            except Exception:
+                pass
+        # only allow Data URLs and URLs via http or https
+        if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
+            url = ''
+        return url
+
+    html = create_html_for_pdfexport(object_ids, sections, lang_code, url_mapper=url_mapper)
     return typing.cast(bytes, HTML(
         string=html,
         base_url=base_url
