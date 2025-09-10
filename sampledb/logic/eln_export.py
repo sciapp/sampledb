@@ -50,7 +50,7 @@ def generate_ro_crate_metadata(
     if object_ids:
         description += " for objects #" + ', #'.join(map(str, sorted(object_ids)))
     ro_crate_metadata: typing.Dict[str, typing.Any] = {
-        "@context": "https://w3id.org/ro/crate/1.1/context",
+        "@context": "https://w3id.org/ro/crate/1.2/context",
         "@graph": [
             {
                 "@type": "CreativeWork",
@@ -60,12 +60,12 @@ def generate_ro_crate_metadata(
                     "@id": "./"
                 },
                 "conformsTo": {
-                    "@id": "https://w3id.org/ro/crate/1.1"
+                    "@id": "https://w3id.org/ro/crate/1.2"
                 },
                 "sdPublisher": {
                     "@id": "SampleDB"
                 },
-                "version": "1.1",
+                "version": "1.2",
                 "dateCreated": date_created
             },
             {
