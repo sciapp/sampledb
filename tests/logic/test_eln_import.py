@@ -33,7 +33,7 @@ def eln_zip_bytes(user, app, flask_server):
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
-    with app.app_context():
+    with app.test_request_context('/'):
         zip_bytes = export.get_eln_archive(user.id)
     app.config['SERVER_NAME'] = server_name
     return zip_bytes
@@ -45,7 +45,7 @@ def eln_zip_bytes_unsigned(user, app):
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
-    with app.app_context():
+    with app.test_request_context('/'):
         archive_files, infos = export.get_export_infos(
             user_id=user.id,
             object_ids=None,
@@ -210,7 +210,7 @@ def test_parse_sampledb_eln_file_ro_crate_metadata_modified(user, app, flask_ser
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
-    with app.app_context():
+    with app.test_request_context('/'):
         archive_files, infos = export.get_export_infos(
             user_id=user.id,
             object_ids=None,
@@ -268,7 +268,7 @@ def test_parse_sampledb_eln_file_object_modified(user, app, flask_server, modify
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
-    with app.app_context():
+    with app.test_request_context('/'):
         archive_files, infos = export.get_export_infos(
             user_id=user.id,
             object_ids=None,
