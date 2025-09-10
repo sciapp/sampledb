@@ -1430,10 +1430,11 @@ This example shows how Markdown can be used for instrument Notes.
             file_name='test_database.txt',
             save_content=lambda f: typing.cast(None, f.write(b"Test"))
         )
-        eln_file_data = sampledb.logic.export.get_eln_archive(
-            user_id=instrument_responsible_user.id,
-            object_ids=[independent_object.id, file_object.id, measurement.id, user_reference_object.id]
-        )
+        with app.test_request_context('/'):
+            eln_file_data = sampledb.logic.export.get_eln_archive(
+                user_id=instrument_responsible_user.id,
+                object_ids=[independent_object.id, file_object.id, measurement.id, user_reference_object.id]
+            )
         eln_import_id = sampledb.logic.eln_import.create_eln_import(
             user_id=instrument_responsible_user.id,
             file_name='sampledb_demo_file.eln',

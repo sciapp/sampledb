@@ -1,15 +1,18 @@
+import base64
 import datetime
 import hashlib
 import json
 import mimetypes
 import os.path
 import typing
+import urllib.parse
 
 import flask
 import minisign
 from flask import url_for
 
-from . import minisign_keys
+from . import minisign_keys, markdown_images
+from .files import File
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
@@ -358,7 +361,64 @@ def generate_ro_crate_metadata(
 
     result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
     result_files['sampledb_export/ro-crate-metadata.json.minisig'] = _sign_ro_crate_metadata(result_files['sampledb_export/ro-crate-metadata.json'])
+    result_files['sampledb_export/ro-crate-preview.html'] = _create_preview_html(user_id, list(exported_object_ids), result_files).encode('utf-8')
     return result_files
+
+
+def _create_preview_html(
+        user_id: int,
+        object_ids: typing.List[int],
+        result_files: typing.Dict[str, bytes]
+) -> str:
+    from ..frontend.markdown_images import IMAGE_FORMATS
+    from ..frontend.pdfexport import create_html_for_pdfexport
+
+    base_url = flask.url_for('.index', _external=True)
+
+    def url_mapper(url: str, exported_files: typing.Dict[typing.Tuple[int, int], File]) -> str:
+        if url.startswith(base_url + 'markdown_images/'):
+            file_name = url[len(base_url + 'markdown_images/'):]
+            image_data = markdown_images.get_markdown_image(file_name, user_id)
+            if image_data is None:
+                return ''
+            file_extension = os.path.splitext(file_name)[1].lower()
+            if file_extension not in IMAGE_FORMATS:
+                return ''
+            result_files['sampledb_export/ro-crate-preview_files/markdown_images/' + file_name] = image_data
+            return 'ro-crate-preview_files/markdown_images/' + file_name
+        if url.startswith(base_url + 'objects/') and '/files/' in url[len(base_url + 'objects/'):]:
+            found_result_file = [
+                file_path[len('sampledb_export/'):]
+                for file_path in result_files
+                if file_path.startswith('sampledb_export/' + url[len(base_url):] + '/')
+            ]
+            if found_result_file:
+                return found_result_file[0]
+            object_id_file_id = url[len(base_url + 'objects/'):]
+            url = ''
+            try:
+                object_id_str, file_id_str = object_id_file_id.split('/files/')
+                object_id = int(object_id_str)
+                file_id = int(file_id_str)
+                file = exported_files[(object_id, file_id)]
+                if file.storage == 'database' and not file.is_hidden:
+                    for file_extension, mime_type in IMAGE_FORMATS.items():
+                        if file.original_file_name.lower().endswith(file_extension):
+                            image_data = file.open(read_only=True).read()
+                            return 'data:' + mime_type + ';base64,' + base64.b64encode(image_data).decode('utf-8')
+            except Exception:
+                pass
+        # only allow Data URLs and URLs via http or https
+        if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
+            return ''
+        return url
+
+    return create_html_for_pdfexport(
+        user_id=user_id,
+        object_ids=object_ids,
+        url_mapper=url_mapper,
+        include_logo=False
+    )
 
 
 def _sign_ro_crate_metadata(

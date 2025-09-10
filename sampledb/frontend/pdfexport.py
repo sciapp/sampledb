@@ -43,7 +43,8 @@ def create_html_for_pdfexport(
         sections: typing.Union[typing.Set[str], typing.FrozenSet[str]] = SECTIONS,
         lang_code: str = 'en',
         *,
-        url_mapper: typing.Callable[[str, typing.Dict[typing.Tuple[int, int], logic.files.File]], str]
+        url_mapper: typing.Callable[[str, typing.Dict[typing.Tuple[int, int], logic.files.File]], str],
+        include_logo: bool = True,
 ) -> str:
     exported_files: typing.Dict[typing.Tuple[int, int], logic.files.File] = {}
 
@@ -270,13 +271,14 @@ def create_html_for_pdfexport(
         'pdfexport/export.html',
         get_object_type_name=get_object_type_name,
         export_date=datetime.datetime.now(datetime.timezone.utc),
-        get_object_if_current_user_has_read_permissions=cache_per_request()(functools.partial(object_permissions.get_object_if_user_has_permissions, user_id=user_id, permissions=Permissions.READ)),
+        get_object_if_current_user_has_read_permissions=cache_per_request()(functools.partial(object_permissions.get_object_if_user_has_permissions, user_id, Permissions.READ)),
         objects=objects,
         get_user=get_user_if_exists,
         metadata_language=lang_code,
         files_by_object_id=files_by_object_id,
         eln_import_urls={object[0].object_id: logic.eln_import.get_eln_import_object_url(object[0].object_id) for object in objects},
-        IMAGE_FORMATS=IMAGE_FORMATS
+        IMAGE_FORMATS=IMAGE_FORMATS,
+        include_logo=include_logo,
     )
 
     soup = BeautifulSoup(html, 'html.parser')
