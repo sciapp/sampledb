@@ -17,6 +17,8 @@ E-Mail
      - An email address for users to contact
    * - SAMPLEDB_MAIL_SENDER
      - The email address used for outbound emails
+   * - SAMPLEDB_MAIL_REPLY_TO
+     - The email address used for the Reply-To address of outbound emails (default: SAMPLEDB_MAIL_SENDER)
    * - SAMPLEDB_MAIL_SERVER
      - The mail server used for outbound emails
    * - SAMPLEDB_MAIL_PORT
