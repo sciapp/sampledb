@@ -749,6 +749,7 @@ OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION = False
 # email settings
 MAIL_SERVER = None
 MAIL_SENDER = None
+MAIL_REPLY_TO = None
 CONTACT_EMAIL = None
 
 # branding and legal info
