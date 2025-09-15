@@ -808,3 +808,38 @@ def test_iter_diff():
             }
         )
     ]
+
+
+def test_apply_placeholder_diff():
+    schema_before = {
+        "type": "object",
+        "properties": {
+            "text": {
+                "type": "text",
+                "title": {"en": "Text"}
+            }
+        },
+        "required": ["text"]
+    }
+    data_before = sampledb.logic.schemas.generate_placeholder(schema_before)
+    data_after = {
+        "_type": "text",
+        "text": "A"
+    }
+    data_diff = {
+        '_before': data_before,
+        '_after': data_after
+    }
+    assert apply_diff(
+        data_before=data_before,
+        data_diff=data_diff,
+        schema_before=schema_before,
+        validate_data_before=False
+    ) == data_after
+    with pytest.raises((sampledb.logic.errors.DiffMismatchError, sampledb.logic.errors.ValidationError)):
+        apply_diff(
+            data_before=data_before,
+            data_diff=data_diff,
+            schema_before=schema_before,
+            validate_data_before=True
+        )
