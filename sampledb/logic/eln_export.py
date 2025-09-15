@@ -20,6 +20,8 @@ from .objects import find_object_references
 from .dataverse_export import flatten_metadata, get_title_for_property
 from .datatypes import Quantity
 from .units import get_un_cefact_code_for_unit
+from .users import get_user
+from .. import version
 
 
 def _unpack_single_item_arrays(json_value: typing.Any) -> typing.Any:
@@ -349,6 +351,13 @@ def generate_ro_crate_metadata(
             else:
                 continue
 
+    if not any(user_info['id'] == user_id for user_info in infos['users']):
+        user = get_user(user_id)
+        infos['users'].append({
+            'id': user_id,
+            'name': user.name,
+            'ordic_id': user.orcid
+        })
     for user_info in infos['users']:
         ro_crate_metadata["@graph"].append({
             "@id": f"./users/{user_info['id']}",
@@ -358,6 +367,30 @@ def generate_ro_crate_metadata(
         })
         if user_info.get('orcid_id'):
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
+
+    ro_crate_metadata["@graph"].append({
+        "@id": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/",
+        "@type": "SoftwareApplication",
+        "url": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/",
+        "name": "SampleDB",
+        "version": version.__version__
+    })
+    ro_crate_metadata["@graph"].append({
+        "@id": "#ro-crate-created",
+        "@type": "CreateAction",
+        "object": {
+            "@id": "./"
+        },
+        "name": "RO-Crate created",
+        "endTime": datetime.date.today().strftime('YYYY-MM-DD'),
+        "agent": {"@id": f"./users/{user_id}"},
+        "instrument": {
+            "@id": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
+        },
+        "actionStatus": {
+            "@id": "http://schema.org/CompletedActionStatus"
+        }
+    })
 
     result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
     result_files['sampledb_export/ro-crate-metadata.json.minisig'] = _sign_ro_crate_metadata(result_files['sampledb_export/ro-crate-metadata.json'])

@@ -537,6 +537,8 @@ def test_eln_export_property_values(user, app):
             'ro-crate-metadata.json',
             './',
             'SampleDB',
+            '#ro-crate-created',
+            'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/',
             './license',
             f'./objects/{object_id}/',
             f'./objects/{object_id}/properties/check',
@@ -580,7 +582,7 @@ def test_eln_export_property_values(user, app):
             f'./objects/{referenced_object_id1}/versions/0/data.json',
             f'./objects/{referenced_object_id1}/versions/0/properties/name',
             f'./objects/{referenced_object_id1}/files.json',
-            f'./users/{user.id}'
+            f'./users/{user.id}',
         }
         object_node = nodes_by_id[f'./objects/{object_id}/versions/1/']
         variables_measured = [
