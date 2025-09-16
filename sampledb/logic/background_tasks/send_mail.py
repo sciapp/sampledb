@@ -37,6 +37,7 @@ def handle_send_mail_task(
         mail.send(flask_mail.Message(
             subject=data['subject'],
             sender=flask.current_app.config['MAIL_SENDER'],
+            reply_to=flask.current_app.config['MAIL_REPLY_TO'],
             recipients=data['recipients'],
             body=data['text'],
             html=data['html']
