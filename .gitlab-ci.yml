@@ -439,7 +439,12 @@ build-package:
   stage: build
   image: python:3.13-slim-trixie
   script:
+    # Install packaging requirements
     - python3 -m pip install setuptools wheel twine build
+    # Remove requirements not supported on PyPI
+    - grep -v " @ git+https://" requirements.txt > requirements.pypi.txt
+    - mv requirements.pypi.txt requirements.txt
+    # Build package
     - python3 -m build --sdist
   artifacts:
     paths:
