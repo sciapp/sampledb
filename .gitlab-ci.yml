@@ -446,6 +446,19 @@ build-package:
     - dist
     expire_in: 1 day
 
+deploy-to-testpypi:
+  stage: deploy
+  needs: ["build-package"]
+  image: python:3.13-slim-trixie
+  only:
+    - develop@Scientific-IT-Systems/SampleDB
+  script:
+    - unset TWINE_USERNAME
+    - unset TWINE_PASSWORD
+    - mv $TESTPYPI_PYPIRC ~/.pypirc
+    - python3 -m pip install twine
+    - python3 -m twine upload --verbose --repository sampledb dist/sampledb-*.tar.gz
+
 deploy-to-pypi:
   stage: deploy
   needs: ["build-package"]
