@@ -225,10 +225,12 @@ def _compare_generic_data(
 def _apply_generic_diff(
         data_before: typing.Any,
         data_diff: GenericDiff,
-        schema_before: typing.Optional[typing.Dict[str, typing.Any]]
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]],
+        *,
+        validate_data_before: bool = True
 ) -> typing.Any:
     if '_before' in data_diff:
-        if data_diff['_before'] is not None and schema_before is not None:
+        if data_diff['_before'] is not None and schema_before is not None and validate_data_before:
             try:
                 validate(data_diff['_before'], schema_before)
             except Exception:
@@ -290,7 +292,7 @@ def apply_diff(
             raise errors.DiffMismatchError()
         return _apply_object_diff(data_before, typing.cast(ObjectDiff, data_diff), schema_before)
     if diff_type is GenericDiff:
-        return _apply_generic_diff(data_before, typing.cast(GenericDiff, data_diff), schema_before)
+        return _apply_generic_diff(data_before, typing.cast(GenericDiff, data_diff), schema_before, validate_data_before=validate_data_before)
     return VALUE_NOT_SET
 
 
