@@ -28,5 +28,5 @@ pysaml2
 qrcode
 requests
 simple_openid_connect
-SQLAlchemy
+SQLAlchemy==2.0.41
 weasyprint
