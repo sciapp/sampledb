@@ -1016,22 +1016,24 @@ Reading an instrument log entry
             "log_entry_id": 2,
             "author": 1,
             "versions": [
-                "log_entry_id": 2,
-                "version_id": 1,
-                "utc_datetime": "2020-08-19T13:14:15.123456",
-                "content": "Example Log Entry 2",
-                "categories": [
-                    {
-                        "category_id": 1,
-                        "title": "Error Report"
-                    },
-                    {
-                        "category_id": 7,
-                        "title": "Maintenance Log"
-                    }
-                ],
-                "event_utc_datetime": "2020-08-03T12:13:14.123456",
-                "content_is_markdown": false
+                {
+                    "log_entry_id": 2,
+                    "version_id": 1,
+                    "utc_datetime": "2020-08-19T13:14:15.123456",
+                    "content": "Example Log Entry 2",
+                    "categories": [
+                        {
+                            "category_id": 1,
+                            "title": "Error Report"
+                        },
+                        {
+                            "category_id": 7,
+                            "title": "Maintenance Log"
+                        }
+                    ],
+                    "event_utc_datetime": "2020-08-03T12:13:14.123456",
+                    "content_is_markdown": false
+                }
             ]
         }
 
@@ -1045,6 +1047,109 @@ Reading an instrument log entry
     :>json list versions[?].categories: the log entry version's categories
     :>json string versions[?].event_utc_datetime: the date and time of the event in UTC in ISO format if set, else ``null``
     :>json string versions[?].content_is_markdown: whether the log entry version's content is markdown
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument or the log entry do not exist
+
+
+Reading all versions of an instrument log entry
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/versions/
+
+    Get all versions of a log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2/versions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+          [
+              {
+                  "log_entry_id": 2,
+                  "version_id": 1,
+                  "utc_datetime": "2020-08-19T13:14:15.123456",
+                  "content": "Example Log Entry 2",
+                  "categories": [
+                      {
+                          "category_id": 1,
+                          "title": "Error Report"
+                      },
+                      {
+                          "category_id": 7,
+                          "title": "Maintenance Log"
+                      }
+                  ],
+                  "event_utc_datetime": "2020-08-03T12:13:14.123456",
+                  "content_is_markdown": false
+              }
+          ]
+
+    :statuscode 200: no error
+    :statuscode 403: the instrument log can only be accessed by instrument scientists
+    :statuscode 404: the instrument or the log entry do not exist
+
+
+Reading an instrument log entry version
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/versions/(int:version_id)
+
+    Get the specific version (`version_id`) of a log entry (`log_entry_id`) for an instrument (`instrument_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/instruments/1/log_entries/2/versions/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "log_entry_id": 2,
+            "version_id": 1,
+            "utc_datetime": "2020-08-19T13:14:15.123456",
+            "content": "Example Log Entry 2",
+            "categories": [
+                {
+                    "category_id": 1,
+                    "title": "Error Report"
+                },
+                {
+                    "category_id": 7,
+                    "title": "Maintenance Log"
+                }
+            ],
+            "event_utc_datetime": "2020-08-03T12:13:14.123456",
+            "content_is_markdown": false
+        }
+
+    :>json number log_entry_id: the log entry's ID
+    :>json number version_id: the log entry version's ID
+    :>json string utc_datetime: the date and time of the log entry version in UTC in ISO format
+    :>json string content: the log entry version's content
+    :>json list categories: the log entry version's categories
+    :>json string event_utc_datetime: the date and time of the event in UTC in ISO format if set, else ``null``
+    :>json string content_is_markdown: whether the log entry version's content is markdown
     :statuscode 200: no error
     :statuscode 403: the instrument log can only be accessed by instrument scientists
     :statuscode 404: the instrument or the log entry do not exist
@@ -1280,11 +1385,13 @@ Creating an instrument log entry
 
         POST /api/v1/instruments/1/log_entries/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
         Accept: application/json
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
         {
             "content": "Example Log Entry Text",
+            "content_is_markdown": false,
             "category_ids": [1, 7],
             "file_attachments": [
                 {
@@ -1312,11 +1419,72 @@ Creating an instrument log entry
         Location: https://iffsamples.fz-juelich.de/api/v1/instruments/1/log_entries/1
 
     :<json string content: the log entry's content
+    :<json bool content_is_markdown: whether the content should be displayed as Markdown
     :<json list category_ids: an optional list of category IDs for the log entry
     :<json list file_attachments: an optional list of file attachments as json objects with file_name and base64_content attributes
     :<json list object_attachments: an optional list of object attachments as json objects with an object_id attribute
     :<json string event_utc_datetime: an optional string containing the date and time of the event in UTC in ISO format
     :statuscode 201: the log entry and optional attachments have been created successfully
+    :statuscode 400: there was an error in the given json data
+    :statuscode 403: only instrument scientists can write to the instrument log
+    :statuscode 404: the instrument does not exist
+
+
+Creating an instrument log entry version
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/instruments/(int:instrument_id)/log_entries/(int:log_entry_id)/versions/
+
+    Create a new version for a log entry (`log_entry_id`) for an instrument (`instrument_id`) and optionally attach new files and objects to it or hide existing attachments.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/instruments/1/log_entries/2/versions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "content": "Example Log Entry **Text**",
+            "content_is_markdown": true,
+            "category_ids": [1, 7],
+            "file_attachments": [
+                {
+                    "file_name": "example.txt",
+                    "base64_content": "RXhhbXBsZSBDb250ZW50"
+                }
+            ],
+            "object_attachments": [
+                {
+                    "object_id": 1
+                },
+                {
+                    "object_id": 2
+                }
+            ],
+            "event_utc_datetime": "2020-08-03T12:13:14.123456"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/instruments/1/log_entries/1
+
+    :<json number log_entry_id: the log entry ID (optional)
+    :<json number version_id: the log entry version ID (optional)
+    :<json string content: the log entry's content
+    :<json bool content_is_markdown: whether the content should be displayed as Markdown
+    :<json list category_ids: an optional list of category IDs for the log entry
+    :<json list file_attachments: an optional list of file attachments as json objects with file_name and base64_content attributes
+    :<json list object_attachments: an optional list of object attachments as json objects with an object_id attribute
+    :<json string event_utc_datetime: an optional string containing the date and time of the event in UTC in ISO format
+    :statuscode 201: the log entry version has been created successfully
     :statuscode 400: there was an error in the given json data
     :statuscode 403: only instrument scientists can write to the instrument log
     :statuscode 404: the instrument does not exist
@@ -1467,6 +1635,7 @@ Updating an action
 
         POST /api/v1/actions/1 HTTP/1.1
         Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
         Accept: application/json
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
@@ -2281,6 +2450,7 @@ Uploading a file
 
         POST /api/v1/objects/1/files/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
         Accept: application/json
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
@@ -2326,6 +2496,7 @@ Posting a link
 
         POST /api/v1/objects/1/files/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
         Accept: application/json
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
@@ -2444,6 +2615,7 @@ Posting a comment
 
         POST /api/v1/objects/1/comments/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
         Accept: application/json
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
@@ -2591,6 +2763,7 @@ In some situations, e.g. for interactive applications that use the API, users ma
 
         POST /api/v1/access_tokens/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
         Accept: application/json
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 

@@ -8,6 +8,7 @@ Currently in development.
 
 - Improved selection of additional properties to show in object lists
 - Added automatic schema update for administrators
+- Added instrument log entry versions to HTTP API
 - Allow setting default to null for datetime properties
 - Enabled background tasks by default
 - Rerun background tasks that were unable to finish when the SampleDB process is killed

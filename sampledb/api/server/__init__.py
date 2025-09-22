@@ -12,7 +12,7 @@ from .authentication import AccessTokens
 from .comments import ObjectComment, ObjectComments
 from .files import ObjectFile, ObjectFiles
 from .instruments import Instrument, Instruments
-from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
+from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryVersions, InstrumentLogEntryVersion, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
 from .locations import Location, Locations, ObjectLocationAssignment, ObjectLocationAssignments, LocationType, LocationTypes
 from .object_log import ObjectLogEntries
 from .object_permissions import UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions, AuthenticatedUserObjectPermissions, AnonymousUserObjectPermissions
@@ -38,6 +38,8 @@ api.add_url_rule('/api/v1/instruments/', endpoint='instruments', view_func=Instr
 api.add_url_rule('/api/v1/instruments/<int:instrument_id>', endpoint='instrument', view_func=Instrument.as_view('instrument'))
 api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/', endpoint='instrument_log_entries', view_func=InstrumentLogEntries.as_view('instrument_log_entries'))
 api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>', endpoint='instrument_log_entry', view_func=InstrumentLogEntry.as_view('instrument_log_entry'))
+api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/versions/', endpoint='instrument_log_entry_versions', view_func=InstrumentLogEntryVersions.as_view('instrument_log_entry_versions'))
+api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/versions/<int:log_entry_version_id>', endpoint='instrument_log_entry_version', view_func=InstrumentLogEntryVersion.as_view('instrument_log_entry_version'))
 api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/file_attachments/', endpoint='instrument_log_entry_file_attachments', view_func=InstrumentLogEntryFileAttachments.as_view('instrument_log_entry_file_attachments'))
 api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/file_attachments/<int:file_attachment_id>', endpoint='instrument_log_entry_file_attachment', view_func=InstrumentLogEntryFileAttachment.as_view('instrument_log_entry_file_attachment'))
 api.add_url_rule('/api/v1/instruments/<int:instrument_id>/log_entries/<int:log_entry_id>/object_attachments/', endpoint='instrument_log_entry_object_attachments', view_func=InstrumentLogEntryObjectAttachments.as_view('instrument_log_entry_object_attachments'))
