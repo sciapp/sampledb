@@ -302,8 +302,12 @@ def _has_file(db_obj: typing.Any, file_filter: db.ColumnElement[bool]) -> typing
             )
         ) == 0
     ).subquery()
+    if hasattr(db_obj, 'object_id_column'):
+        object_id_column = db_obj.object_id_column
+    else:
+        object_id_column = Objects.object_id_column
     return db.and_(
-        Objects.object_id_column == matching_files.c.object_id,
+        object_id_column == matching_files.c.object_id,
     )
 
 
