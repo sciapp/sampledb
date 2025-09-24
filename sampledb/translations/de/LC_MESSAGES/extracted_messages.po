@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-08-28 15:36+0200\n"
+"POT-Creation-Date: 2025-09-24 15:04+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2129,6 +2129,12 @@ msgstr "ausstehend"
 
 msgid "Revoke Invitation"
 msgstr "Einladung widerrufen"
+
+msgid "Unknown User"
+msgstr "Unbekannter Nutzer"
+
+msgid "Signed by"
+msgstr "Signiert von"
 
 msgid "Mobile File Upload"
 msgstr "Smartphone-Upload"
@@ -4257,9 +4263,6 @@ msgstr "Widerrufen"
 #, python-format
 msgid "Removes the federated identity with %(username)s permanently."
 msgstr "Entfernt die föderierte Identität mit %(username)s endgültig."
-
-msgid "Signed by"
-msgstr "Signiert von"
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -6536,9 +6539,6 @@ msgstr "Bitte geben Sie eine gültige DOI ein."
 
 msgid "Link Publication"
 msgstr "Publikation verknüpfen"
-
-msgid "Unknown User"
-msgstr "Unbekannter Nutzer"
 
 msgid "There are no comments for this object."
 msgstr "Es gibt keine Kommentare für dieses Objekt."
