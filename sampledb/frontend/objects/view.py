@@ -40,7 +40,7 @@ from ...logic.notebook_templates import get_notebook_templates
 from ...logic.utils import get_translated_text, get_data_and_schema_by_id_path
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, GenerateLabelsForm
 from ...utils import object_permissions_required
-from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
+from ..utils import generate_qrcode, get_locations_form_data
 from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, PAGE_SIZE_KEYS, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
@@ -444,7 +444,6 @@ def object(object_id: int) -> FlaskResponseT:
     template_kwargs.update({
         "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
         "get_fed_object_if_current_user_has_read_permissions": get_fed_object_if_current_user_has_read_permissions,
-        "get_user": cache_per_request()(get_user_if_exists),
         "get_location": cache_per_request()(get_location),
         "get_object_location_assignment": get_object_location_assignment,
         "get_project": get_project_if_it_exists,
