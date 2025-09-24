@@ -28,7 +28,7 @@ from ...logic.components import get_component, get_components
 from .forms import CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ...utils import object_permissions_required, FlaskResponseT
-from ..utils import get_user_if_exists, check_current_user_is_not_readonly, get_groups_form_data
+from ..utils import check_current_user_is_not_readonly, get_groups_form_data
 from ...models import Permissions, Object
 
 
@@ -177,7 +177,6 @@ def object_permissions(object_id: int) -> FlaskResponseT:
         all_user_permissions=all_user_permissions,
         anonymous_user_permissions=anonymous_user_permissions,
         federation_shares=component_policies,
-        get_user=get_user_if_exists,
         get_component=get_component,
         Permissions=Permissions,
         permissions_form=permissions_form,

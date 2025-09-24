@@ -22,7 +22,6 @@ from wtforms.validators import DataRequired, ValidationError, InputRequired
 from . import frontend
 from .objects.permissions import get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
 from .objects.view import get_project_if_it_exists
-from .utils import get_user_if_exists
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location, get_instrument_object_links, set_instrument_object
@@ -269,7 +268,6 @@ def instrument(instrument_id: int) -> FlaskResponseT:
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
 
     template_kwargs = {
-        "get_user": get_user_if_exists,
         "get_component": get_component,
         "user_favorite_action_ids": user_favorite_action_ids,
     }
