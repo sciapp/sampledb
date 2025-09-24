@@ -439,12 +439,30 @@ build-package:
   stage: build
   image: python:3.13-slim-trixie
   script:
+    # Install packaging requirements
     - python3 -m pip install setuptools wheel twine build
+    # Remove requirements not supported on PyPI
+    - grep -v " @ git+https://" requirements.txt > requirements.pypi.txt
+    - mv requirements.pypi.txt requirements.txt
+    # Build package
     - python3 -m build --sdist
   artifacts:
     paths:
     - dist
     expire_in: 1 day
+
+deploy-to-testpypi:
+  stage: deploy
+  needs: ["build-package"]
+  image: python:3.13-slim-trixie
+  only:
+    - develop@Scientific-IT-Systems/SampleDB
+  script:
+    - unset TWINE_USERNAME
+    - unset TWINE_PASSWORD
+    - mv $TESTPYPI_PYPIRC ~/.pypirc
+    - python3 -m pip install twine
+    - python3 -m twine upload --verbose --repository sampledb dist/sampledb-*.tar.gz
 
 deploy-to-pypi:
   stage: deploy
