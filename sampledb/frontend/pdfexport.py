@@ -24,7 +24,7 @@ from ..models import ObjectLogEntryType, Permissions
 from ..logic.users import get_user
 
 from .markdown_images import IMAGE_FORMATS
-from .utils import custom_format_datetime, get_user_if_exists, get_location_name
+from .utils import custom_format_datetime, get_location_name
 from ..logic.utils import get_translated_text
 from ..logic.caching import cache_per_request
 
@@ -273,7 +273,6 @@ def create_html_for_pdfexport(
         export_date=datetime.datetime.now(datetime.timezone.utc),
         get_object_if_current_user_has_read_permissions=cache_per_request()(functools.partial(object_permissions.get_object_if_user_has_permissions, user_id, Permissions.READ)),
         objects=objects,
-        get_user=get_user_if_exists,
         metadata_language=lang_code,
         files_by_object_id=files_by_object_id,
         eln_import_urls={object[0].object_id: logic.eln_import.get_eln_import_object_url(object[0].object_id) for object in objects},

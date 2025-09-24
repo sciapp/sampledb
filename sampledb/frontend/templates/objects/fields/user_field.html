@@ -8,7 +8,7 @@
 {% if selected_user_id is none %}
   {% set selected_user = None %}
 {% else %}
-  {% set selected_user = get_user_if_exists(selected_user_id) %}
+  {% set selected_user = get_user(selected_user_id) %}
 {% endif %}
 
 <select {% if is_template %} class="template-select" data-template-class="form-control selectpicker" {% else %} class="form-control selectpicker" {% endif %} name="{{ id_prefix }}_uid" data-live-search="true">

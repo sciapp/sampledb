@@ -136,7 +136,7 @@
                 </ul>
               {% elif notification.type == NotificationType.AUTOMATIC_USER_FEDERATION %}
                 {% set component = get_component(notification.data.component_id) %}
-                {{ _('Your account has been automatically linked with the <a href="%(user_url)s"> user #%(user_id)s</a> from %(component_name)s.', user_url=get_federation_url(get_user_or_none(notification.data.user_id, component_id=notification.data.component_id)), user_id=notification.data.user_id, component_name=component.name) }}
+                {{ _('Your account has been automatically linked with the <a href="%(user_url)s"> user #%(user_id)s</a> from %(component_name)s.', user_url=get_federation_url(get_user(notification.data.user_id, component_id=notification.data.component_id)), user_id=notification.data.user_id, component_name=component.name) }}
               {% else %}
                 {{ _('Unknown notification type.') }}
               {% endif %}
