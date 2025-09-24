@@ -1,4 +1,4 @@
-{% from 'macros.j2' import import_information_symbol %}
+{% from 'macros.j2.html' import import_information_symbol %}
 
 <div class="hidden"  id="related-objects-entries" data-sampledb-root-object-index="{{ related_objects_index_by_object_ref[object_ref] }}">
 {% for current_object_ref, subtree in related_objects_subtrees.items() %}
