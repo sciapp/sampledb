@@ -439,6 +439,10 @@ build-package:
   stage: build
   image: python:3.13-slim-trixie
   script:
+    # Determine version
+    - apt-get update
+    - apt-get install -y git
+    - export SAMPLEDB_VERSION=`git describe | cut -d- -f1,2 | sed s/-/.post/ | sed s/^v//`
     # Install packaging requirements
     - python3 -m pip install setuptools wheel twine build
     # Remove requirements not supported on PyPI
