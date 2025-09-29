@@ -6096,9 +6096,6 @@ msgstr ""
 "CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
 " relative Zeitangabe in Sekunden und Wert"
 
-msgid "Unknown User"
-msgstr "Unbekannter Nutzer"
-
 #, python-format
 msgid "Remove %(item_name)s"
 msgstr "%(item_name)s entfernen"
