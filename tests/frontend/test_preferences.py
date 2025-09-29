@@ -365,7 +365,7 @@ def test_user_add_general_authentication_method(flask_server):
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
     # submit the form
 
-    #  add authentication_method with password is to short
+    #  add authentication_method with a password that is too short
     r = session.post(url, {
         'login': 'test',
         'password': 'xx',
@@ -374,7 +374,18 @@ def test_user_add_general_authentication_method(flask_server):
         'add': 'Add'
     })
     assert r.status_code == 200
-    assert 'The password must be at least 3 characters long' in r.content.decode('utf-8')
+    assert 'Please enter at least 3 characters.' in r.content.decode('utf-8')
+
+    #  add authentication_method with a password that is too long
+    r = session.post(url, {
+        'login': 'test',
+        'password': 'x' * 80,
+        'authentication_method': 'L',
+        'csrf_token': csrf_token,
+        'add': 'Add'
+    })
+    assert r.status_code == 200
+    assert 'The password must be at most 72 bytes long.' in r.content.decode('utf-8')
 
     #  add identically authentication_method
     r = session.post(url, {

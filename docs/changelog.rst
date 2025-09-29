@@ -11,6 +11,7 @@ Currently in development.
 - Allow setting default to null for datetime properties
 - Enabled background tasks by default
 - Rerun background tasks that were unable to finish when the SampleDB process is killed
+- Limit new passwords to 72 bytes to match bcrypt length limit
 
 
 Version 0.31.1

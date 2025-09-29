@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-09-24 15:04+0200\n"
+"POT-Creation-Date: 2025-10-02 15:42+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -144,6 +144,10 @@ msgstr "Bitte geben Sie mindestens 1 Zeichen ein."
 
 msgid "Please enter at least 3 characters."
 msgstr "Bitte geben Sie mindestens 3 Zeichen ein."
+
+#, python-format
+msgid "The password must be at most %(max_bcrypt_password_length)s bytes long."
+msgstr "Das Passwort darf höchstens %(max_bcrypt_password_length)s Byte lang sein."
 
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
@@ -1994,9 +1998,6 @@ msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgid "Password"
 msgstr "Passwort"
 
-msgid "Please enter a password with at least 3 characters."
-msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
-
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
@@ -2728,9 +2729,6 @@ msgstr "Authentifizierungsmethode hinzufügen"
 
 msgid "Type"
 msgstr "Typ"
-
-msgid "The password must be at least 3 characters long."
-msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
 #, python-format
 msgid ""
