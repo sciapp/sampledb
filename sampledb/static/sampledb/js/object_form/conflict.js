@@ -16,7 +16,11 @@ $(function () {
       suffix = 'imported';
     }
 
-    const content = JSON.parse(atob(baseField.data(`content-${suffix}`)));
+    const encodedContent = baseField.data(`content-${suffix}`);
+    let content = '';
+    if (encodedContent) {
+      content = JSON.parse(atob(encodedContent));
+    }
     const type = baseField.data('field-type');
     const referenceField = $(baseField.data('reference-field'));
 
