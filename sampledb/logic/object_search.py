@@ -1696,9 +1696,12 @@ def generate_filter_func(
                     tree: typing.Any = tree
             ) -> typing.Any:
                 """ Filter objects based on search query string """
-
                 data_name = str(data).split('.', maxsplit=1)[-1]  # "data" or "data_full", depending on the column name used
                 db_obj = db.literal_column(data_name).cast(postgresql.JSONB)
+                if hasattr(data, 'object_id_column'):
+                    db_obj.object_id_column = data.object_id_column
+                else:
+                    db_obj.object_id_column = Objects.object_id_column
                 filter_func, outer_filter = transform_tree_to_query(db_obj, tree, search_notes, use_permissions_filter_for_referenced_objects)
                 # check bool if filter_func is only an attribute
                 if isinstance(filter_func, Expression):
