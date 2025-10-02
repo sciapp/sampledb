@@ -320,7 +320,7 @@ def test_eln_export(user, app):
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
-    with app.app_context():
+    with app.test_request_context('/'):
         zip_bytes = export.get_eln_archive(user.id)
     app.config['SERVER_NAME'] = server_name
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
@@ -339,6 +339,10 @@ def test_eln_export(user, app):
             for severity in [
                 rocrate_validator.models.Severity.REQUIRED
             ]:
+                # rocrate_validator does not support ro-crate-1.2 yet, so use
+                # ro-crate-1.1 profile and ignore check ro-crate-1.1_5.3,
+                # which checks that conformsTo is set to RO-Crate 1.1,
+                # and as such fails for crates using version 1.2 instead.
                 result = rocrate_validator.services.validate(rocrate_validator.models.ValidationSettings(
                     profiles_path=rocrate_validator.utils.get_profiles_path(),
                     profile_identifier="ro-crate-1.1",
@@ -346,9 +350,11 @@ def test_eln_export(user, app):
                     rocrate_uri=rocrate_validator.utils.URI(rocrate_dir),
                 ))
                 result_dict = result.to_dict()
-                assert result_dict['issues'] == []
-                assert result_dict['passed']
-                assert result.passed(severity)
+                if result_dict['issues'] == []:
+                    assert result_dict['passed']
+                    assert result.passed(severity)
+                else:
+                    assert len(result_dict['issues']) == 1 and result_dict['issues'][0]['check']['identifier'] == 'ro-crate-1.1_5.3'
 
 
 def test_eln_export_property_values(user, app):
@@ -513,7 +519,7 @@ def test_eln_export_property_values(user, app):
     )
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
-    with app.app_context():
+    with app.test_request_context('/'):
         zip_bytes = export.get_eln_archive(user.id, object_ids=[
             object_id,
             referenced_object_id1
@@ -531,6 +537,8 @@ def test_eln_export_property_values(user, app):
             'ro-crate-metadata.json',
             './',
             'SampleDB',
+            '#ro-crate-created',
+            'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/',
             './license',
             f'./objects/{object_id}/',
             f'./objects/{object_id}/properties/check',
@@ -574,7 +582,7 @@ def test_eln_export_property_values(user, app):
             f'./objects/{referenced_object_id1}/versions/0/data.json',
             f'./objects/{referenced_object_id1}/versions/0/properties/name',
             f'./objects/{referenced_object_id1}/files.json',
-            f'./users/{user.id}'
+            f'./users/{user.id}',
         }
         object_node = nodes_by_id[f'./objects/{object_id}/versions/1/']
         variables_measured = [
