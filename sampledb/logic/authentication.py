@@ -22,6 +22,10 @@ from . import errors, api_log
 # 12 is the default in the Python bcrypt module, this variable allows
 # overriding this in tests
 NUM_BCYRPT_ROUNDS = 12
+# maximum password length (in bytes) supported by bcrypt.hashpw
+# versions <5.0.0 have truncated passwords to that length before, but starting
+# with bcrypt 5.0.0 a ValueError is raised instead
+MAX_BCRYPT_PASSWORD_LENGTH = 72
 
 
 @dataclasses.dataclass(frozen=True)
@@ -49,11 +53,13 @@ class AuthenticationMethod:
 
 
 def _hash_password(password: str) -> str:
-    return str(bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=NUM_BCYRPT_ROUNDS)).decode('utf-8'))
+    # manually truncate long passwords to ensure consistent behavior to bcrypt versions <5.0.0
+    return str(bcrypt.hashpw(password.encode('utf-8')[:MAX_BCRYPT_PASSWORD_LENGTH], bcrypt.gensalt(rounds=NUM_BCYRPT_ROUNDS)).decode('utf-8'))
 
 
 def _validate_password_hash(password: str, password_hash: str) -> bool:
-    return bool(bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')))
+    # manually truncate long passwords to ensure consistent behavior to bcrypt versions <5.0.0
+    return bool(bcrypt.checkpw(password.encode('utf-8')[:MAX_BCRYPT_PASSWORD_LENGTH], password_hash.encode('utf-8')))
 
 
 def _validate_password_authentication(authentication_method: Authentication, password: str) -> bool:

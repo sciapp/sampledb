@@ -9,6 +9,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
 from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired, ValidationError
 
+from ..logic import authentication
+
 
 class SigninForm(FlaskForm):
     username = StringField(validators=[InputRequired()])
@@ -49,6 +51,10 @@ class RegistrationForm(FlaskForm):
             if ', ' not in name[1:-1]:
                 raise ValidationError(_("Please enter your name as: surname, given names."))
 
+    def validate_password(self, field: PasswordField) -> None:
+        if field.data and len(field.data.encode('utf-8')) > authentication.MAX_BCRYPT_PASSWORD_LENGTH:
+            raise ValidationError(_('The password must be at most %(max_bcrypt_password_length)s bytes long.', max_bcrypt_password_length=authentication.MAX_BCRYPT_PASSWORD_LENGTH))
+
 
 class PasswordForm(FlaskForm):
     password = PasswordField('New Password', validators=[
@@ -70,6 +76,10 @@ class AuthenticationPasswordForm(FlaskForm):
         EqualTo('password')
     ])
     submit = SubmitField('Change Password')
+
+    def validate_password(self, field: PasswordField) -> None:
+        if field.data and len(field.data.encode('utf-8')) > authentication.MAX_BCRYPT_PASSWORD_LENGTH:
+            raise ValidationError(_('The password must be at most %(max_bcrypt_password_length)s bytes long.', max_bcrypt_password_length=authentication.MAX_BCRYPT_PASSWORD_LENGTH))
 
 
 class RevokeInvitationForm(FlaskForm):

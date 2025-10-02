@@ -41,6 +41,14 @@ if (window.getTemplateValue('show_api_token_modal')) {
   $('#createApiTokenModal').modal('show');
 }
 
+if (window.getTemplateValue('show_add_authentication_method_form')) {
+  $('#addAuthenticationMethodModal').modal('show');
+}
+
+if (window.getTemplateValue('show_edit_authentication_method_password_form')) {
+  $('#' + window.getTemplateValue('show_edit_authentication_method_password_form')).modal('show');
+}
+
 if (window.getTemplateValue('show_add_webhook_form')) {
   $(document).ready(function () {
     const addWebhookModal = $('#addWebhookModal');
