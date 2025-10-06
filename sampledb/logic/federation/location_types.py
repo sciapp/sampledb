@@ -99,17 +99,18 @@ def parse_import_location_type(
         location_type_data: typing.Dict[str, typing.Any],
         component: Component
 ) -> LocationType:
-    return import_location_type(parse_location_type(location_type_data), component)
+    if parsed_location_type := parse_location_type(location_type_data):
+        return import_location_type(parsed_location_type, component)
+    return get_location_type(location_type_data['location_type_id'])
 
 
 def parse_location_type(
         location_type_data: typing.Dict[str, typing.Any]
-) -> LocationTypeData:
+) -> typing.Optional[LocationTypeData]:
     fed_id = _get_id(location_type_data.get('location_type_id'), special_values=[LocationType.LOCATION])
     uuid = _get_uuid(location_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError(f'Invalid update for local location type {fed_id}')
+        return None
     return LocationTypeData(
         fed_id=fed_id,
         component_uuid=uuid,

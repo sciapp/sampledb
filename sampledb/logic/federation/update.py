@@ -18,15 +18,18 @@ from .locations import import_location, parse_location, locations_check_for_cycl
 from .markdown_images import parse_markdown_image, import_markdown_image
 from .actions import import_action, parse_action
 from .objects import import_object, parse_object
+from ..languages import create_language, update_language, check_language_exists
 from ..components import Component, set_component_discoverable
 from ..component_authentication import get_own_authentication
 from ..users import link_users_by_email_hashes
 from ..federation.login import update_metadata
+from ..shares import add_object_import_specification, update_object_import_specification, get_object_import_specification, get_components_object_shared_with
 from .. import errors
-from ...models import ComponentAuthenticationType
+from ...models import ComponentAuthenticationType, Object
+from ..background_tasks import post_poke_components_task
 
 PROTOCOL_VERSION_MAJOR = 0
-PROTOCOL_VERSION_MINOR = 1
+PROTOCOL_VERSION_MINOR = 2
 
 FEDERATION_TIMEOUT = 60
 
@@ -180,6 +183,14 @@ def import_updates(
         pass
     if components:
         update_components(component, components)
+    try:
+        updates = get('/federation/v1/shares/languages/', component, ignore_last_sync_time=ignore_last_sync_time)
+    except errors.InvalidJSONError:
+        raise errors.InvalidDataExportError('Received invalid JSON string.')
+    except errors.RequestError:
+        updates = None
+    if updates:
+        update_languages(component, updates)
     users = None
     try:
         users = get('/federation/v1/shares/users/', component, ignore_last_sync_time=ignore_last_sync_time)
@@ -235,7 +246,8 @@ def update_users(
     user_data_list = _get_list(updates.get('users'), default=[])
     user_email_hashes = _get_list(updates.get('federation_candidates'), default=[])
     for user_data in user_data_list:
-        users.append(parse_user(user_data, component))
+        if parsed_user := parse_user(user_data, component):
+            users.append(parsed_user)
     for user_data in users:
         import_user(user_data, component)
 
@@ -249,6 +261,10 @@ def update_shares(
     # parse and validate
     _get_dict(updates, mandatory=True)
     _validate_header(updates.get('header'), component)
+    bidirectional_editing = updates.get('header', {}).get('bidirectional_editing', False)
+
+    conflicts_local_objects = updates.get('conflicts_local_objects', {})
+    conflicts_federated_objects = updates.get('conflicts_federated_objects', {})
 
     markdown_images = []
     markdown_images_data_dict = _get_dict(updates.get('markdown_images'), default={})
@@ -258,40 +274,48 @@ def update_shares(
     users = []
     user_data_list = _get_list(updates.get('users'), default=[])
     for user_data in user_data_list:
-        users.append(parse_user(user_data, component))
+        if user := parse_user(user_data, component):
+            users.append(user)
 
     instruments = []
     instrument_data_list = _get_list(updates.get('instruments'), default=[])
     for instrument_data in instrument_data_list:
-        instruments.append(parse_instrument(instrument_data))
+        if instrument := parse_instrument(instrument_data):
+            instruments.append(instrument)
 
     action_types = []
     action_type_data_list = _get_list(updates.get('action_types'), default=[])
     for action_type_data in action_type_data_list:
-        action_types.append(parse_action_type(action_type_data))
+        if action_type := parse_action_type(action_type_data):
+            action_types.append(action_type)
 
     actions = []
     action_data_list = _get_list(updates.get('actions'), default=[])
     for action_data in action_data_list:
-        actions.append(parse_action(action_data))
+        if action := parse_action(action_data):
+            actions.append(action)
 
     location_types = []
     location_type_data_list = _get_list(updates.get('location_types'), default=[])
     for location_type_data in location_type_data_list:
-        location_types.append(parse_location_type(location_type_data))
+        if location_type := parse_location_type(location_type_data):
+            location_types.append(location_type)
 
     locations = {}
     location_data_list = _get_list(updates.get('locations'), default=[])
     for location_data in location_data_list:
-        location = parse_location(location_data)
-        locations[(location['fed_id'], location['component_uuid'])] = location
+        if location := parse_location(location_data):
+            locations[(location['fed_id'], location['component_uuid'])] = location
 
     locations_check_for_cyclic_dependencies(locations)
 
     objects = []
+    access_policies = {}
     object_data_list = _get_list(updates.get('objects'), default=[])
     for object_data in object_data_list:
-        objects.append(parse_object(object_data, component))
+        parsed_object = parse_object(object_data, component)
+        objects.append(parsed_object)
+        access_policies[parsed_object['fed_object_id']] = object_data['policy'].get('access', {})
 
     # apply
     for markdown_image_data in markdown_images:
@@ -319,10 +343,25 @@ def update_shares(
             locations.pop(key)
 
     import_status_by_object_id = {}
+
     for object_data in objects:
         import_status: typing.Dict[str, typing.Any] = {}
-        import_object(object_data, component, import_status=import_status)
-        import_status_by_object_id[object_data['fed_object_id']] = import_status
+        fed_object_id = object_data['fed_object_id']
+        conflict_status = conflicts_local_objects.get(f'{fed_object_id}', {}) if object_data['component_id'] is None else conflicts_federated_objects.get(f'{fed_object_id}', {})
+        try:
+            imported_object, changes = import_object(object_data, component, import_status=import_status, conflict_status=conflict_status)
+        except errors.FederationObjectImportError:
+            continue
+        if object_data['component_id'] == component.id:
+            import_status_by_object_id[object_data['fed_object_id']] = import_status
+        if bidirectional_editing:
+            if get_object_import_specification(imported_object.id):
+                update_object_import_specification(imported_object.id, access_policy=access_policies[object_data['fed_object_id']])
+            elif imported_object.fed_object_id is not None and imported_object.component_id is not None:
+                add_object_import_specification(imported_object.id, access_policy=access_policies[object_data['fed_object_id']])
+
+        if changes:
+            poke_affected_components(imported_object, component.id)
 
     if component.address:
         for object_id, import_status in import_status_by_object_id.items():
@@ -332,6 +371,44 @@ def update_shares(
                     component=component,
                     import_status=import_status
                 )
+
+
+def update_languages(
+        component: Component,
+        updates: typing.Dict[str, typing.Any]
+) -> None:
+    lang_codes = {language['lang_code'] for language in updates['languages']}.union({'en'})
+    for language_update in updates['languages']:
+        if language_update['lang_code'] == 'en':
+            continue
+        if check_language_exists(language_id=language_update['id'], component_id=component.id):
+            update_language(
+                language_id=language_update['id'],
+                component_id=component.id,
+                names=language_update['names'],
+                lang_code=language_update['lang_code'],
+                datetime_format_datetime=language_update['datetime_format_datetime'],
+                datetime_format_moment=language_update['datetime_format_moment'],
+                datetime_format_moment_output=language_update['datetime_format_moment_output'],
+                date_format_moment_output=language_update['date_format_moment_output'],
+                enabled_for_input=language_update['enabled_for_input'],
+                enabled_for_user_interface=language_update['enabled_for_user_interface'],
+                lang_codes_to_add=lang_codes
+            )
+        else:
+            create_language(
+                names=language_update['names'],
+                lang_code=language_update['lang_code'],
+                datetime_format_datetime=language_update['datetime_format_datetime'],
+                datetime_format_moment=language_update['datetime_format_moment'],
+                datetime_format_moment_output=language_update['datetime_format_moment_output'],
+                date_format_moment_output=language_update['date_format_moment_output'],
+                enabled_for_input=language_update['enabled_for_input'],
+                enabled_for_user_interface=language_update['enabled_for_user_interface'],
+                fed_lang_id=language_update['id'],
+                component_id=component.id,
+                lang_codes_to_add=lang_codes
+            )
 
 
 def send_object_share_import_status(
@@ -344,3 +421,16 @@ def send_object_share_import_status(
         component=component,
         json=import_status
     )
+
+
+def poke_affected_components(object: Object, origin_component_id: typing.Optional[int] = None) -> None:
+    if object.component_id is not None:
+        component_ids = {object.component_id}
+    else:
+        component_ids = {component.id for component in get_components_object_shared_with(object.id)}
+
+    if origin_component_id is not None:
+        component_ids = component_ids - {origin_component_id}
+
+    if component_ids:
+        post_poke_components_task(list(component_ids))

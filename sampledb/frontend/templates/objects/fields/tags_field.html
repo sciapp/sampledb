@@ -1,1 +1,33 @@
-<input type="text" class="form-control" {% if id_prefix+'_tags' in form_data %}value="{{ form_data[id_prefix+'_tags'] }}"{% elif data is not none and "tags" in data %}value="{{ data.tags | join(', ') }}"{% endif %} data-role="tagsinput" id="{{ id_prefix }}_input" name="{{ id_prefix }}_tags"/>
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+  {% set conflicting = 'imported' in data or 'local' in data %}
+  {% if conflicting %}
+    {% set imported_data = data.get('imported') %}
+    {% set local_data = data.get('local') %}
+    {% set data = local_data or imported_data%}
+  {% endif %}
+{% endif %}
+
+{% if conflicting %}
+<div class="input-group {% if conflicting %}has-conflict conflict-field-resizing{% endif %}">
+{% endif %}
+  <input type="text" class="form-control {% if conflicting %} has-conflict {% endif %}" {% if id_prefix+'_tags' in form_data %}value="{{ form_data[id_prefix+'_tags'] }}"{% elif data is not none and "tags" in data %}value="{{ data.tags | join(', ') }}"{% endif %} data-role="tagsinput" id="{{ id_prefix }}_input" name="{{ id_prefix }}_tags" />
+{% if conflicting %}
+  <div
+    class="input-group-btn"
+    data-field-type="tags"
+    data-reference-field="[name='{{ id_prefix }}_tags']"
+    data-conflict="true"
+    data-content-local="{% if local_data is not none and 'tags' in local_data %}{{ local_data.tags | base64encode }}{% endif %}"
+    data-content-imported="{% if imported_data is not none and 'tags' in imported_data %}{{ imported_data.tags | base64encode }}{% endif %}"
+  >
+    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+    <ul class="dropdown-menu dropdown-menu-right">
+      <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _('Local Version') }}</button></li>
+      <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _('Imported Version') }}</button></li>
+    </ul>
+  </div>
+</div>
+{% endif %}

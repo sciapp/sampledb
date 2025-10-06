@@ -414,13 +414,13 @@ def get_object_table_with_permissions(
     if name_only:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id, o.data as data_full
+        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id, o.version_component_id, o.hash_data, o.hash_metadata, o.imported_from_component_id, o.data as data_full
         FROM objects_current AS o
         """
     else:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id, o.data as data_full
+        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id, o.version_component_id, o.hash_data, o.hash_metadata, o.imported_from_component_id, o.data as data_full
         FROM objects_current AS o
         """
 
@@ -546,6 +546,10 @@ def get_object_table_with_permissions(
         Objects._current_table.c.component_id,
         Objects._current_table.c.eln_import_id,
         Objects._current_table.c.eln_object_id,
+        Objects._current_table.c.version_component_id,
+        Objects._current_table.c.hash_data,
+        Objects._current_table.c.hash_metadata,
+        Objects._current_table.c.imported_from_component_id,
         db.column('data_full', postgresql.JSONB)
     ).subquery()
     return table, parameters

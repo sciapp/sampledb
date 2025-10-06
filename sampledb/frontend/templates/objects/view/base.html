@@ -68,9 +68,24 @@
   </div>
   {% endif %}
 
+  {% if object_has_conflicts and user_may_edit %}
+  <div class="alert alert-warning alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <strong>{{ _('Conflict') }}:</strong>
+    {% if solvable_conflicts|length > 0 %}
+      {{ _('The object version is conflicting with an imported object version.') }}
+    {% else %}
+      {{ _('The object version is conflicting with an imported object version. The conflict cannot be solved until the data for this object is shared with the other database and the data for the conflicting object versions has been imported.') }}
+    {% endif %}
+  </div>
+  {% endif %}
+
   <h1>
     {% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}{% if name %}: {% endif %}{% endif %}{{ name | get_translated_text(default='—') }}
     {{ import_information_symbol(object) }}
+    {% if object_has_conflicts %}
+      <i class="fa fa-warning"></i>
+    {% endif %}
   </h1>
   <h2 id="information">{{ _('Information') }}</h2>
   {% if not config['DISABLE_INSTRUMENTS'] %}
@@ -139,12 +154,12 @@
     {% endif %}
   {% if not is_archived %}
     {% if not current_user.is_readonly %}
-      {% if user_may_edit %}
+      {% if user_may_edit and (import_specification is none or import_specification.data) %}
         <div class="form-group">
           <a href="{{ url_for('.object', object_id=object_id, mode='edit') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new version of the information for this object.') }}"><i class="fa fa-pencil" aria-hidden="true"></i> {{ _('Edit Object') }}</a>
         </div>
       {% endif %}
-      {% if user_may_edit and new_schema_available %}
+      {% if user_may_edit and new_schema_available and is_local_object %}
         <div class="form-group">
           <a href="{{ url_for('.object', object_id=object_id, mode='upgrade') }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Update the schema for the information for this object.') }}"><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> {{ _('Update Schema') }}</a>
         </div>
@@ -168,6 +183,7 @@
           {% endif %}
         </div>
       {% endif %}
+
       {% if action is not none and usable_in_action_types and not current_user.is_readonly and current_user.is_authenticated %}
         {% for usable_in_action_type in usable_in_action_types %}
           <div class="form-group">
@@ -249,6 +265,27 @@
         </a>
       </div>
     {% endif %}
+
+    {% if user_may_edit and object_has_conflicts and solvable_conflicts|length > 0 %}
+      {% if solvable_conflicts|length == 1 %}
+        <div class="form-group">
+          <a href="{{ url_for('.conflict_overview', object_id=object_id, component_id=solvable_conflicts[0].component_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Solve conflicts caused by an import of updates from %(component_name)s.', component_name=solvable_conflicts[0].component.get_name()) }}"><i class="fa fa-warning"></i> {{ _('Solve Conflicts') }}</a>
+        </div>
+      {% else %}
+        <div class="form-group">
+          <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Solve conflicts caused by an import of updates from another database.') }}">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-warning"></i> {{ _('Solve Conflicts') }} <span class="caret"></span></button>
+            <ul class="dropdown-menu dropdown-menu-right">
+              <li><strong style="padding: 3px 20px">{{ _("Solving Conflicts with...") }}</strong></li>
+              {% for conflict in solvable_conflicts %}
+                <li><a href="{{ url_for('.conflict_overview', object_id=object_id, component_id=conflict.component_id) }}">...{{ conflict.component.get_name() }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
     {% if notebook_templates and jupyterhub_templates_url %}
       <div class="form-group">
         <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a Jupyter Notebook in %(jupyterhub_name)s to analyze this object.', jupyterhub_name=jupyterhub_name) }}">
@@ -269,7 +306,7 @@
       </div>
     {% endif %}
   {% endif %}
-    {% if restore_form is not none and not component %}
+    {% if restore_form is not none and not component and not is_fed %}
     <div class="form-group">
       <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
         {{ restore_form.csrf_token() }}
@@ -570,7 +607,13 @@
               <td>
                 <span class="pull-right" style="display:flex;">
                   <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="{{ _('View information') }}"><i class="fa fa-info"></i></button>
-                  {% with file_component = get_component_or_none(file.component_id) %}
+                  {% if object.component_id is none or file.storage != 'federation' %}
+                    {% set file_component_id = file.component_id %}
+                  {% else %}
+                    {% set file_component_id = object.component_id %}
+                  {% endif %}
+
+                  {% with file_component = get_component_or_none(file_component_id) %}
                   {% if file.storage == 'database' or file.storage == 'federation' %}
                   {% if file | has_preview and (file.storage != 'federation' or (file_component and file_component.address and file_component.import_token_available)) %}
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('View preview') }}"><i class="fa fa-search"></i></a>
@@ -705,6 +748,14 @@
                     {% endwith %}
                   </div>
                   {% endif %}
+                  {% if file.imported_from_component_id is not none %}
+                  <div class="row">
+                    <div class="col-sm-3 text-right"><label>{{ _('Imported from') }}:</label></div>
+                    {% with imported_from_component = get_component(file.imported_from_component_id) %}
+                      <div class="col-sm-9"><a href="{{ url_for('.component', component_id=imported_from_component.id) }}">{{ imported_from_component.get_name() }}</a></div>
+                    {% endwith %}
+                  </div>
+                  {% endif %}
                   {% if file.hash is not none %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Checksum (%(algorithm)s)', algorithm=file.hash.algorithm.upper()) }}:</label></div>
@@ -769,13 +820,13 @@
                   </div>
                   </div>
                   <div class="modal-footer">
-                    {% if user_may_upload_files %}
+                    {% if user_may_upload_files and file.component_id is none and file.fed_id is none %}
                     <button type="submit" class="btn btn-primary file-info-edit-mode">{{ _('Save') }}</button>
                     <button type="button" class="btn btn-default file-info-edit-mode button-file-info-cancel">{{ _('Cancel') }}</button>
                     <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">{{ _('Edit') }}</button>
                     <button type="button" class="btn btn-default file-info-view-mode button-file-info-hide">{{ _('Hide') }}</button>
                     {% endif %}
-                    {% if file.storage == 'database' %}
+                    {% if file.storage == 'database' or file.storage == 'federation' %}
                     <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-default file-info-view-mode">{{ _('Download') }}</a>
                     {% endif %}
                     <button type="button" class="btn btn-default file-info-view-mode" data-dismiss="modal">{{ _('Close') }}</button>
@@ -1114,7 +1165,7 @@
       <table class="table">
       <thead>
       <tr>
-        <th>{{ _("Datetime") }}</th><th>{{ _("Location") }}</th><th>{{ _("Responsible User") }}</th><th>{{ _("Assigning User") }}</th><th>{{ _("Description") }}</th>
+        <th>{{ _("Datetime") }}</th><th>{{ _("Location") }}</th><th>{{ _("Responsible User") }}</th><th>{{ _("Assigning User") }}</th><th>{{ _("Description") }}</th><th></th>
       </tr>
       </thead>
       <tbody>
@@ -1134,8 +1185,7 @@
           <td>
             {% if object_location_assignment.responsible_user_id is not none %}
               {% with user = get_user(object_location_assignment.responsible_user_id) %}
-                <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ user.get_name() }}</a>
-                {{ import_information_symbol(user) }}
+                {{ user_reference(user) }}
                 {% if object_location_assignment.confirmed %}
                   <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.')}}">&check;</span>
                 {% elif object_location_assignment.declined %}
@@ -1153,13 +1203,11 @@
           </td>
           {% with user = get_user(object_location_assignment.user_id) %}
             <td>
-              <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">
-                {{ user.get_name() }}
-              </a>
-              {{ import_information_symbol(user) }}
+              {{ user_reference(user) }}
             </td>
           {% endwith %}
           <td><pre class="location-description">{{ object_location_assignment.description | get_translated_text or ('&mdash;' | safe) }}</pre></td>
+          <td>{% if object_location_assignment.imported_from_component_id is not none %}<i class="fa fa-exclamation-circle" data-toggle="tooltip" data-placement="top" title="{{ _('The assignment was imported from %(component_name)s.', component_name=object_location_assignment.imported_from_component.get_name()) }}"></i>{% endif %}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -1291,6 +1339,9 @@
                 <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ federated_user.get_name() }}</a>
                 {{ import_information_symbol(comment.author) }}
               {% endif %}, <span data-utc-datetime="{{ comment.utc_datetime | generic_format_datetime }}">{{ comment.utc_datetime | babel_format_datetime }}</span>
+              {% if comment.imported_from_component_id is not none %}
+                <i class="fa fa-exclamation-circle" data-toggle="tooltip" data-placement="top" title="{{ _('The comment was imported from %(component_name)s.', component_name=comment.imported_from_component.get_name()) }}"></i>
+              {% endif %}
             </div>
           </div>
         {% endfor %}
@@ -1346,19 +1397,29 @@
         </thead>
         <tbody>
         {% for object_log_entry in object_log_entries %}
-          {% set ns = namespace(object_log_entry_message='—', object_log_entry_view_html=none, object_log_entry_view_url=none) %}
+          {% set ns = namespace(object_log_entry_message='—', object_log_entry_view_html=none, object_log_entry_view_url=none, is_fed_change=false) %}
           {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
             {% if 'previous_object_id' in object_log_entry.data %}
               {% set ns.object_log_entry_message = _('%(user_ref)s created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_ref=user_reference(object_log_entry.user), previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) %}
             {% else %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s created the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% if object_log_entry.data.get('imported_from_component_id') is none %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s created the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% else %}
+                {% set component = get_component(object_log_entry.data['imported_from_component_id']) %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s created the object according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) %}
+              {% endif %}
             {% endif %}
-              {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
+            {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
             {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) %}
             {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}
+              {% else %}
+                {% set component = get_component(object_log_entry.data['imported_from_component_id']) %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s edited the object according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) %}
+              {% endif %}
               {% if 'version_id' in object_log_entry.data %}
                 {% set ns.object_log_entry_view_html = _('<a href="%(view_version_url)s">View&nbsp;Version</a>&nbsp;/&nbsp;<a href="%(view_version_url_with_diff)s">View&nbsp;Changes</a>', view_version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']),view_version_url_with_diff=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id'], diff='')) %}
               {% endif %}
@@ -1382,7 +1443,13 @@
               {% set ns.object_log_entry_message = _('%(user_ref)s used the object to create a sample.', user_ref=user_reference(object_log_entry.user)) %}
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
-            {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) %}
+            {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) %}
+            {% else %}
+              {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s posted a comment for this object according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+              {% endwith %}
+            {% endif %}
             {% if action is not none and action.type.enable_comments %}
               {% if 'comment_id' in object_log_entry.data %}
                 {% set ns.object_log_entry_view_url = "#comment-" + (object_log_entry.data['comment_id'] | string) %}
@@ -1393,17 +1460,47 @@
               {% if file.id == object_log_entry.data['file_id'] %}
                 {% if file.storage == 'database' or file.storage == 'federation' %}
                   {% if action is not none and action.type.enable_files %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a> according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name, component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% else %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s uploaded %(file_name)s according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name, component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% endif %}
                 {% elif file.storage == 'url' %}
-                  {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) %}
+                  {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+                    {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) %}
+                  {% else %}
+                    {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a> according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url, component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                    {% endwith %}
+                  {% endif %}
                 {% else %}
                   {% if action is not none and action.type.enable_files %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a> according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id'], component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% else %}
-                    {% set ns.object_log_entry_message = _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) %}
+                    {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+                      {% set ns.object_log_entry_message = _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) %}
+                    {% else %}
+                      {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                        {% set ns.object_log_entry_message = _('%(user_ref)s posted a file according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                      {% endwith %}
+                    {% endif %}
                   {% endif %}
                 {% endif %}
               {% endif %}
@@ -1415,12 +1512,28 @@
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
             {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
-            {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id))) %}
-            {% elif object_location_assignment.location_id is not none %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) %}
-            {% elif object_location_assignment.responsible_user_id is not none %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id))) %}
+            {% set location = none %}
+            {% if object_location_assignment.location_id is not none %}
+              {% set location = get_location(object_location_assignment.location_id) %}
+            {% endif %}
+            {% if object_log_entry.data.get('imported_from_component_id') is none or object_log_entry.data.get('imported_from_component_id') == object.component_id %}
+              {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>%(import_symbol)s and user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id)), import_symbol=import_information_symbol(location)) %}
+              {% elif object_location_assignment.location_id is not none %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>%(import_symbol)s.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), import_symbol=import_information_symbol(location)) %}
+              {% elif object_location_assignment.responsible_user_id is not none %}
+                {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id))) %}
+              {% endif %}
+            {% else %}
+              {% with imported_from_component = get_component(object_log_entry.data.get('imported_from_component_id')) %}
+                {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
+                  {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>%(import_symbol)s and user %(other_user_ref)s according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id)), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name(), import_symbol=import_information_symbol(location)) %}
+                {% elif object_location_assignment.location_id is not none %}
+                  {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>%(import_symbol)s according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name(), import_symbol=import_information_symbol(location)) %}
+                {% elif object_location_assignment.responsible_user_id is not none %}
+                  {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to user %(other_user_ref)s according to <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_reference(object_log_entry.user), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id)), component_url=url_for('.component', component_id=imported_from_component.id), component_name=imported_from_component.get_name()) %}
+                {% endif %}
+              {% endwith %}
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
             {% set ns.object_log_entry_message = _('%(user_ref)s linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_ref=user_reference(object_log_entry.user), url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) %}
@@ -1466,6 +1579,18 @@
             {% if object.eln_import_id is not none %}
               {% set ns.object_log_entry_view_url = url_for('.eln_import', eln_import_id=object.eln_import_id) %}
             {% endif %}
+          {% elif object_log_entry.type == ObjectLogEntryType.IMPORT_CONFLICTING_VERSION %}
+            {% set ns.object_log_entry_message = _('The imported version #%(fed_version_id)s from <a href="%(component_url)s">%(component_name)s</a> is conflicting with the local object version.', component_name=get_component(object_log_entry.data["component_id"]).get_name(), component_url=url_for('.component', component_id=object_log_entry.data["component_id"]), fed_version_id=object_log_entry.data['fed_version_id']) %}
+            {% if 'component_id' in object_log_entry.data and 'fed_version_id' in object_log_entry.data %}
+              {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object.id, version_id=object_log_entry.data['fed_version_id'], component_id=object_log_entry.data['component_id']) %}
+            {% endif %}
+          {% elif object_log_entry.type == ObjectLogEntryType.SOLVE_VERSION_CONFLICT %}
+            {% if object_log_entry.data.get('automerged', False) %}
+              {% set ns.object_log_entry_message = _('The conflict with imported version #%(version_id)s from %(component_name)s was solved automatically.', component_name=get_component(object_log_entry.data['component_id']).name, version_id=object_log_entry.data['version_id']) %}
+            {% else %}
+              {% set ns.object_log_entry_message = _('The conflict with imported version #%(version_id)s from %(component_name)s was solved by %(user_ref)s.', user_ref=user_reference(object_log_entry.user), component_name=get_component(object_log_entry.data['component_id']).name, version_id=object_log_entry.data['version_id']) %}
+            {% endif %}
+            {% set ns.object_log_entry_view_html = _('<a href="%(view_version_url)s">View&nbsp;Version</a>&nbsp;/&nbsp;<a href="%(view_version_url_with_diff)s">View&nbsp;Changes</a>&nbsp;/&nbsp;<a href="%(conflict_url)s">View&nbsp;Conflict</a>', view_version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['solved_in']),view_version_url_with_diff=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['solved_in'], diff=''), conflict_url=url_for('.conflict_overview', object_id=object_log_entry.object_id, component_id=object_log_entry.data['component_id'], solved_in=object_log_entry.data['solved_in'])) %}
           {% else %}
             {% set ns.object_log_entry_message = _('Unknown event') %}
           {% endif %}
@@ -1473,8 +1598,13 @@
             {% if any_object_log_entry_is_imported %}
               <td style="white-space: nowrap;width: 1%;">
                 {% if object_log_entry.is_imported %}
-                  {% if object.component %}
-                    <i class="fa fa-fw fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from %(component_name)s', component_name=object.component.get_name()) }}"></i>
+                  {% if object.imported_from_component or (object_log_entry.user is not none and object_log_entry.user.component_id is not none) %}
+                    {% if object.imported_from_component is none %}
+                      {% set log_component = get_component(object_log_entry.user.component_id) %}
+                    {% else %}
+                      {% set log_component = object.imported_from_component %}
+                    {% endif %}
+                    <i class="fa fa-fw fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from %(component_name)s', component_name=log_component.get_name()) }}"></i>
                   {% elif object.eln_import %}
                     {% set signed_by = get_import_signed_by(object.eln_import_id) %}
                     {% if signed_by != None %}
@@ -1522,7 +1652,7 @@
       <h2 id="other_databases">{{ _('Other Databases') }}</h2>
       <div class="federation-information">
         {% if component %}
-          {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>.', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
+          {{ _('This object was created as object #%(fed_object_id)s in database <a href="%(component_url)s">%(component_name)s</a>.', fed_object_id=fed_object_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
         {% endif %}
         {% if shares %}
           {{ _('This object is being shared with users from the following databases:') }}
@@ -1656,6 +1786,20 @@
                             <li>{{ note }}</li>
                           {% endfor %}
                         </ul>
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.CREATE_VERSION_CONFLICT %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry_component %}
+                        {{ _('A version conflict was created between the local object version and the imported version #%(fed_version_id)s from <a href="%(component_url)s">%(component_name)s</a>.', component_url=url_for('.component', component_id=log_entry_component.id), component_name=log_entry_component.get_name(), fed_version_id=log_entry.data.fed_version_id) }}
+                      {% else %}
+                        {{ _('A version conflict was created between the local object version and the imported version #%(fed_version_id)s from an unknown database.', fed_version_id=log_entry.data.fed_version_id) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.SOLVE_VERSION_CONFLICT %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry_component %}
+                        {{ _('The version conflict between the local object version and the imported version #%(fed_version_id)s from <a href="%(component_url)s">%(component_name)s</a> was solved.', component_url=url_for('.component', component_id=log_entry_component.id), component_name=log_entry_component.get_name(), fed_version_id=log_entry.data.fed_version_id) }}
+                      {% else %}
+                        {{ _('The version conflict between the local object version and the imported version #%(fed_version_id)s from an unknown database was solved.', component_url=url_for('.component', component_id=log_entry_component.id), component_name=log_entry_component.get_name(), fed_version_id=log_entry.data.fed_version_id) }}
                       {% endif %}
                     {% else %}
                       {{ _('Unknown event') }}

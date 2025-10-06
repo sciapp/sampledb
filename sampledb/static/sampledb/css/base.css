@@ -162,7 +162,7 @@ body > footer {
     text-align: left;
 }
 .form-navbar-signout button.btn.btn-link:hover,
-div.multiselect-actions li button.btn.btn-link:hover
+.multiselect-actions li button.btn.btn-link:hover
 {
     text-decoration:none;
     color:rgb(51, 51, 51);
@@ -495,10 +495,62 @@ th:hover .search-helper {
 .has-error .form-control {
     border-color: #f94442 !important;
 }
+
 .has-error .input-group-addon {
     color: #f94442 !important;
     border-color: #f94442 !important;
 }
+
+.has-conflict,
+.has-conflict input,
+.has-conflict textarea,
+.has-conflict select,
+.has-conflict > button,
+.has-conflict .dropdown-toggle,
+.has-conflict .help-block,
+.has-conflict .form-control,
+.has-conflict .dropdown-toggle,
+.has-conflict .input-group-addon,
+.has-conflict > .bootstrap-tagsinput,
+.has-conflict > .editor-toolbar, .has-conflict > .CodeMirror {
+  border-color: #ff6c27 !important;
+  background-color: #ff6c2725 !important;
+}
+
+.conflict-dropdown {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    height: 100%;
+}
+
+.conflict-center-item,
+.conflict-center-item > .btn {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+}
+
+.conflict-field-resizing,
+.conflict-field-resizing > input,
+.conflict-field-resizing > textarea,
+.conflict-field-resizing > div.input-group-btn[data-field-type],
+.conflict-field-resizing > div.input-group-btn > .dropdown-toggle,
+.conflict-field-resizing > .bootstrap-tagsinput
+{
+  height: 100%;
+}
+
+.hazard-conflict {
+  display: flex;
+  align-items: center;
+}
+
+.conflict-field-resizing > .bootstrap-tagsinput {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+
 .error .bootstrap-select .dropdown-toggle, .has-error .bootstrap-select .dropdown-toggle {
     border-color: #f94442 !important;
 }
@@ -1412,6 +1464,14 @@ code {
 
 .data-diff-both {
     background-color: #fff7ee;
+}
+
+.data-diff-local {
+  background-color: #ffa50022;
+}
+
+.data-diff-import {
+  background-color: #add8e622;
 }
 
 .data-diff-before .object-user-content,

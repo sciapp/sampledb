@@ -51,3 +51,41 @@ class ObjectShare(Model):
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(object_id={self.object_id}, component_id={self.component_id}, policy={self.policy}, utc_datetime={self.utc_datetime})>'
+
+
+class ObjectImportSpecification(Model):
+    __tablename__ = 'object_import_specifications'
+
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False, primary_key=True)
+    data: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    files: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    action: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    users: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    comments: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    object_location_assignments: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ObjectImportSpecification"]]
+
+    def __init__(
+        self,
+        object_id: int,
+        data: bool,
+        files: bool,
+        action: bool,
+        users: bool,
+        comments: bool,
+        object_location_assignments: bool
+    ):
+        super().__init__(
+            object_id=object_id,
+            data=data,
+            files=files,
+            action=action,
+            users=users,
+            comments=comments,
+            object_location_assignments=object_location_assignments
+        )
+
+    def __repr__(self) -> str:
+        return f'<{type(self).__name__}(object_id={self.object_id}, data={self.data}, files={self.files}, action={self.action}, users={self.users}, comments={self.comments}, object_location_assignment={self.object_location_assignments})>'

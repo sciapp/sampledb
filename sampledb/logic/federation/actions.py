@@ -74,13 +74,17 @@ class SharedActionData(typing.TypedDict):
 
 def parse_action(
         action_data: typing.Dict[str, typing.Any]
-) -> ActionData:
+) -> typing.Optional[ActionData]:
     import_notes = []
     fed_id = _get_id(action_data.get('action_id'))
     uuid = _get_uuid(action_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError(f'Invalid update for local action {fed_id}')
+        try:
+            get_action(action_id=fed_id)
+        except errors.ActionDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local action {fed_id} does not exist')
+        return None
+
     schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(action_data.get('schema'))
     if schema is not None:
         _parse_schema(schema)
@@ -214,7 +218,9 @@ def parse_import_action(
         action_data: typing.Dict[str, typing.Any],
         component: Component
 ) -> Action:
-    return import_action(parse_action(action_data), component)
+    if parsed_action := parse_action(action_data):
+        return import_action(parsed_action, component)
+    return get_action(action_id=action_data['action_id'])
 
 
 def _parse_action_ref(

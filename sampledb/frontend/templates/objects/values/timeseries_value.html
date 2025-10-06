@@ -1,7 +1,7 @@
 {% if not data or not data.data %}
   &mdash;
 {% else %}
-  <span class="timeseries-container" data-sampledb-timeseries-title="{{ schema['title'] | get_translated_text }}" data-sampledb-timeseries-id="{{ id_prefix[:-1] }}">
+<span class="timeseries-container" data-sampledb-timeseries-title="{{ schema['title'] | get_translated_text }}" data-sampledb-timeseries-title-suffix="{%- if conflict_view_name is not none -%}{{conflict_view_name}}{%-endif-%}" data-sampledb-timeseries-id-prefix="{%- if modal_prefix is not none -%}{{modal_prefix}}{%-endif-%}" data-sampledb-timeseries-id="{{ id_prefix[:-1] }}">
     {% set timeseries_data = data | to_timeseries_data(schema) %}
     {% if timeseries_data.magnitude_average is none and timeseries_data.magnitude_stddev is none and timeseries_data.magnitude_min is none and timeseries_data.magnitude_max is none and timeseries_data.magnitude_count is none %}
       {{ _('Timeseries') }}

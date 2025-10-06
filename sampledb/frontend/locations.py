@@ -453,6 +453,12 @@ def _handle_object_location_assignment(
             user_id=flask_login.current_user.id,
             object_location_assignment_id=object_location_assignment_id
         )
+        try:
+            logic.federation.update.poke_affected_components(
+                object=logic.objects.get_object(object_location_assignment.object_id)
+            )
+        except errors.ObjectDoesNotExistError:
+            pass
     return flask.redirect(flask.url_for('.object', object_id=object_location_assignment.object_id))
 
 

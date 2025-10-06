@@ -342,7 +342,8 @@ def test_get_object_ids_for_component_id():
         schema=None,
         data=None,
         user_id=None,
-        utc_datetime=None
+        utc_datetime=None,
+        imported_from_component_id=component.id,
     )
     assert logic.components.get_object_ids_for_component_id(component.id) == {object.id}
 
@@ -376,7 +377,8 @@ def test_get_object_ids_for_components():
         schema=None,
         data=None,
         user_id=None,
-        utc_datetime=None
+        utc_datetime=None,
+        imported_from_component_id=component.id,
     )
     assert logic.components.get_object_ids_for_components() == {object.id}
 
@@ -403,7 +405,8 @@ def test_get_local_object_ids():
         schema=None,
         data=None,
         user_id=None,
-        utc_datetime=None
+        utc_datetime=None,
+        imported_from_component_id=component.id,
     )
     assert not logic.components.get_local_object_ids()
     user = logic.users.create_user(

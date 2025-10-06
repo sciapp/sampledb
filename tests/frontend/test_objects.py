@@ -413,7 +413,8 @@ def test_objects_referencable(flask_server, user):
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[2].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.GRANT)
 
     component = sampledb.logic.components.add_component(address=None, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='')
-    fed_object = sampledb.logic.objects.insert_fed_object_version(1, 0, component.id, None, schema, {'name': {'_type': 'text', 'text': 'Fed Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}}, None, None)
+    data = {'name': {'_type': 'text', 'text': 'Fed Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}}
+    fed_object = sampledb.logic.objects.insert_fed_object_version(1, 0, component.id, None, schema, data, None, None, imported_from_component_id=component.id)
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     session = requests.session()
@@ -1900,7 +1901,7 @@ def test_copy_object(flask_server, user):
         assert object_log_entries[0].user_id == user.id
         assert object_log_entries[0].object_id == new_object.object_id
         assert object_log_entries[0].data == {
-            'previous_object_id': object.id
+            'previous_object_id': object.id,
         }
 
 
@@ -2030,7 +2031,8 @@ def test_object_federation_references(flask_server, user, simple_object, compone
         user_id=fed_user.id,
         data=fed_data,
         schema=simple_object.schema,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        imported_from_component_id=component.id,
     )
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
@@ -2085,7 +2087,8 @@ def test_object_federation_references(flask_server, user, simple_object, compone
         user_id=fed_user.id,
         data=data,
         schema=REFERENCES_SCHEMA,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        imported_from_component_id=component.id,
     )
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
     session = requests.session()

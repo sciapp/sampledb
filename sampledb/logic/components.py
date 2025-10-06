@@ -34,6 +34,7 @@ class Component:
     export_token_available: bool
     discoverable: bool
     fed_login_available: bool
+    is_hidden: bool
 
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
@@ -49,11 +50,14 @@ class Component:
             import_token_available=import_token_available,
             export_token_available=export_token_available,
             discoverable=component.discoverable,
-            fed_login_available=component.fed_login_available
+            fed_login_available=component.fed_login_available,
+            is_hidden=component.is_hidden,
         )
 
     def get_name(self) -> str:
-        if self.name is None:
+        if self.is_hidden:
+            return _('Unknown database (%(uuid)s)', uuid=self.uuid[:8])
+        elif self.name is None:
             if self.address is not None:
                 regex = re.compile(r"https?://(www\.)?")    # should usually be https
                 return regex.sub('', self.address).strip().strip('/')
@@ -118,6 +122,7 @@ def add_component(
         name: typing.Optional[str] = None,
         address: typing.Optional[str] = None,
         description: typing.Optional[str] = '',
+        is_hidden: bool = False
 ) -> Component:
     """
     Adds a new component with the given address, name and description.
@@ -126,6 +131,7 @@ def add_component(
     :param name: a (possibly empty) name for the component
     :param address: the address of the component
     :param description: a (possibly empty) description for the component
+    :param is_hidden: if set to true, the component will not be shown in the UI
     :return: the newly added component
     :raise errors.InvalidComponentNameError: when the component name is more
         than MAX_COMPONENT_NAME_LENGTH characters long
@@ -155,10 +161,17 @@ def add_component(
         if existing_component is not None:
             raise errors.ComponentAlreadyExistsError()
     existing_component = components.Component.query.filter_by(uuid=uuid).first()
-    if existing_component is not None:
+    if existing_component is not None and not existing_component.is_hidden:
         raise errors.ComponentAlreadyExistsError()
 
-    component = components.Component(uuid=uuid, name=name, description=description, address=address)
+    if existing_component is None:
+        component = components.Component(uuid=uuid, name=name, description=description, address=address, is_hidden=is_hidden)
+    else:
+        component = existing_component
+        component.name = name
+        component.description = description or ''
+        component.address = address
+        component.is_hidden = is_hidden
     db.session.add(component)
     db.session.commit()
 

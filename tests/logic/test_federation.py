@@ -9,6 +9,7 @@ from copy import deepcopy
 import datetime
 import flask
 import pytest
+import hashlib
 
 import sampledb.logic.components
 from sampledb import logic, db
@@ -29,7 +30,7 @@ from sampledb.logic.federation.location_types import parse_import_location_type
 from sampledb.logic.federation.locations import parse_location, shared_location_preprocessor, locations_check_for_cyclic_dependencies, parse_import_location
 from sampledb.logic.federation.markdown_images import parse_import_markdown_image
 from sampledb.logic.federation.object_location_assignments import parse_import_object_location_assignment
-from sampledb.logic.federation.objects import shared_object_preprocessor, parse_import_object
+from sampledb.logic.federation.objects import shared_object_preprocessor, parse_import_object, parse_object
 from sampledb.logic.federation.users import parse_user, shared_user_preprocessor, parse_import_user
 from sampledb.logic.federation.update import update_shares
 from sampledb.logic.federation.components import parse_import_component_info
@@ -54,7 +55,7 @@ UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
 UUID_2 = '1e59c517-bd11-4390-aeb4-971f20b06612'
 
 POLICY: typing.Dict[typing.Any, typing.Any] = {'access': {'data': True, 'action': True, 'users': True, 'files': True, 'comments': True, 'object_location_assignments': True}, 'permissions': {'users': {'1': 'read', '2': 'grant'}, 'groups': {'4': 'read', '5': 'grant'}, 'projects': {'1': 'read', '3': 'grant'}}}
-OBJECT_DATA: typing.Dict[typing.Any, typing.Any] = {'object_id': 1, 'versions': [{'version_id': 0, 'data': {'name': {'_type': 'text', 'text': 'Example'}}, 'schema': {'title': 'Example Action', 'type': 'object', 'properties': {'name': {'title': 'Example Attribute', 'type': 'text'}}, 'required': ['name']}, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'utc_datetime': '2021-05-03 05:04:54.514236'}], 'action': {'action_id': 2, 'component_uuid': UUID_1}, 'policy': POLICY}
+OBJECT_DATA: typing.Dict[typing.Any, typing.Any] = {'object_id': 1, 'versions': [{'version_id': 0, 'version_component_uuid': UUID_1, 'data': {'name': {'_type': 'text', 'text': 'Example'}}, 'schema': {'title': 'Example Action', 'type': 'object', 'properties': {'name': {'title': 'Example Attribute', 'type': 'text'}}, 'required': ['name']}, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'utc_datetime': '2021-05-03 05:04:54.514236'}], 'action': {'action_id': 2, 'component_uuid': UUID_1}, 'policy': POLICY}
 ARRAY_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "Object Information", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "array": {"title": "Array", "type": "array", "items": {"title": "Subarray", "type": "array", "items": {"type": "text", "title": "Text"}}}}, "required": ["name"]}
 ARRAY_DATA: typing.Dict[typing.Any, typing.Any] = {"name": {"text": {"en": ""}, "_type": "text"}, "array": [[{"text": {"en": "Entry 1.1"}, "_type": "text"}, {"text": {"en": "Entry 1.2"}, "_type": "text"}, {"text": {"en": "Entry 1.3"}, "_type": "text"}], [{"text": {"en": "Entry 2.1"}, "_type": "text"}, {"text": {"en": "Entry 2.2"}, "_type": "text"}], [{"text": {"en": "Entry 3.1"}, "_type": "text"}]]}
 ARRAY_OBJECT_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "Object Information", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "object": {"title": "Object", "type": "object", "properties": {"object_name": {"title": "Name", "type": "text"}, "text_array": {"type": "array", "title": "Text Array", "items": {"type": "text", "title": "Text"}}, "array": {"type": "array", "title": "Object Array", "items": {"type": "object", "title": "Object", "properties": {"subobject_name": {"title": "Name", "type": "text"}}}}}}}, "required": ["name"]}
@@ -75,6 +76,7 @@ REFERENCES_TABLE_LIST_DATA_FRAME: typing.Dict[typing.Any, typing.Any] = {'name':
 FILE_ACTION_SCHEMA: typing.Dict[str, typing.Any] = {'title': 'Object Information', 'type': 'object', 'properties': {'name': {'type': 'text', 'title': 'Name'}, 'file': {'type': 'file', 'title': 'File'}}, 'required': ['name']}
 FILE_OBJECT_DATA: typing.Dict[str, typing.Any] = {'name': {'_type': 'text', 'text': 'Test Object'}, 'file': {'_type': 'file', 'file_id': 0}}
 
+
 @pytest.fixture
 def user():
     user = User(name='User', email='example@example.com', affiliation='FZJ', type=UserType.PERSON)
@@ -93,6 +95,10 @@ def fed_user(foreign_component):
     # force attribute refresh
     assert user.id is not None
     return user
+
+
+def get_hash(s: str) -> str:
+    return hashlib.sha256(s.encode('utf-8')).hexdigest()
 
 
 @pytest.fixture
@@ -277,27 +283,28 @@ def markdown_images(user):
 
 
 @pytest.fixture
-def markdown_object(user, markdown_action, markdown_images):
+def markdown_object(user, markdown_action, markdown_images, app):
     md0, md1, md2 = markdown_images
-    object = create_object(user_id=user.id, action_id=markdown_action.id, data={
-        'name': {
-            'text': 'name',
-            '_type': 'text'
-        },
-        'comment': {
-            'text': 'Image 1: ![image](/markdown_images/' + md0.file_name + ')',
-            '_type': 'text',
-            'is_markdown': True
-        },
-        'markdown': {
-            'text': {
-                'en': 'Image 2: ![image](/markdown_images/' + md1.file_name + ')',
-                'de': 'Bild 2: ![image](/markdown_images/' + md2.file_name + ')'
+    with app.app_context(), app.test_request_context():
+        object = create_object(user_id=user.id, action_id=markdown_action.id, data={
+            'name': {
+                'text': 'name',
+                '_type': 'text'
             },
-            '_type': 'text',
-            'is_markdown': True
-        }
-    })
+            'comment': {
+                'text': 'Image 1: ![image](/markdown_images/' + md0.file_name + ')',
+                '_type': 'text',
+                'is_markdown': True
+            },
+            'markdown': {
+                'text': {
+                    'en': 'Image 2: ![image](/markdown_images/' + md1.file_name + ')',
+                    'de': 'Bild 2: ![image](/markdown_images/' + md2.file_name + ')'
+                },
+                '_type': 'text',
+                'is_markdown': True
+            }
+        })
 
     return object
 
@@ -370,7 +377,7 @@ def ref_objects(user, simple_action, measurement_action):
 
 
 @pytest.fixture
-def complex_object(complex_action, users, ref_objects):
+def complex_object(complex_action, users, ref_objects, app):
     ref_object, ref_sample, ref_measurement = ref_objects
     user1, user2, user3, user4, user5, user6, user7 = users
     object_data = deepcopy(COMPLEX_OBJECT_DATA)
@@ -378,11 +385,12 @@ def complex_object(complex_action, users, ref_objects):
     object_data['sample']['object_id'] = ref_sample.object_id
     object_data['measurement']['object_id'] = ref_measurement.object_id
     object_data['user']['user_id'] = user1.id
-    object = create_object(
-        user_id=user2.id,
-        action_id=complex_action.id,
-        data=object_data,
-    )
+    with app.app_context(), app.test_request_context():
+        object = create_object(
+            user_id=user2.id,
+            action_id=complex_action.id,
+            data=object_data,
+        )
     create_comment(object_id=object.id, user_id=user3.id, content='Comment')
     create_url_file(object_id=object.id, user_id=user4.id, url='http://example.com/file')
     location = create_location(name={'en': 'Location'}, description={'en': 'Description'}, parent_location_id=None, user_id=user5.id, type_id=logic.locations.LocationType.LOCATION)
@@ -538,20 +546,37 @@ def locations():
     return locations
 
 
+def _get_user_id(user_id: int, component_uuid: str) -> int:
+    if component_uuid == sampledb.config.FEDERATION_UUID:
+        return user_id
+    return get_user(user_id, get_component_by_uuid(component_uuid).id).id
+
+
 @pytest.fixture
-def object_history():
+def object_history(component):
     object_data_1 = deepcopy(OBJECT_DATA)
     object_data_1['versions'][0]['version_id'] = 0
     object_data_1['versions'][0]['data']['name']['text'] = 'Example Version 0'
     object_data_1['versions'][0]['utc_datetime'] = '2021-05-03 05:04:54.614336'
-    object_data_2 = deepcopy(OBJECT_DATA)
-    object_data_2['versions'][0]['version_id'] = 1
-    object_data_2['versions'][0]['data']['name']['text'] = 'Example Version 1'
-    object_data_2['versions'][0]['utc_datetime'] = '2021-05-07 16:40:12.191564'
-    object_data_3 = deepcopy(OBJECT_DATA)
-    object_data_3['versions'][0]['version_id'] = 2
-    object_data_3['versions'][0]['data']['name']['text'] = 'Example Version 2'
-    object_data_3['versions'][0]['utc_datetime'] = '2021-06-12 12:30:14.735518'
+    object_data_1['versions'][0]['version_component_uuid'] = sampledb.config.FEDERATION_UUID
+    object_data_1['versions'][0]['hash_data'] = logic.federation.conflicts.calculate_data_hash(data=object_data_1['versions'][0]['data'], schema=object_data_1['versions'][0]['schema'])
+    object_data_1['versions'][0]['hash_metadata'] = get_hash("METADATA_HASH_1")
+    object_data_2 = deepcopy(object_data_1)
+    object_data_2['versions'].append(deepcopy(OBJECT_DATA['versions'][0]))
+    object_data_2['versions'][1]['version_id'] = 1
+    object_data_2['versions'][1]['data']['name']['text'] = 'Example Version 1'
+    object_data_2['versions'][1]['utc_datetime'] = '2021-05-07 16:40:12.191564'
+    object_data_2['versions'][1]['version_component_uuid'] = UUID_1
+    object_data_2['versions'][1]['hash_data'] = logic.federation.conflicts.calculate_data_hash(data=object_data_2['versions'][1]['data'], schema=object_data_2['versions'][1]['schema'])
+    object_data_2['versions'][1]['hash_metadata'] = get_hash("METADATA_HASH_2")
+    object_data_3 = deepcopy(object_data_2)
+    object_data_3['versions'].append(deepcopy(OBJECT_DATA['versions'][0]))
+    object_data_3['versions'][2]['version_id'] = 2
+    object_data_3['versions'][2]['data']['name']['text'] = 'Example Version 2'
+    object_data_3['versions'][2]['utc_datetime'] = '2021-06-12 12:30:14.735518'
+    object_data_3['versions'][2]['version_component_uuid'] = UUID_1
+    object_data_3['versions'][2]['hash_data'] = logic.federation.conflicts.calculate_data_hash(data=object_data_3['versions'][2]['data'], schema=object_data_3['versions'][2]['schema'])
+    object_data_3['versions'][2]['hash_metadata'] = get_hash('METADATA_HASH_3')
     return object_data_1, object_data_2, object_data_3
 
 
@@ -566,6 +591,11 @@ def _check_object(object_data, comp):
         if version.get('utc_datetime') is not None:
             assert object.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') == version.get('utc_datetime')
         assert object.component_id == comp.id
+        if object.version_component_id is None:
+            assert version.get('version_component_uuid') == sampledb.config.FEDERATION_UUID
+        elif object.version_component_id is not None:
+            version_component = logic.components.get_component(object.version_component_id)
+            assert version.get('version_component_uuid') == version_component.uuid
 
         if version.get('user') is not None:
             user_component = get_component_by_uuid(version['user'].get('component_uuid'))
@@ -599,7 +629,7 @@ def _check_action(action_data):
     assert action.is_hidden == action_data.get('is_hidden', False)
 
     # imported actions are disabled by default
-    assert action.disable_create_objects == True
+    assert action.disable_create_objects
 
     if action_data.get('action_type') is not None:
         action_type_component = get_component_by_uuid(action_data['action_type'].get('component_uuid'))
@@ -1171,8 +1201,9 @@ def _invalid_datetime_test(data, key, parse_function, mandatory=False):
 def test_import_simple_object(component):
     object_data = deepcopy(OBJECT_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     _check_object(object_data, component)
+    assert changes
 
     assert len(get_objects()) == 1
 
@@ -1184,60 +1215,6 @@ def test_import_simple_object(component):
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
     assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
-
-
-def test_update_object_version(component):
-    old_object_data = deepcopy(OBJECT_DATA)
-    start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    old_object = parse_import_object(old_object_data, component)
-
-    object_data = deepcopy(OBJECT_DATA)
-    object_data['versions'][0]['data'] = {
-        'name': {
-            '_type': 'text',
-            'text': 'Updated Example'
-        }
-    }
-    object_data['versions'][0]['schema'] = {
-        'title': 'Updated Example Action',
-        'type': 'object',
-        'properties': {
-            'name': {
-                'title': 'Updated Example Attribute',
-                'type': 'text'
-            }
-        },
-        'required': ['name']
-    }
-    object_data['action'] = {
-        'action_id': 7,
-        'component_uuid': UUID_1
-    }
-    object_data['versions'][0]['user'] = {
-        'user_id': 5,
-        'component_uuid': UUID_1
-    }
-    object_data['versions'][0]['utc_datetime'] = '2021-06-03 01:04:54.539351'
-    object = parse_import_object(object_data, component)
-    _check_object(object_data, component)
-
-    assert old_object.id == object.id
-    assert len(get_objects()) == 1
-
-    log_entries = get_fed_object_log_entries_for_object(object.id)
-    assert len(FedObjectLogEntry.query.all()) == 2
-    assert len(log_entries) == 2
-    assert log_entries[1].type == FedObjectLogEntryType.IMPORT_OBJECT
-    assert log_entries[1].component_id == object.component_id
-    assert log_entries[1].object_id == object.id
-    assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
-    assert log_entries[0].type == FedObjectLogEntryType.UPDATE_OBJECT
-    assert log_entries[0].component_id == object.component_id
-    assert log_entries[0].object_id == object.id
-    assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
-    assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
 def test_parse_simple_object_invalid(component):
@@ -1256,10 +1233,11 @@ def test_import_simple_object_no_schema(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['schema']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     del object_data['versions'][0]['data']
     _check_object(object_data, component)
 
+    assert changes
     assert len(get_objects()) == 1
 
     log_entries = get_fed_object_log_entries_for_object(object.id)
@@ -1275,10 +1253,12 @@ def test_import_simple_object_no_schema(component):
 def test_import_simple_object_no_data(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['data']
+    del object_data['versions'][0]['schema']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
+    assert changes
     assert len(get_objects()) == 1
 
     log_entries = get_fed_object_log_entries_for_object(object.id)
@@ -1295,9 +1275,10 @@ def test_import_simple_object_no_user(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['user']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
+    assert changes
     assert len(get_objects()) == 1
 
     log_entries = get_fed_object_log_entries_for_object(object.id)
@@ -1314,9 +1295,10 @@ def test_import_simple_object_no_action(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['action']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
+    assert changes
     assert len(get_objects()) == 1
 
     log_entries = get_fed_object_log_entries_for_object(object.id)
@@ -1333,9 +1315,10 @@ def test_import_simple_object_no_utc_datetime(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['utc_datetime']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
+    assert changes
     assert len(get_objects()) == 1
 
     log_entries = get_fed_object_log_entries_for_object(object.id)
@@ -1374,42 +1357,105 @@ def test_import_markdown_image(component):
 
 def test_import_object_history(component, object_history):
     object_data_1, object_data_2, object_data_3 = object_history
-    object_2 = parse_import_object(object_data_2, component)
-    object_id = object_2.object_id
-    _check_object(object_data_2, component)
-    assert object_2 == get_object(object_id)
-
-    object_1 = parse_import_object(object_data_1, component)
+    object_1, changes = parse_import_object(object_data_1, component)
+    object_id = object_1.object_id
     _check_object(object_data_1, component)
+    assert changes
+    assert object_1 == get_object(object_id)
+
+    object_2, changes = parse_import_object(object_data_2, component)
+    _check_object(object_data_2, component)
+    assert changes
     assert object_2 == get_object(object_id)
     assert [object_1, object_2] == get_object_versions(object_id)
 
-    object_3 = parse_import_object(object_data_3, component)
+    object_3, changes = parse_import_object(object_data_3, component)
     _check_object(object_data_3, component)
+    assert changes
     assert object_3 == get_object(object_id)
     assert [object_1, object_2, object_3] == get_object_versions(object_id)
 
 
-def test_import_object_version_update(component, object_history):
-    object_data_1, object_data_2, _ = object_history
-    object_1 = parse_import_object(object_data_1, component)
-    _check_object(object_data_1, component)
-    object_id = object_1.object_id
-    assert object_1 == get_object(object_id)
-    assert [object_1] == get_object_versions(object_id)
+def test_import_object_history_with_conflicts(component, object_history, user):
+    object_data_1, object_data_2, object_data_3 = object_history
+    object_data_2_modified = deepcopy(object_data_2['versions'][1]['data'])
+    object_data_2_modified['name']['text'] = "Conflict"
 
-    object_data_2['versions'][0]['version_id'] = 0
-    object_2 = parse_import_object(object_data_2, component)
-    _check_object(object_data_2, component)
-    get_object(object_id)
-    assert object_2 == get_object(object_id)
-    assert [object_2] == get_object_versions(object_id)
+    object_1, changes = parse_import_object(object_data_1, component)
+    assert changes
+    assert object_1 == get_object(object_1.id)
+
+    logic.objects.update_object(object_1.id, data=object_data_2_modified, user_id=user.id)
+
+    object_3, changes = parse_import_object(object_data_3, component)
+    assert not changes
+    conflict = logic.federation.conflicts.get_object_version_conflict(object_id=object_3.id)
+    assert conflict is not None
+    assert conflict.base_version_id == object_1.version_id
+    assert conflict.component_id == component.id
+    assert conflict.fed_version_id == 2
+    assert conflict.version_solved_in is None
+
+    logic.federation.conflicts.solve_conflict_by_strategy(
+        conflict,
+        solving_strategy=logic.federation.conflicts.SolvingStrategy.APPLY_IMPORTED,
+        user_id=user.id
+    )
+
+    solved_conflict_version = get_object(object_id=object_1.id)
+    assert logic.federation.conflicts.get_object_version_conflict(object_id=object_3.id).version_solved_in == solved_conflict_version.version_id
+
+    object_3_reimported, changes = parse_import_object(object_data_3, component)
+
+    assert not changes
+    with pytest.raises(logic.errors.ObjectVersionConflictDoesNotExistError):
+        logic.federation.conflicts.get_object_version_conflict(object_id=object_3.id, only_unsolved=True)
+    assert logic.objects.get_object(object_id=object_1.id) == solved_conflict_version
+
+    object_data_4 = deepcopy(object_data_3)
+    object_data_4['versions'].append(deepcopy(object_data_3['versions'][-1]))
+    object_data_4['versions'][3]['version_id'] = 3
+    object_data_4['versions'].append(deepcopy(OBJECT_DATA['versions'][0]))
+    object_data_4['versions'][4]['version_id'] = 4
+    object_data_4['versions'][4]['data']['name']['text'] = 'Example Version 3'
+    object_data_4['versions'][4]['utc_datetime'] = '2021-06-12 16:30:14.735518'
+    object_data_4['versions'][4]['hash_data'] = logic.federation.conflicts.calculate_data_hash(object_data_4['versions'][4]['data'], object_data_4['versions'][4]['schema'])
+    object_data_4['versions'][4]['hash_metadata'] = get_hash("METADATA_HASH_4")
+    object_data_4['versions'][4]['version_component_uuid'] = UUID_1
+    conflict_status = {"2": {"version_solved_in": 3, "automerged": False, "fed_version_id": 1}}
+    object_4, changes = parse_import_object(object_data_4, component, conflict_status)
+    with pytest.raises(logic.errors.ObjectVersionConflictDoesNotExistError):
+        logic.federation.conflicts.get_object_version_conflict(object_id=object_4.id, only_unsolved=True)
+    assert len(logic.federation.conflicts.get_object_conflicts(object_id=object_4.id, component_id=component.id)) == 1
+    assert changes
+    assert logic.objects.get_object(object_id=object_4.id) == object_4
+    assert object_4.data == object_data_4['versions'][4]['data']
+    assert object_4.hash_data == object_data_4['versions'][4]['hash_data']
+    assert object_4.hash_metadata == object_data_4['versions'][4]['hash_metadata']
+
+
+def test_import_similar_object_version(component, object_history, user):
+    # similar version: data hash equal, metadata hash different => equal version data created by different users
+    object_data_1, object_data_2, _ = object_history
+
+    object_1, changes = parse_import_object(object_data_1, component)
+    assert changes
+    assert object_1 == get_object(object_id=object_1.id)
+
+    logic.objects.update_object(object_id=object_1.id, data=object_data_2['versions'][1]['data'], user_id=user.id)
+
+    object_2, changes = parse_import_object(object_data_2, component)
+    assert not changes
+    assert get_object(object_2.id).user_id == user.id
+    assert len(logic.federation.conflicts.get_object_conflicts(object_id=object_2.id)) == 0
 
 
 def test_import_object_tags(component):
     object_data = deepcopy(OBJECT_DATA)
     object_data['versions'][0]['data'] = deepcopy(COMPLEX_OBJECT_DATA)
     object_data['versions'][0]['schema'] = deepcopy(COMPLEX_ACTION_SCHEMA)
+    object_data['versions'][0]['hash_data'] = get_hash('HASH_DATA_1')
+    object_data['versions'][0]['hash_metadata'] = get_hash('HASH_METADATA_1')
     parse_import_object(object_data, component)
     tags = get_tags()
     assert len(tags) == len(object_data['versions'][0]['data']['tags']['tags'])
@@ -1422,6 +1468,8 @@ def test_import_object_tags_new_subversion(component):
     object_data = deepcopy(OBJECT_DATA)
     object_data['versions'][0]['data'] = deepcopy(COMPLEX_OBJECT_DATA)
     object_data['versions'][0]['schema'] = deepcopy(COMPLEX_ACTION_SCHEMA)
+    object_data['versions'][0]['hash_data'] = get_hash('HASH_DATA_1')
+    object_data['versions'][0]['hash_metadata'] = get_hash('HASH_METADATA_1')
     parse_import_object(object_data, component)
 
     object_data_2 = deepcopy(object_data)
@@ -1447,29 +1495,33 @@ def test_import_object_tags_new_subversion_old_previous_version(component):
     object_data = deepcopy(OBJECT_DATA)
     object_data['versions'][0]['data'] = deepcopy(COMPLEX_OBJECT_DATA)
     object_data['versions'][0]['schema'] = deepcopy(COMPLEX_ACTION_SCHEMA)
+    object_data['versions'][0]['hash_data'] = get_hash('HASH_DATA_1')
+    object_data['versions'][0]['hash_metadata'] = get_hash('HASH_METADATA_1')
     parse_import_object(object_data, component)
 
-    object_data_2 = deepcopy(object_data)
+    tags = get_tags()
 
+    object_data_2 = deepcopy(object_data)
     object_data_2['versions'][0]['version_id'] += 1
     parse_import_object(object_data_2, component)
+    tags = get_tags()
 
     object_data_3 = deepcopy(object_data)
     object_data_3['versions'][0]['data']['tags']['tags'].remove('object')
     parse_import_object(object_data_3, component)
     tags = get_tags()
-    assert len(tags) == len(object_data['versions'][0]['data']['tags']['tags'])
+    assert len(tags) == len(object_data_3['versions'][0]['data']['tags']['tags'])
     for tag in tags:
-        assert tag.name in object_data['versions'][0]['data']['tags']['tags']
+        assert tag.name in object_data_3['versions'][0]['data']['tags']['tags']
         assert tag.uses == 1
 
     object_data_4 = deepcopy(object_data)
     object_data_4['versions'][0]['data']['tags']['tags'].append('tag')
     parse_import_object(object_data_4, component)
     tags = get_tags()
-    assert len(tags) == len(object_data['versions'][0]['data']['tags']['tags'])
+    assert len(tags) == len(object_data_4['versions'][0]['data']['tags']['tags'])
     for tag in tags:
-        assert tag.name in object_data['versions'][0]['data']['tags']['tags']
+        assert tag.name in object_data_4['versions'][0]['data']['tags']['tags']
         assert tag.uses == 1
 
 
@@ -1478,6 +1530,8 @@ def test_import_object_tags_new_old_version(component):
     object_data['versions'][0]['data'] = deepcopy(COMPLEX_OBJECT_DATA)
     object_data['versions'][0]['schema'] = deepcopy(COMPLEX_ACTION_SCHEMA)
     object_data['versions'][0]['version_id'] = 3
+    object_data['versions'][0]['hash_data'] = get_hash('HASH_DATA_1')
+    object_data['versions'][0]['hash_metadata'] = get_hash('HASH_METADATA_1')
     parse_import_object(object_data, component)
 
     object_data_2 = deepcopy(object_data)
@@ -1485,9 +1539,9 @@ def test_import_object_tags_new_old_version(component):
     object_data_2['versions'][0]['version_id'] = 2
     parse_import_object(object_data_2, component)
     tags = get_tags()
-    assert len(tags) == len(object_data['versions'][0]['data']['tags']['tags'])
+    assert len(tags) == len(object_data_2['versions'][0]['data']['tags']['tags'])
     for tag in tags:
-        assert tag.name in object_data['versions'][0]['data']['tags']['tags']
+        assert tag.name in object_data_2['versions'][0]['data']['tags']['tags']
         assert tag.uses == 1
 
     object_data_3 = deepcopy(object_data)
@@ -1495,9 +1549,9 @@ def test_import_object_tags_new_old_version(component):
     object_data_3['versions'][0]['version_id'] = 1
     parse_import_object(object_data_3, component)
     tags = get_tags()
-    assert len(tags) == len(object_data['versions'][0]['data']['tags']['tags'])
+    assert len(tags) == len(object_data_3['versions'][0]['data']['tags']['tags'])
     for tag in tags:
-        assert tag.name in object_data['versions'][0]['data']['tags']['tags']
+        assert tag.name in object_data_3['versions'][0]['data']['tags']['tags']
         assert tag.uses == 1
 
 
@@ -1518,7 +1572,8 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
         user_id=fed_user.id,
         data=fed_data,
         schema=simple_object.schema,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        imported_from_component_id=component.id,
     )
     object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=object_permissions.Permissions.READ)
     data = deepcopy(REFERENCES_TABLE_LIST_DATA_FRAME)
@@ -2672,10 +2727,11 @@ def test_locations_check_for_cyclic_dependencies_cyclic_including_local_location
 def test_import_comment(simple_object, component):
     comment_data = deepcopy(COMMENT_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    comment = parse_import_comment(comment_data, simple_object, component)
+    comment, changes = parse_import_comment(comment_data, simple_object, component)
     _check_comment(comment_data)
 
     assert len(Comment.query.all()) == 1
+    assert changes
 
     log_entries = get_fed_comment_log_entries_for_comment(comment.id)
     assert len(FedCommentLogEntry.query.all()) == 1
@@ -2686,11 +2742,15 @@ def test_import_comment(simple_object, component):
     assert log_entries[0].utc_datetime >= start_datetime
     assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
+    comment, changes = parse_import_comment(comment_data, simple_object, component)
+    assert not changes
+
 
 def test_update_comment(simple_object, component):
     old_comment_data = deepcopy(COMMENT_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    old_comment = parse_import_comment(old_comment_data, simple_object, component)
+    old_comment, changes = parse_import_comment(old_comment_data, simple_object, component)
+    assert changes
 
     comment_data = deepcopy(COMMENT_DATA)
     comment_data['content'] = 'Updated comment'
@@ -2700,8 +2760,9 @@ def test_update_comment(simple_object, component):
         'component_uuid': UUID_1
     }
 
-    comment = parse_import_comment(comment_data, simple_object, component)
+    comment, changes = parse_import_comment(comment_data, simple_object, component)
     _check_comment(comment_data)
+    assert changes
 
     assert old_comment.id == comment.id
     assert len(Comment.query.all()) == 1
@@ -2724,7 +2785,7 @@ def test_update_comment(simple_object, component):
 
 def test_parse_comment_invalid_data(simple_object, component):
     def parse_function(data):
-        return parse_import_comment(data, simple_object, component)
+        return parse_import_comment(data, simple_object, component)[0]
     _invalid_id_test(COMMENT_DATA, 'comment_id', parse_function)
     _invalid_component_uuid_test(COMMENT_DATA, parse_function)
     _invalid_reference_test(COMMENT_DATA, 'user', 'user_id', parse_function)
@@ -2739,8 +2800,9 @@ def test_import_comment_no_user(simple_object, component):
     comment_data = deepcopy(COMMENT_DATA)
     del comment_data['user']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    comment = parse_import_comment(comment_data, simple_object, component)
+    comment, changes = parse_import_comment(comment_data, simple_object, component)
     _check_comment(comment_data)
+    assert changes
 
     assert len(Comment.query.all()) == 1
 
@@ -2757,8 +2819,9 @@ def test_import_comment_no_user(simple_object, component):
 def test_import_file_url(simple_object, component):
     file_data = deepcopy(FILE_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    file = parse_import_file(file_data, simple_object, component)
+    file, changes = parse_import_file(file_data, simple_object, component)
     _check_file(file_data, simple_object.id)
+    assert changes
 
     assert len(File.query.all()) == 1
 
@@ -2775,7 +2838,8 @@ def test_import_file_url(simple_object, component):
 def test_update_file_url(simple_object, component):
     old_file_data = deepcopy(FILE_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    old_file = parse_import_file(old_file_data, simple_object, component)
+    old_file, changes = parse_import_file(old_file_data, simple_object, component)
+    assert changes
 
     file_data = deepcopy(FILE_DATA)
     file_data['data'] = {"storage": "url", "url": "https://example.com/file2"}
@@ -2785,11 +2849,12 @@ def test_update_file_url(simple_object, component):
         'component_uuid': UUID_1
     }
 
-    file = parse_import_file(file_data, simple_object, component)
+    file, changes = parse_import_file(file_data, simple_object, component)
     _check_file(file_data, simple_object.id)
 
     assert old_file.id == file.id
     assert len(File.query.all()) == 1
+    assert changes
 
     log_entries = get_fed_file_log_entries_for_file(file.id, simple_object.object_id)
     assert len(FedFileLogEntry.query.all()) == 2
@@ -2809,7 +2874,7 @@ def test_update_file_url(simple_object, component):
 
 def test_parse_file_invalid_data(simple_object, component):
     def parse_function(data):
-        return parse_import_file(data, simple_object, component)
+        return parse_import_file(data, simple_object, component)[0]
     _invalid_id_test(FILE_DATA, 'file_id', parse_function)
     _invalid_component_uuid_test(FILE_DATA, parse_function)
     _invalid_reference_test(FILE_DATA, 'user', 'user_id', parse_function)
@@ -2869,8 +2934,9 @@ def test_parse_file_no_user(simple_object, component):
     file_data = deepcopy(FILE_DATA)
     del file_data['user']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    file = parse_import_file(file_data, simple_object, component)
+    file, changes = parse_import_file(file_data, simple_object, component)
     _check_file(file_data, simple_object.id)
+    assert changes
 
     assert len(File.query.all()) == 1
 
@@ -2887,8 +2953,9 @@ def test_parse_file_no_user(simple_object, component):
 def test_import_object_location_assignment(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
+    assignment, changes = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
+    assert changes
 
     assert len(ObjectLocationAssignment.query.all()) == 1
 
@@ -2905,7 +2972,8 @@ def test_import_object_location_assignment(simple_object, component):
 def test_update_object_location_assignment(simple_object, component):
     old_assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    old_assignment = parse_import_object_location_assignment(old_assignment_data, simple_object, component)
+    old_assignment, changes = parse_import_object_location_assignment(old_assignment_data, simple_object, component)
+    assert changes
 
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     assignment_data['description'] = {'en': 'Updated description'}
@@ -2923,8 +2991,9 @@ def test_update_object_location_assignment(simple_object, component):
         'component_uuid': UUID_1
     }
 
-    assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
+    assignment, changes = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
+    assert changes
 
     assert old_assignment.id == assignment.id
     assert len(ObjectLocationAssignment.query.all()) == 1
@@ -2946,8 +3015,8 @@ def test_update_object_location_assignment(simple_object, component):
 
 
 def test_parse_object_location_assignment_invalid_data(simple_object):
-    _invalid_component_uuid_test(OBJECT_LOCATION_ASSIGNMENT_DATA, lambda d: parse_import_object_location_assignment(d, simple_object, component))
-    _invalid_id_test(OBJECT_LOCATION_ASSIGNMENT_DATA, 'id', lambda d: parse_import_object_location_assignment(d, simple_object, component))
+    _invalid_component_uuid_test(OBJECT_LOCATION_ASSIGNMENT_DATA, lambda d: parse_import_object_location_assignment(d, simple_object, component)[0])
+    _invalid_id_test(OBJECT_LOCATION_ASSIGNMENT_DATA, 'id', lambda d: parse_import_object_location_assignment(d, simple_object, component)[0])
 
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['responsible_user']
@@ -2969,8 +3038,9 @@ def test_import_object_location_assignment_no_user(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['user']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
+    assignment, changes = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
+    assert changes
 
     assert len(ObjectLocationAssignment.query.all()) == 1
 
@@ -2988,8 +3058,9 @@ def test_import_object_location_assignment_no_responsible_user(simple_object, co
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['responsible_user']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
+    assignment, changes = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
+    assert changes
 
     assert len(ObjectLocationAssignment.query.all()) == 1
 
@@ -3007,8 +3078,9 @@ def test_import_object_location_assignment_no_location(simple_object, component)
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['location']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
+    assignment, changes = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
+    assert changes
 
     assert len(ObjectLocationAssignment.query.all()) == 1
 
@@ -3026,8 +3098,9 @@ def test_import_object_location_assignment_no_description(simple_object, compone
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['description']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
+    assignment, changes = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
+    assert changes
 
     assert len(ObjectLocationAssignment.query.all()) == 1
 
@@ -3675,10 +3748,15 @@ def test_update_shares(component, users, groups, projects):
     object1_0['object_id'] = 1
     object1_0['versions'][0]['version_id'] = 0
     object1_0['versions'][0]['user']['user_id'] = 1
-    object1_1 = deepcopy(OBJECT_DATA)
+    object1_0['versions'][0]['hash_metadata'] = get_hash("HASH_METADATA_1_V_0")
+    object1_0['versions'][0]['hash_data'] = get_hash("HASH_DATA_1_V_0")
+    object1_1 = deepcopy(object1_0)
+    object1_1['versions'].append(deepcopy(OBJECT_DATA['versions'][0]))
     object1_1['object_id'] = 1
-    object1_1['versions'][0]['version_id'] = 1
-    object1_1['versions'][0]['user']['user_id'] = 1
+    object1_1['versions'][1]['version_id'] = 1
+    object1_1['versions'][1]['user']['user_id'] = 1
+    object1_1['versions'][1]['hash_metadata'] = get_hash("HASH_METADATA_1_V_1")
+    object1_1['versions'][1]['hash_data'] = get_hash("HASH_DATA_1_V_1")
     object2 = deepcopy(OBJECT_DATA)
     object2['object_id'] = 2
     object2['versions'][0]['version_id'] = 0
@@ -3794,7 +3872,9 @@ def test_update_shares(component, users, groups, projects):
         'users': [user1, user2, user3],
         'instruments': [instrument1, instrument2, instrument3],
         'actions': [action1, action2],
-        'action_types': [action_type1, action_type2]
+        'action_types': [action_type1, action_type2],
+        'conflict_local_objects': {},
+        'conflict_federated_objects': {},
     }
 
     sampledb.logic.components.update_component(
@@ -3820,6 +3900,7 @@ def test_update_shares(component, users, groups, projects):
             utc_datetime_str = kwargs['json']['utc_datetime']
             datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
             kwargs['json']['utc_datetime'] = None
+
     assert request_data == [
         ((), {
             'endpoint': '/federation/v1/shares/objects/1/import_status',
@@ -4113,9 +4194,10 @@ def test_import_object_unknown_language(component):
         }
     }
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
-    object = parse_import_object(object_data, component)
+    object, changes = parse_import_object(object_data, component)
     _check_object(ref_object_data, component)
 
+    assert changes
     assert len(get_objects()) == 1
 
     log_entries = get_fed_object_log_entries_for_object(object.id)
@@ -4256,7 +4338,8 @@ def test_import_object_import_status(component):
     start_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
     object_data = logic.federation.objects.parse_object(object_data, component)
     import_status = {}
-    object = logic.federation.objects.import_object(object_data, component, import_status=import_status)
+    object, changes = logic.federation.objects.import_object(object_data, component, import_status=import_status)
+    assert changes
     assert import_status['success']
     assert not import_status['notes']
     assert import_status['object_id'] == object.id

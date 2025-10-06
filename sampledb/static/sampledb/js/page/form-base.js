@@ -1006,7 +1006,9 @@ function updateJSInteractiveFields () {
   });
 
   $('.objectpicker').each(function () {
-    $(this).data('sampledb-default-selected', $(this).val());
+    if ($(this).val() !== '') {
+      $(this).data('sampledb-default-selected', $(this).val());
+    }
   });
 
   updateObjectPickers();

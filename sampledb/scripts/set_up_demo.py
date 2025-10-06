@@ -820,13 +820,6 @@ This example shows how Markdown can be used for instrument Notes.
             'parent_location': {'location_id': 1, 'component_uuid': UUID}
         }, component)
         sampledb.logic.federation.users.parse_import_user({
-            'user_id': 1,
-            'component_uuid': UUID,
-            'name': 'Partnering User',
-            'email': 'partner@example.com',
-            'affiliation': 'Collaborating Partner LLC',
-        }, component)
-        sampledb.logic.federation.users.parse_import_user({
             'user_id': 2,
             'component_uuid': UUID,
             'name': None,
@@ -1818,5 +1811,65 @@ This example shows how Markdown can be used for instrument Notes.
             action_id=horizontal_object_action.id,
             schema=horizontal_object_action_schema,
         )
+
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Imported Object Reference Demo'
+                }
+            },
+            'comment': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Local Change'
+                },
+                'is_markdown': True,
+            },
+            'samples': [
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'component_uuid': 'ee36dd7f-72b0-44b6-afa8-752e920fbb32'
+                },
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'eln_source_url': 'http://localhost:5000/',
+                    'eln_object_url': 'http://localhost:5000/objects/10001'
+                }
+            ]
+        }
+
+        sampledb.logic.objects.update_object(object_id=object.object_id, data=data, user_id=instrument_responsible_user.id)
+
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Imported Object Reference Demo (updated)'
+                }
+            },
+            'comment': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Imported Change'
+                },
+                'is_markdown': True
+            },
+            'samples': [
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'component_uuid': 'ee36dd7f-72b0-44b6-afa8-752e920fbb32'
+                },
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'eln_source_url': 'http://localhost:5000/',
+                    'eln_object_url': 'http://localhost:5000/objects/10001'
+                }
+            ]
+        }
 
     print("Success: set up demo data", flush=True)
