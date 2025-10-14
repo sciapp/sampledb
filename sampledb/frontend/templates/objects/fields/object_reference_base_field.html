@@ -29,6 +29,12 @@
   {% else %}
     {% set selected_id = data.object_id | string %}
   {% endif %}
+{% elif schema is not none and "default" in schema %}
+  {% if current_value_text is not none %}
+    {% set selected_id = "-1" %}
+  {% else %}
+    {% set selected_id = schema.default | string %}
+  {% endif %}
 {% else %}
   {% set selected_id = none %}
 {% endif %}

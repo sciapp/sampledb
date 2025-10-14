@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.33
+------------
+
+Currently in development.
+
+- Added support for default values to object reference schemas
+
+
 Version 0.32
 ------------
 
