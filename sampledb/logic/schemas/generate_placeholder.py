@@ -78,11 +78,11 @@ def generate_placeholder(
     elif schema['type'] == 'quantity':
         return _generate_quantity_placeholder(schema, path)
     elif schema['type'] == 'sample':
-        return _generate_sample_placeholder(schema, path)  # type: ignore
+        return _generate_sample_placeholder(schema, path)
     elif schema['type'] == 'measurement':
-        return _generate_measurement_placeholder(schema, path)  # type: ignore
+        return _generate_measurement_placeholder(schema, path)
     elif schema['type'] == 'object_reference':
-        return _generate_object_reference_placeholder(schema, path)  # type: ignore
+        return _generate_object_reference_placeholder(schema, path)
     elif schema['type'] == 'tags':
         return _generate_tags_placeholder(schema, path)
     elif schema['type'] == 'hazards':
@@ -252,7 +252,7 @@ def _generate_quantity_placeholder(schema: typing.Dict[str, typing.Any], path: t
     }
 
 
-def _generate_sample_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _generate_sample_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
     """
     Generates a placeholder sample object based on an object schema.
 
@@ -263,7 +263,7 @@ def _generate_sample_placeholder(schema: typing.Dict[str, typing.Any], path: typ
     return _generate_object_reference_placeholder(schema, path)
 
 
-def _generate_measurement_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _generate_measurement_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
     """
     Generates a placeholder measurement object based on an object schema.
 
@@ -274,7 +274,7 @@ def _generate_measurement_placeholder(schema: typing.Dict[str, typing.Any], path
     return _generate_object_reference_placeholder(schema, path)
 
 
-def _generate_object_reference_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _generate_object_reference_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
     """
     Generates a placeholder object reference object based on an object schema.
 
@@ -282,6 +282,11 @@ def _generate_object_reference_placeholder(schema: typing.Dict[str, typing.Any],
     :param path: the path to this subschema
     :return: None, as there can be no default object reference
     """
+    if 'default' in schema:
+        return {
+            '_type': schema['type'],
+            'object_id': schema['default']
+        }
     return None
 
 
