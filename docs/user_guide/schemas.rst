@@ -1171,6 +1171,11 @@ filter_operator
 
 This attribute is either ``"and"`` or ``"or"`` and when both ``action_type_id`` and ``action_id`` are set, this controls whether both these filters need to be fulfilled or only one. By default (``"and"``), objects referenced by an ``object_reference`` property need to match both the ``action_id`` and  ``action_type_id`` filters, however when ``filter_operator`` is set to ``"or"`` it is enough for an object to match one of these filters.
 
+default
+^^^^^^^
+
+A JSON number containing the object ID to be used as default selection, e.g. ``1`` to use object #1 as the default.
+
 Sample References
 ^^^^^^^^^^^^^^^^^
 

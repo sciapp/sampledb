@@ -959,7 +959,7 @@ def _validate_object_reference_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'filter_operator', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'filter_operator', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip', 'default'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -994,6 +994,16 @@ def _validate_object_reference_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
+    if 'default' in schema:
+        validate(
+            instance={
+                '_type': 'object_reference',
+                'object_id': schema['default']
+            },
+            schema=schema,
+            path=path,
+            strict=strict
+        )
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 

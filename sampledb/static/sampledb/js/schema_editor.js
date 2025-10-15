@@ -406,7 +406,7 @@ function enableSchemaEditor () {
       return null;
     }
 
-    if (schema.type === 'datetime' && 'default' in schema) {
+    if (['datetime', 'object_reference', 'sample', 'measurement'].includes(schema.type) && 'default' in schema) {
       window.schema_editor_missing_type_support = true;
     }
 
