@@ -45,7 +45,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User, get_user_by_federated_user
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for, get_hash
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
@@ -67,6 +67,7 @@ from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
 from ..logic.files import File, get_file as get_file_logic
+from ..logic.object_data_to_html import object_data_to_html
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
 from .info_pages import InfoPageAcknowledgementForm
@@ -107,6 +108,7 @@ JinjaFilter()(markdown_to_safe_html)
 JinjaFilter()(get_translated_text)
 JinjaFilter()(get_all_translated_texts)
 JinjaFilter()(bool)
+JinjaFilter()(get_hash)
 
 JinjaFunction()(get_component_or_none)
 JinjaFunction()(get_component_id_by_uuid)
@@ -120,6 +122,7 @@ JinjaFunction()(apply_diff)
 JinjaFunction()(invert_diff)
 JinjaFunction()(get_import_signed_by)
 JinjaFunction()(InfoPageAcknowledgementForm)
+JinjaFunction()(object_data_to_html)
 
 qrcode_cache: typing.Dict[str, str] = {}
 
@@ -767,12 +770,6 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
         return None
     except errors.ComponentDoesNotExistError:
         return None
-
-
-@JinjaFilter()
-@functools.lru_cache(maxsize=None)
-def get_hash(text: str) -> str:
-    return hashlib.sha256(text.encode('utf-8'), usedforsecurity=False).hexdigest()
 
 
 @functools.lru_cache(maxsize=None)

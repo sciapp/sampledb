@@ -13,9 +13,6 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}"/>
 {% endblock %}
 
-{% set id_prefix_root = "object" %}
-{% set property_path = () %}
-
 {% block sidebar %}
   <nav>
     <ul>
@@ -98,8 +95,6 @@
     </div>
   </div>
   {% block includes %}
-      {% set indent_level = 0 %}
-      {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
           {% if previous_version_data_diff %}
             {% set diff = previous_version_data_diff %}
@@ -108,8 +103,25 @@
             {% set diff = none %}
             {% set previous_schema = none %}
           {% endif %}
+          {% set id_prefix_root = "object" %}
+          {% set property_path = () %}
+          {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           <div style="margin-left: -15px; margin-right:-15px">
+          {% if config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] and not diff and not previous_schema %}
+            {{ object_data_to_html(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                metadata_language=metadata_language,
+                data=data,
+                schema=schema,
+                id_prefix_root=id_prefix_root,
+                files=files,
+              ) | safe }}
+          {% else %}
+            {%- set indent_level = 0 %}
+            {%- set show_indent_border = False %}
             {% include "objects/view/any.html" %}
+          {% endif %}
           </div>
       {% endif %}
   {% endblock %}
@@ -508,9 +520,22 @@
                 {% set data = elem.object.data %}
                 {% set schema = elem.object.schema %}
                 {% set files = elem.files %}
-                {% set indent_level = 0 %}
-                {% set show_indent_border = False %}
-                {% include "objects/view/any.html" %}
+                {% if config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] %}
+                  {{ object_data_to_html(
+                      object_id=elem.object.object_id,
+                      version_id=elem.object.version_id,
+                      metadata_language=metadata_language,
+                      data=data,
+                      schema=schema,
+                      id_prefix_root=id_prefix_root,
+                      workflow_display_mode=workflow_display_mode,
+                      files=files
+                    ) | safe }}
+                {% else %}
+                  {%- set indent_level = 0 %}
+                  {%- set show_indent_border = False %}
+                  {% include "objects/view/any.html" %}
+                {% endif %}
               {% endif %}
               </div>
             {% endif %}
