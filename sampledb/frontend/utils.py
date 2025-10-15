@@ -769,6 +769,12 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
         return None
 
 
+@JinjaFilter()
+@functools.lru_cache(maxsize=None)
+def get_hash(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8'), usedforsecurity=False).hexdigest()
+
+
 @functools.lru_cache(maxsize=None)
 def _get_fingerprint(file_path: str) -> str:
     """

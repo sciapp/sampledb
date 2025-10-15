@@ -866,7 +866,7 @@ A tooltip to display when hovering the mouse cursor over the property title, as 
 default
 ^^^^^^^
 
-A default value for the property, as a JSON string using ``YYYY-MM-DD hh:mm:ss`` notation and UTC, e.g. ``"2021-07-23 08:00:00"``. If no default is given, the current date and time when creating or editing an object using this schema will be used as the default.
+A default value for the property, as a JSON string using ``YYYY-MM-DD hh:mm:ss`` notation and UTC, e.g. ``"2021-07-23 08:00:00"``. If no default is given, the current date and time when creating or editing an object using this schema will be used as the default. To disable this behavior, set ``default`` to ``null``.
 
 
 .. _metadata_tags:

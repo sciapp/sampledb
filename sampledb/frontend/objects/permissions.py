@@ -15,9 +15,10 @@ from .. import frontend
 from ... import logic
 from ...logic import user_log
 from ...logic.actions import get_action
+from ...logic.caching import cache_per_request
 from ...logic.components import get_component_by_uuid
-from ...logic.errors import ObjectDoesNotExistError, ComponentDoesNotExistError
-from ...logic.object_permissions import get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ...logic.errors import ObjectDoesNotExistError
+from ...logic.object_permissions import get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions, get_object_if_user_has_permissions
 from ...logic.shares import get_shares_for_object, add_object_share, update_object_share
 from ...logic.users import get_users, get_users_for_component
 from ...logic.groups import get_group
@@ -40,32 +41,12 @@ def on_unauthorized(object_id: int) -> FlaskResponseT:
     return flask.render_template('objects/unauthorized.html', object_id=object_id, has_grant_user=has_grant_user), 403
 
 
+@cache_per_request()
 def get_object_if_current_user_has_read_permissions(object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
-    user_id = flask_login.current_user.id
-    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        try:
-            permissions = get_user_object_permissions(object_id, user_id)
-            if Permissions.READ not in permissions:
-                return None
-            else:
-                return get_object(object_id)
-        except ObjectDoesNotExistError:
-            return None
-    else:
-        try:
-            component = get_component_by_uuid(component_uuid)
-        except ComponentDoesNotExistError:
-            return None
-        try:
-            object = get_fed_object(object_id, component.id)
-            permissions = get_user_object_permissions(object.id, user_id)
-            if Permissions.READ not in permissions:
-                return None
-        except ObjectDoesNotExistError:
-            return None
-        return object
+    return get_object_if_user_has_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ, object_id=object_id, component_uuid=component_uuid)
 
 
+@cache_per_request()
 def get_fed_object_if_current_user_has_read_permissions(fed_object_id: int, component_uuid: str) -> typing.Optional[Object]:
     user_id = flask_login.current_user.id
     component = get_component_by_uuid(component_uuid)

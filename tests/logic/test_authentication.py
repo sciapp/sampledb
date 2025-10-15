@@ -90,3 +90,16 @@ def test_get_api_tokens(user_id):
     assert authentication.get_api_tokens(user_id)[0].login['description'] == 'Example API Token'
     assert authentication.get_api_tokens(user_id)[0].login['login'] == api_token[:8]
     authentication._validate_password_hash(api_token[8:], authentication.get_api_tokens(user_id)[0].login['bcrypt_hash'])
+
+def test_bcrypt_long_passwords():
+    # bcrypt versions <5.0.0 have silently truncated passwords to a length of
+    # 72 bytes, this checks that this behavior is preserved by SampleDB
+    # wrapper functions, to ensure that old password hashes still work
+    password1 = 'a' * authentication.MAX_BCRYPT_PASSWORD_LENGTH
+    password2 = password1 + 'a' * 10
+    password_hash1 = authentication._hash_password(password=password1)
+    password_hash2 = authentication._hash_password(password=password2)
+    assert authentication._validate_password_hash(password=password1, password_hash=password_hash1)
+    assert authentication._validate_password_hash(password=password1, password_hash=password_hash2)
+    assert authentication._validate_password_hash(password=password2, password_hash=password_hash1)
+    assert authentication._validate_password_hash(password=password2, password_hash=password_hash2)

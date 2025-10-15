@@ -13,6 +13,7 @@ from .. import db
 from . import errors
 from . import actions
 from . import action_types
+from . import components
 from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
 from . import instruments
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
@@ -643,3 +644,26 @@ def request_object_permissions(requester_id: int, object_id: int) -> None:
 
 def copy_permissions(target_object_id: int, source_object_id: int) -> None:
     object_permissions.copy_permissions(source_resource_id=source_object_id, target_resource_id=target_object_id)
+
+
+def get_object_if_user_has_permissions(user_id: int, permissions: Permissions, object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
+    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            if permissions not in get_user_object_permissions(object_id, user_id):
+                return None
+            else:
+                return objects.get_object(object_id)
+        except errors.ObjectDoesNotExistError:
+            return None
+    else:
+        try:
+            component = components.get_component_by_uuid(component_uuid)
+        except errors.ComponentDoesNotExistError:
+            return None
+        try:
+            object = objects.get_fed_object(object_id, component.id)
+            if permissions not in get_user_object_permissions(object.id, user_id):
+                return None
+        except errors.ObjectDoesNotExistError:
+            return None
+        return object

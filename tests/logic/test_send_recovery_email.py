@@ -1,3 +1,4 @@
+import time
 import pytest
 import re
 from bs4 import BeautifulSoup
@@ -6,6 +7,8 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 from sampledb.logic.authentication import add_email_authentication
+
+from ..conftest import wait_for_background_task
 
 
 @pytest.fixture
@@ -47,7 +50,7 @@ def user2(app):
     return user
 
 
-def test_send_recovery_email_no_authentification_method(app, user_without_authentication):
+def test_send_recovery_email_no_authentification_method(app, user_without_authentication, enable_background_tasks):
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
@@ -58,8 +61,17 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
         users.append(user)
 
         # no authentication_method
-        sampledb.logic.utils.send_recovery_email(user.email)
+        _, task = sampledb.logic.utils.send_recovery_email(user.email)
+        assert task is not None
+        assert task.type == 'send_mail'
+        assert task.data['subject'] == "SampleDB Account Recovery"
+        assert 'There is no way to sign in to your SampleDB account' in task.data['html']
 
+        wait_for_background_task(task)
+
+        assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+        app.config['ENABLE_BACKGROUND_TASKS'] = False
         with sampledb.mail.record_messages() as outbox:
             sampledb.logic.utils.send_recovery_email(user.email)
 
@@ -72,7 +84,7 @@ def test_send_recovery_email_no_authentification_method(app, user_without_authen
     app.config['SERVER_NAME'] = server_name
 
 
-def test_send_recovery_email_for_ldap_authentication(app):
+def test_send_recovery_email_for_ldap_authentication(app, enable_background_tasks):
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
         # Send recovery email
@@ -83,6 +95,17 @@ def test_send_recovery_email_for_ldap_authentication(app):
         assert user is not None
         users.append(user)
 
+        _, task = sampledb.logic.utils.send_recovery_email(user.email)
+        assert task is not None
+        assert task.type == 'send_mail'
+        assert task.data['subject'] == "SampleDB Account Recovery"
+        assert 'You can use the {}'.format(app.config['LDAP_NAME']) in task.data['html']
+
+        wait_for_background_task(task)
+
+        assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+        app.config['ENABLE_BACKGROUND_TASKS'] = False
         # email authentication for ldap-user
         with sampledb.mail.record_messages() as outbox:
             sampledb.logic.utils.send_recovery_email(user.email)
@@ -94,7 +117,7 @@ def test_send_recovery_email_for_ldap_authentication(app):
         assert 'You can use the {}'.format(app.config['LDAP_NAME']) in message
 
 
-def test_send_recovery_email_for_email_authentication(app, user):
+def test_send_recovery_email_for_email_authentication(app, user, enable_background_tasks):
     # Send recovery email
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
@@ -103,6 +126,19 @@ def test_send_recovery_email_for_email_authentication(app, user):
         users.append(user)
         users = []
         users.append(user)
+
+        _, task = sampledb.logic.utils.send_recovery_email(user.email)
+
+        assert task is not None
+        assert task.type == 'send_mail'
+        assert task.data['subject'] == 'SampleDB Account Recovery'
+        assert 'click here' in task.data['html']
+
+        wait_for_background_task(task)
+
+        assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+        app.config['ENABLE_BACKGROUND_TASKS'] = False
 
         with sampledb.mail.record_messages() as outbox:
             sampledb.logic.utils.send_recovery_email(user.email)
@@ -114,7 +150,7 @@ def test_send_recovery_email_for_email_authentication(app, user):
         assert 'click here' in message
 
 
-def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, user2):
+def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, user2, enable_background_tasks):
     # Send recovery email
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
@@ -122,6 +158,24 @@ def test_send_recovery_email_multiple_user_with_same_contact_email(app, user, us
         users = []
         users.append(user)
         users.append(user2)
+
+        _, task = sampledb.logic.utils.send_recovery_email(user.email)
+
+        assert task is not None
+        assert task.type == 'send_mail'
+        assert task.data['subject'] == 'SampleDB Account Recovery'
+        assert 'click here' in task.data['html']
+        document = BeautifulSoup(task.data['html'], 'html.parser')
+        for user in users:
+            preference_url = f'localhost/users/{user.id}/preferences'
+            anchors = document.find_all('a', attrs={'href': re.compile(preference_url)})
+            assert len(anchors) == 1
+
+        wait_for_background_task(task)
+
+        assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+        app.config['ENABLE_BACKGROUND_TASKS'] = False
 
         with sampledb.mail.record_messages() as outbox:
             sampledb.logic.utils.send_recovery_email(user.email)

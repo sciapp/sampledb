@@ -4,6 +4,7 @@
 """
 
 from . import authentication
+from . import automatic_schema_updates
 from . import background_tasks
 from . import dataverse_export
 from . import default_permissions
@@ -37,6 +38,7 @@ from .action_translations import ActionTranslation, ActionTypeTranslation
 from .action_permissions import UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from .api_log import APILogEntry, HTTPMethod
 from .authentication import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, SAMLArtifacts, SAMLMetadata, SAMLMetadataType
+from .automatic_schema_updates import UpdatableObjectsCheck, UpdatableObjectsCheckStatus, AutomaticSchemaUpdate, AutomaticSchemaUpdateStatus
 from .background_tasks import BackgroundTask, BackgroundTaskStatus
 from .comments import Comment
 from .components import Component
@@ -83,6 +85,7 @@ from .webhooks import Webhook, WebhookType
 __all__ = [
     'api_log',
     'authentication',
+    'automatic_schema_updates',
     'background_tasks',
     'dataverse_export',
     'default_permissions',
@@ -114,6 +117,8 @@ __all__ = [
     'ActionType',
     'ActionTranslation',
     'ActionTypeTranslation',
+    'AutomaticSchemaUpdate',
+    'AutomaticSchemaUpdateStatus',
     'BackgroundTask',
     'BackgroundTaskStatus',
     'UserActionPermissions',
@@ -189,6 +194,8 @@ __all__ = [
     'SAMLArtifacts',
     'SAMLMetadata',
     'SAMLMetadataType',
+    'UpdatableObjectsCheck',
+    'UpdatableObjectsCheckStatus',
     'User',
     'UserFederationAlias',
     'FederatedIdentity',

@@ -528,6 +528,12 @@ def test_validate_datetime_schema_default():
         'default': '2017-03-31 10:20:30'
     }
     validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'datetime',
+        'default': None
+    }
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_datetime_schema_invalid_default_type():

@@ -2,11 +2,14 @@
 """
 
 """
+import time
 
 import pytest
 import sampledb
 import sampledb.logic
 import sampledb.models
+
+from ..conftest import wait_for_background_task
 
 
 @pytest.fixture
@@ -98,13 +101,23 @@ def test_set_notification_mode(app, user):
     assert sampledb.logic.notifications.get_notification_mode_for_type(sampledb.models.NotificationType.OTHER, user.id) == sampledb.models.NotificationMode.EMAIL
 
 
-def test_send_notification(app, user):
+def test_send_notification(app, user, enable_background_tasks):
     for notification_type in sampledb.models.NotificationType:
         sampledb.logic.notifications.set_notification_mode_for_type(notification_type, user.id, sampledb.models.NotificationMode.EMAIL)
     assert len(sampledb.logic.notifications.get_notifications(user.id)) == 0
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
+
+    with app.app_context():
+        sampledb.logic.notifications.create_other_notification(user.id, 'This is a test message')
+
+    task = sampledb.models.background_tasks.BackgroundTask.query.filter_by(type='send_mail').first()
+    wait_for_background_task(task)
+    assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+    app.config['ENABLE_BACKGROUND_TASKS'] = False
+
     with app.app_context():
         with sampledb.mail.record_messages() as outbox:
             sampledb.logic.notifications.create_other_notification(user.id, 'This is a test message')

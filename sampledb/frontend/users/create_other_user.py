@@ -31,6 +31,10 @@ class CreateOtherUserForm(FlaskForm):
         if not authentication.is_login_available(field.data):
             raise ValidationError(_('This name is already being used.'))
 
+    def validate_password(self, field: PasswordField) -> None:
+        if field.data and len(field.data.encode('utf-8')) > authentication.MAX_BCRYPT_PASSWORD_LENGTH:
+            raise ValidationError(_('The password must be at most %(max_bcrypt_password_length)s bytes long.', max_bcrypt_password_length=authentication.MAX_BCRYPT_PASSWORD_LENGTH))
+
 
 @frontend.route('/users/create_other_user', methods=['GET', 'POST'])
 @flask_login.login_required

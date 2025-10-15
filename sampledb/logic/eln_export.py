@@ -1,15 +1,18 @@
+import base64
 import datetime
 import hashlib
 import json
 import mimetypes
 import os.path
 import typing
+import urllib.parse
 
 import flask
 import minisign
 from flask import url_for
 
-from . import minisign_keys
+from . import minisign_keys, markdown_images
+from .files import File
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
@@ -17,6 +20,8 @@ from .objects import find_object_references
 from .dataverse_export import flatten_metadata, get_title_for_property
 from .datatypes import Quantity
 from .units import get_un_cefact_code_for_unit
+from .users import get_user
+from .. import version
 
 
 def _unpack_single_item_arrays(json_value: typing.Any) -> typing.Any:
@@ -47,7 +52,7 @@ def generate_ro_crate_metadata(
     if object_ids:
         description += " for objects #" + ', #'.join(map(str, sorted(object_ids)))
     ro_crate_metadata: typing.Dict[str, typing.Any] = {
-        "@context": "https://w3id.org/ro/crate/1.1/context",
+        "@context": "https://w3id.org/ro/crate/1.2/context",
         "@graph": [
             {
                 "@type": "CreativeWork",
@@ -57,12 +62,12 @@ def generate_ro_crate_metadata(
                     "@id": "./"
                 },
                 "conformsTo": {
-                    "@id": "https://w3id.org/ro/crate/1.1"
+                    "@id": "https://w3id.org/ro/crate/1.2"
                 },
                 "sdPublisher": {
                     "@id": "SampleDB"
                 },
-                "version": "1.1",
+                "version": "1.2",
                 "dateCreated": date_created
             },
             {
@@ -346,6 +351,13 @@ def generate_ro_crate_metadata(
             else:
                 continue
 
+    if not any(user_info['id'] == user_id for user_info in infos['users']):
+        user = get_user(user_id)
+        infos['users'].append({
+            'id': user_id,
+            'name': user.name,
+            'ordic_id': user.orcid
+        })
     for user_info in infos['users']:
         ro_crate_metadata["@graph"].append({
             "@id": f"./users/{user_info['id']}",
@@ -356,9 +368,90 @@ def generate_ro_crate_metadata(
         if user_info.get('orcid_id'):
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
 
+    ro_crate_metadata["@graph"].append({
+        "@id": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/",
+        "@type": "SoftwareApplication",
+        "url": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/",
+        "name": "SampleDB",
+        "version": version.__version__
+    })
+    ro_crate_metadata["@graph"].append({
+        "@id": "#ro-crate-created",
+        "@type": "CreateAction",
+        "object": {
+            "@id": "./"
+        },
+        "name": "RO-Crate created",
+        "endTime": datetime.date.today().strftime('YYYY-MM-DD'),
+        "agent": {"@id": f"./users/{user_id}"},
+        "instrument": {
+            "@id": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
+        },
+        "actionStatus": {
+            "@id": "http://schema.org/CompletedActionStatus"
+        }
+    })
+
     result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
     result_files['sampledb_export/ro-crate-metadata.json.minisig'] = _sign_ro_crate_metadata(result_files['sampledb_export/ro-crate-metadata.json'])
+    result_files['sampledb_export/ro-crate-preview.html'] = _create_preview_html(user_id, list(exported_object_ids), result_files).encode('utf-8')
     return result_files
+
+
+def _create_preview_html(
+        user_id: int,
+        object_ids: typing.List[int],
+        result_files: typing.Dict[str, bytes]
+) -> str:
+    from ..frontend.markdown_images import IMAGE_FORMATS
+    from ..frontend.pdfexport import create_html_for_pdfexport
+
+    base_url = flask.url_for('.index', _external=True)
+
+    def url_mapper(url: str, exported_files: typing.Dict[typing.Tuple[int, int], File]) -> str:
+        if url.startswith(base_url + 'markdown_images/'):
+            file_name = url[len(base_url + 'markdown_images/'):]
+            image_data = markdown_images.get_markdown_image(file_name, user_id)
+            if image_data is None:
+                return ''
+            file_extension = os.path.splitext(file_name)[1].lower()
+            if file_extension not in IMAGE_FORMATS:
+                return ''
+            result_files['sampledb_export/ro-crate-preview_files/markdown_images/' + file_name] = image_data
+            return 'ro-crate-preview_files/markdown_images/' + file_name
+        if url.startswith(base_url + 'objects/') and '/files/' in url[len(base_url + 'objects/'):]:
+            found_result_file = [
+                file_path[len('sampledb_export/'):]
+                for file_path in result_files
+                if file_path.startswith('sampledb_export/' + url[len(base_url):] + '/')
+            ]
+            if found_result_file:
+                return found_result_file[0]
+            object_id_file_id = url[len(base_url + 'objects/'):]
+            url = ''
+            try:
+                object_id_str, file_id_str = object_id_file_id.split('/files/')
+                object_id = int(object_id_str)
+                file_id = int(file_id_str)
+                file = exported_files[(object_id, file_id)]
+                if file.storage == 'database' and not file.is_hidden:
+                    for file_extension, mime_type in IMAGE_FORMATS.items():
+                        if file.original_file_name.lower().endswith(file_extension):
+                            image_data = file.open(read_only=True).read()
+                            return 'data:' + mime_type + ';base64,' + base64.b64encode(image_data).decode('utf-8')
+            except Exception:
+                pass
+        # only allow Data URLs and URLs via http or https
+        if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
+            return ''
+        return url
+
+    return create_html_for_pdfexport(
+        user_id=user_id,
+        object_ids=object_ids,
+        url_mapper=url_mapper,
+        include_logo=False
+    )
 
 
 def _sign_ro_crate_metadata(

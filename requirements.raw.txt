@@ -3,7 +3,7 @@ beautifulsoup4
 bleach
 CherryPy
 email-validator
-fido2 < 2.0.0
+fido2
 Flask
 Flask-Babel
 Flask-Cors
@@ -28,5 +28,5 @@ pysaml2
 qrcode
 requests
 simple_openid_connect
-SQLAlchemy
+SQLAlchemy==2.0.41
 weasyprint

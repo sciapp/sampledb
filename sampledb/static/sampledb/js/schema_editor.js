@@ -406,6 +406,10 @@ function enableSchemaEditor () {
       return null;
     }
 
+    if (schema.type === 'datetime' && 'default' in schema) {
+      window.schema_editor_missing_type_support = true;
+    }
+
     let node = schemaEditorTemplates.find('.schema-editor-generic-property')[0].cloneNode(true);
     node = $(node);
     node.find('[data-toggle="tooltip"]:not(.disabled)').tooltip();

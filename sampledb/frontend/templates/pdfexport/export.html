@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-{% from 'macros.j2' import import_information_symbol, user_reference %}
+{% from 'macros.j2.html' import import_information_symbol, user_reference %}
 <head>
   <meta charset="UTF-8">
   <title>{{ service_name }} {{ _('Export') }}</title>
@@ -28,25 +28,39 @@
                 width: 1cm;
             }
         }
+        header {
+            display: none;
+        }
+        .logo {
+            display: none;
+        }
+        @media print {
+        {% if config.internal.PDFEXPORT_LOGO_URL and include_logo %}
+            .logo {
+                display: block;
+            }
+        {% endif %}
         article {
             page-break-after: always;
         }
         header {
+            display: block;
             background-repeat: no-repeat;
             background-size: 17mm 17mm;
             background-position: center top;
             position: running(header);
             width: 17.5mm;
-            height:40mm;
-            margin-bottom:-61mm;
-            padding-top:17.5mm;
-            margin-right:-21mm;
+            height: 40mm;
+            margin-bottom: -61mm;
+            padding-top: 17.5mm;
+            margin-right: -21mm;
             hyphens: none;
             text-align: center;
             font-size: 8pt;
             line-height: 1.2;
         }
-        {% if config.internal.PDFEXPORT_LOGO_URL %}
+        }
+        {% if config.internal.PDFEXPORT_LOGO_URL and include_logo %}
           {% set logo_width = config.internal.PDFEXPORT_LOGO_WIDTH %}
           {% set logo_height = logo_width / config.internal.PDFEXPORT_LOGO_ASPECT_RATIO %}
           .logo {
@@ -232,7 +246,7 @@
         {% for file_extension in IMAGE_FORMATS %}
           {% if file.original_file_name.lower().endswith(file_extension) %}
             <h3>{{ _('File') }} #{{ file.id }}: {{ file.title }}</h3>
-            <img src="./object_files/{{ object.id }}/{{ file.id }}" class="object-file-image"/>
+            <img src="{{ url_for('.object_file', object_id=object.id, file_id=file.id) }}" class="object-file-image"/>
           {% endif %}
         {% endfor %}
       {% endif %}

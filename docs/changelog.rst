@@ -1,6 +1,21 @@
 Changelog
 =========
 
+Version 0.32
+------------
+
+Released on October 15th, 2025.
+
+- Improved selection of additional properties to show in object lists
+- Added automatic schema update for administrators
+- Added instrument log entry versions to HTTP API
+- Allow setting default to null for datetime properties
+- Enabled background tasks by default
+- Rerun background tasks that were unable to finish when the SampleDB process is killed
+- Limit new passwords to 72 bytes to match bcrypt length limit
+- Fixed escaping of user and object references
+
+
 Version 0.31.1
 --------------
 
@@ -8,6 +23,7 @@ Released on July 21st, 2025.
 
 - Fixed object location assignment for locations with capacities
 - Updated used version of simple_openid_connect to fix issues with OIDC login
+
 
 Version 0.31
 ------------

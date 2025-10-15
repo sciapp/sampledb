@@ -43,8 +43,19 @@ Available roles:
 - ``is_readonly`` / ``is_not_readonly``
 - ``is_admin`` / ``is_not_admin``
 
+.. raw:: html
+
+   <style>
+     .highlight .err {
+       border: inherit;
+       box-sizing: inherit;
+       color: #777777;
+     }
+   </style>
+
 .. code-block:: json
     :caption: Roles in an ID Token
+    :force:
 
     {
       ...

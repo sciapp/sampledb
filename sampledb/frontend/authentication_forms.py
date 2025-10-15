@@ -12,6 +12,7 @@ from wtforms import StringField, RadioField, PasswordField, SubmitField, Integer
 from wtforms.validators import DataRequired, Length, Email, ValidationError
 
 from .utils import validate_orcid
+from ..logic import authentication
 
 
 class NewUserForm(FlaskForm):
@@ -85,6 +86,10 @@ class AuthenticationForm(FlaskForm):
                 is_valid = False
                 self.description.errors.append(_('Please enter at least 1 character.'))
         return is_valid
+
+    def validate_password(self, field: PasswordField) -> None:
+        if field.data and len(field.data.encode('utf-8')) > authentication.MAX_BCRYPT_PASSWORD_LENGTH:
+            raise ValidationError(_('The password must be at most %(max_bcrypt_password_length)s bytes long.', max_bcrypt_password_length=authentication.MAX_BCRYPT_PASSWORD_LENGTH))
 
 
 class AuthenticationMethodForm(FlaskForm):

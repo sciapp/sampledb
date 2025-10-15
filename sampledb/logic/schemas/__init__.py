@@ -14,7 +14,7 @@ in JSON schema, sampledb schemas can use the following types:
 """
 
 from . import utils, templates, data_diffs
-from .convert_to_schema import convert_to_schema
+from .convert_to_schema import convert_to_schema, is_converting_to_schema_necessary
 from .copy_data import copy_data
 from .data_diffs import apply_diff, calculate_diff
 from .generate_placeholder import generate_placeholder, get_default_data
@@ -30,6 +30,7 @@ __all__ = [
     'data_diffs',
     'generate_placeholder',
     'get_default_data',
+    'is_converting_to_schema_necessary',
     'templates',
     'utils',
     'validate_schema',

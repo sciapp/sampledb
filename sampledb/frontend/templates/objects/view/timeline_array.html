@@ -12,8 +12,7 @@
   <div style="padding-left:2.5em; position: relative">
     <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
     {% if data %}
-      {% set plot_counter.value = plot_counter.value + 1 %}
-      {% set plot_id = id_prefix ~ '_plot' ~ plot_counter.value %}
+      {% set plot_id = (id_prefix ~ '_plot') | get_hash  %}
       <div id="plotly_plot_div_{{ plot_id }}" class="div-timeline-array"></div>
       <div class="checkbox text-center" style="margin-bottom: 1em">
         <label>

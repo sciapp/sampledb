@@ -17,6 +17,8 @@ E-Mail
      - An email address for users to contact
    * - SAMPLEDB_MAIL_SENDER
      - The email address used for outbound emails
+   * - SAMPLEDB_MAIL_REPLY_TO
+     - The email address used for the Reply-To address of outbound emails (default: SAMPLEDB_MAIL_SENDER)
    * - SAMPLEDB_MAIL_SERVER
      - The mail server used for outbound emails
    * - SAMPLEDB_MAIL_PORT
@@ -70,7 +72,7 @@ If you use LDAP for user management, you can use these variables to configure ho
 .. _oidc_configuration:
 
 OpenID Connect (OIDC)
-----
+---------------------
 
 .. list-table:: OIDC Configuration Environment Variables
    :header-rows: 1
@@ -284,7 +286,9 @@ Miscellaneous
    * - Variable Name
      - Description
    * - SAMPLEDB_SERVER_NAME
-     - The server name for Flask. See: https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
+     - The server name for Flask. See: https://flask.palletsprojects.com/en/stable/config/#SERVER_NAME
+   * - SAMPLEDB_PREFERRED_URL_SCHEME
+     - The preferred URL scheme for Flask. See: https://flask.palletsprojects.com/en/stable/config/#PREFERRED_URL_SCHEME
    * - SAMPLEDB_SQLALCHEMY_DATABASE_URI
      - The database URI for SQLAlchemy. See: https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/
    * - SAMPLEDB_SECRET_KEY
