@@ -19,9 +19,11 @@ import typing
 import flask
 
 from ... import db
+from ...utils import ansi_color
 from ...models import BackgroundTask, BackgroundTaskStatus
 from .. import errors
 from .background_dataverse_export import handle_dataverse_export_task
+from .automatic_schema_updates import handle_check_for_automatic_schema_updates_task, handle_perform_automatic_schema_updates_task
 from .send_mail import handle_send_mail_task
 from .poke_components import handle_poke_components_task
 from .trigger_webhooks import handle_trigger_object_log_webhooks, handle_webhook_send
@@ -35,6 +37,8 @@ HANDLERS: typing.Dict[str, typing.Callable[[typing.Dict[str, typing.Any], typing
     'poke_components': handle_poke_components_task,
     'trigger_object_log_webhooks': handle_trigger_object_log_webhooks,
     'webhook_send': handle_webhook_send,
+    'check_for_automatic_schema_updates': handle_check_for_automatic_schema_updates_task,
+    'perform_automatic_schema_updates': handle_perform_automatic_schema_updates_task,
 }
 
 should_stop = False
@@ -75,6 +79,8 @@ def post_background_task(
     :return: the task status and the task object itself
     """
     if flask.current_app.config['ENABLE_BACKGROUND_TASKS']:
+        if flask.current_app.config['TESTING']:
+            auto_delete = False
         task = BackgroundTask(
             type=type,
             auto_delete=auto_delete,
@@ -87,7 +93,7 @@ def post_background_task(
         start_handler_threads(flask.current_app)
         return BackgroundTaskStatus.POSTED, task
     else:
-        return _handle_background_task(type, data, None), None
+        return _handle_background_task(type, data, None)[0], None
 
 
 def start_handler_threads(app: flask.Flask) -> None:
@@ -211,7 +217,8 @@ def _handle_background_tasks(app: flask.Flask, should_delete_expired_tasks: bool
                 task = None
             if task is not None:
                 if _claim_background_task(task):
-                    _set_background_task_status(task, _handle_background_task(task.type, task.data, task.id))
+                    status, result = _handle_background_task(task.type, task.data, task.id)
+                    _set_background_task_status_with_result(task, status, result)
                 else:
                     # another thread might have claimed the task first
                     continue
@@ -246,22 +253,32 @@ def _handle_background_task(
         type: str,
         data: typing.Dict[str, typing.Any],
         task_id: typing.Optional[int]
-) -> BackgroundTaskStatus:
+) -> typing.Tuple[BackgroundTaskStatus, typing.Optional[typing.Dict[str, typing.Any]]]:
     handler = HANDLERS.get(type)
     try:
-        if handler is not None and handler(data, task_id)[0]:
-            return BackgroundTaskStatus.DONE
+        if handler is not None:
+            success, result = handler(data, task_id)
+            if success:
+                return BackgroundTaskStatus.DONE, result
+            else:
+                return BackgroundTaskStatus.FAILED, result
     except Exception:
         print("Exception during handler for task:\n", traceback.format_exc(), file=sys.stderr)
-    return BackgroundTaskStatus.FAILED
+    return BackgroundTaskStatus.FAILED, None
 
 
-def _set_background_task_status(
+def _set_background_task_status_with_result(
         task: BackgroundTask,
-        task_status: BackgroundTaskStatus
+        task_status: BackgroundTaskStatus,
+        result: typing.Optional[typing.Dict[str, typing.Any]]
 ) -> None:
     try:
         task.status = task_status
+        if result is not None:
+            if 'expiration_date' in result:
+                task.expiration_date = result['expiration_date']
+                del result['expiration_date']
+            task.result = result
         if task_status.is_final() and task.auto_delete:
             db.session.delete(task)
         else:
@@ -270,3 +287,19 @@ def _set_background_task_status(
     except Exception:
         # task status could not be updated, no way to recover?
         pass
+
+
+def reset_claimed_background_tasks() -> None:
+    """
+    Resets all currently claimed tasks to being posted.
+
+    This should only be used before the handler threads are started, to allow
+    retrying tasks which had been claimed when the app last ran, but did not
+    finish before it was stopped.
+    """
+    claimed_tasks = BackgroundTask.query.filter_by(status=BackgroundTaskStatus.CLAIMED).all()
+    for task in claimed_tasks:
+        print(ansi_color(f"Resetting background task {task} to POSTED.", color=33), file=sys.stderr)
+        task.status = BackgroundTaskStatus.POSTED
+        db.session.add(task)
+    db.session.commit()

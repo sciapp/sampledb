@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-{% from 'macros.j2' import import_information_symbol, user_reference %}
+{% from 'macros.j2.html' import import_information_symbol, user_reference %}
 <head>
 {% block head %}
   <meta charset="UTF-8">
@@ -199,6 +199,7 @@
               <li><a href="{{ url_for('dashboard.index') }}">{{ _('Monitoring Dashboard') }}</a></li>
               {% endif %}
               <li><a href="{{ url_for('frontend.admin_info_pages') }}">{{ _('Info Pages') }}</a></li>
+              <li><a href="{{ url_for('frontend.automatic_schema_updates') }}">{{ _('Automatic Schema Updates') }}</a></li>
             {% endif %}
           </ul>
         </li>

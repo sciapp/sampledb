@@ -128,3 +128,8 @@ With these files in place, you can start the nginx container:
         nginx
 
 You should now be able to access SampleDB using your domain name and HTTPS.
+
+SampleDB configuration
+----------------------
+
+The nginx location configuration line ``proxy_set_header X-Forwarded-Proto $scheme;`` will automatically set the ``X-Forwarded-Proto`` header to ``https`` for requests made via HTTPS, so that SampleDB will generate replies with HTTPS URLs. To ensure that HTTPS is used for SampleDB URLs in other contexts, you should also set the ``SAMPLEDB_PREFERRED_URL_SCHEME`` :ref:`configuration variable <miscellaneous_config>` to ``https``.

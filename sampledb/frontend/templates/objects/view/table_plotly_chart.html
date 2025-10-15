@@ -1,7 +1,6 @@
 {% if data is not none and 'plotly' in data %}
-  {% set plot_counter.value = plot_counter.value + 1 %}
   {% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
-  {% set plot_id = id_prefix ~ '_plot' ~ plot_counter.value %}
+  {% set plot_id = (id_prefix ~ '_plot') | get_hash  %}
 <div>
   {% if plotly_chart_title %}
     {{ plotly_chart_title }}

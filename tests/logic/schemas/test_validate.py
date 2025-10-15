@@ -427,21 +427,66 @@ def test_validate_quantity_invalid_key():
         validate(instance, schema)
 
 
-# dimensionality is strictly tied to the given unit and its validity, so valid given dimensionality doesn't matter anymore, it will be automatically corrected
-#def test_validate_quantity_invalid_quantity_dimensionality_type():
-#    schema = {
-#        'title': 'Example',
-#        'type': 'quantity',
-#        'units': 'm'
-#    }
-#    instance = {
-#        '_type': 'quantity',
-#        'units': 'm',
-#        'dimensionality': b'[length]',
-#        'magnitude_in_base_units': 1e-3
-#    }
-#    with pytest.raises(ValidationError):
-#        validate(instance, schema)
+def test_validate_quantity_invalid_quantity_dimensionality_type():
+   schema = {
+       'title': 'Example',
+       'type': 'quantity',
+       'units': 'm'
+   }
+   instance = {
+       '_type': 'quantity',
+       'units': 'm',
+       'dimensionality': b'[length]',
+       'magnitude_in_base_units': 1e-3
+   }
+   with pytest.raises(ValidationError):
+       validate(instance, schema)
+
+def test_validate_quantity_invalid_quantity_dimensionality():
+   schema = {
+       'title': 'Example',
+       'type': 'quantity',
+       'units': 'm'
+   }
+   instance = {
+       '_type': 'quantity',
+       'units': 'm',
+       'dimensionality': '[mass]',
+       'magnitude_in_base_units': 1e-3
+   }
+   with pytest.raises(ValidationError):
+       validate(instance, schema)
+
+@pytest.mark.parametrize(
+    ['units', 'dimensionality_str_old', 'dimensionality_str_new'],
+    [
+        ('W', '[length] ** 2 * [mass] / [time] ** 3', '[mass] * [length] ** 2 / [time] ** 3'),
+        ('s', '[time]', '[time]'),
+        ('Hz', '1 / [time]', '1 / [time]'),
+        ('1', 'dimensionless', 'dimensionless'),
+        ('Hz / m / kg', '1 / [length] / [mass] / [time]', '1 / [time] / [length] / [mass]')
+    ]
+)
+def test_validate_quantity_quantity_dimensionality_order(units, dimensionality_str_old, dimensionality_str_new):
+    assert dimensionality_str_new == str(sampledb.logic.units.int_ureg.Unit(units).dimensionality)
+    assert dimensionality_str_old == sampledb.logic.units.get_old_dimensionality(sampledb.logic.units.int_ureg.Unit(units))
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': units
+    }
+    instance = {
+        '_type': 'quantity',
+        'units': units,
+        'magnitude_in_base_units': 1e-3
+    }
+    for dimensionality_str in [
+        dimensionality_str_old,
+        dimensionality_str_new,
+        str(sampledb.logic.units.int_ureg.Unit(units).dimensionality),
+    ]:
+        instance['dimensionality'] = dimensionality_str
+        validate(instance, schema)
 
 
 def test_validate_quantity_invalid_quantity_units_type():

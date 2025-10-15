@@ -25,6 +25,7 @@ from .notifications import create_notification_for_being_referenced_by_object_me
 from .errors import CreatingObjectsDisabledError
 from .utils import cache
 from ..logic.schemas.utils import data_iter
+from .. import db
 
 
 def create_object(
@@ -711,3 +712,12 @@ def get_action_ids_for_object_ids(
     :return: the objects' action IDs
     """
     return Objects.get_action_ids_for_object_ids(object_ids)
+
+
+def get_max_object_id() -> typing.Optional[int]:
+    """
+    Get the maximum object ID.
+
+    :return: the largest existing object ID, or None if no objects exist
+    """
+    return typing.cast(typing.Optional[int], db.session.query(db.func.max(Objects.object_id_column)).scalar())

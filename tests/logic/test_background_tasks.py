@@ -3,8 +3,10 @@ import sampledb.logic.background_tasks
 import sampledb.logic.background_tasks.core
 import time
 
+from ..conftest import wait_for_background_task
 
-def test_background_tasks(app):
+
+def test_background_tasks(app, enable_background_tasks):
     handler_call_args = []
     def test_handler(data, task_id):
         handler_call_args.append(data)
@@ -37,12 +39,7 @@ def test_background_tasks(app):
     assert task_status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.POSTED
     assert task is not None
     # give the background task time to be processed
-    for _ in range(5):
-        db.session.refresh(task)
-        if task.status in (sampledb.logic.background_tasks.core.BackgroundTaskStatus.DONE, sampledb.logic.background_tasks.core.BackgroundTaskStatus.FAILED):
-            break
-        time.sleep(0.1)
-    task = sampledb.logic.background_tasks.core.get_background_task(task.id)
+    wait_for_background_task(task)
     assert task.status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.DONE
     assert handler_call_args == [
         {'value': 1},
@@ -50,8 +47,50 @@ def test_background_tasks(app):
         {'value': 3}
     ]
 
-    # other tests should proceed with background tasks off, but that way the
-    # handler threads would not be stopped later on, so they need to be
-    # stopped now
-    sampledb.logic.background_tasks.stop_handler_threads(app)
-    app.config['ENABLE_BACKGROUND_TASKS'] = False
+
+def test_background_tasks_result_success(enable_background_tasks):
+    def test_handler_success(data, task_id):
+        return True, {'result': 'success'}
+
+    sampledb.logic.background_tasks.core.HANDLERS['test'] = test_handler_success
+
+    task_status, task = sampledb.logic.background_tasks.post_background_task('test', {}, False)
+    assert task_status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.POSTED
+    assert task is not None
+
+    wait_for_background_task(task)
+
+    assert task.status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.DONE
+    assert task.result == {'result': 'success'}
+
+
+def test_background_tasks_result_failed(enable_background_tasks):
+    def test_handler_fails(data, task_id):
+        return False, {'result': 'failed'}
+
+    sampledb.logic.background_tasks.core.HANDLERS['test'] = test_handler_fails
+
+    task_status, task = sampledb.logic.background_tasks.post_background_task('test', {'value': 1}, False)
+    assert task_status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.POSTED
+    assert task is not None
+
+    wait_for_background_task(task)
+
+    assert task.status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.FAILED
+    assert task.result == {'result': 'failed'}
+
+
+def test_background_tasks_result_exception(enable_background_tasks):
+    def test_handler_exception(data, task_id):
+        raise Exception('test exception')
+
+    sampledb.logic.background_tasks.core.HANDLERS['test'] = test_handler_exception
+
+    task_status, task = sampledb.logic.background_tasks.post_background_task('test', {'value': 1}, False)
+    assert task_status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.POSTED
+    assert task is not None
+
+    wait_for_background_task(task)
+
+    assert task.status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.FAILED
+    assert task.result is None

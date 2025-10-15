@@ -2,6 +2,7 @@
 """
 
 """
+import time
 import re
 import requests
 import pytest
@@ -9,6 +10,8 @@ from bs4 import BeautifulSoup
 
 import sampledb
 import sampledb.models
+
+from ..conftest import wait_for_background_task
 
 
 @pytest.fixture
@@ -42,7 +45,7 @@ def test_login_failed_link_to_change_password_will_appear(flask_server):
     assert document.find('a', {'href': '/users/me/preferences'}) is not None
 
 
-def test_recovery_email_send_no_authentication_method_exists(flask_server, user_without_authentication):
+def test_recovery_email_send_no_authentication_method_exists(flask_server, user_without_authentication, app, enable_background_tasks):
     user = user_without_authentication
     session = requests.session()
 
@@ -55,6 +58,18 @@ def test_recovery_email_send_no_authentication_method_exists(flask_server, user_
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
     #  send recovery email
+    r = session.post(url, {
+        'email': 'example1@example.com',
+        'csrf_token': csrf_token
+    })
+    assert r.status_code == 200
+
+    task = sampledb.models.BackgroundTask.query.filter_by(type="send_mail").first()
+    assert task is not None
+    wait_for_background_task(task)
+    assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+    app.config['ENABLE_BACKGROUND_TASKS'] = False
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {
             'email': 'example1@example.com',
@@ -68,7 +83,7 @@ def test_recovery_email_send_no_authentication_method_exists(flask_server, user_
     assert 'There is no way to sign in to your SampleDB account' in message
 
 
-def test_new_password_send(flask_server, user):
+def test_new_password_send(flask_server, user, app, enable_background_tasks):
     session = requests.session()
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url)
@@ -78,6 +93,18 @@ def test_new_password_send(flask_server, user):
 
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
+
+    r = session.post(url, {
+        'email': 'example@example.com',
+        'csrf_token': csrf_token
+    })
+
+    task = sampledb.models.BackgroundTask.query.filter_by(type="send_mail").first()
+    assert task is not None
+    wait_for_background_task(task)
+    assert task.status == sampledb.models.BackgroundTaskStatus.DONE
+
+    app.config['ENABLE_BACKGROUND_TASKS'] = False
     #  send recovery email
     with sampledb.mail.record_messages() as outbox:
         r = session.post(url, {

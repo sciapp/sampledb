@@ -21,6 +21,7 @@ from flask_login import current_user
 
 from . import datatypes
 from . import languages
+from .units import get_old_dimensionality
 from .utils import get_translated_text, get_postgres_timezone_alias
 from ..models import Objects
 from ..models.files import File
@@ -49,7 +50,10 @@ def float_operator_greater_than_equals(left: typing.Any, right: typing.Any) -> t
 def quantity_binary_operator(db_obj: typing.Any, other: datatypes.Quantity, operator: typing.Callable[[typing.Any, typing.Any], typing.Any]) -> typing.Any:
     return db.and_(
         db_obj['_type'].astext == 'quantity',
-        db_obj['dimensionality'].astext == str(other.dimensionality),
+        db.or_(
+            db_obj['dimensionality'].astext == str(other.dimensionality),
+            db_obj['dimensionality'].astext == get_old_dimensionality(other.units),
+        ),
         operator(db_obj['magnitude_in_base_units'].astext.cast(db.Float), other.magnitude_in_base_units)
     )
 
@@ -80,14 +84,20 @@ def quantity_between(db_obj: typing.Any, left: datatypes.Quantity, right: dataty
     if including:
         return db.and_(
             db_obj['_type'].astext == 'quantity',
-            db_obj['dimensionality'].astext == str(left.dimensionality),
+            db.or_(
+                db_obj['dimensionality'].astext == str(left.dimensionality),
+                db_obj['dimensionality'].astext == get_old_dimensionality(left.units),
+            ),
             db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 + db.func.sign(db_obj['magnitude_in_base_units'].astext.cast(db.Float)) * EPSILON) >= left.magnitude_in_base_units,
             db_obj['magnitude_in_base_units'].astext.cast(db.Float) * (1 - db.func.sign(db_obj['magnitude_in_base_units'].astext.cast(db.Float)) * EPSILON) <= right.magnitude_in_base_units
         )
     else:
         return db.and_(
             db_obj['_type'].astext == 'quantity',
-            db_obj['dimensionality'].astext == str(left.dimensionality),
+            db.or_(
+                db_obj['dimensionality'].astext == str(left.dimensionality),
+                db_obj['dimensionality'].astext == get_old_dimensionality(left.units),
+            ),
             db_obj['magnitude_in_base_units'].astext.cast(db.Float) > left.magnitude_in_base_units,
             db_obj['magnitude_in_base_units'].astext.cast(db.Float) < right.magnitude_in_base_units
         )
@@ -292,8 +302,12 @@ def _has_file(db_obj: typing.Any, file_filter: db.ColumnElement[bool]) -> typing
             )
         ) == 0
     ).subquery()
+    if hasattr(db_obj, 'object_id_column'):
+        object_id_column = db_obj.object_id_column
+    else:
+        object_id_column = Objects.object_id_column
     return db.and_(
-        Objects.object_id_column == matching_files.c.object_id,
+        object_id_column == matching_files.c.object_id,
     )
 
 

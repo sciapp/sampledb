@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-05-20 12:59+0200\n"
+"POT-Creation-Date: 2025-10-02 15:42+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -144,6 +144,10 @@ msgstr "Bitte geben Sie mindestens 1 Zeichen ein."
 
 msgid "Please enter at least 3 characters."
 msgstr "Bitte geben Sie mindestens 3 Zeichen ein."
+
+#, python-format
+msgid "The password must be at most %(max_bcrypt_password_length)s bytes long."
+msgstr "Das Passwort darf höchstens %(max_bcrypt_password_length)s Byte lang sein."
 
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
@@ -1171,6 +1175,34 @@ msgstr "Unbenannte Kategorie"
 msgid "Unnamed Project Group"
 msgstr "Unbenannte Projektgruppe"
 
+msgid "Invalid action ID."
+msgstr "Ungültige Aktions-ID."
+
+msgid ""
+"An updatable objects check has been started. Please refresh this page in "
+"a few minutes."
+msgstr ""
+"Eine Prüfung auf aktualisierbare Objekte wurde gestartet. Bitte laden Sie"
+" diese Seite in ein paar Minuten neu."
+
+msgid "Another updatable objects check is already in progress."
+msgstr "Eine andere Prüfung auf aktualisierbare Objekte läuft bereits."
+
+msgid ""
+"An automatic schema update has been started. Please refresh this page in "
+"a few minutes."
+msgstr ""
+"Eine automatische Schema-Aktualisierung wurde gestartet. Bitte laden Sie "
+"diese Seite in ein paar Minuten neu."
+
+msgid ""
+"Without enabling the setting \"Use Admin Permissions\" in your "
+"preferences, you will not be able to update all updatable objects."
+msgstr ""
+"Ohne die Einstellung \"Administratorrechte verwenden\" in Ihren "
+"Einstellungen zu aktivieren, werden Sie nicht alle aktualisierbaren "
+"Objekte aktualisieren können."
+
 msgid "File stored in other database is not available."
 msgstr "Datei aus anderer Datenbank ist nicht verfügbar."
 
@@ -1402,9 +1434,6 @@ msgstr "action_ids und action dürfen nicht beide gesetzt sein."
 
 msgid "Unable to parse action IDs."
 msgstr "Aktions-IDs konnten nicht geparst werden."
-
-msgid "Invalid action ID."
-msgstr "Ungültige Aktions-ID"
 
 msgid "Unable to parse instrument IDs."
 msgstr "Instrument-ID konnte nicht geparst werden."
@@ -1740,6 +1769,9 @@ msgstr "Monitoring Dashboard"
 msgid "Info Pages"
 msgstr "Infoseiten"
 
+msgid "Automatic Schema Updates"
+msgstr "Automatische Schema-Aktualisierungen"
+
 #, python-format
 msgid ""
 "You will be signed out after %(idle_sign_out_minutes)s minutes of "
@@ -1966,9 +1998,6 @@ msgstr "Bitte geben Sie eine gültige E-Mail-Adresse ein."
 msgid "Password"
 msgstr "Passwort"
 
-msgid "Please enter a password with at least 3 characters."
-msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
-
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
 
@@ -2101,6 +2130,12 @@ msgstr "ausstehend"
 
 msgid "Revoke Invitation"
 msgstr "Einladung widerrufen"
+
+msgid "Unknown User"
+msgstr "Unbekannter Nutzer"
+
+msgid "Signed by"
+msgstr "Signiert von"
 
 msgid "Mobile File Upload"
 msgstr "Smartphone-Upload"
@@ -2694,9 +2729,6 @@ msgstr "Authentifizierungsmethode hinzufügen"
 
 msgid "Type"
 msgstr "Typ"
-
-msgid "The password must be at least 3 characters long."
-msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
 #, python-format
 msgid ""
@@ -3935,6 +3967,156 @@ msgstr "Nach Themen filtern"
 msgid "Clear"
 msgstr "Leeren"
 
+msgid "Updatable Objects"
+msgstr "Aktualisierbare Objekte"
+
+msgid "Automatically Updatable Objects"
+msgstr "Automatisch Aktualisierbare Objekte"
+
+msgid "Start Schema Updates"
+msgstr "Schema-Aktualisierung starten"
+
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgid "Deselect all"
+msgstr "Alle abwählen"
+
+msgid "Missing permissions."
+msgstr "Fehlende Berechtigungen."
+
+msgid "New object version."
+msgstr "Neue Objektversion."
+
+msgid ""
+"No automatically updatable objects were found during the most recent "
+"check for updatable objects."
+msgstr ""
+"Während der letzten Prüfung auf aktualisierbare Objekte wurden keine "
+"automatisch aktualisierbaren Objekte gefunden."
+
+msgid "Manually Updatable Objects"
+msgstr "Manuell Aktualisierbare Objekte"
+
+msgid "Update Schema"
+msgstr "Schema aktualisieren"
+
+msgid ""
+"No objects requiring a manual schema update were found during the most "
+"recent check for updatable objects."
+msgstr ""
+"Während der letzten Prüfung auf aktualisierbare Objekte wurden keine "
+"Objekte gefunden, die eine manuelle Schema-Aktualisierung benötigen."
+
+msgid ""
+"Administrators can use automatic schema updates to update the schemas of "
+"all objects which do not need any changes to their data to match the "
+"current schema of their action."
+msgstr ""
+"Administratoren können automatische Schema-Aktualisierungen nutzen, um "
+"die Schemata von allen Objekten zu aktualisieren, deren Daten nicht "
+"verändert werden müssen, um dem aktuellen Schema der jeweiligen Aktion zu"
+" entsprechen."
+
+#, python-format
+msgid ""
+"%(service_name)s is currently checking for objects that can have their "
+"schemas updated automatically. This may take a few minutes."
+msgstr ""
+"%(service_name)s prüft gerade auf Objekte, deren Schema automatisch "
+"aktualisiert werden kann. Dies kann mehrere Minuten dauern."
+
+#, python-format
+msgid ""
+"To be able to perform automatic schema updates, %(service_name)s can "
+"check for objects that can have their schemas updated automatically. This"
+" may take a few minutes."
+msgstr ""
+"Um auf automatische Schema-Aktualisierungen zu prüfen, kann "
+"%(service_name)s nach Objekten suchen, deren Schema automatisch "
+"aktualisiert werden kann. Dies kann mehrere Minuten dauern."
+
+msgid "Check for Updatable Objects"
+msgstr "Auf aktualisierbare Objekte prüfen"
+
+#, python-format
+msgid ""
+"%(service_name)s will check for objects that can have their schemas "
+"updated automatically. This may take a few minutes."
+msgstr ""
+"%(service_name)s wird prüfen, ob es Objekte gibt, deren Schema "
+"automatisch aktualisiert werden kann. Dies kann mehrere Minuten dauern."
+
+msgid "Filter by Action"
+msgstr "Nach Aktion filtern"
+
+msgid "All actions"
+msgstr "Alle Aktionen"
+
+msgid "All Actions"
+msgstr "Alle Aktionen"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Updatable Object Check"
+msgstr "Prüfung auf Aktualisierbare Objekte"
+
+msgid "Automatic Schema Update"
+msgstr "Automatische Schema-Aktualisierung"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Updated Objects"
+msgstr "Aktualisierte Objekte"
+
+msgid "Automatic"
+msgstr "Automatisch"
+
+msgid "Manual"
+msgstr "Manuell"
+
+msgid "Success"
+msgstr "Erfolg"
+
+msgid "Failure"
+msgstr "Fehler"
+
+msgid "Done"
+msgstr "Erledigt"
+
+msgid "Starting"
+msgstr "Startet"
+
+msgid "Update Schemas"
+msgstr "Schemata aktualisieren"
+
+#, python-format
+msgid "%(num_objects)d objects were updated successfully."
+msgstr "%(num_objects)d Objekte wurden erfolgreich aktualisiert."
+
+#, python-format
+msgid "%(num_objects)d objects could not be updated."
+msgstr "%(num_objects)d Objekte konnten nicht aktualisiert werden."
+
+msgid "Reload Page"
+msgstr "Seite neuladen"
+
+msgid ""
+"The status of a check for automatically updatable objects has changed. "
+"Please reload the page."
+msgstr ""
+"Der Status einer Prüfung auf automatisch aktualisierbare Objekte hat sich"
+" verändert. Bitte laden Sie die Seite neu."
+
+msgid ""
+"The status of an automatic schema update has changed. Please reload the "
+"page."
+msgstr ""
+"Der Status einer automatischen Schema-Aktualisierung hat sich verändert. "
+"Bitte laden Sie die Seite neu."
+
 msgid "Background Tasks"
 msgstr "Hintergrund-Aufgaben"
 
@@ -3953,9 +4135,6 @@ msgid "Some tasks will be deleted automatically once they are completed or fail.
 msgstr ""
 "Manche Aufgaben werden automatisch gelöscht, sobald Sie abgeschlossen "
 "oder fehlgeschlagen sind."
-
-msgid "Status"
-msgstr "Status"
 
 msgid "Data"
 msgstr "Daten"
@@ -4082,9 +4261,6 @@ msgstr "Widerrufen"
 #, python-format
 msgid "Removes the federated identity with %(username)s permanently."
 msgstr "Entfernt die föderierte Identität mit %(username)s endgültig."
-
-msgid "Signed by"
-msgstr "Signiert von"
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -5087,9 +5263,6 @@ msgstr ""
 "Wählen Sie aus, welche Eigenschaften nach %(dataverse_name)s exportiert "
 "werden sollen."
 
-msgid "Select all"
-msgstr "Alle auswählen"
-
 msgid "Unselect all"
 msgstr "Alle abwählen"
 
@@ -5487,15 +5660,6 @@ msgstr "Nach Aktionstyp filtern"
 
 msgid "All action types"
 msgstr "Alle Aktionstypen"
-
-msgid "Filter by Action"
-msgstr "Nach Aktion filtern"
-
-msgid "All actions"
-msgstr "Alle Aktionen"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
 
 msgid "Filter by Instrument"
 msgstr "Nach Instrument filtern"
@@ -5962,6 +6126,9 @@ msgstr "Version #%(version_id)s"
 msgid "Show Changes"
 msgstr "Änderungen anzeigen"
 
+msgid "Tools"
+msgstr "Werkzeuge"
+
 msgid "Workflow"
 msgstr "Workflow"
 
@@ -6019,9 +6186,6 @@ msgstr "Objekt bearbeiten"
 
 msgid "Update the schema for the information for this object."
 msgstr "Das Schema für die Informationen für dieses Objekt aktualisieren."
-
-msgid "Update Schema"
-msgstr "Schema aktualisieren"
 
 msgid ""
 "Modify who can read the information for this object, write it or grant "
@@ -6373,9 +6537,6 @@ msgstr "Bitte geben Sie eine gültige DOI ein."
 
 msgid "Link Publication"
 msgstr "Publikation verknüpfen"
-
-msgid "Unknown User"
-msgstr "Unbekannter Nutzer"
 
 msgid "There are no comments for this object."
 msgstr "Es gibt keine Kommentare für dieses Objekt."
@@ -6730,6 +6891,9 @@ msgstr ""
 "Diese .eln-Datei wurde von <a href=\"%(signed_by)s\">%(signed_by)s</a> "
 "signiert."
 
+msgid "Loading related objects..."
+msgstr "Zugehörige Objekte werden geladen..."
+
 msgid ""
 "The schema for this object is out-of-date and the action it was created "
 "with has a new schema available. Do you want to use the new schema?"
@@ -6775,6 +6939,9 @@ msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
 #, python-format
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
+
+msgid "Failed to load related objects."
+msgstr "Die zugehörigen Objekte konnten nicht geladen werden."
 
 msgid "hide plot"
 msgstr "Plot ausblenden"
@@ -7803,6 +7970,18 @@ msgstr "Importierter Nutzer"
 #, python-format
 msgid "Federated login is disabled for %(service_name)s."
 msgstr "Die föderierte Anmeldung ist für %(service_name)s deaktiviert."
+
+#, python-format
+msgid "Modified properties: %(property_paths)s."
+msgstr "Veränderte Eigenschaften: %(property_paths)s."
+
+#, python-format
+msgid "Added properties: %(property_paths)s."
+msgstr "Hinzugefügte Eigenschaften: %(property_paths)s."
+
+#, python-format
+msgid "Removed properties: %(property_paths)s."
+msgstr "Entfernte Eigenschaften: %(property_paths)s."
 
 #, python-format
 msgid ""

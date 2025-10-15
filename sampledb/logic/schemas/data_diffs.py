@@ -225,10 +225,12 @@ def _compare_generic_data(
 def _apply_generic_diff(
         data_before: typing.Any,
         data_diff: GenericDiff,
-        schema_before: typing.Optional[typing.Dict[str, typing.Any]]
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]],
+        *,
+        validate_data_before: bool = True
 ) -> typing.Any:
     if '_before' in data_diff:
-        if data_diff['_before'] is not None and schema_before is not None:
+        if data_diff['_before'] is not None and schema_before is not None and validate_data_before:
             try:
                 validate(data_diff['_before'], schema_before)
             except Exception:
@@ -290,7 +292,7 @@ def apply_diff(
             raise errors.DiffMismatchError()
         return _apply_object_diff(data_before, typing.cast(ObjectDiff, data_diff), schema_before)
     if diff_type is GenericDiff:
-        return _apply_generic_diff(data_before, typing.cast(GenericDiff, data_diff), schema_before)
+        return _apply_generic_diff(data_before, typing.cast(GenericDiff, data_diff), schema_before, validate_data_before=validate_data_before)
     return VALUE_NOT_SET
 
 
@@ -341,3 +343,28 @@ def invert_diff(
             inverted_data_diff['_before'] = generic_diff['_after']
         return inverted_data_diff
     return None
+
+
+def iter_diff(
+        data_diff: typing.Optional[DataDiff],
+        property_path: typing.Sequence[typing.Union[int, str]] = ()
+) -> typing.Generator[typing.Tuple[typing.Sequence[typing.Union[int, str]], GenericDiff], None, None]:
+    diff_type = _guess_type_of_diff(data_diff)
+    if diff_type is None:
+        return
+    if diff_type is ArrayDiff:
+        array_diff = typing.cast(ArrayDiff, data_diff)
+        for index, item_diff in enumerate(array_diff):
+            yield from iter_diff(item_diff, tuple(property_path) + (index,))
+    if diff_type is ArrayIndexDiff:
+        array_index_diff = typing.cast(ArrayIndexDiff, data_diff)
+        for index_info, item_diff in array_index_diff.items():
+            yield from iter_diff(item_diff, tuple(property_path) + (index_info,))
+    if diff_type is ObjectDiff:
+        object_diff = typing.cast(ObjectDiff, data_diff)
+        for property_name, property_diff in object_diff.items():
+            yield from iter_diff(property_diff, tuple(property_path) + (property_name,))
+        return
+    if diff_type is GenericDiff:
+        yield property_path, typing.cast(GenericDiff, data_diff)
+    return

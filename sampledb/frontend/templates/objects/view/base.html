@@ -20,6 +20,7 @@
   <nav>
     <ul>
       <li><a href="#information">{{ _('Information') }}</a></li>
+      <li><a href="#tools">{{ _('Tools') }}</a></li>
       {% if workflow_view_modals %}
         {% if not only_empty_workflows %}
           <li><a href="#workflow_views">_('Workflow Views')</a></li>
@@ -97,9 +98,6 @@
     </div>
   </div>
   {% block includes %}
-      {# counter for plotly_chart_plots #}
-      {% set plot_counter = namespace(value=0) %}
-      {% set object_reference_counter = namespace(value=0) %}
       {% set indent_level = 0 %}
       {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
@@ -123,7 +121,7 @@
       </div>
     </div>
   {% endif %}
-  <div class="object-button-bar">
+  <div class="object-button-bar" id="tools">
     {% if object_languages | length > 1 %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _("View object information in a different language.") }}">
@@ -320,9 +318,6 @@
           <button class="btn btn-default btn-xs expand-all-button" data-collapse-group-id="{{ workflow_id }}"><i class="fa fa-plus-square-o"></i> {{ _('Expand All') }}</button>
           <button class="btn btn-default btn-xs collapse-all-button" data-collapse-group-id="{{ workflow_id }}"><i class="fa fa-minus-square-o"></i> {{ _('Collapse All') }}</button>
         </div>
-        {# counter for plotly_chart_plots #}
-        {% set plot_counter = namespace(value=0) %}
-        {% set object_reference_counter = namespace(value=0) %}
         {% for elem in workflow %}
           {% set wfpath_object = namespace(name=name, id=object_id) %}
           <div>
@@ -1686,53 +1681,11 @@
     {% endif %}
   {% endif %}
 
-  {% if not is_archived and related_objects_subtrees and action is not none and action.type.enable_related_objects %}
+  {% if not is_archived and action is not none and action.type.enable_related_objects %}
     <h2 id="related_objects">{{ _('Related Objects') }}</h2>
 
     <div class="related-objects">
-    </div>
-  {% endif %}
-  {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
-    <div class="hidden"  id="related-objects-entries" data-sampledb-root-object-index="{{ related_objects_index_by_object_ref[object_ref] }}">
-    {% for current_object_ref, subtree in related_objects_subtrees.items() %}
-      {% set referenced_objects = [] %}
-      {% for referenced_object_ref in subtree.referenced_objects %}
-        {% do referenced_objects.append(related_objects_index_by_object_ref[referenced_object_ref]) %}
-      {% endfor %}
-      {% set referencing_objects = [] %}
-      {% for referencing_object_ref in subtree.referencing_objects %}
-        {% do referencing_objects.append(related_objects_index_by_object_ref[referencing_object_ref]) %}
-      {% endfor %}
-      {% set object = related_object_by_object_ref.get(current_object_ref) %}
-      {% set object_name = object.name | get_translated_text('–') if object is not none and object.name is not none else '–' %}
-      {% set object_id = current_object_ref.object_id or '–' %}
-      <span id="related-objects-entry-{{ related_objects_index_by_object_ref[current_object_ref] }}" data-sampledb-object-index="{{ related_objects_index_by_object_ref[current_object_ref] }}" data-sampledb-referenced-objects="{{ referenced_objects | tojson }}" data-sampledb-referencing-objects="{{ referencing_objects | tojson }}" {% if current_object_ref.is_local %}data-sampledb-is-local="true" data-sampledb-object-name="{{ object_name }}" data-sampledb-object-id="{{ object.object_id }}"{% endif %}>
-        {% if current_object_ref.is_local %}
-          <a href="{{ url_for('.object', object_id=current_object_ref.object_id) }}">{{ object_name }} &bullet; #{{ current_object_ref.object_id }}</a>
-          {% if object is not none %}
-            {{ import_information_symbol(object) }}
-          {% endif %}
-        {% elif current_object_ref.component_uuid is not none %}
-          {% if current_object_ref.component_uuid != config['FEDERATION_UUID'] %}
-            {% set object_ref = FederationObjectRef(fed_id=current_object_ref.object_id, component_uuid=current_object_ref.component_uuid) %}
-            #{{ current_object_ref.object_id }} @ {{ object_ref.component.get_name() }}
-            {{ import_information_symbol(object_ref) }}
-          {% else %}
-            <a href="{{ url_for('frontend.object', object_id=current_object_ref.object_id) }}">#{{  current_object_ref.object_id }}</a>
-          {% endif %}
-        {% else %}
-          {% if current_object_ref.eln_object_url %}
-            <a href="{{ current_object_ref.eln_object_url }}">
-          {% endif %}
-          {{ _('Object') }} #{{ current_object_ref.object_id }} @
-          {% if not current_object_ref.eln_object_url %}
-            <a href="{{ current_object_ref.eln_source_url }}">
-          {% endif %}
-          {{ current_object_ref.eln_source_url }}
-          </a>
-        {% endif %}
-      </span>
-    {% endfor %}
+      <i class="fa fa-spinner fa-pulse fa-2x fa-fw" data-toggle="tooltip" title="{{ _('Loading related objects...') }}" data-placement="right"></i>
     </div>
   {% endif %}
 
@@ -1809,14 +1762,15 @@
               </div>
             </div>
 
-            {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
+            {% if action is not none and action.type.enable_related_objects %}
             <strong>{{ _('Objects') }}</strong>
             <div class="related-objects">
+              <i class="fa fa-spinner fa-pulse fa-2x fa-fw" data-toggle="tooltip" title="{{ _('Loading related objects...') }}" data-placement="right"></i>
             </div>
             {% endif %}
           </div>
           <div class="modal-footer">
-            {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
+            {% if action is not none and action.type.enable_related_objects %}
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">{{ _('Select All') }}</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">{{ _('Deselect All') }}</button>
             {% endif %}
@@ -1936,7 +1890,8 @@
   {% do set_template_value("user_may_comment", user_may_comment and action is not none and action.type.enable_comments) %}
   {% do set_template_value("user_may_upload_files", user_may_upload_files) %}
   {% do set_template_value("has_object_log_entries", (object_log_entries and action is not none and action.type.enable_activity_log) | bool) %}
-  {% do set_template_value("has_related_objects_tree", (related_objects_subtrees and action is not none and action.type.enable_related_objects) | bool) %}
+  {% do set_template_value("has_related_objects_tree", (action is not none and action.type.enable_related_objects) | bool) %}
+  {% do set_template_value("related_objects_entries_url", url_for('.related_objects_entries', object_id=object_id)) %}
   {% do set_template_value("show_download_service", (show_download_service and action is not none and action.type is not none and action.type.enable_files and files) | bool) %}
   {% do set_template_value("translations.select_responsible_user_or_location", _("Please select one responsible user or one location")) %}
   {% do set_template_value("translations.files_selected", _('files selected')) %}
@@ -1947,6 +1902,7 @@
   {% do set_template_value("translations.referenced_relationship_text", _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name='OBJECT_NAME_PLACEHOLDER', object_id='OBJECT_ID_PLACEHOLDER')) %}
   {% do set_template_value("translations.referencing_relationship_text", _('References %(object_name)s (#%(object_id)s) in its metadata', object_name='OBJECT_NAME_PLACEHOLDER', object_id='OBJECT_ID_PLACEHOLDER')) %}
   {% do set_template_value("translations.include_object_in_export", _('Include #%(object_id)s in Export', object_id='OBJECT_ID_PLACEHOLDER')) %}
+  {% do set_template_value("translations.failed_to_load_related_objects", _('Failed to load related objects.')) %}
 
   {{ super() }}
 {% endblock %}

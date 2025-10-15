@@ -22,6 +22,7 @@ from ...logic import object_log, comments, errors
 from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_user_action_permissions
+from ...logic.caching import cache_per_request
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
 from ...logic.object_relationships import get_workflow_references
@@ -439,53 +440,16 @@ def object(object_id: int) -> FlaskResponseT:
         "only_empty_workflows": all(len(workflow) == 0 for workflow in workflows),
     })
 
-    # related objects tree
-    if action and action.type and action.type.enable_related_objects:
-        related_objects_subtrees = logic.object_relationships.gather_related_object_subtrees(object_id)
-        related_object_refs_by_object_id = {}
-        for object_ref in related_objects_subtrees:
-            if object_ref.is_local:
-                related_object_refs_by_object_id[object_ref.object_id] = object_ref
-        related_object_ids = set(related_object_refs_by_object_id)
-        related_objects = logic.object_permissions.get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ,
-            object_ids=tuple(related_object_ids),
-            name_only=True
-        )
-        related_object_by_object_ref = {
-            related_object_refs_by_object_id[related_object.object_id]: related_object
-            for related_object in related_objects
-        }
-        related_objects_object_refs = list(related_objects_subtrees)
-        related_objects_index_by_object_ref = {
-            object_ref: index
-            for index, object_ref in enumerate(related_objects_object_refs)
-        }
-    else:
-        related_objects_subtrees = None
-        related_object_by_object_ref = None
-        related_objects_object_refs = None
-        related_objects_index_by_object_ref = None
-    template_kwargs.update({
-        "related_objects_subtrees": related_objects_subtrees,
-        "related_object_by_object_ref": related_object_by_object_ref,
-        "object_ref": logic.object_relationships.ObjectRef(object_id=object_id, component_uuid=None, eln_object_url=None, eln_source_url=None),
-        "related_objects_object_refs": related_objects_object_refs,
-        "related_objects_index_by_object_ref": related_objects_index_by_object_ref
-    })
-
     # various getters
     template_kwargs.update({
-        "get_object": get_object,
         "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
         "get_fed_object_if_current_user_has_read_permissions": get_fed_object_if_current_user_has_read_permissions,
-        "get_user": get_user_if_exists,
-        "get_location": get_location,
+        "get_user": cache_per_request()(get_user_if_exists),
+        "get_location": cache_per_request()(get_location),
         "get_object_location_assignment": get_object_location_assignment,
         "get_project": get_project_if_it_exists,
-        "get_action_type": get_action_type,
-        "get_component": get_component,
+        "get_action_type": cache_per_request()(get_action_type),
+        "get_component": cache_per_request()(get_component),
         "get_shares_for_object": get_shares_for_object,
     })
 
@@ -510,6 +474,47 @@ def object(object_id: int) -> FlaskResponseT:
             template_mode="view",
             **template_kwargs
         )
+
+
+@frontend.route('/objects/<int:object_id>/related_objects_entries')
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+def related_objects_entries(object_id: int) -> FlaskResponseT:
+    object = get_object(object_id)
+    if object.action_id is None:
+        return flask.abort(404)
+    action = get_action(object.action_id)
+    if not action or not action.type or not action.type.enable_related_objects:
+        return flask.abort(404)
+    related_objects_subtrees = logic.object_relationships.gather_related_object_subtrees(object_id)
+    related_object_refs_by_object_id = {}
+    for object_ref in related_objects_subtrees:
+        if object_ref.is_local:
+            related_object_refs_by_object_id[object_ref.object_id] = object_ref
+    related_object_ids = set(related_object_refs_by_object_id)
+    related_objects = logic.object_permissions.get_objects_with_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        object_ids=tuple(related_object_ids),
+        name_only=True
+    )
+    related_object_by_object_ref = {
+        related_object_refs_by_object_id[related_object.object_id]: related_object
+        for related_object in related_objects
+    }
+    related_objects_object_refs = list(related_objects_subtrees)
+    related_objects_index_by_object_ref = {
+        object_ref: index
+        for index, object_ref in enumerate(related_objects_object_refs)
+    }
+
+    return flask.render_template(
+        'objects/view/related_objects_entries.html',
+        related_objects_subtrees=related_objects_subtrees,
+        related_object_by_object_ref=related_object_by_object_ref,
+        object_ref=logic.object_relationships.ObjectRef(object_id=object_id, component_uuid=None, eln_object_url=None, eln_source_url=None),
+        related_objects_object_refs=related_objects_object_refs,
+        related_objects_index_by_object_ref=related_objects_index_by_object_ref,
+    )
 
 
 @frontend.route('/objects/<int:object_id>/dc.rdf')
