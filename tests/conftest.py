@@ -139,7 +139,8 @@ def create_app():
 def app(flask_server):
     app = flask_server.app
     # reset config and database before each test
-    app.config = copy.deepcopy(flask_server.initial_config)
+    app.config.clear()
+    app.config.update(flask_server.initial_config)
 
     app.config['ENABLE_BACKGROUND_TASKS'] = True
     sampledb.logic.background_tasks.core.stop_handler_threads(app)
