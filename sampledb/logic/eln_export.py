@@ -382,7 +382,7 @@ def generate_ro_crate_metadata(
             "@id": "./"
         },
         "name": "RO-Crate created",
-        "endTime": datetime.date.today().strftime('YYYY-MM-DD'),
+        "endTime": datetime.date.today().strftime('%Y-%m-%d'),
         "agent": {"@id": f"./users/{user_id}"},
         "instrument": {
             "@id": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
