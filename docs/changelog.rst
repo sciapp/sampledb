@@ -4,7 +4,7 @@ Changelog
 Version 0.32
 ------------
 
-Currently in development.
+Released on October 15th, 2025.
 
 - Improved selection of additional properties to show in object lists
 - Added automatic schema update for administrators
@@ -13,6 +13,7 @@ Currently in development.
 - Enabled background tasks by default
 - Rerun background tasks that were unable to finish when the SampleDB process is killed
 - Limit new passwords to 72 bytes to match bcrypt length limit
+- Fixed escaping of user and object references
 
 
 Version 0.31.1
