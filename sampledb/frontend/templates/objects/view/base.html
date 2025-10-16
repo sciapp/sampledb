@@ -1355,7 +1355,12 @@
             {% endif %}
               {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
-            {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) %}
+            {% set batch_ids = (object_log_entry.data['object_ids'] | tojson)[1:-1] %}
+            {% if batch_ids | length > 1000 %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <form method="post" action="%(batch_url)s" style="display: inline; margin: 0 -2px;" class="form-inline"><input type="hidden" name="ids" value="%(batch_ids)s"/><button type="submit" class="btn-link" style="padding: 0">batch</button></form>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects'), batch_ids=batch_ids) %}
+            {% else %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=batch_ids)) %}
+            {% endif %}
             {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
               {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}
