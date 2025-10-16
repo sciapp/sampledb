@@ -493,7 +493,7 @@
               <label class="control-label" for="filter_action_ids">
                 {{ _('Filter by Action') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">>
+              <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">
                 {% for topic in sorted_action_topics + [None] %}
                   {% if sorted_action_topics %}
                     <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Actions') }}{% endif %}">

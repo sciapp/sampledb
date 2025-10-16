@@ -2993,6 +2993,12 @@ msgstr "Nur suchen nach"
 msgid "Created with"
 msgstr "Erstellt mit"
 
+msgid "All actions"
+msgstr "Alle Aktionen"
+
+msgid "All Actions"
+msgstr "Alle Aktionen"
+
 msgid "Search Query Builder"
 msgstr "Suchanfrage erstellen"
 
@@ -4049,12 +4055,6 @@ msgstr ""
 
 msgid "Filter by Action"
 msgstr "Nach Aktion filtern"
-
-msgid "All actions"
-msgstr "Alle Aktionen"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
 
 msgid "Start"
 msgstr "Start"

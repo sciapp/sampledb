@@ -52,11 +52,18 @@
     <div class="form-group row">
       <label style="font-weight: normal" class="col-md-2">{{ _('Created with') }}</label>
       <div class="col-md-4">
-        <select name="action" class="selectpicker" data-width="100%">
-          <option value="" selected="selected">&mdash;</option>
-          {% for action in actions %}
-            {% if not action.is_hidden %}
-              <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument and not config['DISABLE_INSTRUMENTS'] %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} &mdash; {% endif %}{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</option>
+        <select name="action" class="selectpicker" data-width="100%" multiple="multiple"  data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">
+          {% for topic in sorted_action_topics + [None] %}
+            {% if sorted_action_topics %}
+              <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Actions') }}{% endif %}">
+            {% endif %}
+            {% for action in actions %}
+              {% if not action.is_hidden and (topic is none or topic in action.topics) %}
+                <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" data-action-id="{{ action.id }}" data-action-type-id="{{ action.type_id }}">{% if action.user %}{{ action.user.name }} / {% endif %}{% if action.instrument and not config['DISABLE_INSTRUMENTS'] %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} &mdash; {% endif %}{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</option>
+              {% endif %}
+            {% endfor %}
+            {% if sorted_action_topics %}
+              </optgroup>
             {% endif %}
           {% endfor %}
         </select>
