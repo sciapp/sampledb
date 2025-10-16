@@ -3,6 +3,7 @@
 Implementation of OpenID Connect.
 """
 
+import datetime
 import hashlib
 import secrets
 import time
@@ -11,18 +12,17 @@ import typing
 import flask
 import pydantic
 from furl import furl
-from simple_openid_connect.pkce import generate_pkce_pair
 from simple_openid_connect.client import OpenidClient
 from simple_openid_connect.data import (
-    IdToken, JwtAccessToken, RpInitiatedLogoutRequest, TokenErrorResponse,
-    TokenIntrospectionSuccessResponse, TokenSuccessResponse,
-    UserinfoErrorResponse
+    BackChannelLogoutToken, IdToken, JwtAccessToken, RpInitiatedLogoutRequest,
+    TokenErrorResponse, TokenIntrospectionSuccessResponse,
+    TokenSuccessResponse, UserinfoErrorResponse
 )
-from simple_openid_connect.exceptions import UnsupportedByProviderError
+from simple_openid_connect.pkce import generate_pkce_pair
 
 from ..config import OIDC_REQUIRED_CONFIG_KEYS
 from ..models import AuthenticationType, UserType
-from . import authentication, users
+from . import authentication, errors, users
 
 
 def is_oidc_configured() -> bool:
@@ -79,6 +79,14 @@ class _Data(pydantic.BaseModel):
     started: float = pydantic.Field(default_factory=time.time)
 
 
+class _LoginSessionData(pydantic.BaseModel):
+    sub: str
+    sid: str | None
+    id_token_hint: str
+    access_token: str
+    refresh_token: str
+
+
 def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
     """
     Start an OIDC authentication attempt.
@@ -129,7 +137,7 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
     return url, data
 
 
-def handle_authentication(url: str, token: str) -> tuple[users.User, str, str]:
+def handle_authentication(url: str, token: str) -> tuple[users.User, str]:
     """
     Handle an OIDC authentication callback.
 
@@ -151,11 +159,11 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str, str]:
     data = _Data.model_validate_json(token)
 
     if current_url.args['state'] != data.state:
-        raise RuntimeError('Incorrect state value')
+        raise errors.TemporaryLoginAttemptError('Incorrect state value')
 
     # Make the timeout configurable if necessary.
     if data.started < time.time() - 10 * 60:
-        raise RuntimeError('Request timed out')
+        raise errors.TemporaryLoginAttemptError('Request timed out')
 
     client = _get_client()
 
@@ -166,7 +174,7 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str, str]:
     )
 
     if isinstance(token_response, TokenErrorResponse):
-        raise RuntimeError('Token Error')
+        raise errors.TemporaryLoginAttemptError('Token Error')
 
     if data.nonce_value is not None:
         nonce = hashlib.sha256(data.nonce_value.encode()).hexdigest()
@@ -202,10 +210,27 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str, str]:
     # Do not handle errors, see note in function.
     user = _handle_roles(user, id_token)
 
-    return user, token_response.id_token, data.redirect_uri
+    if flask.current_app.config['OIDC_USE_SESSION'] and token_response.refresh_token:
+        login_session = authentication.add_login_session(
+            user_id=user.id,
+            authentication_type=AuthenticationType.OIDC,
+            # Choose a long expiration as we do not rely on this for
+            # expiration, merely for cleanup.
+            expires_at=datetime.datetime.now() + datetime.timedelta(weeks=4),
+            data=_LoginSessionData(
+                sub=id_token.sub,
+                sid=id_token.sid,
+                id_token_hint=token_response.id_token,
+                access_token=token_response.access_token,
+                refresh_token=token_response.refresh_token,
+            ).model_dump(),
+        )
+        user = user.with_login_session(login_session.id)
+
+    return user, data.redirect_uri
 
 
-def logout(id_token_hint: str, post_logout_redirect_uri: str) -> str:
+def logout(login_session: authentication.LoginSession, post_logout_redirect_uri: str) -> str:
     """
     Return the URL to initiate a logout request with the OIDC Provider. If the
     OP does not support RP-Initiated Logout, the returned URL will default to
@@ -215,20 +240,99 @@ def logout(id_token_hint: str, post_logout_redirect_uri: str) -> str:
     `post_logout_redirect_uri`, whether by the OP or by the caller of this
     function.
 
-    :param id_token_hint: The ID token returned in the authentication.
+    :param login_session: The login session.
     :param post_logout_redirect_uri: The URL to which the OP should redirect
         the user.
     :return: The next URL.
     """
-    client = _get_client()
     try:
+        client = _get_client()
+        session_data = _LoginSessionData.model_validate(login_session.data)
         return client.initiate_logout(RpInitiatedLogoutRequest(
-            id_token_hint=id_token_hint,
+            id_token_hint=session_data.id_token_hint,
             client_id=client.client_auth.client_id,
             post_logout_redirect_uri=post_logout_redirect_uri,
         ))
-    except UnsupportedByProviderError:
+    except Exception:
         return post_logout_redirect_uri
+
+
+def handle_backchannel_logout(logout_token: str) -> None:
+    client = _get_client()
+
+    token = BackChannelLogoutToken.parse_jwt(
+        logout_token,
+        client.provider_keys,
+    )
+    token.validate_extern(
+        client.provider_config.issuer,
+        client.client_auth.client_id,
+    )
+
+    if token.sub is None:
+        raise NotImplementedError(
+            'Lookup via sid is not yet supported, sub is required'
+        )
+
+    [authentication_method] = authentication.get_oidc_authentications_by_sub(
+        client.provider_config.issuer,
+        token.sub,
+    )
+
+    login_sessions = [
+        login_session
+        for login_session in
+        authentication.get_active_login_session(authentication_method.user_id)
+        if login_session.type == AuthenticationType.OIDC
+    ]
+
+    found: list[authentication.LoginSession] = []
+    if token.sid:
+        for login_session in login_sessions:
+            session_data = _LoginSessionData.model_validate(login_session.data)
+            if session_data.sid == token.sid:
+                found.append(login_session)
+    else:
+        found = login_sessions
+    authentication.expire_login_sessions(s.id for s in found)
+
+
+def validate_login_session(login_session: authentication.LoginSession) -> bool:
+    if not flask.current_app.config['OIDC_USE_SESSION']:
+        return True
+
+    client = _get_client()
+
+    try:
+        session_data = _LoginSessionData.model_validate(login_session.data)
+    except Exception:
+        return False  # Invalid data, abort.
+
+    try:
+        client.decode_id_token(session_data.id_token_hint)
+        return True  # Token is still valid.
+    except Exception:
+        pass  # Token isn't valid, continue with refresh.
+
+    try:
+        response = client.exchange_refresh_token(session_data.refresh_token)
+        if isinstance(response, TokenErrorResponse):
+            return False
+
+        authentication.update_login_session(
+            login_session_id=login_session.id,
+            data=_LoginSessionData(
+                sub=session_data.sub,
+                sid=session_data.sid,
+                id_token_hint=response.id_token,
+                access_token=response.access_token,
+                refresh_token=response.refresh_token or session_data.refresh_token,
+            ).model_dump(),
+        )
+
+        return True
+    except Exception:
+        return False
 
 
 def validate_access_token(access_token: str) -> typing.Tuple[authentication.AuthenticationMethod, users.User]:

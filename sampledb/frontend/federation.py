@@ -45,7 +45,7 @@ def component(component_id: int) -> FlaskResponseT:
     except errors.ComponentDoesNotExistError:
         return flask.abort(404)
     try:
-        alias = get_user_alias(flask_login.current_user.get_id(), component_id)
+        alias = get_user_alias(flask_login.current_user.id, component_id)
     except errors.UserAliasDoesNotExistError:
         alias = None
     created_api_token = None
