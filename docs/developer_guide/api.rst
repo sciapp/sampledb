@@ -537,6 +537,163 @@ Setting the permissions for anonymous users
     :statuscode 404: the object does not exist
 
 
+Reading all permissions of an object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/
+
+    Get all permission mappings.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "users": {
+                1: "grant"
+            },
+            "groups": {
+                2: "read"
+            },
+            "projects": {
+                2: "read"
+            },
+            "authenticated_users" : "none",
+            "anonymous_users": "none"
+        }
+
+    :<json object users: user_ids and their associated permission for this object
+    :<json object groups: group_ids and their associated permission for this object
+    :<json object projects: project_ids and their associated permission for this object
+    :<json object authenticated_users: permission all authenticated users have to this object
+    :<json object anonymous_users: permission all users have to this object
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting all permissions of an object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/
+
+    Set and/or change multiple permissions to the given object.
+    Does keep non-colliding permissions that are already set and will return all currently applied permissions for this object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "users": {
+                1: "grant"
+            },
+            "groups": {
+                2: "read"
+            },
+            "projects": {
+                2: "write"
+            },
+            "authenticated_users" : "none",
+            "anonymous_users": "none"
+        }
+        
+    :<json object users: user_ids and their associated permission for this object (optional)
+    :<json object groups: group_ids and their associated permission for this object (optional)
+    :<json object projects: project_ids and their associated permission for this object (optional)
+    :<json object authenticated_users: permission all authenticated users have to this object (optional)
+    :<json object anonymous_users: permission all users have to this object (optional)
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "users": {
+                1: "grant"
+            },
+            "groups": {
+                2: "read"
+            },
+            "projects": {
+                2: "write"
+            },
+            "authenticated_users" : "none",
+            "anonymous_users": "none"
+        }
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object or user does not exist
+
+
+Copying all permissions from one object to another
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/permissions/copy/
+
+    Sets the permissions of the target object exactly to the permissions of the source object.
+    Request object can either be a list of objects or one object providing a source- and a target-object_id.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/permissions/copy/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        [
+            {
+                "source_object_id": 1,
+                "target_object_id": 3,
+            },
+            {
+                "source_object_id": 4,
+                "target_object_id": 2,
+            }
+        ]
+
+    :<json number source_object_id: the object_id from which the permissions should be copied
+    :<json number target_object_id: the object_id where the copied permissions should be applied to
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (must be either list of json objects or json object with properties 'source' and 'target')
+    :statuscode 403: user does not have GRANT permissions on 'target' object or READ permission on 'source' object
+    :statuscode 404: 'target' or 'source' object does not exist
+
+
 Reading all users' permissions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

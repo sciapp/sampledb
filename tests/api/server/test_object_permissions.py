@@ -487,3 +487,219 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     assert r.json() == {
         "message": "anonymous users are disabled"
     }
+
+
+def test_get_all_object_permissions(flask_server, auth, user, other_user, object_id):
+    group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
+    sampledb.logic.object_permissions.set_group_object_permissions(object_id, group_id, sampledb.models.Permissions.WRITE)
+    project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
+    sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.GRANT)
+    sampledb.logic.projects.add_group_to_project(project_id, group_id, sampledb.models.Permissions.GRANT)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=sampledb.models.Permissions.READ)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object_id, user_id=other_user.id, permissions=sampledb.models.Permissions.READ)
+
+    r_all = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), auth=auth)
+    r_users = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users'.format(object_id), auth=auth)
+    r_groups = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups'.format(object_id), auth=auth)
+    r_projects = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects'.format(object_id), auth=auth)
+    r_authenticated = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
+    r_anonymous = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+
+    assert r_all.status_code == 200
+    assert r_all.json()["users"] == r_users.json()
+    assert r_all.json()["groups"] == r_groups.json()
+    assert r_all.json()["projects"] == r_projects.json()
+    assert r_all.json()["authenticated_users"] == r_authenticated.json()
+    assert r_all.json()["anonymous_users"] == (r_anonymous.json() if r_anonymous.ok else 'none')
+
+    r_all = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id+1), auth=auth)
+    assert r_all.status_code == 404
+
+
+def test_set_object_permissions(flask_server, auth, user, other_user, object_id):
+    # Apply perms for 2 out of 3 (users, groups, projects)
+    # Stick with the first permission;
+    # Remove (change) perm for second;
+    # Add perm for third (user, group, project)
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id,
+        user.id,
+        sampledb.models.Permissions.GRANT
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id,
+        other_user.id,
+        sampledb.models.Permissions.GRANT
+    )
+    with flask_server.app.app_context():
+        third_user = sampledb.models.User(name="Third User", email="third_user@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(third_user)
+        sampledb.db.session.commit()
+        assert third_user.id is not None
+    group_ids = [sampledb.logic.groups.create_group(f"Example Group{i}", "", other_user.id).id for i in range(3)]
+    [
+        sampledb.logic.object_permissions.set_group_object_permissions(
+            object_id,
+            group_id,
+            sampledb.models.Permissions.WRITE,
+        )
+        for group_id in group_ids
+    ]
+    project_ids = [sampledb.logic.projects.create_project(f"Example Project{i}", "", other_user.id).id for i in range(3)]
+    [
+        sampledb.logic.object_permissions.set_project_object_permissions(
+            object_id,
+            project_id,
+            sampledb.models.Permissions.GRANT,
+        )
+        for project_id in project_ids
+    ]
+
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object_id,sampledb.models.Permissions.READ)
+    flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
+    sampledb.logic.object_permissions.set_object_permissions_for_anonymous_users(object_id,sampledb.models.Permissions.READ)
+    request_json = {
+        "users": {
+            other_user.id: "none",
+            third_user.id: "read",
+        },
+        "groups": {
+            group_ids[1]: 'none',
+            group_ids[2]: 'read',
+        },
+        "projects": {
+            project_ids[1]: 'none',
+            project_ids[2]: 'read',
+        },
+    }
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    assert r.status_code == 200
+
+    assert all([
+        r.json()["users"][str(user.id)] == 'grant',
+        r.json()["users"].get(str(other_user.id)) == None,
+        r.json()["users"][str(third_user.id)] == "read"
+    ])
+    assert all([
+        r.json()["groups"][str(group_ids[0])] == 'write',
+        r.json()["groups"].get(str(group_ids[1])) == None,
+        r.json()["groups"][str(group_ids[2])] == 'read',
+    ])
+    assert all([
+        r.json()["projects"][str(project_ids[0])] == 'grant',
+        r.json()["projects"].get(str(project_ids[1])) == None,
+        r.json()["projects"][str(project_ids[2])] == 'read',
+    ])
+    assert r.json()["authenticated_users"] == 'read'
+    assert r.json()["anonymous_users"] == 'read'
+
+    request_json = {
+        'authenticated_users': 'none',
+        'anonymous_users': 'none',
+    }
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    assert r.status_code == 200
+    assert r.json()["authenticated_users"] == 'none'
+    assert r.json()["anonymous_users"] == 'none'
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id+1), json=request_json, auth=auth)
+    assert r.status_code == 404
+
+    flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
+    request_json = {
+        'anonymous_users': 'read',
+    }
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {
+        "message": "anonymous users are disabled"
+    }
+
+
+def test_copy_object_permissions(flask_server, auth, user, other_user, object_id, action):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id, other_user.id, sampledb.models.Permissions.GRANT)
+    group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
+    sampledb.logic.object_permissions.set_group_object_permissions(object_id, group_id, sampledb.models.Permissions.WRITE)
+    project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
+    sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.WRITE)
+    other_object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    other_object_id = other_object.object_id
+    request_json = {
+        "source_object_id": object_id,
+        "target_object_id": other_object_id,
+    }
+    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    assert r.status_code == 200
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
+    assert r.status_code == 200
+    perms_source_object = sampledb.api.server.object_permissions.all_object_permissions_dict_to_json(sampledb.logic.object_permissions.get_all_object_permissions(object_id))
+    perms_source_object["users"] = {str(k): v for k,v in perms_source_object["users"].items()} if perms_source_object.get("users") else None
+    perms_source_object["groups"] = {str(k): v for k,v in perms_source_object["groups"].items()} if perms_source_object.get("groups") else None
+    perms_source_object["projects"] = {str(k): v for k,v in perms_source_object["projects"].items()} if perms_source_object.get("projects") else None
+
+    for key in perms_source_object.keys():
+        assert r.json()[key] == perms_source_object[key]
+
+    # Multiple copy requests at once
+    b_object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    b_object_id = b_object.object_id
+    c_object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    c_object_id = c_object.object_id
+
+    # Make sure c_object and b_object do not have the same permissions as object
+    perms_source = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
+    perms_b_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
+    perms_c_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
+    assert not all([perms_source.get(key, None) == perms_b_obj.get(key, None) for key in perms_source.keys()]) # Fails if object and b_object have same permissions
+    assert not all([perms_source.get(key, None) == perms_c_obj.get(key, None) for key in perms_source.keys()]) # Failes if object and c_object have same permissions
+
+    request_json = [
+        {
+        "source_object_id": object_id,
+        "target_object_id": b_object_id,
+        },
+        {
+        "source_object_id": object_id,
+        "target_object_id": c_object_id,
+        },
+    ]
+    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    assert r.status_code == 200
+    perms_source = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
+    perms_b_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
+    perms_c_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
+    for key in perms_source.keys():
+        assert perms_source[key] == perms_b_obj[key]
+        assert perms_source[key] == perms_c_obj[key]
+
+    request_json = {
+        "source_object_id": object_id,
+        "target_object_id": other_object_id,
+    }
+
+    # Not enough permission to view source object's permissions
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id, user.id, sampledb.models.Permissions.NONE)
+    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    assert r.status_code == 403
+
+    # Not enough permissions to perform a grant action on target object
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id, user.id, sampledb.models.Permissions.READ)
+    sampledb.logic.object_permissions.set_user_object_permissions(other_object_id, user.id, sampledb.models.Permissions.READ)
+    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    assert r.status_code == 403
+
+    # Not existing object
+    last_object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    last_object_id = last_object.object_id
+    request_json = {
+        "source_object_id": object_id,
+        "target_object_id": last_object_id+1,
+    }
+    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    assert r.status_code == 404

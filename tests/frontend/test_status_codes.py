@@ -332,6 +332,7 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/objects/{object_id}/files/{file_id}': 200,
         f'api/v1/objects/{object_id}/locations/': 200,
         f'api/v1/objects/{object_id}/locations/{object_location_assignment_index}': 200,
+        f'api/v1/objects/{object_id}/permissions/': 200,
         f'api/v1/objects/{object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
         f'api/v1/objects/{object_id}/permissions/authenticated_users': 200,
         f'api/v1/objects/{object_id}/permissions/groups/': 200,
@@ -350,6 +351,7 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/objects/{other_object_id}/files/{file_id}': 404,
         f'api/v1/objects/{other_object_id}/locations/': 200,
         f'api/v1/objects/{other_object_id}/locations/{object_location_assignment_index}': 404,
+        f'api/v1/objects/{other_object_id}/permissions/': 200,
         f'api/v1/objects/{other_object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
         f'api/v1/objects/{other_object_id}/permissions/authenticated_users': 200,
         f'api/v1/objects/{other_object_id}/permissions/groups/': 200,
