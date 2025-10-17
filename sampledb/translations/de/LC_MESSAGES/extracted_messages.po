@@ -6568,6 +6568,20 @@ msgstr "%(user_ref)s hat das Objekt erstellt."
 
 #, python-format
 msgid ""
+"%(user_ref)s created the object as part of a <form method=\"post\" "
+"action=\"%(batch_url)s\" style=\"display: inline; margin: 0 -2px;\" class"
+"=\"form-inline\"><input type=\"hidden\" name=\"ids\" "
+"value=\"%(batch_ids)s\"/><button type=\"submit\" class=\"btn-link\" "
+"style=\"padding: 0\">batch</button></form>."
+msgstr ""
+"%(user_ref)s hat das Objekt als Teil einer <form method=\"post\" "
+"action=\"%(batch_url)s\" style=\"display: inline; margin: 0 -2px;\" class"
+"=\"form-inline\"><input type=\"hidden\" name=\"ids\" "
+"value=\"%(batch_ids)s\"/><button type=\"submit\" class=\"btn-link\" "
+"style=\"padding: 0\">Charge</button></form> erstellt."
+
+#, python-format
+msgid ""
 "%(user_ref)s created the object as part of a <a "
 "href=\"%(batch_url)s\">batch</a>."
 msgstr ""
