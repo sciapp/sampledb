@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.33
+------------
+
+Currently in development.
+
+- Improved search query builder
+
+
 Version 0.32
 ------------
 

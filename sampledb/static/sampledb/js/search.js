@@ -324,12 +324,40 @@ $(function () {
   function getCurrentSearchPaths () {
     const actionSelect = $('select[name="action"]');
     if (actionSelect.selectpicker('val')) {
-      const selectedActionId = actionSelect.find('option:selected').data('actionId');
-      if (selectedActionId in window.search_paths_by_action) {
-        return window.search_paths_by_action[selectedActionId];
-      } else {
-        return {};
+      const selectedActionIds = $.map(actionSelect.find('option:selected'), function (option) {
+        return $(option).data('actionId');
+      });
+      const searchPaths = {};
+      for (const selectedActionId of selectedActionIds) {
+        if (selectedActionId in window.search_paths_by_action) {
+          for (const [searchPath, searchPathInfo] of Object.entries(window.search_paths_by_action[selectedActionId])) {
+            if (!(searchPath in searchPaths)) {
+              searchPaths[searchPath] = {};
+              if ('titles' in searchPathInfo) {
+                searchPaths[searchPath].titles = searchPathInfo.titles.slice();
+              }
+              if ('types' in searchPathInfo) {
+                searchPaths[searchPath].types = searchPathInfo.types.slice();
+              }
+            } else {
+              for (const key of ['titles', 'types']) {
+                if (key in searchPathInfo) {
+                  if (key in searchPaths[searchPath]) {
+                    for (const value of searchPathInfo[key]) {
+                      if (!(searchPaths[searchPath][key].includes(value))) {
+                        searchPaths[searchPath][key].push(value);
+                      }
+                    }
+                  } else {
+                    searchPaths[searchPath][key] = searchPathInfo[key].slice();
+                  }
+                }
+              }
+            }
+          }
+        }
       }
+      return searchPaths;
     }
     const actionTypeSelect = $('select[name="t"]');
     if (actionTypeSelect.selectpicker('val')) {

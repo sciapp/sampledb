@@ -10,6 +10,7 @@ from .. import frontend
 from ...logic.action_types import get_action_types
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.users import get_users
+from ...logic.topics import get_topics
 from ..utils import get_search_paths
 from ...utils import FlaskResponseT
 
@@ -20,6 +21,15 @@ def search() -> FlaskResponseT:
     actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
+
+    sorted_action_topics = []
+    if not flask.current_app.config['DISABLE_TOPICS']:
+        sorted_topics = get_topics()
+        for topic in sorted_topics:
+            for action in actions:
+                if topic in action.topics:
+                    sorted_action_topics.append(topic)
+                    break
 
     action_types = [
         action_type
@@ -39,6 +49,7 @@ def search() -> FlaskResponseT:
         search_paths_by_action_type=search_paths_by_action_type,
         actions=actions,
         action_types=action_types,
+        sorted_action_topics=sorted_action_topics,
         datetime=datetime,
         users=get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']),
     ), 200, {
