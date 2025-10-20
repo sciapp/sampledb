@@ -3,6 +3,7 @@
 
 """
 import copy
+import http
 import itertools
 import json
 import typing
@@ -79,9 +80,15 @@ OBJECT_LIST_OPTION_PARAMETERS = (
 )
 
 
-@frontend.route('/objects/')
+@frontend.route('/objects/', methods=['GET', 'POST'])
 @flask_login.login_required
 def objects() -> FlaskResponseT:
+    if flask.request.method == 'POST':
+        response = save_object_list_defaults()
+        if response is not None:
+            return response
+        if 'ids' not in flask.request.form:
+            return flask.abort(http.HTTPStatus.BAD_REQUEST)
 
     user_settings = get_user_settings(user_id=flask_login.current_user.id)
     if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_OPTION_PARAMETERS):
@@ -131,7 +138,7 @@ def objects() -> FlaskResponseT:
 
     name_only = True
     implicit_action_type = None
-    object_ids_str = flask.request.args.get('ids', '')
+    object_ids_str = flask.request.form.get('ids', flask.request.args.get('ids', ''))
     object_ids: typing.Optional[typing.Set[int]] = None
     if object_ids_str:
         try:
@@ -1514,9 +1521,7 @@ def _parse_display_properties(
     return display_properties, display_property_titles
 
 
-@frontend.route('/objects/', methods=['POST'])
-@flask_login.login_required
-def save_object_list_defaults() -> FlaskResponseT:
+def save_object_list_defaults() -> typing.Optional[FlaskResponseT]:
     if 'save_default_filters' in flask.request.form:
         all_locations = get_locations_with_user_permissions(
             user_id=flask_login.current_user.id,
@@ -1637,7 +1642,7 @@ def save_object_list_defaults() -> FlaskResponseT:
             }
         )
         return flask.redirect(build_modified_url('.objects', blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
-    return flask.abort(400)
+    return None
 
 
 @frontend.route("/edit_locations", methods=["POST"])
