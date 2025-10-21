@@ -102,6 +102,78 @@ def test_convert_object():
     assert not warnings
 
 
+def test_convert_object_with_new_none_property():
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example, Text'
+        }
+    }
+    previous_schema = {
+        'type': 'object',
+        'title': 'Test',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    new_schema = {
+        'type': 'object',
+        'title': 'Test',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'new': {
+                'title': 'New Property',
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == {
+        'name': {
+            '_type': 'text',
+            'text': 'Example, Text'
+        },
+        'new': None
+    }
+    assert not warnings
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema, filter_out_new_none_properties=True)
+    assert new_data == {
+        'name': {
+            '_type': 'text',
+            'text': 'Example, Text'
+        }
+    }
+    assert not warnings
+    new_schema['required'] = ['name', 'new']
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == {
+        'name': {
+            '_type': 'text',
+            'text': 'Example, Text'
+        },
+        'new': None
+    }
+    assert not warnings
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema, filter_out_new_none_properties=True)
+    assert new_data == {
+        'name': {
+            '_type': 'text',
+            'text': 'Example, Text'
+        },
+        'new': None
+    }
+    assert not warnings
+
+
 def test_convert_schema_with_unknown_type():
     data = {}
     previous_schema = {

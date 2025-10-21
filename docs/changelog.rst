@@ -9,6 +9,7 @@ Currently in development.
 - Implemented caching for object data rendered to html
 - Improved search query builder
 - Added support for default values to object reference schemas
+- Improved handling of new, non-required properties in automatic schema update
 
 
 Version 0.32
