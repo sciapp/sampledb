@@ -17,7 +17,7 @@ import werkzeug.wrappers.response
 
 from .. import frontend
 from ...logic import oidc
-from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server, get_login_session, delete_all_expired_login_sessions, AuthenticationType
+from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server, get_login_session, delete_all_expired_login_sessions
 from ...logic.users import get_user, User, create_sampledb_federated_identity, get_federated_identity, enable_federated_identity_for_login
 from ...logic.components import get_component, get_federated_login_components
 from ...logic.errors import TemporaryLoginAttemptError, FederatedUserInFederatedIdentityError, UserDoesNotExistError, FederatedIdentityNotFoundError
@@ -25,6 +25,7 @@ from ..users_forms import SigninForm, SignoutForm
 from .forms import WebAuthnLoginForm
 from ... import login_manager
 from ...utils import FlaskResponseT
+from ...models import AuthenticationType
 
 
 @login_manager.user_loader
@@ -354,6 +355,7 @@ def oidc_callback() -> FlaskResponseT:
         shared_device=False,
         next_url=next,
     )
+
 
 @frontend.route('/users/me/oidc/backchannel_logout', methods={'POST'})
 def oidc_backchannel_logout() -> FlaskResponseT:

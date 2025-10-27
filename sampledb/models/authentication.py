@@ -9,7 +9,7 @@ import typing
 
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, Query, Mapped
-from sqlalchemy.sql import func
+from sqlalchemy.sql import functions
 
 from .. import db
 from .utils import Model
@@ -67,7 +67,7 @@ class Login(Model):
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     type: Mapped[AuthenticationType] = db.Column(db.Enum(AuthenticationType), nullable=False)
-    created_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False, default=func.now())
+    created_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False, default=functions.now())
     expires_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
     user: Mapped['User'] = relationship('User')

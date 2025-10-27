@@ -437,7 +437,7 @@ def get_login_session(login_session_id: int) -> LoginSession:
     :param login_session_id: the ID of an existing login session
     :return: the login session
     :raise errors.LoginSessionDoesNotExistError: if the login session does not exist
-    :raise errors.LoginSessionExpiredError: if the login session has expired
+    :raise errors.LoginSessionHasExpiredError: if the login session has expired
     """
     login = Login.query.filter_by(id=login_session_id).first()
     if login is None:
@@ -472,6 +472,7 @@ def add_login_session(
 
     :param user_id: the ID of the user
     :param authentication_type: the authentication type
+    :param expires_at: the datetime at which the session expires
     :param data: additional data specific to the authentication type
     :return: the login session
     """
@@ -496,6 +497,7 @@ def update_login_session(
 
     :param login_session_id: the ID of the login session
     :param data: additional data specific to the authentication type
+    :param expires_at: the datetime at which the session expires
     """
     login = Login.query.filter_by(id=login_session_id).first()
     if not login:
