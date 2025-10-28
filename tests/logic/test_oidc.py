@@ -142,6 +142,7 @@ def auth_helper(
                 nonce=nonce_override or nonce,
                 **payload,
             ),
+            "refresh_token": "refresh_token",
         },
     )
 
@@ -170,7 +171,7 @@ def auth_helper(
 
 
 def test_oidc(setup):
-    user, _, returned_next = auth_helper(setup)
+    user, returned_next = auth_helper(setup)
     assert returned_next == setup[2]
     assert user.name == "Test"
     assert user.email == "test@example.net"
@@ -345,3 +346,40 @@ def test_oidc_roles(setup):
 
     with pytest.raises(Exception):
         auth_helper(setup)
+
+
+def test_oidc_backchannel_logout(setup):
+    flask.current_app.config["OIDC_USE_SESSION"] = True
+
+    user = auth_helper(setup, payload={"sid": "sid1"})[0]
+    sessions = sampledb.logic.authentication.get_active_login_sessions(user.id)
+    assert len(sessions) == 1
+
+    user = auth_helper(setup, payload={"sid": "sid2"})[0]
+    sessions = sampledb.logic.authentication.get_active_login_sessions(user.id)
+    assert len(sessions) == 2
+
+    def logout(payload: dict[str, str]):
+        oidc.handle_backchannel_logout(mk_jwt(
+            iss=OP_CONFIG["issuer"],
+            aud="test_client",
+            iat=time(),
+            jti="jti",
+            events={
+                "http://schemas.openid.net/event/backchannel-logout": {}
+            },
+            **payload,
+        ))
+
+    with pytest.raises(ValueError):
+        logout({"sub": "456"})
+    sessions = sampledb.logic.authentication.get_active_login_sessions(user.id)
+    assert len(sessions) == 2
+
+    logout({"sub": "123", "sid": "sid2"})
+    sessions = sampledb.logic.authentication.get_active_login_sessions(user.id)
+    assert len(sessions) == 1
+
+    logout({"sub": "123"})
+    sessions = sampledb.logic.authentication.get_active_login_sessions(user.id)
+    assert len(sessions) == 0
