@@ -119,8 +119,7 @@ def generate_secret_key(num_bits: int) -> str:
     :return: the base64 encoded secret key
     """
     num_bytes = num_bits // 8
-    binary_key = os.urandom(num_bytes)
-    base64_key = base64.b64encode(binary_key).decode('ascii')
+    base64_key = secrets.token_urlsafe(num_bytes)
     return base64_key
 
 
