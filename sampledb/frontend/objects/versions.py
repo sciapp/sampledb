@@ -21,7 +21,6 @@ from ...logic.utils import get_translated_text
 from ...logic.schemas.data_diffs import calculate_diff
 from .forms import ObjectVersionRestoreForm
 from ...utils import object_permissions_required, FlaskResponseT
-from ..utils import get_user_if_exists
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions
 from ...models import Permissions
 
@@ -34,7 +33,11 @@ def object_versions(object_id: int) -> FlaskResponseT:
         return flask.abort(404)
     object_versions = get_object_versions(object_id=object_id)
     object_versions.sort(key=lambda object_version: -object_version.version_id)
-    return flask.render_template('objects/object_versions.html', get_user=get_user_if_exists, object=object, object_versions=object_versions)
+    return flask.render_template(
+        'objects/object_versions.html',
+        object=object,
+        object_versions=object_versions
+    )
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
@@ -108,7 +111,6 @@ def object_version(object_id: int, version_id: int) -> FlaskResponseT:
         previous_version_schema=previous_version_schema,
         link_version_specific_rdf=True,
         restore_form=form,
-        get_user=get_user_if_exists,
         user_may_grant=user_may_grant,
         get_action_type=get_action_type,
         component=object.component,

@@ -762,7 +762,8 @@ def get_local_decimal_delimiter() -> str:
     return typing.cast(str, numbers.format_decimal(1.2346, locale=flask_babel.get_locale())[1:2])
 
 
-@JinjaFunction()
+@JinjaFunction("get_user")
+@cache_per_request()
 def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
     try:
         return get_user(user_id, component_id)
@@ -1253,14 +1254,6 @@ def get_locations_form_data(
         for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id], has_read_permissions=location_id in readable_location_ids), reverse=True):
             unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, name_prefix, subtree[location_id], id_path + [location_id]))
     return all_choices, choices
-
-
-@JinjaFunction()
-def get_user_or_none(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
-    try:
-        return get_user(user_id, component_id=component_id)
-    except errors.UserDoesNotExistError:
-        return None
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
