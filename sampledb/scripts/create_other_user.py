@@ -5,10 +5,10 @@ Script for creating a user of type OTHER in SampleDB.
 Usage: sampledb create_other_user <name> <email>
 """
 
-import os
 import string
 import sys
 import typing
+import secrets
 
 from .. import create_app
 from ..logic.users import create_user
@@ -32,7 +32,7 @@ def main(arguments: typing.List[str]) -> None:
         if not is_login_available(name):
             print('Error: name is already being used', file=sys.stderr)
             sys.exit(1)
-        password = ''.join([('00' + hex(c)[2:])[-2:] for c in os.urandom(16)])
+        password = secrets.token_hex(16)
         print(f"Note: the user will receive the password '{password}'")
         user = create_user(name, email, UserType.OTHER)
         add_other_authentication(user.id, name, password)
