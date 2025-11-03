@@ -1829,6 +1829,9 @@ Reading a list of all users
             }
         ]
 
+    :<json string filter_hidden: set to `true` to only get hidden users or to `false` to only get non-hidden users (only for API requests by administrators)
+    :<json string filter_active: set to `true` to only get active users or to `false` to only get non-active users (only for API requests by administrators)
+    :<json string filter_readonly: set to `true` to only get read-only users or to `false` to only get non-read-only users (only for API requests by administrators)
     :statuscode 200: no error
 
 
@@ -1869,6 +1872,9 @@ Reading a user
     :>json string affiliation: the user's affiliation (optional)
     :>json string role: the user's role (optional)
     :>json string email: the user's email (only for API requests by administrators)
+    :>json string is_hidden: whether the user is hidden (only for API requests by administrators)
+    :>json string is_active: whether the user is active (only for API requests by administrators)
+    :>json string is_readonly: whether the user is read-only (only for API requests by administrators)
     :statuscode 200: no error
     :statuscode 404: the user does not exist
 
