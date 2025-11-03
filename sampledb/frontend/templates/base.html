@@ -102,7 +102,7 @@
       {% else %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left" id="nav-search">
         <div class="input-group">
-          <input type="text" id="input-search" class="form-control" placeholder="{{ _('Search…') }}" name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
+          <input type="text" id="input-search" class="form-control" placeholder="{{ _('Search objects…') }}" name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">{{ _('Search') }}</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -346,7 +346,7 @@
 
 
 {% block template_values %}
-  {% do set_template_value("translations.search", _('Search…')) %}
+  {% do set_template_value("translations.search", _('Search objects…')) %}
   {% do set_template_value("translations.advanced_search", _('Advanced Search…')) %}
   {% do set_template_value("translations.automatic_sign_out_after_x_minutes_of_inactivity", _('Sign out in PLACEHOLDER')) %}
   {% do set_template_value("translations.treepicker_expand_all_text", _('Expand All')) %}

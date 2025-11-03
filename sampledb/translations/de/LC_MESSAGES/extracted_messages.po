@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-10-27 08:45+0100\n"
+"POT-Creation-Date: 2025-11-03 08:16+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1700,8 +1700,8 @@ msgstr "Navigation aus-/einklappen"
 msgid "Help"
 msgstr "Hilfe"
 
-msgid "Search…"
-msgstr "Suche…"
+msgid "Search objects…"
+msgstr "Objekte suchen…"
 
 msgid "Search"
 msgstr "Suche"
@@ -3973,6 +3973,17 @@ msgstr "Nach Themen filtern"
 msgid "Clear"
 msgstr "Leeren"
 
+msgid "Filter by name"
+msgstr "Nach Name filtern"
+
+#, python-format
+msgid ""
+"Showing NUM_RESULTS_PLACEHOLDER of %(num_actions)s actions due to filter "
+"for &quot;FILTER_PLACEHOLDER&quot;."
+msgstr ""
+"Zeigt NUM_RESULTS_PLACEHOLDER von %(num_actions)s Aktionen wegen Filter "
+"nach &quot;FILTER_PLACEHOLDER&quot;."
+
 msgid "Updatable Objects"
 msgstr "Aktualisierbare Objekte"
 
@@ -4819,6 +4830,14 @@ msgstr ""
 
 msgid "Create Instrument"
 msgstr "Instrument erstellen"
+
+#, python-format
+msgid ""
+"Showing NUM_RESULTS_PLACEHOLDER of %(num_instruments)s instruments due to"
+" filter for &quot;FILTER_PLACEHOLDER&quot;."
+msgstr ""
+"Zeigt NUM_RESULTS_PLACEHOLDER von %(num_instruments)s Instrumenten wegen "
+"Filter nach &quot;FILTER_PLACEHOLDER&quot;."
 
 #, python-format
 msgid "Language in %(lang_name)s"
