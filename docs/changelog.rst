@@ -10,7 +10,8 @@ Currently in development.
 - Improved search query builder
 - Added support for default values to object reference schemas
 - Improved handling of new, non-required properties in automatic schema update
-- Add name-based filtering to action and instrument lists
+- Added name-based filtering to action and instrument lists
+- Added config value for MAX_FORM_MEMORY_SIZE
 
 
 Version 0.32

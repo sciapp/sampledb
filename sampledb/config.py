@@ -68,6 +68,7 @@ def parse_configuration_values() -> None:
     for config_name in [
         'INVITATION_TIME_LIMIT',
         'MAX_CONTENT_LENGTH',
+        'MAX_FORM_MEMORY_SIZE',
         'MAX_BATCH_SIZE',
         'VALID_TIME_DELTA',
         'DOWNLOAD_SERVICE_TIME_LIMIT',
