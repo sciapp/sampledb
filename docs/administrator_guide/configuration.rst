@@ -385,5 +385,7 @@ Miscellaneous
      - Use modals to display workflow views by default if set to True, else the workflow views are displayed directly on the objects page (default: False)
    * - SAMPLEDB_WORKFLOW_VIEW_COLLAPSED
      - Sets if objects in a workflow view should be collapsed or expanded. Set to True to collapse objects, False to expand object contents (default: False).
+   * - SAMPLEDB_EXTERNAL_LINKS
+     - Sets external links, see :ref:`External Links <external_links>`.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

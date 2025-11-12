@@ -79,7 +79,7 @@
 
   <div class="button-row">
   {% if descendent_location_ids %}
-    <div class="btn-group">
+    <div class="btn-group" style="margin-bottom: 2px">
       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 220px">
         {{ _('View Objects') }} <span class="caret"></span>
       </button>
@@ -102,6 +102,22 @@
   {% endif %}
   {% if Permissions.GRANT in permissions %}
   <a href="{{ url_for('.location_permissions', location_id=location.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Edit the permissions for this location.') }}">{{ _('Edit Permissions') }}</a>
+  {% endif %}
+  {% if location.id in config["LOCATION_LINKS_BY_LOCATION_ID"] or '*' in config["LOCATION_LINKS_BY_LOCATION_ID"] %}
+    {% for links_config in merge_external_links(("LOCATION_LINKS_BY_LOCATION_ID", "*"), ("LOCATION_LINKS_BY_LOCATION_ID", location.id)) %}
+      <div class="btn-group" style="margin-bottom: 2px">
+        <button class="btn btn-default dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 220px">
+          <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="linksDropdownMenuButton">
+          {% for link in links_config.links %}
+            <li>
+              <a href="{{ link.url | replace(links_config.id_placeholder, location.id) }}">{{ link.name | get_translated_text }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
   {% endif %}
   </div>
 
