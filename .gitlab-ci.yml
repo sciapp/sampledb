@@ -277,7 +277,7 @@ documentation:
 
 build-image:
   stage: build
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   script:
@@ -295,7 +295,7 @@ build-image:
 test-container-status:
   stage: test
   needs: ["build-image"]
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   variables:
@@ -389,7 +389,7 @@ deploy-to-github:
 
 deploy-to-github-container-registry:
   stage: deploy
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   only:
