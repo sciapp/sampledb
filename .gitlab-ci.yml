@@ -413,7 +413,7 @@ deploy-to-github-container-registry:
 
 deploy-to-dockerhub:
   stage: deploy
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   only:
