@@ -479,6 +479,17 @@ def _parse_creator_ref(
     )
 
 
+def _node_has_type(node: typing.Dict[str, typing.Any], expected_type: str) -> bool:
+    if '@type' not in node:
+        return False
+    node_type = node['@type']
+    if type(node_type) is str:
+        return node_type == expected_type
+    if type(node_type) is list:
+        return expected_type in node_type
+    return False
+
+
 def _parse_person_ref(
         person_ref: typing.Any,
         graph_nodes_by_id: typing.Dict[str, typing.Any],
@@ -508,7 +519,7 @@ def _parse_person_ref(
             # _eln_assert(graph_nodes_by_id[person_id] == person_node, f"Invalid {node_name} reference")
         else:
             graph_nodes_by_id[person_id] = person_node
-    _eln_assert(person_node['@type'] == 'Person', "Reference to node of wrong type")
+    _eln_assert(_node_has_type(person_node, 'Person'), "Reference to node of wrong type")
     return person_id
 
 
@@ -672,10 +683,13 @@ def parse_eln_file(
             ]
             _eln_assert(
                 any(
-                    ro_crate_metadata.get('@context') == f'https://w3id.org/ro/crate/{supported_ro_crate_version}/context'
+                    ro_crate_metadata.get('@context') == f'https://w3id.org/ro/crate/{supported_ro_crate_version}/context' or (
+                        type(ro_crate_metadata.get('@context')) is list and
+                        ro_crate_metadata.get('@context')[0] == f'https://w3id.org/ro/crate/{supported_ro_crate_version}/context'
+                    )
                     for supported_ro_crate_version in supported_ro_crate_versions
                 ),
-                f"ro-crate-metadata.json @context must be RO-Crate context for RO-Crate version {', '.join(supported_ro_crate_versions[:1])} or {supported_ro_crate_versions[-1]}"
+                f"ro-crate-metadata.json @context must be RO-Crate context for RO-Crate version {', '.join(supported_ro_crate_versions[:-1])} or {supported_ro_crate_versions[-1]}"
             )
 
             _eln_assert(isinstance(ro_crate_metadata.get('@graph'), list), "ro-crate-metadata.json @graph must be list")
@@ -692,32 +706,32 @@ def parse_eln_file(
             root_node = graph_nodes_by_id['./']
             _eln_assert('ro-crate-metadata.json' in graph_nodes_by_id, "ro-crate-metadata.json @graph must contain entry with @id value 'ro-crate-metadata.json'")
             metadata_node = graph_nodes_by_id['ro-crate-metadata.json']
-            _eln_assert(root_node['@type'] == 'Dataset' or root_node['@type'] == ['Dataset'], "ro-crate-metadata.json @graph root node must be Dataset")
+            _eln_assert(_node_has_type(root_node, 'Dataset'), "ro-crate-metadata.json @graph root node must be Dataset")
             if 'version' in metadata_node:
                 _eln_assert(metadata_node['version'] in supported_ro_crate_versions or any(metadata_node['version'].startswith(supported_ro_crate_version + '.') for supported_ro_crate_version in supported_ro_crate_versions), f"ro-crate-metadata.json node has unsupported RO-Crate version (supported are: {', '.join(supported_ro_crate_versions)})")
             root_sdpublisher = root_node.get('sdPublisher')
             metadata_sdpublisher = metadata_node.get('sdPublisher')
-            _eln_assert(isinstance(root_sdpublisher, dict) or isinstance(metadata_sdpublisher, dict), "ro-crate-metadata.json @graph root node or ro-crate-metadata.json node must contain valid sdPublisher")
-            _eln_assert(isinstance(root_sdpublisher, dict) or root_sdpublisher is None, "ro-crate-metadata.json @graph root node sdPublisher is invalid")
-            _eln_assert(isinstance(metadata_sdpublisher, dict) or metadata_sdpublisher is None, "ro-crate-metadata.json @graph ro-crate-metadata.json node sdPublisher is invalid")
-            if root_sdpublisher is not None and metadata_sdpublisher is not None:
-                _eln_assert(root_sdpublisher == metadata_sdpublisher, "ro-crate-metadata.json @graph contains conflicting sdPublisher information")
-            if root_sdpublisher is not None:
-                sdpublisher = root_sdpublisher
-            else:
-                sdpublisher = metadata_sdpublisher
-            _eln_assert(all(isinstance(key, str) for key in sdpublisher), "ro-crate-metadata.json @graph sdPublisher is invalid")
-            if set(sdpublisher.keys()) == {'@id'}:
-                _eln_assert(isinstance(sdpublisher['@id'], str), "ro-crate-metadata.json @graph sdPublisher is invalid")
-                sdpublisher = graph_nodes_by_id.get(sdpublisher['@id'])
-                _eln_assert(isinstance(sdpublisher, dict), "ro-crate-metadata.json @graph sdPublisher is invalid")
-                sdpublisher = typing.cast(typing.Dict[str, typing.Any], sdpublisher)
+            eln_dialect: typing.Optional[str] = None
+            if root_sdpublisher is not None or metadata_sdpublisher is not None:
+                _eln_assert(isinstance(root_sdpublisher, dict) or isinstance(metadata_sdpublisher, dict), "ro-crate-metadata.json @graph root node or ro-crate-metadata.json node must contain valid sdPublisher")
+                _eln_assert(isinstance(root_sdpublisher, dict) or root_sdpublisher is None, "ro-crate-metadata.json @graph root node sdPublisher is invalid")
+                _eln_assert(isinstance(metadata_sdpublisher, dict) or metadata_sdpublisher is None, "ro-crate-metadata.json @graph ro-crate-metadata.json node sdPublisher is invalid")
+                if root_sdpublisher is not None and metadata_sdpublisher is not None:
+                    _eln_assert(root_sdpublisher == metadata_sdpublisher, "ro-crate-metadata.json @graph contains conflicting sdPublisher information")
+                if root_sdpublisher is not None:
+                    sdpublisher = root_sdpublisher
+                else:
+                    sdpublisher = metadata_sdpublisher
                 _eln_assert(all(isinstance(key, str) for key in sdpublisher), "ro-crate-metadata.json @graph sdPublisher is invalid")
-            _eln_assert(sdpublisher.get('@type') == 'Organization', "ro-crate-metadata.json @graph sdPublisher is invalid")
-            if sdpublisher.get('name') == 'SampleDB':
-                eln_dialect = 'SampleDB'
-            else:
-                eln_dialect = None
+                if set(sdpublisher.keys()) == {'@id'}:
+                    _eln_assert(isinstance(sdpublisher['@id'], str), "ro-crate-metadata.json @graph sdPublisher is invalid")
+                    sdpublisher = graph_nodes_by_id.get(sdpublisher['@id'])
+                    _eln_assert(isinstance(sdpublisher, dict), "ro-crate-metadata.json @graph sdPublisher is invalid")
+                    sdpublisher = typing.cast(typing.Dict[str, typing.Any], sdpublisher)
+                    _eln_assert(all(isinstance(key, str) for key in sdpublisher), "ro-crate-metadata.json @graph sdPublisher is invalid")
+                _eln_assert(_node_has_type(sdpublisher, 'Organization'), "ro-crate-metadata.json @graph sdPublisher is invalid")
+                if sdpublisher.get('name') == 'SampleDB':
+                    eln_dialect = 'SampleDB'
             _eln_assert('hasPart' in root_node, "ro-crate-metadata.json @graph root node must have parts")
             if not isinstance(root_node['hasPart'], list):
                 root_node['hasPart'] = [root_node['hasPart']]
@@ -740,7 +754,7 @@ def parse_eln_file(
                         _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
                         description = graph_nodes_by_id[description['@id']]
                     _eln_assert(isinstance(object_node_ref, dict), "Invalid description")
-                    _eln_assert(description.get('@type') == 'TextObject', "Invalid description for Dataset")
+                    _eln_assert(_node_has_type(description, 'TextObject'), "Invalid description for Dataset")
                     description_is_markdown = description.get('encodingFormat') == 'text/markdown'
                     description = description.get('text', '')
                 else:
@@ -818,7 +832,7 @@ def parse_eln_file(
                                 # _eln_assert(graph_nodes_by_id[author_id] == author_node, "Invalid author reference")
                             else:
                                 graph_nodes_by_id[author_id] = author_node
-                        _eln_assert(author_node['@type'] == 'Person', "Reference to node of wrong type")
+                        _eln_assert(_node_has_type(author_node, 'Person'), "Reference to node of wrong type")
                     _eln_assert(isinstance(comment_node.get('text'), str), "Invalid text for Comment")
                     _eln_assert(isinstance(comment_node.get('dateCreated'), str), "Invalid dateCreated for Comment")
                     date_created: typing.Optional[datetime.datetime]
@@ -935,7 +949,7 @@ def parse_eln_file(
                         # skip untyped variableMeasured entries, e.g. used by elabFTW for elabftw_metadata
                         if '@type' not in property_value:
                             continue
-                        _eln_assert(property_value.get('@type') == 'PropertyValue', "Invalid variableMeasured item type for Dataset")
+                        _eln_assert(_node_has_type(property_value, 'PropertyValue'), "Invalid variableMeasured item type for Dataset")
                         _eln_assert(isinstance(property_value.get('propertyID'), str), "Invalid variableMeasured item propertyID for Dataset")
                         _eln_assert(isinstance(property_value.get('name', ''), str), "Invalid variableMeasured item name for Dataset")
                         _eln_assert(isinstance(property_value.get('value'), (str, bool, int, float)), "Invalid variableMeasured item value for Dataset")
@@ -956,8 +970,12 @@ def parse_eln_file(
                     _eln_assert(list(object_part_ref.keys()) == ['@id'], "Invalid reference")
                     _eln_assert(object_part_ref['@id'] in graph_nodes_by_id, "Reference to unknown ID")
                     object_part = graph_nodes_by_id[object_part_ref['@id']]
-                    if object_part['@type'] == 'File':
-                        _eln_assert(isinstance(object_part.get('name'), str), "Invalid name for File")
+                    if _node_has_type(object_part, 'File'):
+                        if 'name' in object_part:
+                            _eln_assert(isinstance(object_part.get('name'), str), "Invalid name for File")
+                            file_title = object_part['name']
+                        else:
+                            file_title = object_part['@id']
                         if 'description' in object_part:
                             description = object_part.get('description')
                             if isinstance(description, dict):
@@ -965,7 +983,7 @@ def parse_eln_file(
                                     _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
                                     description = graph_nodes_by_id[description['@id']]
                                 _eln_assert(isinstance(object_node_ref, dict), "Invalid description")
-                                _eln_assert(description.get('@type') == 'TextObject', "Invalid description for File")
+                                _eln_assert(_node_has_type(description, 'TextObject'), "Invalid description for File")
                                 description = description.get('text', '')
                             else:
                                 _eln_assert(isinstance(object_part.get('description'), str), "Invalid description for File")
@@ -989,7 +1007,7 @@ def parse_eln_file(
                                 author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
                                 files.append(ParsedELNURLFile(
                                     url=file_url,
-                                    title=object_part.get('name'),
+                                    title=file_title,
                                     description=description,
                                     user_id=author_id,
                                     date_created=date_created
@@ -1056,13 +1074,13 @@ def parse_eln_file(
                             author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
                             files.append(ParsedELNDatabaseFile(
                                 name=file_name,
-                                title=object_part['name'],
+                                title=file_title,
                                 description=object_part.get('description'),
                                 content=file_data,
                                 user_id=author_id,
                                 date_created=date_created,
                             ))
-                    if eln_dialect == 'SampleDB' and object_part['@type'] == 'Dataset':
+                    if eln_dialect == 'SampleDB' and _node_has_type(object_part, 'Dataset'):
                         _eln_assert(any(object_part['@id'].startswith(object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_suffix in ('version/', 'versions/')), "SampleDB .eln file must only contain versions as Dataset parts of objects")
                         try:
                             version_id = int(object_part['@id'].strip('/').rsplit('/', maxsplit=1)[1])
@@ -1187,7 +1205,7 @@ def parse_eln_file(
                     type_id=object_type_id,
                 ))
             for graph_node in graph_nodes_by_id.values():
-                if graph_node['@type'] == 'Person':
+                if _node_has_type(graph_node, 'Person'):
                     if 'name' in graph_node and graph_node['name'] is None:
                         name = None
                     else:
@@ -1201,7 +1219,8 @@ def parse_eln_file(
                             name = name.strip()
                         else:
                             name = None
-                        _eln_assert(name, "Invalid name for Person")
+                        if not name:
+                            name = 'Imported User'
                     url = None
                     if 'url' in graph_node:
                         _eln_assert(isinstance(graph_node['url'], str), "Invalid url for Person")
