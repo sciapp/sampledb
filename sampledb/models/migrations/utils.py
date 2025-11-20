@@ -250,6 +250,7 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "authentication_type_add_oidc",
         "notification_mode_for_types_add_not_null_constraint",
         'eln_imports_add_signed_by',
+        "topics_split_show_in_navbar",
     ]
 
     migrations = []

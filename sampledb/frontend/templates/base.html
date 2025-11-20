@@ -117,18 +117,25 @@
           </span>
         </div>
       </form>
-      {% if config['DISABLE_TOPICS'] %}
-        {% set nav_topics = [] %}
-      {% else %}
-        {% set nav_topics = get_topics(filter_navbar=True) %}
+      {% set action_navbar_topics = [] %}
+      {% set instrument_navbar_topics = [] %}
+      {% if not config['DISABLE_TOPICS'] %}
+        {% for topic in get_topics(filter_navbar=True) %}
+          {% if topic.show_in_action_navbar %}
+            {% do action_navbar_topics.append(topic) %}
+          {% endif %}
+          {% if topic.show_in_instrument_navbar %}
+            {% do instrument_navbar_topics.append(topic) %}
+          {% endif %}
+        {% endfor %}
       {% endif %}
       <ul class="nav navbar-nav">
         {% if not config['DISABLE_INSTRUMENTS'] %}
-          {% if nav_topics %}
+          {% if instrument_navbar_topics %}
             <li class="dropdown">
               <a href="{{ url_for('frontend.instruments') }}" style="display:inline-block; padding-right: 0;">{{ _('Instruments') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
               <ul class="dropdown-menu">
-                {% for topic in nav_topics %}
+                {% for topic in instrument_navbar_topics %}
                   <li><a href="{{ url_for('frontend.instruments', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
                 {% endfor %}
               </ul>
@@ -145,9 +152,9 @@
               <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
-            {% if nav_topics %}
+            {% if action_navbar_topics %}
             <li role="separator" class="divider"></li>
-            {% for topic in nav_topics %}
+            {% for topic in action_navbar_topics %}
             <li><a href="{{ url_for('frontend.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
             {% endfor %}
             {% endif %}
