@@ -337,8 +337,8 @@ def print_deprecation_warnings() -> None:
                 "Numeric tags are enabled, please evaluate if these are "
                 "necessary for your use case and set the configuration value "
                 "ENABLE_NUMERIC_TAGS to False to disable them. To learn more,"
-                "see: "
-                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#numeric-tags",
+                "see: " + flask.current_app.config["DOCUMENTATION_ROOT_URL"] +
+                "administrator_guide/deprecated_features.html#numeric-tags",
                 color=33
             ),
             file=sys.stderr,

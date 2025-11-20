@@ -4,7 +4,7 @@
 
 {% block content %}
   <h1>{{ _('Tags') }}</h1>
-  <p class="text-muted">{{ _('Tags or Keywords serve as a means to organize objects using short, lower case words.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#tags">{{ _('Read more.') }}</a></p>
+  <p class="text-muted">{{ _('Tags or Keywords serve as a means to organize objects using short, lower case words.') }} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/objects.html#tags">{{ _('Read more.') }}</a></p>
   {% if tags %}
     <ul>
     {% for tag in tags %}

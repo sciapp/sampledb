@@ -132,6 +132,8 @@ Customization
      - The alignment (left, center or right) of the logo, if SAMPLEDB_PDFEXPORT_LOGO_URL is set (default: right)
    * - SAMPLEDB_PDFEXPORT_LOGO_WIDTH
      - The width of the logo in millimeters (default: 30). Large logos will overlap with the content of the object export, so make sure the size and alignment do not cause any issues.
+   * - SAMPLEDB_DOCUMENTATION_ROOT_URL
+     - The root URL for the documentation (default: https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/)
    * - SAMPLEDB_HELP_URL
      - The URL to use for the help link
 

@@ -13,7 +13,7 @@
         {% else %}
           {{ _('Numeric tags are enabled, please do not set the configuration value <code>ENABLE_NUMERIC_TAGS</code> or set it to <code>False</code>.') }}
         {% endif %}
-          <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#numeric-tags">{{ _('Read more.') }}</a>
+          <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}administrator_guide/deprecated_features.html#numeric-tags">{{ _('Read more.') }}</a>
         </li>
     {% endif %}
     </ul>

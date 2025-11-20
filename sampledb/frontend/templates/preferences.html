@@ -180,7 +180,7 @@
   <h3 id="api_tokens">{{ _('API Tokens')}}</h3>
   <div>
     <p>
-      <strong>{{ _('Note:')}}</strong> {{ _('API tokens are an authentication method for use with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
+      <strong>{{ _('Note:')}}</strong> {{ _('API tokens are an authentication method for use with the <a href="%(documentation_root_url)sdeveloper_guide/api.html">HTTP API</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"]) }}
     </p>
     <table class="table">
       {% if api_tokens %}
@@ -221,7 +221,7 @@
   <h3 id="api_access_tokens">{{ _('API Access Tokens')}}</h3>
   <div>
     <p>
-      <strong>{{ _('Note:')}}</strong> {{ _('API access tokens are short-lived tokens for the use by interactive applications or scripts to authenticate with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
+      <strong>{{ _('Note:')}}</strong> {{ _('API access tokens are short-lived tokens for the use by interactive applications or scripts to authenticate with the <a href="%(documentation_root_url)sdeveloper_guide/api.html">HTTP API</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"])}}
     </p>
     <table class="table">
       <thead>
@@ -301,7 +301,7 @@
     <h3 id="webhooks">{{ _('Webhooks') }}</h3>
     <div>
       <p>
-        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log, as described in <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/webhooks.html">the documentation</a>.')}}
+        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log, as described in <a href="%(documentation_root_url)sdeveloper_guide/webhooks.html">the documentation</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"])}}
       </p>
         <table class="table">
       {% if webhooks | length == 0 %}
@@ -875,7 +875,7 @@
             </div>
             <span class="help-block">
               {{ _('Make sure you save it &mdash; you won\'t be able to access it again.') }}
-              {{ _('See the <href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/webhooks.html#validation">documentation</a> on how to use and validate messages using a secret.') }}
+              {{ _('See the <a href="%(documentation_root_url)sdeveloper_guide/webhooks.html#validation">documentation</a> on how to use and validate messages using a secret.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"]) }}
             </span>
           </div>
           <div class="modal-footer">
