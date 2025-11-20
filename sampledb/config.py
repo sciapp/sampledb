@@ -114,6 +114,7 @@ def parse_configuration_values() -> None:
         'DISABLE_SUBPROJECTS',
         'ENFORCE_SPLIT_NAMES',
         'BUILD_TRANSLATIONS',
+        'SHOW_DOWNTIME_WARNING',
         'SHOW_PREVIEW_WARNING',
         'SHOW_OBJECT_TITLE',
         'FULL_WIDTH_OBJECTS_TABLE',
@@ -845,6 +846,7 @@ PYBABEL_PATH = 'pybabel'
 
 EXTRA_USER_FIELDS: typing.Dict[str, typing.Dict[str, typing.Dict[str, str]]] = {}
 
+SHOW_DOWNTIME_WARNING = False
 SHOW_PREVIEW_WARNING = False
 
 DISABLE_INLINE_EDIT = False
