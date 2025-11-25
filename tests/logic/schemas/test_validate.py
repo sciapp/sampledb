@@ -4,6 +4,8 @@
 """
 import datetime
 import math
+import typing
+import uuid
 
 import pytest
 
@@ -1575,10 +1577,10 @@ def test_validate_measurement_with_federated_action_type():
     validate(instance, schema)
 
 
-def test_validate_object_reference():
+def test_validate_object_reference(flask_server):
     from sampledb.models.users import User, UserType
     from sampledb.models.actions import Action
-    schema = {
+    schema: typing.Dict[str, typing.Any] = {
         'title': 'Example',
         'type': 'object_reference'
     }
@@ -1611,6 +1613,64 @@ def test_validate_object_reference():
     schema['action_type_id'] = None
     validate(instance, schema)
     schema['action_type_id'] = action.type_id
+    validate(instance, schema)
+    component_uuid = flask_server.app.config['FEDERATION_UUID']
+    schema['action_id'] = {'action_id': action.id, 'component_uuid': component_uuid}
+    schema['action_type_id'] = {'action_type_id': action.type_id, 'component_uuid': component_uuid}
+    validate(instance, schema)
+    other_component_uuid = str(uuid.uuid4())
+    other_component = sampledb.logic.components.add_component(other_component_uuid)
+    fed_object_id = 1
+    fed_action_type_id = 2
+    fed_action_id = 3
+    instance = {
+        '_type': 'object_reference',
+        'object_id': fed_object_id,
+        'component_uuid': other_component_uuid
+    }
+    schema['action_id'] = {'action_id': fed_action_id, 'component_uuid': other_component_uuid}
+    schema['action_type_id'] = {'action_type_id': fed_action_type_id, 'component_uuid': other_component_uuid}
+    validate(instance, schema)
+    schema['action_id'] = [{'action_id': fed_action_id, 'component_uuid': other_component_uuid}]
+    schema['action_type_id'] = [{'action_type_id': fed_action_type_id, 'component_uuid': other_component_uuid}]
+    validate(instance, schema)
+    fed_action = sampledb.logic.federation.actions.import_action(
+        action_data=sampledb.logic.federation.actions.ActionData(
+            fed_id=fed_action_id,
+            component_uuid=other_component_uuid,
+            action_type=sampledb.logic.federation.action_types.ActionTypeRef(
+                action_type_id=fed_action_type_id,
+                component_uuid=other_component_uuid
+            ),
+            schema=None,
+            instrument=None,
+            user=None,
+            description_is_markdown=False,
+            short_description_is_markdown=False,
+            is_hidden=True,
+            translations=[],
+            admin_only=False,
+            disable_create_objects=True,
+            import_notes=[]
+        ),
+        component=other_component
+    )
+    fed_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=fed_object_id,
+        fed_version_id=0,
+        component_id=other_component.id,
+        action_id=fed_action.id,
+        schema=action.schema,
+        data=object.data,
+        user_id=None,
+        utc_datetime=datetime.datetime.now()
+    )
+    instance = {
+        '_type': 'object_reference',
+        'object_id': fed_object.id
+    }
+    schema['action_id'] = {'action_id': fed_action_id, 'component_uuid': other_component_uuid}
+    schema['action_type_id'] = {'action_type_id': fed_action_type_id, 'component_uuid': other_component_uuid}
     validate(instance, schema)
 
 

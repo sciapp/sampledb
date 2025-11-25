@@ -1159,12 +1159,12 @@ A tooltip to display when hovering the mouse cursor over the property title, as 
 action_type_id
 ^^^^^^^^^^^^^^
 
-This attribute is a number or list of numbers that sets the IDs of action types to limit which actions an object referenced by this property may have been created with, e.g. ``-99`` to limit the property to samples or ``[-99, -98]`` to allow samples and measurements.
+This attribute is a number, dict or list of numbers or dicts that sets the IDs of action types to limit which actions an object referenced by this property may have been created with, e.g. ``-99`` to limit the property to samples, ``[-99, -98]`` to allow samples and measurements or [-99, {"action_type_id": 2, "component_uuid": "0f26c1ae-4d53-40ce-aef2-cd180d10685e"}] to allow samples and action type 2 from another database.
 
 action_id
 ^^^^^^^^^
 
-This attribute is a number or list of numbers that sets the IDs of actions to limit that only objects created with these actions may be referenced by this property, e.g. ``1`` or ``[1, 3]``.
+This attribute is a number, dict or list of numbers or dicts that sets the IDs of actions to limit that only objects created with these actions may be referenced by this property, e.g. ``1``, ``[1, 3]`` or ``[1, {"action_id": 2, "component_uuid": "0f26c1ae-4d53-40ce-aef2-cd180d10685e"}]``.
 
 filter_operator
 ^^^^^^^^^^^^^^^

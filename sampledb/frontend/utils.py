@@ -51,8 +51,8 @@ from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.schemas import get_default_data
-from ..logic.actions import Action
-from ..logic.action_types import ActionType
+from ..logic.actions import Action, get_action
+from ..logic.action_types import ActionType, get_action_type
 from ..logic.info_pages import InfoPage, get_info_pages_for_endpoint
 from ..logic.instruments import Instrument
 from ..logic.instrument_log_entries import InstrumentLogFileAttachment
@@ -1926,3 +1926,55 @@ def merge_external_links(*external_link_config_keys: typing.Tuple[str, typing.Un
         else:
             merged_external_link_config_list.append(copy.deepcopy(link_list_config))
     return merged_external_link_config_list
+
+
+@JinjaFunction()
+def convert_schema_action_ids_to_local_action_ids(
+        schema_action_ids: typing.Optional[typing.Union[int, typing.Dict[str, typing.Any], typing.List[typing.Union[int, typing.Dict[str, typing.Any]]]]]
+) -> typing.Optional[typing.List[int]]:
+    if schema_action_ids is None:
+        return None
+    if type(schema_action_ids) is not list:
+        schema_action_ids = [typing.cast(typing.Union[int, typing.Dict[str, typing.Any]], schema_action_ids)]
+    local_action_ids = set()
+    for schema_action_id in schema_action_ids:
+        if type(schema_action_id) is int:
+            local_action_ids.add(schema_action_id)
+        if type(schema_action_id) is dict:
+            if schema_action_id['component_uuid'] == flask.current_app.config['FEDERATION_UUID']:
+                local_action_ids.add(schema_action_id['action_id'])
+            else:
+                component_id = get_component_id_by_uuid(schema_action_id['component_uuid'])
+                if component_id is not None:
+                    try:
+                        action = get_action(schema_action_id['action_id'], component_id)
+                        local_action_ids.add(action.id)
+                    except errors.ActionDoesNotExistError:
+                        pass
+    return list(local_action_ids)
+
+
+@JinjaFunction()
+def convert_schema_action_type_ids_to_local_action_type_ids(
+        schema_action_type_ids: typing.Optional[typing.Union[int, typing.Dict[str, typing.Any], typing.List[typing.Union[int, typing.Dict[str, typing.Any]]]]]
+) -> typing.Optional[typing.List[int]]:
+    if schema_action_type_ids is None:
+        return None
+    if type(schema_action_type_ids) is not list:
+        schema_action_type_ids = [typing.cast(typing.Union[int, typing.Dict[str, typing.Any]], schema_action_type_ids)]
+    local_action_type_ids = set()
+    for schema_action_type_id in schema_action_type_ids:
+        if type(schema_action_type_id) is int:
+            local_action_type_ids.add(schema_action_type_id)
+        if type(schema_action_type_id) is dict:
+            if schema_action_type_id['component_uuid'] == flask.current_app.config['FEDERATION_UUID']:
+                local_action_type_ids.add(schema_action_type_id['action_type_id'])
+            else:
+                component_id = get_component_id_by_uuid(schema_action_type_id['component_uuid'])
+                if component_id is not None:
+                    try:
+                        action_type = get_action_type(schema_action_type_id['action_type_id'], component_id)
+                        local_action_type_ids.add(action_type.id)
+                    except errors.ActionTypeDoesNotExistError:
+                        pass
+    return list(local_action_type_ids)
