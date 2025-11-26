@@ -1547,8 +1547,9 @@ def test_add_webhook_selenium(flask_server, driver, user):
     assert webhook.target_url == flask_server.base_url
     assert webhook.secret == driver.find_element(By.CSS_SELECTOR, '#webhook-secret input').get_attribute("value")
     assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
-    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:first-child').get_attribute("innerText") == "Example Webhook"
-    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == flask_server.base_url
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(1)').get_attribute("innerText") == "Object Log"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == "Example Webhook"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(3)').get_attribute("innerText") == flask_server.base_url
 
 
 def test_add_webhook_exist_already_selenium(flask_server, driver, user):
@@ -1696,8 +1697,9 @@ def test_add_webhook_blank_name_selenium(flask_server, driver, user):
     assert webhook.target_url == flask_server.base_url
     assert webhook.secret == driver.find_element(By.CSS_SELECTOR, '#webhook-secret input').get_attribute("value")
     assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
-    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:first-child').get_attribute("innerText") == "—"
-    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == flask_server.base_url
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(1)').get_attribute("innerText") == "Object Log"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == "—"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(3)').get_attribute("innerText") == flask_server.base_url
 
 
 def test_remove_webhook_selenium(flask_server, driver, user):
@@ -1716,12 +1718,13 @@ def test_remove_webhook_selenium(flask_server, driver, user):
 
     driver.get(flask_server.base_url + 'users/me/preferences')
     assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
-    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:first-child').get_attribute("innerText") == "Example Webhook"
-    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == 'https://example.com'
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(1)').get_attribute("innerText") == "Object Log"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == "Example Webhook"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(3)').get_attribute("innerText") == 'https://example.com'
 
     assert sampledb.logic.webhooks.get_webhooks(user_id=user.id)
     with wait_for_page_load(driver):
-        driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(4) button').click()
+        driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(5) button').click()
     assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
 
 

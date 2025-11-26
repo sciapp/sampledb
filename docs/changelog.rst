@@ -16,6 +16,7 @@ Currently in development.
 - Added name-based filtering to action and instrument lists
 - Added config value for MAX_FORM_MEMORY_SIZE
 - Split setting for showing topics in navbar for actions and instruments tabs
+- Added webhook type for changes to object permissions
 
 
 Version 0.32

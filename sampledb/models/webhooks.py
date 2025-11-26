@@ -15,6 +15,7 @@ from .utils import Model
 
 class WebhookType(enum.Enum):
     OBJECT_LOG = 1
+    OBJECT_PERMISSIONS = 2
 
 
 class Webhook(Model):

@@ -301,7 +301,7 @@
     <h3 id="webhooks">{{ _('Webhooks') }}</h3>
     <div>
       <p>
-        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log, as described in <a href="%(documentation_root_url)sdeveloper_guide/webhooks.html">the documentation</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"])}}
+        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log or to changes to object permissions, as described in <a href="%(documentation_root_url)sdeveloper_guide/webhooks.html">the documentation</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"])}}
       </p>
         <table class="table">
       {% if webhooks | length == 0 %}
@@ -309,6 +309,7 @@
       {% else %}
          <thead>
              <tr>
+                 <th>{{ _('Type') }}</th>
                  <th>{{ _('Name') }}</th>
                  <th>{{ _('Address') }}</th>
                  <th>{{ _('Last Contact') }}</th>
@@ -318,9 +319,10 @@
          <tbody>
            {% for webhook in webhooks %}
            <tr>
+             <td>{{ {'OBJECT_LOG': _('Object Log'), 'OBJECT_PERMISSIONS': _('Object Permissions')}.get(webhook.type.name, '—') }}</td>
              <td>{{ webhook.name or '—' }}</td>
              <td>{{ webhook.target_url }}</td>
-             <td>{% if not webhook.last_contact %}&mdash;{% else %}{{ webhook.last_contact }}{% endif %}</td>
+             <td>{% if not webhook.last_contact %}&mdash;{% else %}{{ webhook.last_contact | babel_format_datetime }}{% endif %}</td>
              <td class="text-right">
                <div class="btn-group">
                  <form method="post" name="form-remove-webhook" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
@@ -336,6 +338,7 @@
       {% endif %}
          <tfoot>
            <tr>
+             <td></td>
              <td></td>
              <td></td>
              <td></td>
@@ -832,6 +835,17 @@
         <form method="post" action="{{ url_for('.user_preferences', user_id=current_user.id) }}" class="form-horizontal">
           {{ add_webhook_form.csrf_token() }}
           <div class="modal-body">
+            <div class="form-group {% if add_webhook_form.type.errors %}has-error{% endif %}">
+              <label for="addWebhookType" class="col-sm-2 control-label">{{ _('Type') }}</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" id="addWebhookType" name="{{ add_webhook_form.type.name }}" data-width="100%">
+                  {% for choice in add_webhook_form.type.choices %}
+                    <option {% if add_webhook_form.type.data == choice[0] %}selected="selected"{% endif %} value="{{ choice[0] }}">{{ _(choice[1]) }}</option>
+                  {% endfor %}
+                </select>
+                {% for error_message in add_webhook_form.type.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
             <div class="form-group {% if add_webhook_form.name.errors %}has-error{% endif %}">
               <label for="addWebhookName" class="col-sm-2 control-label">{{ _('Name') }}</label>
               <div class="col-sm-10">

@@ -7,7 +7,7 @@ import flask
 
 from .authentication import object_permissions_required
 from ..utils import Resource, ResponseData
-from ...logic import users, groups, projects, errors, object_permissions
+from ...logic import users, groups, projects, errors, object_permissions, background_tasks
 from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -56,6 +56,7 @@ class UserObjectPermissions(Resource):
                 "message": "Permissions name required"
             }, 400
         object_permissions.set_user_object_permissions(object_id, user_id, permissions)
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
 
 
@@ -116,6 +117,7 @@ class GroupObjectPermissions(Resource):
                 "message": "Permissions name required"
             }, 400
         object_permissions.set_group_object_permissions(object_id, group_id, permissions)
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
 
 
@@ -168,6 +170,7 @@ class ProjectObjectPermissions(Resource):
                 "message": "Permissions name required"
             }, 400
         object_permissions.set_project_object_permissions(object_id, project_id, permissions)
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
 
 
@@ -203,6 +206,7 @@ class PublicObjectPermissions(Resource):
             object_id=object_id,
             permissions=Permissions.READ if is_public else Permissions.NONE
         )
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return is_public, 200
 
 
@@ -233,6 +237,7 @@ class AuthenticatedUserObjectPermissions(Resource):
             object_id=object_id,
             permissions=permissions
         )
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
 
 
@@ -271,4 +276,5 @@ class AnonymousUserObjectPermissions(Resource):
             object_id=object_id,
             permissions=permissions
         )
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200

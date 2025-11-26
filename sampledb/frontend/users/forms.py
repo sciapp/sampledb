@@ -5,7 +5,7 @@
 
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectMultipleField, HiddenField, BooleanField
+from wtforms import StringField, IntegerField, SelectMultipleField, HiddenField, BooleanField, SelectField
 from wtforms.validators import InputRequired, Length, DataRequired
 
 
@@ -64,6 +64,7 @@ class ManageTwoFactorAuthenticationMethodForm(FlaskForm):
 class AddWebhookForm(FlaskForm):
     name = StringField(validators=[Length(min=0, max=100)])
     address = StringField(validators=[Length(min=1, max=100)])
+    type = SelectField(validators=[DataRequired()], choices=[('object_log', 'Object Log'), ('object_permissions', 'Object Permissions')])
 
 
 class RemoveWebhookForm(FlaskForm):

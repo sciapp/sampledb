@@ -391,6 +391,8 @@ def _handle_webhook_forms(
         add_webhook_form.address.data = ''
     if add_webhook_form.name.data is None:
         add_webhook_form.name.data = ''
+    if add_webhook_form.type.data is None:
+        add_webhook_form.type.data = 'object_log'
     remove_webhook_form = RemoveWebhookForm()
 
     template_kwargs.update(
@@ -420,11 +422,15 @@ def _handle_webhook_forms(
             try:
                 name = add_webhook_form.name.data
                 address = add_webhook_form.address.data
+                webhook_type = {
+                    'object_log': WebhookType.OBJECT_LOG,
+                    'object_permissions': WebhookType.OBJECT_PERMISSIONS,
+                }.get(add_webhook_form.type.data, WebhookType.OBJECT_LOG)
                 if name == '':
                     name = None
                 if address == '':
                     address = None
-                new_webhook = create_webhook(type=WebhookType.OBJECT_LOG, user_id=flask_login.current_user.id, target_url=address, name=name)
+                new_webhook = create_webhook(type=webhook_type, user_id=flask_login.current_user.id, target_url=address, name=name)
             except errors.WebhookAlreadyExistsError:
                 add_webhook_form.address.errors.append(_('A webhook of this type with this target address already exists', service_name=flask.current_app.config['SERVICE_NAME']))
             except errors.InsecureComponentAddressError:
