@@ -12,7 +12,7 @@
 
 <div>
   <label class="control-label" for="{{ id_prefix }}_data">{{ _('Data (as CSV)') }}</label>
-  <div class="has-conflict {% if conflicting %} input-group conflict-field-resizing {% endif %}" >
+  <div class="{% if conflicting %}input-group has-conflict conflict-field-resizing {% endif %}" >
     <textarea type="text" class="form-control" {% if conflicting %} style="resize: vertical; min-height: 36px;" {% endif %} id="{{ id_prefix }}_data" name="{{ id_prefix }}_data" rows="5" placeholder="{{ _('CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or relative time in seconds, and magnitude') }}">{% if id_prefix+'_data' in form_data %}{{ form_data[id_prefix+'_data'] }}{% elif data is not none and data.data %}{{ data.data | to_timeseries_csv }}{% endif %}</textarea>
     {% if conflicting %}
       <div
