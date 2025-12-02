@@ -7091,7 +7091,7 @@ msgid ""
 " local object version."
 msgstr ""
 "Die importierte Version #%(fed_version_id)s von <a "
-"href=\"%(component_url)s\">%(component_name)s<a/> steht in Konflikt mit "
+"href=\"%(component_url)s\">%(component_name)s</a> steht in Konflikt mit "
 "der lokalen Objektversion."
 
 #, python-format
