@@ -92,8 +92,10 @@ def create_object(
         object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
     elif permissions_for_group_id is not None:
         object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, Permissions.GRANT)
+        object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
     elif permissions_for_project_id is not None:
         object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
+        object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
     else:
         object_permissions.set_initial_permissions(object)
     if permissions_for_all_users is not None:
@@ -265,8 +267,10 @@ def create_object_batch(
                     object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
                 elif permissions_for_group_id is not None:
                     object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, Permissions.GRANT)
+                    object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
                 elif permissions_for_project_id is not None:
                     object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
+                    object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
                 else:
                     object_permissions.set_initial_permissions(object)
                 if permissions_for_all_users is not None:
