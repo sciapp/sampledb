@@ -321,8 +321,10 @@ Miscellaneous
      - The path to the pybabel executable (default: ``pybabel``)
    * - SAMPLEDB_EXTRA_USER_FIELDS
      - A JSON-encoded dict containing extra user fields, e.g. ``{"phone": {"name": {"en": "Phone No."}, "placeholder": {"en": "Phone No."}}}`` (default: ``{}``)
+   * - SAMPLEDB_SHOW_DOWNTIME_WARNING
+     - If set, a warning will be shown indicating that the instance may occasionally be offline during updates. (default: False)
    * - SAMPLEDB_SHOW_PREVIEW_WARNING
-     - If set, a warning will be shown indicating that the instance is a preview installation and that data will be deleted.
+     - If set, a warning will be shown indicating that the instance is a preview installation and that data will be deleted. (default: False)
    * - SAMPLEDB_DISABLE_INLINE_EDIT
      - If set, the inline edit mode will be disabled and users will not be able to edit individual fields.
    * - SAMPLEDB_SHOW_OBJECT_TITLE
