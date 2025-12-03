@@ -1829,6 +1829,9 @@ Reading a list of all users
             }
         ]
 
+    :<json string filter_hidden: set to `true` to only get hidden users or to `false` to only get non-hidden users (only for API requests by administrators)
+    :<json string filter_active: set to `true` to only get active users or to `false` to only get non-active users (only for API requests by administrators)
+    :<json string filter_readonly: set to `true` to only get read-only users or to `false` to only get non-read-only users (only for API requests by administrators)
     :statuscode 200: no error
 
 
@@ -1869,6 +1872,9 @@ Reading a user
     :>json string affiliation: the user's affiliation (optional)
     :>json string role: the user's role (optional)
     :>json string email: the user's email (only for API requests by administrators)
+    :>json string is_hidden: whether the user is hidden (only for API requests by administrators)
+    :>json string is_active: whether the user is active (only for API requests by administrators)
+    :>json string is_readonly: whether the user is read-only (only for API requests by administrators)
     :statuscode 200: no error
     :statuscode 404: the user does not exist
 
@@ -2202,6 +2208,101 @@ Reading a location
     :statuscode 404: the location does not exist
 
 
+Creating a new location
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/locations/
+
+    Create a new location.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/locations/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "name": "Example Location",
+            "description": "This is an example location",
+            "parent_location_id": null,
+            "type_id": -99
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/locations/1
+
+    :<json string name: the locations's name
+    :<json string description: the locations's description
+    :<json number parent_location_id: the parent location's ID
+    :<json number type_id: the location type's ID
+    :statuscode 201: the location was created successfully
+    :statuscode 403: management of locations is limited to administrators (configurable), management of locations of this location type is limited to administrators or the user does not have WRITE permissions for the parent location
+
+
+Updating a location
+^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/locations/(int:location_id)
+
+    Update the specific location (`location_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/locations/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "location_id": 1,
+            "name": "Example Location",
+            "description": "This is an example location",
+            "parent_location_id": null,
+            "type_id": -99,
+            "is_hidden": false,
+            "enable_object_assignments": true
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "location_id": 1,
+            "name": "Example Location",
+            "description": "This is an example location",
+            "parent_location_id": null,
+            "type_id": -99,
+            "is_hidden": false,
+            "enable_object_assignments": true
+        }
+
+    :<json number location_id: the location's ID (optional)
+    :<json string name: the locations's name
+    :<json string description: the locations's description
+    :<json number parent_location_id: the parent location's ID
+    :<json number type_id: the location type's ID
+    :<json bool is_hidden: whether or not the location is hidden
+    :<json bool enable_object_assignments: whether object assignments are enabled for this location
+    :statuscode 200: the location was updated successfully
+    :statuscode 403: management of locations is limited to administrators (configurable), management of locations of this location type is limited to administrators or the user does not have WRITE permissions for the parent location
+
+
 Reading a list of an object's locations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2279,6 +2380,45 @@ Reading an object's location
     :>json number utc_datetime: the datetime when the object was stored
     :statuscode 200: no error
     :statuscode 404: the object or the object location assignment does not exist
+
+
+Assigning a location or a responsible user to an object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/(int:object_id)/locations/
+
+    Assign a location or responsible user to a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/objects/1/locations/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "location_id": 2,
+            "responsible_user_id": "3",
+            "description": "This is an example location assignment."
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/locations/0
+
+    :<json number location_id: the ID of the location to assign the object to (optional if responsible_user_id is set)
+    :<json string responsible_user_id: the ID of the responsible user to assign the object to (optional if responsible_user_id is set)
+    :<json string description: the description for the object location assignment (optional)
+    :statuscode 201: the object has successfully been assigned to a location or a responsible user
+    :statuscode 403: the user does not have WRITE permissions for this object or READ permissions for this location
+    :statuscode 404: the object does not exist
 
 
 Location Types
