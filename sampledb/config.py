@@ -520,8 +520,8 @@ def check_config(
                         'supported anymore starting with SampleDB 0.26.0. '
                         'Please move them to "database" storage using an '
                         'earlier version of SampleDB. For more information, '
-                        'see: '
-                        'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage'
+                        'see: ' + config['DOCUMENTATION_ROOT_URL'] +
+                        'administrator_guide/deprecated_features.html#local-file-storage'
                         '\n',
                         color=31
                     ),
@@ -536,8 +536,8 @@ def check_config(
                         'are not supported anymore starting with SampleDB 0.26.0. '
                         'Please unset the FILE_STORAGE_PATH config variable and do '
                         'not mount a directory for local file storage. For more '
-                        'information, see: '
-                        'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage'
+                        'information, see: ' + config['DOCUMENTATION_ROOT_URL'] +
+                        'administrator_guide/deprecated_features.html#local-file-storage'
                         '\n',
                         color=31
                     ),
@@ -694,8 +694,8 @@ def check_config(
 
     if show_config_info:
         print(
-            'For more information on setting SampleDB configuration, see: '
-            'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
+            'For more information on setting SampleDB configuration, see: ' +
+            config['DOCUMENTATION_ROOT_URL'] +
             'administrator_guide/configuration.html',
             file=sys.stderr
         )
@@ -768,7 +768,8 @@ SERVICE_IMPRINT = None
 SERVICE_LEGAL_NOTICE = None
 SERVICE_PRIVACY_POLICY = None
 SERVICE_ACCESSIBILITY = None
-HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
+DOCUMENTATION_ROOT_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
+HELP_URL = DOCUMENTATION_ROOT_URL + '#documentation'
 
 # a map of file extensions and the MIME types they should be handled as
 # this is used to determine which user uploaded files should be served as

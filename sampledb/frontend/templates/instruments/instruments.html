@@ -20,7 +20,7 @@
     {% endif %}
     </ul>
   {% endif %}
-  <p class="text-muted">{{ _('Instruments in %(service_name)s map real instruments to <a href="%(actions_url)s">actions</a> performed with them.', service_name=service_name, actions_url=url_for('.actions')) }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html">{{ _('Read more.') }}</a></p>
+  <p class="text-muted">{{ _('Instruments in %(service_name)s map real instruments to <a href="%(actions_url)s">actions</a> performed with them.', service_name=service_name, actions_url=url_for('.actions')) }} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/instruments.html">{{ _('Read more.') }}</a></p>
 
   {% if current_user.is_admin and not current_user.is_readonly %}
     <a href="{{ url_for('.new_instrument', topic_ids=filter_topic_ids | join(',') or None) }}" class="btn btn-default">{{ _('Create Instrument') }}</a>

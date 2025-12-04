@@ -868,11 +868,11 @@ def federated_login_verify() -> FlaskResponseT:
     try:
         response = process_login(form_data)
     except errors.InvalidSAMLRequestError:
-        flask.flash(_('Failed to verify the authentication request. Please try again or contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/federation.html#federated-login"), "error-url")
+        flask.flash(_('Failed to verify the authentication request. Please try again or contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url=flask.current_app.config['DOCUMENTATION_ROOT_URL'] + "administrator_guide/federation.html#federated-login"), "error-url")
         return flask.redirect(flask.url_for('.index'))
 
     if response is None:
-        flask.flash(_('Failed to use federated login because of missing metadata. Please contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/federation.html#federated-login"), 'error-url')
+        flask.flash(_('Failed to use federated login because of missing metadata. Please contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url=flask.current_app.config['DOCUMENTATION_ROOT_URL'] + "administrator_guide/federation.html#federated-login"), 'error-url')
         return flask.redirect(flask.url_for('.index'))
     return response
 
