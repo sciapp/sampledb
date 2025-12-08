@@ -319,6 +319,11 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
             raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
     elif not choices:
         all_languages = languages.get_languages_by_component(component_id=component_id)
+        # If only one language is found, the other component does not support bidirectional editing (english and german
+        # must be available then). Therefore local languages should be used.
+        if len(all_languages) < 2:
+            all_languages = languages.get_languages()
+
         language_names = {
             language.lang_code: get_translated_text(language.names)
             for language in all_languages
