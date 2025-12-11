@@ -16,7 +16,8 @@
     {% if current_user.is_admin %}
       <dl>
         <dt>{{ _('Show on Frontpage') }}</dt><dd>{% if topic.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown on the frontpage') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown on the frontpage') }}{% endif %}</dd>
-        <dt>{{ _('Show in Navbar') }}</dt><dd>{% if topic.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the navbar') }}{% endif %}</dd>
+        <dt>{{ _('Show in Actions Tab of Navbar') }}</dt><dd>{% if topic.show_in_action_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the actions tab of the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the actions tab of the navbar') }}{% endif %}</dd>
+        <dt>{{ _('Show in Instruments Tab of Navbar') }}</dt><dd>{% if topic.show_in_instrument_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the instruments tab of the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the instruments tab of the navbar') }}{% endif %}</dd>
       </dl>
     {% endif %}
       {% if not config['DISABLE_INSTRUMENTS'] %}

@@ -7,7 +7,8 @@ from sampledb.logic import errors, topics, instruments, actions
 def test_check_topic_exists():
     topic = topics.create_topic(
         show_on_frontpage=True,
-        show_in_navbar=True,
+        show_in_action_navbar=True,
+        show_in_instrument_navbar=True,
         name={'en': 'Testing'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -22,7 +23,8 @@ def test_check_topic_exists():
 def test_get_topics():
     t1 = topics.create_topic(
         show_on_frontpage=True,
-        show_in_navbar=True,
+        show_in_action_navbar=True,
+        show_in_instrument_navbar=True,
         name={'en': 'Topic A'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -31,7 +33,8 @@ def test_get_topics():
     )
     t2 = topics.create_topic(
         show_on_frontpage=True,
-        show_in_navbar=False,
+        show_in_action_navbar=False,
+        show_in_instrument_navbar=False,
         name={'en': 'Topic B'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -40,7 +43,8 @@ def test_get_topics():
     )
     t3 = topics.create_topic(
         show_on_frontpage=False,
-        show_in_navbar=True,
+        show_in_action_navbar=True,
+        show_in_instrument_navbar=True,
         name={'en': 'Topic C'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -49,7 +53,8 @@ def test_get_topics():
     )
     t4 = topics.create_topic(
         show_on_frontpage=False,
-        show_in_navbar=False,
+        show_in_action_navbar=False,
+        show_in_instrument_navbar=False,
         name={'en': 'Topic D'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -71,7 +76,8 @@ def test_add_topic_to_order():
     all_topics = [
         topics.create_topic(
             show_on_frontpage=True,
-            show_in_navbar=True,
+            show_in_action_navbar=True,
+            show_in_instrument_navbar=True,
             name={'en': 'Local Topic ' + chr(ord('A') + i)},
             description={'en': ''},
             short_description={'en': ''},
@@ -98,7 +104,8 @@ def test_add_topic_to_order():
 
     new_local_topic = topics.create_topic(
         show_on_frontpage=True,
-        show_in_navbar=True,
+        show_in_action_navbar=True,
+        show_in_instrument_navbar=True,
         name={'en': 'Local Topic A2'},
         description={'en': ''},
         short_description={'en': ''},
@@ -132,7 +139,8 @@ def test_actions_use_instrument_topics():
     }
     topic_a = topics.create_topic(
         show_on_frontpage=True,
-        show_in_navbar=True,
+        show_in_action_navbar=True,
+        show_in_instrument_navbar=True,
         name={'en': 'Topic A'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -141,7 +149,8 @@ def test_actions_use_instrument_topics():
     )
     topic_b = topics.create_topic(
         show_on_frontpage=True,
-        show_in_navbar=False,
+        show_in_action_navbar=False,
+        show_in_instrument_navbar=False,
         name={'en': 'Topic B'},
         description={'en': 'Testing Topic'},
         short_description={'en': ''},
@@ -215,7 +224,8 @@ def test_get_object_topics(use_instrument_action):
             description={"en": f"Topic {i+1}"},
             short_description={"en": f"Topic {i+1}"},
             show_on_frontpage=True,
-            show_in_navbar=True,
+            show_in_action_navbar=True,
+            show_in_instrument_navbar=True,
             description_is_markdown=False,
             short_description_is_markdown=False,
         )

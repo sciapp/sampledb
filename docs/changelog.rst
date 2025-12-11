@@ -15,6 +15,7 @@ Currently in development.
 - Give GRANT permissions to the user creating an object even if also granting permissions to a group
 - Added name-based filtering to action and instrument lists
 - Added config value for MAX_FORM_MEMORY_SIZE
+- Split setting for showing topics in navbar for actions and instruments tabs
 
 
 Version 0.32

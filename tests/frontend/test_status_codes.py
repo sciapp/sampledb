@@ -260,7 +260,8 @@ def test_status_codes(flask_server, user, driver):
             zip_bytes=b''
         ).id
         topic_id = sampledb.logic.topics.create_topic(
-            show_in_navbar=False,
+            show_in_action_navbar=False,
+            show_in_instrument_navbar=False,
             show_on_frontpage=False,
             name={'en': 'Test'},
             description={'en': 'Testing Topic'},

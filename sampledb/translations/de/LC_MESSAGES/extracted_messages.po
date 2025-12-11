@@ -7471,11 +7471,25 @@ msgstr "Ja, dieses Thema auf Startseite anzeigen"
 msgid "No, this topic should not be shown on the frontpage"
 msgstr "Nein, dieses Thema nicht auf Startseite anzeigen"
 
-msgid "Yes, this topic should be shown in the navbar"
-msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
+msgid "Show in Actions Tab of Navbar"
+msgstr "Im Aktions-Tab der Navigationsleiste anzeigen"
 
-msgid "No, this topic should not be shown in the navbar"
-msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
+msgid "Yes, this topic should be shown in the actions tab of the navbar"
+msgstr "Ja, dieses Thema im Aktions-Tab der Navigationsleiste anzeigen"
+
+msgid "No, this topic should not be shown in the actions tab of the navbar"
+msgstr "Nein, dieses Thema nicht im Aktions-Tab der Navigationsleiste anzeigen"
+
+msgid "Show in Instruments Tab of Navbar"
+msgstr "In Instrumenten-Tab der Navigationsleiste anzeigen"
+
+msgid "Yes, this topic should be shown in the instruments tab of the navbar"
+msgstr "Ja, dieses Thema im Instrumenten-Tab der Navigationsleiste anzeigen"
+
+msgid "No, this topic should not be shown in the instruments tab of the navbar"
+msgstr ""
+"Nein, dieses Thema nicht im Instrumenten-Tab der Navigationsleiste "
+"anzeigen"
 
 msgid "View Instruments"
 msgstr "Instrumente anzeigen"
@@ -7499,8 +7513,11 @@ msgstr "wird in der Themenliste angezeigt"
 msgid "Show this topic on the frontpage"
 msgstr "Thema auf Startseite anzeigen"
 
-msgid "Show this topic in the navbar"
-msgstr "Aktionen dieses Themas in der Navigationsleiste anzeigen"
+msgid "Show this topic in the actions tab of the navbar"
+msgstr "Dieses Thema im Aktions-Tab der Navigationsleiste anzeigen"
+
+msgid "Show this topic in the instruments tab of the navbar"
+msgstr "Dieses Thema im Instrumenten-Tab der Navigationsleiste anzeigen"
 
 #, python-format
 msgid "Topics allow filtering information in %(service_name)s."
