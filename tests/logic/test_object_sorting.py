@@ -33,7 +33,8 @@ def action() -> Action:
             'properties': {
                 'name': {
                     'title': 'Name',
-                    'type': 'text'
+                    'type': 'text',
+                    'languages': 'all'
                 },
                 'text_attr': {
                     'title': 'Text Attribute 1',
@@ -171,24 +172,57 @@ def test_order_by_last_modification_date(user: User, action: Action) -> None:
 
 
 def test_order_by_text_property(user: User, action: Action) -> None:
-    sampledb.logic.objects.create_object(action_id=action.id, data={
-        'name': {
-            '_type': 'text',
-            'text': 'Name'
-        }
-    }, user_id=user.id)
-    sampledb.logic.objects.create_object(action_id=action.id, data={
-        'name': {
-            '_type': 'text',
-            'text': 'ABC'
-        }
-    }, user_id=user.id)
+    german = sampledb.logic.languages.get_language_by_lang_code('de')
+    sampledb.logic.languages.update_language(
+        language_id=german.id,
+        names=german.names,
+        lang_code=german.lang_code,
+        datetime_format_datetime=german.datetime_format_datetime,
+        datetime_format_moment=german.datetime_format_moment,
+        datetime_format_moment_output=german.datetime_format_moment_output,
+        date_format_moment_output=german.date_format_moment_output,
+        enabled_for_input=True,
+        enabled_for_user_interface=True,
+    )
+    for name in [
+        {'en': 'test1'},
+        {'en': 'test2'},
+        {'en': 'test3', 'de': 'test0'},
+    ]:
+        sampledb.logic.objects.create_object(action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': name
+            }
+        }, user_id=user.id)
 
     objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.property_value("name")))
-    assert objects[0].data['name']['text'] <= objects[1].data['name']['text']
+    assert [object.data['name']['text'] for object in objects] == [
+        {'en': 'test1'},
+        {'en': 'test2'},
+        {'en': 'test3', 'de': 'test0'},
+    ]
 
     objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.descending(object_sorting.property_value("name")))
-    assert objects[0].data['name']['text'] >= objects[1].data['name']['text']
+    assert [object.data['name']['text'] for object in objects] == [
+        {'en': 'test3', 'de': 'test0'},
+        {'en': 'test2'},
+        {'en': 'test1'},
+    ]
+
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.ascending(object_sorting.property_value("name", 'de')))
+    assert [object.data['name']['text'] for object in objects] == [
+        {'en': 'test3', 'de': 'test0'},
+        {'en': 'test1'},
+        {'en': 'test2'},
+    ]
+
+    objects = sampledb.logic.objects.get_objects(filter_func=lambda data: True, sorting_func=object_sorting.descending(object_sorting.property_value("name", 'de')))
+    assert [object.data['name']['text'] for object in objects] == [
+        {'en': 'test2'},
+        {'en': 'test1'},
+        {'en': 'test3', 'de': 'test0'},
+    ]
 
 
 def test_order_by_quantity_property(user: User, action: Action) -> None:
