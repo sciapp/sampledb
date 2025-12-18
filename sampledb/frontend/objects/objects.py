@@ -455,7 +455,7 @@ def objects() -> FlaskResponseT:
         elif sorting_property_name == '_last_modification_date':
             sorting_property = object_sorting.last_modification_date()
         else:
-            sorting_property = object_sorting.property_value(sorting_property_name)
+            sorting_property = object_sorting.property_value(sorting_property_name, language_code=logic.languages.get_user_language(flask_login.current_user).lang_code)
 
         sorting_function = sorting_order(sorting_property)
 
