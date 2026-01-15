@@ -20,7 +20,7 @@ import sqlalchemy
 
 from .components import get_component_by_uuid
 from ..models import Objects, Object, Action, ActionType, Permissions
-from . import object_log, user_log, object_permissions, errors, users, actions, tags
+from . import object_log, user_log, object_permissions, background_tasks, errors, users, actions, tags
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
 from .utils import cache
@@ -105,6 +105,7 @@ def create_object(
     _update_object_references(object, user_id=user_id)
     _send_user_references_notifications(object, user_id)
     tags.update_object_tag_usage(object)
+    background_tasks.post_trigger_object_permissions_webhooks(object.object_id)
     return object
 
 
@@ -140,6 +141,7 @@ def create_eln_import_object(
     object_log.import_from_eln_file(object_id=object.object_id, user_id=importing_user_id)
     user_log.import_from_eln_file(object_id=object.object_id, user_id=importing_user_id)
     tags.update_object_tag_usage(object)
+    background_tasks.post_trigger_object_permissions_webhooks(object.object_id)
     return object
 
 
@@ -277,6 +279,7 @@ def create_object_batch(
                     object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 tags.update_object_tag_usage(object)
+                background_tasks.post_trigger_object_permissions_webhooks(object.object_id)
     return objects
 
 

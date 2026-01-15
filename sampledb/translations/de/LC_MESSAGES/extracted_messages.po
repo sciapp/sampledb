@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-11-24 14:19+0100\n"
+"POT-Creation-Date: 2025-12-15 08:20+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2498,22 +2498,33 @@ msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
 
 #, python-format
 msgid ""
-"Webhooks allow you to subscribe to the object log, as described in <a "
+"Webhooks allow you to subscribe to the object log or to changes to object"
+" permissions, as described in <a "
 "href=\"%(documentation_root_url)sdeveloper_guide/webhooks.html\">the "
 "documentation</a>."
 msgstr ""
-"Webhooks ermöglichen das Objekt-Log zu abonnieren, wie in <a "
+"Webhooks ermöglichen das Objekt-Log oder Veränderungen der Objekt-"
+"Berechtigungen zu abonnieren, wie in <a "
 "href=\"%(documentation_root_url)sdeveloper_guide/webhooks.html\">der "
 "Dokumentation</a> beschrieben."
 
 msgid "You have not yet created any webhooks."
 msgstr "Sie haben bisher keine Webhooks erstellt."
 
+msgid "Type"
+msgstr "Typ"
+
 msgid "Address"
 msgstr "Adresse"
 
 msgid "Last Contact"
 msgstr "Letzter Kontakt"
+
+msgid "Object Log"
+msgstr "Objekt-Log"
+
+msgid "Object Permissions"
+msgstr "Objektberechtigungen"
 
 msgid "Remove"
 msgstr "Entfernen"
@@ -2725,9 +2736,6 @@ msgstr "Schließen"
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
-msgid "Type"
-msgstr "Typ"
-
 #, python-format
 msgid ""
 "When signing in with a FIDO2 Passkey, %(service_name)s will "
@@ -2758,8 +2766,8 @@ msgstr "Neues API Token"
 
 msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
-"Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
-"zugreifen können."
+"Bitte sichern Sie es &mdash; Sie werden nicht erneut darauf zugreifen "
+"können."
 
 msgid "Target Address"
 msgstr "Zieladresse"
@@ -5378,9 +5386,6 @@ msgstr "Export fehlgeschlagen"
 #, python-format
 msgid "The export failed with the following message: %(error_message)s"
 msgstr "Der Export ist mit folgender Meldung fehlgeschlagen: %(error_message)s"
-
-msgid "Object Permissions"
-msgstr "Objektberechtigungen"
 
 msgid "Not a valid ID. Expected a positive integer."
 msgstr "Keine gültige ID. Positive Ganzzahl erwartet."
