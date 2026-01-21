@@ -661,3 +661,92 @@ def test_copy_array_item_with_list(flask_server, driver, user, existing_item, de
         },
         'array': [existing_item, existing_item]
     }
+
+
+def test_move_array_item(flask_server, driver, user):
+    schema = {
+        "type": "object",
+        "title": "Example Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name",
+                "minLength": 1
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "array",
+                    "title": "Inner Array",
+                    "items": {
+                        "type": "text",
+                        "title": "Item"
+                    }
+                },
+                "default": [
+                    [
+                        {
+                            "_type": "text",
+                            "text": {"en": "1"}
+                        }
+                    ],
+                    [
+                        {
+                            "_type": "text",
+                            "text": {"en": "2"}
+                        }
+                    ],
+                    []
+                ]
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.models.Language.ENGLISH,
+        name="Test Action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'action_object__array__0__movedown').click()
+        driver.find_element(By.ID, 'action_object__array__2__moveup').click()
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'input[name="object__name__text_en"]').send_keys('Test')
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    assert objects[0].schema == action.schema
+    assert objects[0].data == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': 'Test'}
+        },
+        'array': [
+            [
+                {
+                    "_type": "text",
+                    "text": {"en": "2"}
+                }
+            ],
+            [],
+            [
+                {
+                    "_type": "text",
+                    "text": {"en": "1"}
+                }
+            ]
+        ]
+    }

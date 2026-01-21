@@ -83,6 +83,10 @@
                 {% if 'recipes' in schema %}
                   {% include "objects/forms/form_table_recipe.html" %}
                 {% endif %}
+                <div style="height: 34px; margin-left: 11px; margin-right: 6px; display: flex; flex-direction: column;">
+                  <button type="button" id="action_{{ id_prefix }}_moveup" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="table_array_moveup" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-up fa-fw" style="display: block; margin-top:-1px"></i></button>
+                  <button type="button" id="action_{{ id_prefix }}_movedown" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="table_array_movedown" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-down fa-fw" style="display: block; margin-top:-1px"></i></button>
+                </div>
                 <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" data-object-form-button="table_array_copy"><i class="fa fa-clone fa-fw"></i></button>
                 <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger form-delete-button" data-object-form-button="table_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-times fa-fw"></i></button>
               </div>

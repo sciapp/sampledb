@@ -41,6 +41,10 @@
     <div data-id-prefix="{{ id_prefix }}" data-array-item="array" {% if loop.last %}class="array-template"{% endif %}>
       <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
         <div class="pull-right" style="padding-right:0.75em">
+          <div style="display: inline-flex; flex-direction: column; vertical-align: top">
+            <button type="button" id="action_{{ id_prefix }}_moveup" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="array_moveup" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-up fa-fw" style="display: block; margin-top:-1px"></i></button>
+            <button type="button" id="action_{{ id_prefix }}_movedown" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="array_movedown" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-down fa-fw" style="display: block; margin-top:-1px"></i></button>
+          </div>
           <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" style="width:20em;" data-object-form-button="array_copy" data-element-id="{{ property_path[-1] }}">
             {{ _('Copy %(item_name)s', item_name=item_name) }}
           </button>
