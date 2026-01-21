@@ -72,6 +72,10 @@ function updateArrayButtonsHandler (button) {
     case 'table_array_clear':
       $(button).off('click').on('click', arrayFormClearHandler);
       break;
+    case 'array_copy':
+    case 'list_array_copy':
+      $(button).off('click').on('click', arrayFormCopyHandler);
+      break;
     case 'table_array_copy':
       $(button).off('click').on('click', arrayFormTableCopyHandler);
       break;
@@ -506,29 +510,114 @@ function arrayFormAddHandler (event) {
   }
 }
 
-/**
-   * Handles object table array copy button events.
-   * @param event a PointerEvent
-   */
-function arrayFormTableCopyHandler (event) {
-  const button = $(event.currentTarget);
-  // add a new row first, which will then be filled and moved
-  arrayFormAddHandler(event);
-  const arrayContainer = button.closest('[data-array-container]');
-  const arrayPrefix = arrayContainer.data('id-prefix');
-  if (arrayPrefix.includes('!')) {
-    return;
+function copyFields (sourceItem, targetItem) {
+  const sourceFieldPrefix = sourceItem.data('id-prefix');
+  const targetFieldPrefix = targetItem.data('id-prefix');
+  // copy array sizes
+  const sourceHiddenFields = sourceItem.find('[name$="__hidden"]');
+  const arrayItemCallables = [];
+  for (const sourceHiddenField of sourceHiddenFields) {
+    const sourceHiddenFieldName = $(sourceHiddenField).attr('name');
+    const sourceIdPrefix = sourceHiddenFieldName.slice(0, -7);
+    if (sourceIdPrefix.includes('!')) {
+      continue;
+    }
+    const targetIdPrefix = targetFieldPrefix + sourceIdPrefix.slice(sourceFieldPrefix.length);
+    const sourceArrayContainer = sourceItem.find(`[data-id-prefix="${sourceIdPrefix}"][data-array-container]`);
+    if (sourceArrayContainer.length === 1) {
+      if (sourceArrayContainer.data('array-container') === 'array-table') {
+        arrayItemCallables.push(function () {
+          const targetArrayContainer = targetItem.find(`[data-id-prefix="${targetIdPrefix}"][data-array-container]`);
+          if (targetArrayContainer.length === 0) {
+            return false;
+          }
+          const numSourceRows = sourceArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          const numTargetRows = targetArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          if (numTargetRows > numSourceRows) {
+            for (let i = numTargetRows; i > numSourceRows; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_${i - 1}__?__deleterow"]`).trigger('click');
+            }
+          } else if (numTargetRows < numSourceRows) {
+            for (let i = numTargetRows; i < numSourceRows; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__addrow"]`).trigger('click');
+            }
+          }
+          const numSourceColumns = sourceArrayContainer.find('> thead > tr > th').length - 1;
+          const numTargetColumns = targetArrayContainer.find('> thead > tr > th').length - 1;
+          if (numTargetColumns > numSourceColumns) {
+            for (let i = numTargetColumns; i > numSourceColumns; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__deletecolumn"]`).trigger('click');
+            }
+          } else if (numTargetColumns < numSourceColumns) {
+            for (let i = numTargetColumns; i < numSourceColumns; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__addcolumn"]`).trigger('click');
+            }
+          }
+          return true;
+        });
+      } else if (sourceArrayContainer.data('array-container') === 'object-table') {
+        arrayItemCallables.push(function () {
+          const targetArrayContainer = targetItem.find(`[data-id-prefix="${targetIdPrefix}"][data-array-container]`);
+          if (targetArrayContainer.length === 0) {
+            return false;
+          }
+          const numSourceRows = sourceArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          const numTargetRows = targetArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          if (numTargetRows > numSourceRows) {
+            for (let i = numTargetRows; i > numSourceRows; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_${i - 1}__delete"]`).trigger('click');
+            }
+          } else if (numTargetRows < numSourceRows) {
+            for (let i = numTargetRows; i < numSourceRows; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__add"]`).trigger('click');
+            }
+          }
+          return true;
+        });
+      } else {
+        arrayItemCallables.push(function () {
+          const targetArrayContainer = targetItem.find(`[data-id-prefix="${targetIdPrefix}"][data-array-container]`);
+          if (targetArrayContainer.length === 0) {
+            return false;
+          }
+          const numSourceItems = sourceArrayContainer.children('[data-array-item]').not('.array-template').length;
+          const numTargetItems = targetArrayContainer.children('[data-array-item]').not('.array-template').length;
+          if (numTargetItems > numSourceItems) {
+            for (let i = numTargetItems; i > numSourceItems; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_${i - 1}__delete"]`).trigger('click');
+            }
+          } else if (numTargetItems < numSourceItems) {
+            for (let i = numTargetItems; i < numSourceItems; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__add"]`).trigger('click');
+            }
+          }
+          return true;
+        });
+      }
+    }
   }
-  const tableBody = button.closest('tbody');
-  const sourceRow = button.closest('tr');
-  const targetRow = tableBody.children('tr').not('.array-template').last();
-  // move target row right behind source row
-  sourceRow.after(targetRow);
-  const sourceFieldPrefix = sourceRow.data('id-prefix');
-  const targetFieldPrefix = targetRow.data('id-prefix');
-  const targetFields = targetRow.find(`[name^="${targetFieldPrefix}"]`);
+
+  function callArrayItemCallables (arrayItemCallables) {
+    const failedArrayItemCallables = [];
+    for (const arrayItemCallable of arrayItemCallables) {
+      if (!arrayItemCallable.call()) {
+        failedArrayItemCallables.push(arrayItemCallable);
+      }
+    }
+    if (failedArrayItemCallables.length > 0) {
+      if (failedArrayItemCallables.length !== arrayItemCallables.length) {
+        callArrayItemCallables(failedArrayItemCallables);
+      }
+    }
+  }
+  callArrayItemCallables(arrayItemCallables);
+  // copy values of individual fields
+  const targetFields = targetItem.find(`[name^="${targetFieldPrefix}"]`);
   for (const targetField of targetFields) {
     const sourceFieldName = sourceFieldPrefix + targetField.name.substring(targetFieldPrefix.length);
+    if (sourceFieldName.includes('!')) {
+      continue;
+    }
     const sourceField = $(`[name=${sourceFieldName}]`)[0];
     if (sourceField.tagName === 'INPUT' || sourceField.tagName === 'TEXTAREA') {
       if (sourceField.type === 'checkbox') {
@@ -553,6 +642,54 @@ function arrayFormTableCopyHandler (event) {
     }
     $(targetField).trigger('change');
   }
+}
+
+/**
+   * Handles array copy button events.
+   * @param event a PointerEvent
+   */
+function arrayFormCopyHandler (event) {
+  const button = $(event.currentTarget);
+  // add a new item first, which will then be filled and moved
+  arrayFormAddHandler(event);
+  const arrayContainer = button.closest('[data-array-container]');
+  const arrayPrefix = arrayContainer.data('id-prefix');
+  if (arrayPrefix.includes('!')) {
+    return;
+  }
+  const sourceItem = button.closest('[data-array-item]');
+  const targetItem = arrayContainer.children('[data-array-item]').not('.array-template').last();
+  sourceItem.after(targetItem);
+  copyFields(sourceItem, targetItem);
+  // update array ID prefixes to match the changed order of rows
+  const sortedItemIndices = [];
+  for (const item of arrayContainer.children('[data-array-item]').not('.array-template')) {
+    const itemPrefix = $(item).data('id-prefix');
+    const itemIndex = (itemPrefix + '_').split('__').slice(-2)[0];
+    sortedItemIndices.push(Number.parseInt(itemIndex));
+  }
+  updateArrayIDPrefixes(arrayContainer, sortedItemIndices);
+}
+
+/**
+   * Handles object table array copy button events.
+   * @param event a PointerEvent
+   */
+function arrayFormTableCopyHandler (event) {
+  const button = $(event.currentTarget);
+  // add a new row first, which will then be filled and moved
+  arrayFormAddHandler(event);
+  const arrayContainer = button.closest('[data-array-container]');
+  const arrayPrefix = arrayContainer.data('id-prefix');
+  if (arrayPrefix.includes('!')) {
+    return;
+  }
+  const tableBody = button.closest('tbody');
+  const sourceRow = button.closest('tr');
+  const targetRow = tableBody.children('tr').not('.array-template').last();
+  // move target row right behind source row
+  sourceRow.after(targetRow);
+  copyFields(sourceRow, targetRow);
   // update array ID prefixes to match the changed order of rows
   const sortedRowIndices = [];
   for (const row of tableBody.find('tr').not('.array-template')) {

@@ -19,6 +19,7 @@ Currently in development.
 - Split setting for showing topics in navbar for actions and instruments tabs
 - Added webhook type for changes to object permissions
 - Added previous versions to documentation
+- Added copy buttons to regular and list-style arrays
 - Fixed array tables
 
 
