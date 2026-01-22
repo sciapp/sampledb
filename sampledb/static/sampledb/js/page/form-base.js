@@ -738,8 +738,14 @@ function tableFormRowDeleteHandler (event) {
   // remove row containing the button
   button.closest('tr').remove();
   // remove all columns from table header and footer if this was the last real row
-  if (arrayContainer.find('tbody > tr').not('.array-template').length === 0) {
+  const arrayRows = arrayContainer.find('tbody > tr').not('.array-template');
+  if (arrayRows.length === 0) {
     updateTableFormHead(arrayContainer, -arrayContainer.find('> thead > tr > th').not('.control-buttons').length);
+  } else {
+    for (let rowIndex = 0; rowIndex < arrayRows.length; rowIndex++) {
+      $(arrayRows[rowIndex]).data('row-id', rowIndex);
+      $(arrayRows[rowIndex]).attr('data-row-id', rowIndex);
+    }
   }
 
   updateArrayButtonsEnabled(arrayContainer);
@@ -783,7 +789,7 @@ function appendFieldToRow (row, table, rowIndex, columnIndex) {
   td.removeClass('array-col-template');
   td.insertBefore(row.children().last());
   replaceTemplateIndex(td, `!index${table.data('template-order-index')}!`, rowIndex);
-  replaceTemplateIndex(td, `${rowIndex}__!cindex${table.data('col-order-index')}!`, columnIndex);
+  replaceTemplateIndex(td, `${rowIndex}__!cindex${table.data('col-order-index')}!`, `${rowIndex}__${columnIndex}`);
 }
 
 /**
