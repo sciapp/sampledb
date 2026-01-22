@@ -389,7 +389,7 @@ def test_objects_referencable(flask_server, user):
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
         schema=schema
     )
-    names = ['Example1', 'Example2', '<b>Example42</b>']
+    names = ['example1', 'Example2', '<b>Example42</b>']
     objects = [
         sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
@@ -430,7 +430,7 @@ def test_objects_referencable(flask_server, user):
         {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b'], 'is_eln_imported': False},
         {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
         {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False},
-        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'unescaped_text': f'Example1 (#{objects[0].object_id})', 'tags': [], 'is_eln_imported': False}
+        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'example1 (#{objects[0].object_id})', 'unescaped_text': f'example1 (#{objects[0].object_id})', 'tags': [], 'is_eln_imported': False}
     ]
 
     session = requests.session()
@@ -442,6 +442,46 @@ def test_objects_referencable(flask_server, user):
     assert data['referencable_objects'] == [
         {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
         {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False}
+    ]
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    sampledb.logic.settings.set_user_settings(user.id, {'SORT_REFERENCABLE_OBJECTS': 'name'})
+    r = session.get(flask_server.base_url + 'objects/referencable')
+    assert r.status_code == 200
+    data = json.loads(r.content)
+    assert len(data['referencable_objects']) == 5
+    assert data['referencable_objects'] == [
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'example1 (#{objects[0].object_id})', 'unescaped_text': f'example1 (#{objects[0].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': None, 'id': fed_object.object_id, 'is_fed': True, 'max_permission': 1, 'text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'unescaped_text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'tags': ['a', 'b'], 'is_eln_imported': False},
+        {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b'], 'is_eln_imported': False},
+    ]
+    sampledb.logic.settings.set_user_settings(user.id, {'SORT_REFERENCABLE_OBJECTS': None})
+    flask_server.app.config['SORT_REFERENCABLE_OBJECTS'] = 'name'
+    r = session.get(flask_server.base_url + 'objects/referencable')
+    assert r.status_code == 200
+    data = json.loads(r.content)
+    assert len(data['referencable_objects']) == 5
+    assert data['referencable_objects'] == [
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'example1 (#{objects[0].object_id})', 'unescaped_text': f'example1 (#{objects[0].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': None, 'id': fed_object.object_id, 'is_fed': True, 'max_permission': 1, 'text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'unescaped_text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'tags': ['a', 'b'], 'is_eln_imported': False},
+        {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b'], 'is_eln_imported': False},
+    ]
+    sampledb.logic.settings.set_user_settings(user.id, {'SORT_REFERENCABLE_OBJECTS': 'id'})
+    r = session.get(flask_server.base_url + 'objects/referencable')
+    assert r.status_code == 200
+    data = json.loads(r.content)
+    assert len(data['referencable_objects']) == 5
+    assert data['referencable_objects'] == [
+        {'action_id': None, 'id': fed_object.object_id, 'is_fed': True, 'max_permission': 1, 'text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'unescaped_text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'tags': ['a', 'b'], 'is_eln_imported': False},
+        {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b'], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'example1 (#{objects[0].object_id})', 'unescaped_text': f'example1 (#{objects[0].object_id})', 'tags': [], 'is_eln_imported': False}
     ]
 
 

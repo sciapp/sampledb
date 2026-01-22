@@ -1072,6 +1072,8 @@ LOCATION_LINKS_BY_LOCATION_ID: typing.Dict[typing.Union[typing.Literal['*'], int
 BASIC_GROUP_LINKS_BY_BASIC_GROUP_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
 PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
 
+SORT_REFERENCABLE_OBJECTS = 'id'
+
 # variables controlling object data rendering, these should only be modified for testing purposes
 ENABLE_ISOLATED_OBJECT_DATA_RENDERING = True
 ENABLE_OBJECT_DATA_HTML_CACHE = True

@@ -2685,6 +2685,19 @@ msgstr "Ja &mdash; Objekte in Workflow Ansichten einklappen"
 msgid "No &mdash; Expand objects in workflow views"
 msgstr "Nein &mdash; Objekte in Workflow Ansichten ausklappen"
 
+msgid "Sort referencable objects"
+msgstr "Referenzierbare Objekte sortieren"
+
+msgid "By ID &mdash; Sort referencable objects by their ID, from newest to oldest"
+msgstr ""
+"Nach ID &mdash; Sortiere referenzierbare Objekte nach ihrer ID, vom "
+"neusten zum ältesten Objekt"
+
+msgid "By Name &mdash; Sort referencable objects by their name, from A to Z"
+msgstr ""
+"Nach Name &mdash; Sortiere referenzierbare Objekte nach ihrem Namen, von "
+"A bis Z"
+
 msgid "Language"
 msgstr "Sprache"
 

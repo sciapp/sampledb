@@ -13,6 +13,8 @@ Currently in development.
 - Added configurable external link dropdowns for objects, actions, instruments, topics, locations, basic groups and project groups
 - Improved handling of new, non-required properties in automatic schema update
 - Added config value SHOW_DOWNTIME_WARNING for warning about occasional downtime on front page
+- Added config value and user setting for sorting referencable objects by name rather than by ID
+- Made sorting of objects by name or other text properties case-insensitive
 - Give GRANT permissions to the user creating an object even if also granting permissions to a group
 - Added name-based filtering to action and instrument lists
 - Added config value for MAX_FORM_MEMORY_SIZE

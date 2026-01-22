@@ -613,6 +613,13 @@ def _handle_other_settings_forms(
             show_object_title = None
         modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
 
+        sort_referencable_objects_text = flask.request.form.get('input-sort-referencable-objects', 'default')
+        if sort_referencable_objects_text in ('name', 'id'):
+            sort_referencable_objects = sort_referencable_objects_text
+        else:
+            sort_referencable_objects = None
+        modified_settings['SORT_REFERENCABLE_OBJECTS'] = sort_referencable_objects
+
         full_width_objects_table_text = flask.request.form.get('input-full-width-objects-table', 'default')
         if full_width_objects_table_text == 'yes':
             full_width_objects_table = True
