@@ -17,6 +17,7 @@ Currently in development.
 - Added config value for MAX_FORM_MEMORY_SIZE
 - Split setting for showing topics in navbar for actions and instruments tabs
 - Added webhook type for changes to object permissions
+- Fixed array tables
 
 
 Version 0.32
