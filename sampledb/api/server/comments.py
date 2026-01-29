@@ -1,18 +1,30 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
 import typing
+from dataclasses import dataclass
 
 import flask
+from pydantic import BaseModel, Strict
 
-from .authentication import object_permissions_required
-from ..utils import Resource, ResponseData
-from ...logic.comments import Comment, create_comment, get_comments_for_object, get_comment_for_object
 from ...logic import errors
+from ...logic.comments import (Comment, create_comment, get_comment_for_object,
+                               get_comments_for_object)
 from ...models import Permissions
+from ..utils import Resource, ResponseData
+from .authentication import object_permissions_required
+from .validation_utils import is_expected_from_validation_info, validate, NonEmptyString, ValidatingError
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+@dataclass(frozen=True, slots=True)
+class _ValidationContext:
+    object_id: int
+
+
+class _Comment(BaseModel):
+    object_id: typing.Annotated[
+        typing.Optional[int],
+        Strict(),
+        is_expected_from_validation_info(lambda info: info.context.object_id, allow_none=True),
+    ] = None
+    content: NonEmptyString
 
 
 def comment_to_json(comment: Comment) -> typing.Dict[str, typing.Any]:
@@ -42,29 +54,15 @@ class ObjectComments(Resource):
     @object_permissions_required(Permissions.WRITE)
     def post(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON object body required"
-            }, 400
-        if 'object_id' in request_json:
-            if request_json['object_id'] != object_id:
-                return {
-                    "message": f"object_id must be {object_id}"
-                }, 400
-        if 'content' not in request_json:
-            return {
-                "message": "content must be set"
-            }, 400
-        content = request_json['content']
-        if not isinstance(content, str):
-            return {
-                "message": "content must be a string"
-            }, 400
-        if not content:
-            return {
-                "message": "content must not be empty"
-            }, 400
-        comment_id = create_comment(object_id, flask.g.user.id, content)
+        try:
+            request_data = validate(
+                _Comment,
+                request_json,
+                context=_ValidationContext(object_id),
+            )
+        except ValidatingError as e:
+            return e.response
+        comment_id = create_comment(object_id, flask.g.user.id, request_data.content)
 
         comment_url = flask.url_for(
             'api.object_comment',

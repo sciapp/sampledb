@@ -1,24 +1,70 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
-import json
 import typing
+from dataclasses import dataclass
 
 import flask
+from pydantic import AfterValidator, Field, Strict, ValidationInfo
+from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth
 from ..utils import Resource, ResponseData
-from ...logic.actions import get_action, update_action
 from ...logic.action_translations import set_action_translation
+from ...logic.actions import Action as LogicAction
+from ...logic.actions import get_action, update_action
 from ...logic.languages import Language
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions
 from ...logic import errors, utils, actions, action_types
 from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
+from .validation_utils import (ModelWithDefaultsFromValidationInfo,
+                               OptionalNotNone, ValidatingError,
+                               populate_missing_or_expect_from_validation_info,
+                               validate)
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+@dataclass
+class _ValidationContext:
+    action: LogicAction
+    action_type: str
+
+
+def _is_valid_schema(schema: typing.Dict[str, typing.Any], info: ValidationInfo[_ValidationContext]) -> typing.Dict[str, typing.Any]:
+    try:
+        invalid_template_paths = find_invalid_template_paths(schema, flask.g.user.id)
+        if invalid_template_paths:
+            raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
+        validate_schema(schema, invalid_template_action_ids=[info.context.action.id], strict=True)
+        return schema
+    except errors.ValidationError as e:
+        raise PydanticCustomError("action_parsing", e.message)
+    except Exception as e:
+        raise PydanticCustomError("action_parsing", str(e))
+
+
+class _Action(ModelWithDefaultsFromValidationInfo):
+    action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.id)]
+    instrument_id: typing.Annotated[
+        typing.Optional[int],
+        Strict(),
+        populate_missing_or_expect_from_validation_info(
+            lambda i: (
+                None
+                if flask.current_app.config["DISABLE_INSTRUMENTS"]
+                else i.context.action.instrument_id
+            )
+        ),
+    ]
+    user_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.user_id)]
+    type: typing.Annotated[typing.Optional[str], populate_missing_or_expect_from_validation_info(lambda i: i.context.action_type)]
+    type_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.type_id)]
+    name: typing.Annotated[OptionalNotNone[str], Field(min_length=1, max_length=100)]
+    description: OptionalNotNone[str]
+    is_hidden: OptionalNotNone[bool]
+    action_schema: typing.Annotated[
+        OptionalNotNone[typing.Dict[str, typing.Any]],
+        AfterValidator(_is_valid_schema),
+        Field(validation_alias="schema"),
+    ]
 
 
 def action_to_json(action: actions.Action) -> typing.Dict[str, typing.Any]:
@@ -76,84 +122,23 @@ class Action(Resource):
             return flask.abort(403)
         action_json = action_to_json(action)
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON object body required"
-            }, 400
-        name = action.name.get('en')
-        description = action.description.get('en')
-        short_description = action.short_description.get('en')
-        schema = action.schema
-        is_hidden = action.is_hidden
-        for key in request_json:
-            if key not in action_json:
-                return {
-                    "message": f"invalid key '{key}'"
-                }, 400
-            if isinstance(request_json[key], str) and '\0' in request_json[key]:
-                return {
-                    "message": f"{key} must not contain NULL"
-                }, 400
-            if key == 'name':
-                if not isinstance(request_json['name'], str):
-                    return {
-                        "message": "name must be string"
-                    }, 400
-                if len(request_json['name']) < 1 or len(request_json['name']) > 100:
-                    return {
-                        "message": "name must be between 1 and 100 characters long"
-                    }, 400
-                name = request_json['name']
-            elif key == 'description':
-                if not isinstance(request_json['description'], str):
-                    return {
-                        "message": "description must be string"
-                    }, 400
-                description = request_json['description']
-            elif key == 'is_hidden':
-                if not isinstance(request_json['is_hidden'], bool):
-                    return {
-                        "message": "is_hidden must be boolean"
-                    }, 400
-                is_hidden = request_json['is_hidden']
-            elif key == 'schema':
-                if not isinstance(request_json['schema'], dict):
-                    return {
-                        "message": "schema must be dict"
-                    }, 400
-                schema = request_json['schema']
-                error_message = None
-                try:
-                    invalid_template_paths = find_invalid_template_paths(schema, flask.g.user.id)
-                    if invalid_template_paths:
-                        raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
-                    validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id], strict=True)
-                except errors.ValidationError as e:
-                    error_message = e.message
-                except Exception as e:
-                    error_message = str(e)
-                if error_message is not None:
-                    return {
-                        "message": error_message
-                    }, 400
-            else:
-                if action_json[key] != request_json[key]:
-                    return {
-                        "message": f"{key} must be {json.dumps(action_json[key])}"
-                    }, 400
+        try:
+            request_data = validate(_Action, request_json, context=_ValidationContext(action, action_json["type"]))
+        except ValidatingError as e:
+            return e.response
         update_action(
             action_id=action_id,
-            schema=schema,
+            schema=action.schema if request_data.action_schema is None else request_data.action_schema,
             description_is_markdown=action.description_is_markdown,
-            is_hidden=is_hidden,
+            is_hidden=action.is_hidden if request_data.is_hidden is None else request_data.is_hidden,
             short_description_is_markdown=action.short_description_is_markdown,
         )
         set_action_translation(
             language_id=Language.ENGLISH,
             action_id=action_id,
-            name=name or '',
-            description=description or '',
-            short_description=short_description or ''
+            name=(action.name.get("en") or "") if request_data.name is None else request_data.name,
+            description=(action.description.get("en") or "") if request_data.description is None else request_data.description,
+            short_description=action.short_description.get("en") or ""
         )
         action = get_action(action_id=action_id)
         return action_to_json(action)

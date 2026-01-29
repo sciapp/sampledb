@@ -1,8 +1,3 @@
-# coding: utf-8
-"""
-
-"""
-
 import base64
 import datetime
 
@@ -593,7 +588,25 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 400
     assert r.json() == {
-        'message': f"unknown category_ids: 1, 7"
+        "message": "Category ID does not exist, instrument has no log categories (category_ids.0)",
+        "error_details": {
+            "category_ids": {
+                "0": {
+                    "msg": "Category ID does not exist, instrument has no log categories",
+                    "input": 1,
+                },
+                "1": {
+                    "msg": "Category ID does not exist, instrument has no log categories",
+                    "input": 7,
+                },
+            },
+            "object_attachments": {
+                "0": {
+                    "msg": "Object should exist",
+                    "input": {"object_id": 1},
+                },
+            },
+        },
     }
 
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
@@ -602,12 +615,6 @@ def test_create_instrument_log_entry(flask_server, auth, user):
         theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.RED
     )
     data['category_ids'] = [category.id]
-
-    r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
-    assert r.status_code == 400
-    assert r.json() == {
-        'message': f"unknown object ids in object_attachments: 1"
-    }
 
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
@@ -678,7 +685,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 400
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 1
-    data['content_is_markdown'] = False
+    del data['content_is_markdown']
 
     data['category_ids'] = {"category_id": category.id}
     r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
@@ -1143,9 +1150,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
 
     r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/', auth=auth)
     assert r.status_code == 400
-    assert r.json() == {
-        'message': "expected json object containing version_id, log_entry_id, content, content_is_markdown, category_ids, file_attachments, object attachments and event_utc_datetime"
-    }
+    assert r.json() == {"message": "Failed to decode JSON object"}
 
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
         instrument_id=instrument.id,
@@ -1348,7 +1353,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'version_id must be {next_version_id}'
+            f"Input should be {next_version_id} (version_id)",
         ),
         (
             {
@@ -1361,7 +1366,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'log_entry_id must be {log_entry.id}'
+            f"Input should be {log_entry.id} (log_entry_id)",
         ),
         (
             {
@@ -1375,7 +1380,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'category_ids': [category.id],
                 'unexpected_key': True
             },
-            'expected json object containing version_id, log_entry_id, content, content_is_markdown, category_ids, file_attachments, object attachments and event_utc_datetime'
+            "Extra inputs are not permitted (unexpected_key)",
         ),
         (
             {
@@ -1388,7 +1393,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            'expected true or false for content_is_markdown'
+            "Input should be a valid boolean (content_is_markdown)",
         ),
         (
             {
@@ -1401,7 +1406,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            'expected string or null for content'
+            "Input should be a valid string (content)",
         ),
         (
             {
@@ -1414,7 +1419,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            'log entry must contain content or an attachment'
+            "Log entry should contain content or an attachment",
         ),
         (
             {
@@ -1427,7 +1432,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            'log entry must contain content or an attachment'
+            "Log entry should contain content or an attachment",
         ),
         (
             {
@@ -1440,7 +1445,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.title]
             },
-            'expected list containing integer numbers for category_ids'
+            "Input should be a valid integer (category_ids.0)",
         ),
         (
             {
@@ -1453,7 +1458,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': category.id
             },
-            'expected list containing integer numbers for category_ids'
+            "Input should be a valid list (category_ids)",
         ),
         (
             {
@@ -1466,7 +1471,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id + 1]
             },
-            'unknown category_ids: 2'
+            "Category ID should be one of: 1 (category_ids.0)",
         ),
         (
             {
@@ -1479,7 +1484,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            'event_utc_datetime must be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910'
+            "Timestamp should be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910 (event_utc_datetime)",
         ),
         (
             {
@@ -1492,7 +1497,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            'event_utc_datetime must be not be more than 1000 years before or after the current date'
+            "Timestamp should not be more than 1000 years before or after the current date (event_utc_datetime)",
         ),
         (
             {
@@ -1505,7 +1510,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [{'object_id': object.id}, {'object_id': object.id}],
                 'category_ids': [category.id]
             },
-            f'duplicate object id in object_attachments: {object.id}'
+            "Object should only be attached once (object_attachments)",
         ),
         (
             {
@@ -1518,7 +1523,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [{'object_id': object.id}, {'object_id': object.id + 1}, {'object_id': object.id + 2}],
                 'category_ids': [category.id]
             },
-            f'unknown object ids in object_attachments: {object.id + 1}, {object.id + 2}'
+            "Object should exist (object_attachments.1)",
         ),
         (
             {
@@ -1531,7 +1536,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': {'object_id': object.id},
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing object_id for object_attachments'
+            "Input should be a valid list (object_attachments)",
         ),
         (
             {
@@ -1544,7 +1549,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [object.id],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing object_id for object_attachments'
+            "Input should be an object (object_attachments.0)",
         ),
         (
             {
@@ -1557,7 +1562,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [{'object_id': str(object.id)}],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing object_id for object_attachments'
+            "Input should be a valid integer (object_attachments.0.object_id)",
         ),
         (
             {
@@ -1570,7 +1575,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [{'object': object.id}],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing object_id for object_attachments'
+            "Field required (object_attachments.0.object_id)",
         ),
         (
             {
@@ -1583,7 +1588,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [{'object_id': -1}],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing object_id for object_attachments'
+            "Input should be greater than or equal to 0 (object_attachments.0.object_id)",
         ),
         (
             {
@@ -1599,7 +1604,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing file_name and base64_content for file_attachments'
+            "Input should be a valid list (file_attachments)",
         ),
         (
             {
@@ -1612,7 +1617,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing file_name and base64_content for file_attachments'
+            "Input should be an object (file_attachments.0)",
         ),
         (
             {
@@ -1629,7 +1634,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing file_name and base64_content for file_attachments'
+            "Extra inputs are not permitted (file_attachments.0.content)",
         ),
         (
             {
@@ -1645,7 +1650,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing file_name and base64_content for file_attachments'
+            "Input should be a valid string (file_attachments.0.file_name)",
         ),
         (
             {
@@ -1661,7 +1666,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'expected list containing dicts containing file_name and base64_content for file_attachments'
+            "Input should be a base64 encoded string (file_attachments.0.base64_content)",
         ),
         (
             {
@@ -1677,7 +1682,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'file attachment names must not be empty and must contain at most 256 characters'
+            "String should have at least 1 character (file_attachments.0.file_name)",
         ),
         (
             {
@@ -1693,11 +1698,9 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            f'file attachment names must not be empty and must contain at most 256 characters'
+            "String should have at most 256 characters (file_attachments.0.file_name)",
         ),
     ]:
         r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/', auth=auth, json=data)
         assert r.status_code == 400
-        assert r.json() == {
-            'message': expected_message
-        }
+        assert r.json()["message"] == expected_message
