@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Authentication functions for the SampleDB RESTful API.
 """
@@ -7,14 +6,19 @@ import typing
 import flask
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
+from pydantic import BaseModel
 
 from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, login_via_oidc_access_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
 from ...logic.users import User
 from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic
 from ..utils import Resource, ResponseData
+from .validation_utils import validate, ValidatingError
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+class _AccessToken(BaseModel):
+    description: str
+
 
 http_basic_auth = HTTPBasicAuth()
 http_api_token_or_access_token_auth = HTTPTokenAuth(scheme='Bearer')
@@ -103,18 +107,9 @@ class AccessTokens(Resource):
                     "message": "failed to refresh API token"
                 }, 400
             return result, 201
-        request_json = flask.request.get_json(force=True, silent=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON body should contain object"
-            }, 400
-        if set(request_json.keys()) != {'description'}:
-            return {
-                "message": "JSON body should only contain description"
-            }, 400
-        description = request_json.get('description')
-        if not isinstance(description, str):
-            return {
-                "message": "description must be a string"
-            }, 400
-        return generate_api_access_token(user_id=flask.g.user.id, description=description), 201
+        request_json = flask.request.get_json(force=True)
+        try:
+            request_data = validate(_AccessToken, request_json)
+        except ValidatingError as e:
+            return e.response
+        return generate_api_access_token(user_id=flask.g.user.id, description=request_data.description), 201

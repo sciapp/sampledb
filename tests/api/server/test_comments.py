@@ -1,9 +1,3 @@
-# coding: utf-8
-"""
-
-"""
-import datetime
-
 import requests
 import pytest
 
@@ -68,7 +62,11 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/comments/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "JSON object body required"
+        "message": "Input should be an object",
+        "error_details": {
+            "msg": "Input should be an object",
+            "input": [],
+        }
     }
 
     data = {
@@ -78,7 +76,13 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": f"object_id must be {object.id}"
+        "message": f"Input should be {object.id} (object_id)",
+        "error_details": {
+            "object_id": {
+                "msg": f"Input should be {object.id}",
+                "input": object.id + 1,
+            }
+        }
     }
 
     data = {
@@ -86,7 +90,10 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "content must be set"
+        "message": "Field required (content)",
+        "error_details": {
+            "content": {"msg": "Field required"}
+        }
     }
 
     data = {
@@ -95,7 +102,13 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "content must be a string"
+        "message": "Input should be a valid string (content)",
+        "error_details": {
+            "content": {
+                "msg": "Input should be a valid string",
+                "input": None,
+            }
+        }
     }
 
     data = {
@@ -104,7 +117,13 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "content must not be empty"
+        "message": "String should have at least 1 character (content)",
+        "error_details": {
+            "content": {
+                "msg": "String should have at least 1 character",
+                "input": "",
+            }
+        }
     }
 
     comments = sampledb.logic.comments.get_comments_for_object(object.id)
