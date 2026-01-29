@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-test
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -222,7 +222,7 @@ check-migrations-postgres-17:
 check-translations:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -250,7 +250,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-documentation
@@ -437,7 +437,7 @@ deploy-to-dockerhub:
 
 build-package:
   stage: build
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     # Determine version
     - apt-get update
@@ -458,7 +458,7 @@ build-package:
 deploy-to-testpypi:
   stage: deploy
   needs: ["build-package"]
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   only:
     - develop@Scientific-IT-Systems/SampleDB
   script:
@@ -471,7 +471,7 @@ deploy-to-testpypi:
 deploy-to-pypi:
   stage: deploy
   needs: ["build-package"]
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
