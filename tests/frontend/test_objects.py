@@ -3057,3 +3057,123 @@ def test_object_data_to_html(flask_server, app, driver, user):
             referenced_schema
         )
         referenced_object = sampledb.logic.objects.get_object(referenced_object.id)
+
+def test_external_links(flask_server, app, driver, user):
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': {
+                'en': 'Name'
+            }
+        }
+    }
+    action1 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema,
+        user_id=user.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action1.id,
+        name='Action 1',
+        description=''
+    )
+    object1 = sampledb.logic.objects.create_object(
+        action1.id,
+        data,
+        user.id
+    )
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema,
+        user_id=user.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action2.id,
+        name='Action 2',
+        description=''
+    )
+    object2 = sampledb.logic.objects.create_object(
+        action2.id,
+        data,
+        user.id
+    )
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+
+    sampledb.frontend.utils.merge_external_links.cache_clear()
+    flask_server.app.config['OBJECT_LINKS_BY_ACTION_ID'] = {
+        '*': [
+            {
+                'links': [
+                    {
+                        'name': {'en': 'Example Link 1'},
+                        'url': 'http://example.org/link1'
+                    },
+                    {
+                        'name': {'en': 'Example Link 2'},
+                        'url': 'http://example.org/link2'
+                    }
+                ],
+                'label': {'en': 'Links'},
+                'icon': 'fa-external-link',
+                'id_placeholder': '<ID>'
+            }
+        ],
+        action1.id: [
+            {
+                'links': [
+                    {
+                        'name': {'en': 'Example Link 3'},
+                        'url': 'http://example.org/link3'
+                    }
+                ],
+                'label': {'en': 'Links'},
+                'icon': 'fa-external-link',
+                'id_placeholder': '<ID>'
+            }
+        ]
+    }
+
+    driver.get(flask_server.base_url + f'objects/{object1.id}')
+    external_links = driver.find_elements(By.CSS_SELECTOR, 'ul[aria-labelledby="linksDropdownMenuButton"] li a')
+    assert {(external_link.get_attribute("textContent"), external_link.get_attribute('href')) for external_link in external_links} == {
+        (
+            'Example Link 1',
+            'http://example.org/link1'
+        ),
+        (
+            'Example Link 2',
+            'http://example.org/link2'
+        ),
+        (
+            'Example Link 3',
+            'http://example.org/link3'
+        ),
+    }
+
+    driver.get(flask_server.base_url + f'objects/{object2.id}')
+    external_links = driver.find_elements(By.CSS_SELECTOR, 'ul[aria-labelledby="linksDropdownMenuButton"] li a')
+    assert {(external_link.get_attribute("textContent"), external_link.get_attribute('href')) for external_link in external_links} == {
+        (
+            'Example Link 1',
+            'http://example.org/link1'
+        ),
+        (
+            'Example Link 2',
+            'http://example.org/link2'
+        ),
+    }
+    sampledb.frontend.utils.merge_external_links.cache_clear()

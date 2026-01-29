@@ -289,6 +289,24 @@
       </form>
     </div>
     {% endif %}
+  {% if object.action_id in config["OBJECT_LINKS_BY_ACTION_ID"] or '*' in config["OBJECT_LINKS_BY_ACTION_ID"] %}
+    {% for links_config in merge_external_links(("OBJECT_LINKS_BY_ACTION_ID", "*"), ("OBJECT_LINKS_BY_ACTION_ID", object.action_id)) %}
+      <div class="form-group">
+        <div class="btn-group">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="linksDropdownMenuButton">
+            {% for link in links_config.links %}
+              <li>
+                <a href="{{ link.url | replace(links_config.id_placeholder, object.id) }}">{{ link.name | get_translated_text }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
   </div>
   {% if schema and ('workflow_view' in schema or 'workflow_views' in schema) %}
     {% set workflow_views = schema.get('workflow_views', []) %}

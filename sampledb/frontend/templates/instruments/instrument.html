@@ -106,6 +106,22 @@
       </div>
     {% endif %}
   {% endif %}
+  {% if instrument.id in config["INSTRUMENT_LINKS_BY_INSTRUMENT_ID"] or '*' in config["INSTRUMENT_LINKS_BY_INSTRUMENT_ID"] %}
+    {% for links_config in merge_external_links(("INSTRUMENT_LINKS_BY_INSTRUMENT_ID", "*"), ("INSTRUMENT_LINKS_BY_INSTRUMENT_ID", instrument.id)) %}
+      <span class="btn-group" style="margin-bottom: -2px">
+        <button class="btn btn-default dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="linksDropdownMenuButton">
+          {% for link in links_config.links %}
+            <li>
+              <a href="{{ link.url | replace(links_config.id_placeholder, instrument.id) }}">{{ link.name | get_translated_text }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </span>
+    {% endfor %}
+  {% endif %}
   {% if instrument_actions %}
   <h2>{{ _('Actions') }}</h2>
   {% for action in instrument_actions %}

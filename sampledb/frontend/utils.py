@@ -8,6 +8,7 @@ import dataclasses
 import decimal
 import difflib
 import io
+import itertools
 import json
 import base64
 import functools
@@ -71,6 +72,7 @@ from ..logic.object_data_to_html import object_data_to_html
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
 from .info_pages import InfoPageAcknowledgementForm
+from ..config import LinkListConfig
 
 
 class JinjaFilter:
@@ -1904,3 +1906,23 @@ def get_info_pages() -> typing.Sequence[InfoPage]:
         user_id=current_user.id,
         exclude_disabled=True
     )
+
+
+@JinjaFunction()
+@functools.cache
+def merge_external_links(*external_link_config_keys: typing.Tuple[str, typing.Union[int, str]]) -> typing.Sequence[LinkListConfig]:
+    external_link_config_lists: typing.List[typing.Sequence[LinkListConfig]] = []
+    for config_key, id_or_wildcard in external_link_config_keys:
+        external_link_config_lists.append(flask.current_app.config[config_key].get(id_or_wildcard, []))
+    merged_external_link_config_list: typing.List[LinkListConfig] = []
+    for link_list_config in itertools.chain(*external_link_config_lists):
+        for existing_link_list_config in merged_external_link_config_list:
+            matching_keys: typing.List[typing.Union[typing.Literal['label'], typing.Literal['icon'], typing.Literal['id_placeholder']]] = ['label', 'icon', 'id_placeholder']
+            if all(existing_link_list_config[key] == link_list_config[key] for key in matching_keys):
+                for link_config in link_list_config['links']:
+                    if link_config not in existing_link_list_config['links']:
+                        existing_link_list_config['links'].append(copy.deepcopy(link_config))
+                break
+        else:
+            merged_external_link_config_list.append(copy.deepcopy(link_list_config))
+    return merged_external_link_config_list

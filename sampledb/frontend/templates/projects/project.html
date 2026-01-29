@@ -154,6 +154,22 @@
   <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteProjectModal">{{ _('Delete Project Group') }}</button>
   {% endif %}
   {% endif %}
+  {% if project.id in config["PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID"] or '*' in config["PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID"] %}
+    {% for links_config in merge_external_links(("PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID", "*"), ("PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID", project.id)) %}
+      <div class="btn-group" style="margin-bottom: 2px">
+        <button class="btn btn-default dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 220px">
+          <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="linksDropdownMenuButton">
+          {% for link in links_config.links %}
+            <li>
+              <a href="{{ link.url | replace(links_config.id_placeholder, project.id) }}">{{ link.name | get_translated_text }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  {% endif %}
   </div>
 
   {% if not current_user.is_readonly and object_id and object_link_form %}

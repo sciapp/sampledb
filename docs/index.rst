@@ -68,6 +68,7 @@ Administrator Guide
     administrator_guide/customization.rst
     administrator_guide/deprecated_features.rst
     administrator_guide/labels.rst
+    administrator_guide/external_links.rst
 
 Developer Guide
 ---------------
