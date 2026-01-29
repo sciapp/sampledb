@@ -1,7 +1,3 @@
-# coding: utf-8
-"""
-
-"""
 import sys
 
 import requests
@@ -418,12 +414,12 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json=[]
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'JSON object body required'
+    assert r.json()['message'] == "Input should be an object"
 
     object_json = {'unknown': 1}
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'invalid key \'unknown\''
+    assert r.json()['message'] == "Extra inputs are not permitted (unknown)"
 
     object_json = {
         'data': {
@@ -444,7 +440,7 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json = {}
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'data or data_diff must be set'
+    assert r.json()['message'] == "At least one required: data, data_diff"
 
     object_json = {
         'object_id': object.object_id,
@@ -583,7 +579,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'object_id must be {}'.format(object.object_id)
+    assert r.json()['message'] == "Input should be {} (object_id)".format(object.object_id)
 
     object_json = {
         'version_id': object.version_id + 1,
@@ -613,7 +609,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'version_id must be {}'.format(object.version_id+1)
+    assert r.json()['message'] == "Input should be {} (version_id)".format(object.version_id+1)
 
     object_json = {
         'action_id': object.action_id,
@@ -643,7 +639,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'action_id must be {}'.format(object.action_id)
+    assert r.json()['message'] == "Input should be {} (action_id)".format(object.action_id)
 
     new_schema = {
         'title': 'Example Object',
@@ -675,7 +671,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'].startswith('schema must be either')
+    assert r.json()['message'].startswith("Schema should be")
 
     sampledb.logic.actions.update_action(
         action_id=action.id,
@@ -944,7 +940,7 @@ def test_create_object(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v1/objects/', json=[], auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'JSON object body required'
+    assert r.json()['message'] == 'Input should be an object'
 
     object_json = {
         'action_id': action.id,
@@ -958,7 +954,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'invalid key \'user_id\''
+    assert r.json()['message'] == "Extra inputs are not permitted (user_id)"
 
     object_json = {
         'object_id': 1,
@@ -972,7 +968,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'object_id cannot be set'
+    assert r.json()['message'] == "Extra inputs are not permitted (object_id)"
 
     object_json = {
         'version_id': 0,
@@ -999,7 +995,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'version_id must be 0'
+    assert r.json()['message'] == "Input should be 0 (version_id)"
 
     object_json = {
         'data': {
@@ -1011,7 +1007,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'action_id must be set'
+    assert r.json()['message'] == "Field required (action_id)"
 
     object_json = {
         'action_id': "Create other Sample",
@@ -1024,7 +1020,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'action_id must be an integer'
+    assert r.json()['message'] == "Input should be a valid integer (action_id)"
 
     object_json = {
         'action_id': action.id + 1,
@@ -1037,7 +1033,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'action {} does not exist'.format(action.id + 1)
+    assert r.json()['message'] == "Action should exist (action_id)"
 
     object_json = {
         'action_id': action.id,
@@ -1069,14 +1065,14 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'schema must be:\n{}'.format(json.dumps(action.schema, indent=4))
+    assert r.json()['message'] == f"Schema should be {json.dumps(action.schema, indent=4)}"
 
     object_json = {
         'action_id': action.id
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'data must be set'
+    assert r.json()['message'] == "Field required (data)"
 
     object_json = {
         'action_id': action.id,

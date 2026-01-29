@@ -1,14 +1,16 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
 import typing
 
 import flask
+from pydantic import BaseModel
 
-from .authentication import multi_auth
+from ...logic import errors, groups
 from ..utils import Resource, ResponseData
-from ...logic import errors, groups, users
+from .authentication import multi_auth
+from .validation_utils import UserId, ValidatingError, validate
+
+
+class _GroupMemberUsers(BaseModel):
+    user_id: UserId
 
 
 def group_to_json(group: groups.Group) -> typing.Dict[str, typing.Any]:
@@ -78,22 +80,15 @@ class GroupMemberUsers(Resource):
             return {
                 "message": f"group {group_id} does not exist"
             }, 404
-
         request_json = flask.request.get_json(force=True)
-        user_id = request_json.get('user_id')
-        if type(user_id) is not int:
-            return {
-                "message": "user_id must be int"
-            }, 400
+        try:
+            request_data = validate(_GroupMemberUsers, request_json)
+        except ValidatingError as err:
+            return err.response
+        user_id = request_data.user_id
         if user_id in group_member_ids:
             return {
                 "message": "user is already a member of this group"
-            }, 400
-        try:
-            users.check_user_exists(user_id)
-        except errors.UserDoesNotExistError:
-            return {
-                "message": "user does not exist"
             }, 400
         groups.add_user_to_group(group_id, user_id)
         return flask.redirect(flask.url_for('.group_member_user', group_id=group_id, user_id=user_id), code=201)
