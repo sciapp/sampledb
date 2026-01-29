@@ -1,17 +1,141 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
 import typing
+from dataclasses import dataclass
+from functools import cached_property
 
 import flask
+from pydantic import BaseModel, Strict, model_validator
+from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth, object_permissions_required
 from ..utils import Resource, ResponseData
-from ...logic import errors, locations, location_permissions, users, utils
+from ...logic import errors, locations, location_permissions, utils
 from ...models import Permissions
+from .validation_utils import (ModelWithDefaultsFromValidationInfo,
+                               OptionalNotNone, UserId, ValidatingError,
+                               is_expected_from_validation_info,
+                               populate_missing_or_expect_from_validation_info,
+                               validate)
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+@dataclass(frozen=True, slots=True)
+class _LocationValidationContext:
+    location: locations.Location
+
+
+@dataclass(frozen=True, slots=True)
+class _ObjectAssignmentValidationContext:
+    object_id: int
+
+
+@typing.overload
+def _get_location(location_id: int, loc: str) -> locations.Location:
+    pass
+
+
+@typing.overload
+def _get_location(location_id: None, loc: str) -> None:
+    pass
+
+
+def _get_location(location_id: typing.Optional[int], loc: str) -> typing.Optional[locations.Location]:
+    if location_id is None:
+        return None
+    try:
+        return locations.get_location(location_id)
+    except errors.LocationDoesNotExistError:
+        raise PydanticCustomError("no_suck_location", f"Location should exist ({loc})")
+
+
+@typing.overload
+def _get_location_type(type_id: int) -> locations.LocationType:
+    pass
+
+
+@typing.overload
+def _get_location_type(type_id: None) -> None:
+    pass
+
+
+def _get_location_type(type_id: typing.Optional[int]) -> typing.Optional[locations.LocationType]:
+    if type_id is None:
+        return None
+    try:
+        return locations.get_location_type(type_id)
+    except errors.LocationTypeDoesNotExistError:
+        raise PydanticCustomError("no_such_location_type", "Location type should exist (type_id)")
+
+
+if typing.TYPE_CHECKING:
+    class _BaseLocation(typing.Protocol):
+        @property
+        def parent_location_id(self) -> typing.Optional[int]:
+            pass
+
+        @property
+        def type(self) -> typing.Any:
+            pass
+else:
+    class _BaseLocation(BaseModel):
+        pass
+
+
+class _ParentLocationMixin(_BaseLocation):
+    @cached_property
+    def parent_location(self) -> typing.Optional[locations.Location]:
+        if self.parent_location_id is None:
+            return None
+        try:
+            return locations.get_location(self.parent_location_id)
+        except errors.LocationDoesNotExistError:
+            raise PydanticCustomError("no_such_location", "Location should exist (parent_location_id)")
+
+    @model_validator(mode="after")
+    def check(self) -> typing.Self:
+        self.parent_location, self.type  # pylint: disable=pointless-statement
+        return self
+
+
+class _Location(_ParentLocationMixin, BaseModel):
+    name: str = ""
+    description: str = ""
+    parent_location_id: typing.Annotated[typing.Optional[int], Strict()] = None
+    type_id: OptionalNotNone[typing.Annotated[int, Strict()]]
+
+    @cached_property
+    def type(self) -> typing.Optional[locations.LocationType]:
+        return _get_location_type(self.type_id)
+
+
+class _LocationUpdate(ModelWithDefaultsFromValidationInfo, _ParentLocationMixin):
+    location_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.location.id)]
+    name: str
+    description: str
+    parent_location_id: typing.Annotated[typing.Optional[int], Strict()]
+    type_id: typing.Annotated[int, Strict()]
+    is_hidden: bool
+    enable_object_assignments: bool
+
+    @cached_property
+    def type(self) -> locations.LocationType:
+        return _get_location_type(self.type_id)
+
+
+class _ObjectLocationAssignment(BaseModel):
+    object_id: OptionalNotNone[typing.Annotated[int, is_expected_from_validation_info(lambda i: i.context.object_id)]]
+    location_id: OptionalNotNone[typing.Annotated[int, Strict()]]
+    responsible_user_id: OptionalNotNone[typing.Annotated[UserId, Strict()]]
+    description: str = ""
+
+    @cached_property
+    def location(self) -> typing.Optional[locations.Location]:
+        return _get_location(self.location_id, "location_id")
+
+    @model_validator(mode="after")
+    def check_assigned_to_something(self) -> typing.Self:
+        # accessing `self.location` also checks validity of location ID
+        if self.location is None and self.responsible_user_id is None:
+            raise PydanticCustomError("unassigned", "Object assignment should include a location or a responsible user")
+        return self
 
 
 def location_to_json(location: locations.Location) -> typing.Dict[str, typing.Any]:
@@ -83,83 +207,32 @@ class Location(Resource):
                 "message": "insufficient permissions for location"
             }, 403
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON object body required"
-            }, 400
-        if request_json.get('location_id', location_id) != location_id:
-            return {
-                "message": f"location_id must be {location_id}"
-            }, 400
-        for key in ['name', 'description', 'parent_location_id', 'type_id', 'is_hidden', 'enable_object_assignments']:
-            if key not in request_json:
-                return {
-                    "message": f"missing property '{key}'"
-                }, 400
-        name = request_json['name']
-        if type(name) is not str:
-            return {
-                "message": "name must be str"
-            }, 400
-        description = request_json['description']
-        if type(description) is not str:
-            return {
-                "message": "description must be str"
-            }, 400
-        parent_location_id = request_json['parent_location_id']
-        if parent_location_id is not None and type(parent_location_id) is not int:
-            return {
-                "message": "parent_location_id must be int or null"
-            }, 400
-        if parent_location_id is not None:
-            try:
-                parent_location = locations.get_location(parent_location_id)
-            except errors.LocationDoesNotExistError:
-                return {
-                    "message": "parent location does not exist"
-                }, 400
-            if Permissions.WRITE not in location_permissions.get_user_location_permissions(parent_location_id, flask.g.user.id):
+        try:
+            request_data = validate(_LocationUpdate, request_json, context=_LocationValidationContext(location))
+        except ValidatingError as e:
+            return e.response
+        if request_data.parent_location is not None:
+            if Permissions.WRITE not in location_permissions.get_user_location_permissions(request_data.parent_location.id, flask.g.user.id):
                 return {
                     "message": "insufficient permissions for parent location"
                 }, 403
-            if not parent_location.type.enable_sub_locations:
+            if not request_data.parent_location.type.enable_sub_locations:
                 return {
                     "message": "parent location type does not allow having sub locations"
                 }, 400
-        type_id = request_json['type_id']
-        if type(type_id) is not int:
-            return {
-                "message": "type_id must be int"
-            }, 400
-        try:
-            location_type = locations.get_location_type(type_id)
-        except errors.LocationTypeDoesNotExistError:
-            return {
-                "message": "location type does not exist"
-            }, 400
-        if not location_type.enable_parent_location and parent_location_id is not None:
+        if not request_data.type.enable_parent_location and request_data.parent_location is not None:
             return {
                 "message": "location type does not allow having a parent location"
             }, 400
-        is_hidden = request_json['is_hidden']
-        if type(is_hidden) is not bool:
-            return {
-                "message": "is_hidden must be boolean"
-            }, 400
-        enable_object_assignments = request_json['enable_object_assignments']
-        if type(enable_object_assignments) is not bool:
-            return {
-                "message": "enable_object_assignments must be boolean"
-            }, 400
         locations.update_location(
             location_id=location_id,
-            name={'en': name},
-            description={'en': description},
-            parent_location_id=parent_location_id,
+            name={'en': request_data.name},
+            description={'en': request_data.description},
+            parent_location_id=request_data.parent_location_id,
             user_id=flask.g.user.id,
-            type_id=type_id,
-            is_hidden=is_hidden,
-            enable_object_assignments=enable_object_assignments
+            type_id=request_data.type.id,
+            is_hidden=request_data.is_hidden,
+            enable_object_assignments=request_data.enable_object_assignments
         )
         location = locations.get_location(location.id)
         return location_to_json(location), 200
@@ -183,38 +256,12 @@ class Locations(Resource):
                 "message": "only administrators may manage locations"
             }, 403
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON object body required"
-            }, 400
-        name = ''
-        if 'name' in request_json:
-            if type(request_json['name']) is not str:
-                return {
-                    "message": "name must be str"
-                }, 400
-            name = request_json['name']
-        description = ''
-        if 'description' in request_json:
-            if type(request_json['description']) is not str:
-                return {
-                    "message": "description must be str"
-                }, 400
-            description = request_json['description']
-        parent_location_id = None
-        if request_json.get('parent_location_id') is not None:
-            if type(request_json['parent_location_id']) is not int:
-                return {
-                    "message": "parent_location_id must be int"
-                }, 400
-            parent_location_id = request_json['parent_location_id']
-            try:
-                parent_location = locations.get_location(parent_location_id)
-            except errors.LocationDoesNotExistError:
-                return {
-                    "message": "parent location does not exist"
-                }, 400
-            if Permissions.WRITE not in location_permissions.get_user_location_permissions(parent_location_id, flask.g.user.id):
+        try:
+            request_data = validate(_Location, request_json)
+        except ValidatingError as e:
+            return e.response
+        if parent_location := request_data.parent_location:
+            if Permissions.WRITE not in location_permissions.get_user_location_permissions(parent_location.id, flask.g.user.id):
                 return {
                     "message": "insufficient permissions for parent location"
                 }, 403
@@ -222,33 +269,21 @@ class Locations(Resource):
                 return {
                     "message": "parent location type does not allow having sub locations"
                 }, 400
-        type_id = locations.LocationType.LOCATION
-        if 'type_id' in request_json:
-            if type(request_json['type_id']) is not int:
-                return {
-                    "message": "type_id must be int"
-                }, 400
-            type_id = request_json['type_id']
-            try:
-                location_type = locations.get_location_type(type_id)
-            except errors.LocationTypeDoesNotExistError:
-                return {
-                    "message": "location type does not exist"
-                }, 400
+        if location_type := request_data.type:
             if location_type.admin_only and not flask.g.user.is_admin:
                 return {
                     "message": "location type may only be used by administrators"
                 }, 403
-            if not location_type.enable_parent_location and parent_location_id is not None:
+            if not location_type.enable_parent_location and request_data.parent_location is not None:
                 return {
                     "message": "location type does not allow having a parent location"
                 }, 400
         location = locations.create_location(
-            name={'en': name},
-            description={'en': description},
-            parent_location_id=parent_location_id,
+            name={'en': request_data.name},
+            description={'en': request_data.description},
+            parent_location_id=None if request_data.parent_location is None else request_data.parent_location.id,
             user_id=flask.g.user.id,
-            type_id=type_id
+            type_id=locations.LocationType.LOCATION if request_data.type is None else request_data.type.id
         )
         return flask.redirect(
             flask.url_for('.location', location_id=location.id),
@@ -309,48 +344,12 @@ class ObjectLocationAssignments(Resource):
     @object_permissions_required(Permissions.WRITE)
     def post(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON object body required"
-            }, 400
-        if 'object_id' in request_json:
-            if request_json['object_id'] != object_id:
-                return {
-                    "message": f"object_id must be {object_id}"
-                }, 400
-        location_id = None
-        if 'location_id' in request_json:
-            if type(request_json['location_id']) is not int:
-                return {
-                    "message": "location_id must be int"
-                }, 400
-            location_id = request_json['location_id']
-        responsible_user_id = None
-        if 'responsible_user_id' in request_json:
-            if type(request_json['responsible_user_id']) is not int:
-                return {
-                    "message": "responsible_user_id must be int"
-                }, 400
-            responsible_user_id = request_json['responsible_user_id']
-        description = ''
-        if 'description' in request_json:
-            if type(request_json['description']) is not str:
-                return {
-                    "message": "description must be str"
-                }, 400
-            description = request_json['description']
-        if location_id is None and responsible_user_id is None:
-            return {
-                "message": "at least one of location_id and responsible_user_id must be set"
-            }, 400
-        if location_id is not None:
-            try:
-                location = locations.get_location(location_id=location_id)
-            except errors.LocationDoesNotExistError:
-                return {
-                    "message": "location does not exist"
-                }, 400
-            if Permissions.READ not in location_permissions.get_user_location_permissions(location_id, flask.g.user.id):
+        try:
+            request_data = validate(_ObjectLocationAssignment, request_json, context=_ObjectAssignmentValidationContext(object_id))
+        except ValidatingError as e:
+            return e.response
+        if location := request_data.location:
+            if Permissions.READ not in location_permissions.get_user_location_permissions(location.id, flask.g.user.id):
                 return {
                     "message": "no permissions for location"
                 }, 403
@@ -358,21 +357,13 @@ class ObjectLocationAssignments(Resource):
                 return {
                     "message": "location does not allow object assignments"
                 }, 400
-
-        if responsible_user_id is not None:
-            try:
-                users.check_user_exists(responsible_user_id)
-            except errors.UserDoesNotExistError:
-                return {
-                    "message": "user does not exist"
-                }, 400
         try:
             locations.assign_location_to_object(
                 object_id=object_id,
-                location_id=location_id,
-                responsible_user_id=responsible_user_id,
+                location_id=None if request_data.location is None else request_data.location.id,
+                responsible_user_id=request_data.responsible_user_id,
                 user_id=flask.g.user.id,
-                description={'en': description}
+                description={'en': request_data.description}
             )
         except errors.ExceedingLocationCapacityError:
             return {
