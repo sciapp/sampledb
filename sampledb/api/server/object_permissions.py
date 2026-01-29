@@ -1,18 +1,82 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
-
-import functools
 import typing
+from contextlib import suppress
+
 import flask
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Strict
+from pydantic_core import PydanticCustomError
 
 from .authentication import object_permissions_required, multi_auth
 from ..utils import Resource, ResponseData
 from ...logic import users, groups, projects, errors, object_permissions, background_tasks, objects
 from ...models import Permissions
+from .validation_utils import UserId, ValidatingError, is_valid, validate
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+def _permissions(value: typing.Any) -> Permissions:
+    if isinstance(value, str):
+        with suppress(ValueError):
+            return Permissions.from_name(value)
+    raise PydanticCustomError("enum", "Input should be 'none', 'read', 'write' or 'grant'")
+
+
+def _group_exists(value: int) -> int:
+    try:
+        groups.get_group(value)
+    except errors.GroupDoesNotExistError:
+        raise PydanticCustomError("no_such_group", "Group should exist")
+    return value
+
+
+def _project_exists(value: int) -> int:
+    try:
+        projects.get_project(value)
+    except errors.ProjectDoesNotExistError:
+        raise PydanticCustomError("no_such_project", "Project should exist")
+    return value
+
+
+type _GroupId = typing.Annotated[int, AfterValidator(_group_exists)]
+type _ProjectId = typing.Annotated[int, AfterValidator(_project_exists)]
+type _Permissions = typing.Annotated[Permissions, BeforeValidator(_permissions)]
+type _UnknownPermissions = typing.Annotated[_Permissions, _is_valid_unknown_permissions]
+type _UserPermissions = typing.Dict[UserId, _Permissions]
+type _GroupPermissions = typing.Dict[_GroupId, _Permissions]
+type _ProjectPermissions = typing.Dict[_ProjectId, _Permissions]
+
+
+def _is_valid_unknown_permissions(permissions: Permissions, /, type_: typing.Literal["authenticated", "anonymous"]) -> AfterValidator:
+    return is_valid(
+        lambda v, i: v in {Permissions.NONE, Permissions.READ},
+        lambda i: PydanticCustomError(
+            "unexpected",
+            f"Permissions for {type_} users should be 'none' or 'read'",
+            {"allowed": {Permissions.NONE, Permissions.READ}},
+        ),
+    )
+
+
+class _ObjectPermissions(BaseModel):
+    users: typing.Optional[_UserPermissions] = None
+    groups: typing.Optional[_GroupPermissions] = None
+    projects: typing.Optional[_ProjectPermissions] = None
+    authenticated_users: typing.Optional[_UnknownPermissions] = None
+    anonymous_users: typing.Optional[_UnknownPermissions] = None
+
+
+def _check_object_exists(value: int) -> int:
+    try:
+        objects.check_object_exists(value)
+    except errors.ObjectDoesNotExistError:
+        raise PydanticCustomError("no_such_object", "Object should exist")
+    return value
+
+
+type ObjectId = typing.Annotated[int, AfterValidator(_check_object_exists)]
+
+
+class _CopyObjectPermissions(BaseModel):
+    source_object_id: ObjectId
+    target_object_id: ObjectId
 
 
 def all_object_permissions_dict_to_json(permissions: object_permissions.AllObjectPermissionsDict) -> typing.Dict[str, typing.Any]:
@@ -47,170 +111,42 @@ class ObjectPermissions(Resource):
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
-        update_functions = []
-        if type(request_json) is not dict:
+        try:
+            request_data = validate(_ObjectPermissions, request_json)
+        except ValidatingError as e:
+            return e.response
+        if request_data.anonymous_users is not None and not flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
             return {
-                "message": "JSON dict body required"
+                "message": "anonymous users are disabled"
             }, 400
-
-        # User-Permissions
-        if (user_perms_json := request_json.get("users")) is not None:
-            if type(user_perms_json) is not dict:
-                return {
-                    "message": "'users' is required to be a JSON object"
-                }, 400
-            for user_id, permission in user_perms_json.items():
-                try:
-                    users.check_user_exists(int(user_id))
-                except (errors.UserDoesNotExistError, ValueError):
-                    return {
-                        "message": f"user {user_id} does not exist"
-                    }, 404
-                if type(permission) is not str:
-                    return {
-                        "message": "JSON string for permission required"
-                    }, 400
-                try:
-                    user_permissions = Permissions.from_name(permission)
-                except ValueError:
-                    return {
-                        "message": f"Permissions name for user {user_id} required"
-                    }, 400
-
-                update_functions.append(
-                    functools.partial(
-                        object_permissions.set_user_object_permissions,
-                        object_id,
-                        user_id,
-                        user_permissions,
-                    )
-                )
-
-        # Group-Permissions
-        if (group_perms_json := request_json.get("groups")) is not None:
-            if type(group_perms_json) is not dict:
-                return {
-                    "message": "'groups' is required to be a JSON object"
-                }, 400
-            for group_id, permission in group_perms_json.items():
-                try:
-                    groups.get_group(int(group_id))
-                except (errors.GroupDoesNotExistError, ValueError):
-                    return {
-                        "message": f"group {group_id} does not exist"
-                    }, 404
-                if type(permission) is not str:
-                    return {
-                        "message": "JSON string for permission required"
-                    }, 400
-                try:
-                    group_permissions = Permissions.from_name(permission)
-                except ValueError:
-                    return {
-                        "message": f"Permissions name for group {group_id} required"
-                    }, 400
-
-                update_functions.append(
-                    functools.partial(
-                        object_permissions.set_group_object_permissions,
-                        object_id,
-                        group_id,
-                        group_permissions,
-                    )
-                )
-
-        # Project-Permissions
-        if (project_perms_json := request_json.get("projects")) is not None:
-            if type(project_perms_json) is not dict:
-                return {
-                    "message": "'projects' is required to be a JSON object"
-                }, 400
-            for project_id, permission in project_perms_json.items():
-                try:
-                    projects.get_project(int(project_id))
-                except (errors.ProjectDoesNotExistError, ValueError):
-                    return {
-                        "message": f"project {project_id} does not exist"
-                    }, 404
-                if type(permission) is not str:
-                    return {
-                        "message": "JSON string for permission required"
-                    }, 400
-                try:
-                    project_permissions = Permissions.from_name(permission)
-                except ValueError:
-                    return {
-                        "message": f"Permissions name for project {project_id} required"
-                    }, 400
-
-                update_functions.append(
-                    functools.partial(
-                        object_permissions.set_project_object_permissions,
-                        object_id,
-                        project_id,
-                        project_permissions,
-                    )
-                )
-
-        # Authenticated
-        if (authenticated_perms_json := request_json.get("authenticated_users")) is not None:
-            if type(authenticated_perms_json) is not str:
-                return {
-                    "message": "JSON string for permission required"
-                }, 400
-            try:
-                authenticated_permissions = Permissions.from_name(authenticated_perms_json)
-            except ValueError:
-                return {
-                    "message": "Permissions name for authenticated users required"
-                }, 400
-
-            if authenticated_permissions not in {Permissions.NONE, Permissions.READ}:
-                return {
-                    "message": 'expected "none" or "read"'
-                }, 400
-
-            update_functions.append(
-                functools.partial(
-                    object_permissions.set_object_permissions_for_all_users,
-                    object_id,
-                    authenticated_permissions,
-                )
+        for user_id, permissions in (request_data.users or {}).items():
+            object_permissions.set_user_object_permissions(
+                object_id,
+                user_id,
+                permissions,
             )
-
-        # Anonymous
-        if (public_perms_json := request_json.get("anonymous_users")) is not None:
-            if public_perms_json is not None and not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
-                return {
-                    "message": "anonymous users are disabled"
-                }, 400
-            if type(public_perms_json) is not str:
-                return {
-                    "message": "JSON string for permission required"
-                }, 400
-            try:
-                public_permissions = Permissions.from_name(public_perms_json)
-            except ValueError:
-                return {
-                    "message": "Permissions name for anonymous users required"
-                }, 400
-
-            if public_permissions not in {Permissions.NONE, Permissions.READ}:
-                return {
-                    "message": 'expected "none" or "read"'
-                }, 400
-
-            update_functions.append(
-                functools.partial(
-                    object_permissions.set_object_permissions_for_anonymous_users,
-                    object_id,
-                    public_permissions,
-                )
+        for group_id, permissions in (request_data.groups or {}).items():
+            object_permissions.set_group_object_permissions(
+                object_id,
+                group_id,
+                permissions,
             )
-
-        for item in update_functions:
-            item()
-
+        for project_id, permissions in (request_data.projects or {}).items():
+            object_permissions.set_project_object_permissions(
+                object_id,
+                project_id,
+                permissions,
+            )
+        if request_data.authenticated_users is not None:
+            object_permissions.set_object_permissions_for_all_users(
+                object_id,
+                request_data.authenticated_users,
+            )
+        if request_data.anonymous_users is not None:
+            object_permissions.set_object_permissions_for_anonymous_users(
+                object_id,
+                request_data.anonymous_users,
+            )
         return all_object_permissions_dict_to_json(
             object_permissions.get_all_object_permissions(object_id=object_id)
         ), 200
@@ -226,73 +162,39 @@ class CopyObjectsPermissions(Resource):
                 "message": "No permission to copy object's permissions"
             }, 403
         request_json = flask.request.get_json(force=True)
-        if type(request_json) is dict:
-            request_json = [request_json]
-        elif type(request_json) is not list:
-            return {
-                "message": "JSON list or dict body required"
-            }, 400
         try:
-            for item in request_json:
-                if type(item) is not dict:
-                    return {
-                        "message": "JSON list or dict body required"
-                    }, 400
-                source_object_id = item.get("source_object_id", None)
-                target_object_id = item.get("target_object_id", None)
-                if type(source_object_id) is not int:
-                    return {
-                        "message": "source_object_id for JSON object required"
-                    }, 400
-                if type(target_object_id) is not int:
-                    return {
-                        "message": "target_object_id for JSON object required"
-                    }, 400
-                # Validating all incoming object ids before changing any permission
-                for object_id in [source_object_id, target_object_id]:
-                    try:
-                        objects.check_object_exists(object_id)
-                    except errors.ObjectDoesNotExistError:
-                        return {
-                            "message": f"object {object_id} does not exist"
-                        }, 404
-
-                # Assure highest permission for source object is atleast READ
-                # to view object's permission
-                if max(
-                    object_permissions.get_object_permissions_for_all_users(source_object_id),
-                    object_permissions.get_user_object_permissions(
-                        object_id=source_object_id,
-                        user_id=user_id,
-                    )
-                ) < Permissions.READ:
-                    return {
-                        "message": f"missing object permission for source object {source_object_id}"
-                    }, 403
-
-                # Assure highest permission for target object is atleast GRANT
-                # to allow permission-manipulation
-                if object_permissions.get_user_object_permissions(
-                    object_id=target_object_id,
+            if not isinstance(request_json, list):
+                request_data = [validate(_CopyObjectPermissions, request_json)]
+            else:
+                request_data = validate(typing.List[_CopyObjectPermissions], request_json)
+        except ValidatingError as e:
+            return e.response
+        for item in request_data:
+            # Assure highest permission for source object is atleast READ
+            # to view object's permission
+            if max(
+                object_permissions.get_object_permissions_for_all_users(item.source_object_id),
+                object_permissions.get_user_object_permissions(
+                    object_id=item.source_object_id,
                     user_id=user_id,
-                ) < Permissions.GRANT:
-                    return {
-                        "message": f"missing object permission for target object {target_object_id}"
-                    }, 403
-
-        except ValueError:
-            return {
-                "message": "body parameters 'source' and 'target' are required to be object IDs"
-            }, 400
-        except KeyError:
-            return {
-                "message": "JSON dict body required 'source' and 'target' key"
-            }, 400
-
-        for item in request_json:
+                )
+            ) < Permissions.READ:
+                return {
+                    "message": f"missing object permission for source object {item.source_object_id}"
+                }, 403
+            # Assure highest permission for target object is atleast GRANT
+            # to allow permission-manipulation
+            if object_permissions.get_user_object_permissions(
+                object_id=item.target_object_id,
+                user_id=user_id,
+            ) < Permissions.GRANT:
+                return {
+                    "message": f"missing object permission for target object {item.target_object_id}"
+                }, 403
+        for item in request_data:
             object_permissions.copy_permissions(
-                source_object_id=item["source_object_id"],
-                target_object_id=item["target_object_id"],
+                source_object_id=item.source_object_id,
+                target_object_id=item.target_object_id,
             )
         return "", 200
 
@@ -322,23 +224,15 @@ class UserObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int, user_id: int) -> ResponseData:
-        try:
-            users.check_user_exists(user_id)
-        except errors.UserDoesNotExistError:
-            return {
-                "message": f"user {user_id} does not exist"
-            }, 404
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, str):
-            return {
-                "message": "JSON string body required"
-            }, 400
         try:
-            permissions = Permissions.from_name(request_json)
-        except ValueError:
-            return {
-                "message": "Permissions name required"
-            }, 400
+            validate(UserId, user_id)
+        except ValidatingError as e:
+            return e.response[0], 404
+        try:
+            permissions: Permissions = validate(_Permissions, request_json)
+        except ValidatingError as e:
+            return e.response
         object_permissions.set_user_object_permissions(object_id, user_id, permissions)
         background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
@@ -383,23 +277,15 @@ class GroupObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int, group_id: int) -> ResponseData:
-        try:
-            groups.get_group(group_id)
-        except errors.GroupDoesNotExistError:
-            return {
-                "message": f"group {group_id} does not exist"
-            }, 404
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, str):
-            return {
-                "message": "JSON string body required"
-            }, 400
         try:
-            permissions = Permissions.from_name(request_json)
-        except ValueError:
-            return {
-                "message": "Permissions name required"
-            }, 400
+            validate(_GroupId, group_id)
+        except ValidatingError as e:
+            return e.response[0], 404
+        try:
+            permissions: Permissions = validate(_Permissions, request_json)
+        except ValidatingError as e:
+            return e.response
         object_permissions.set_group_object_permissions(object_id, group_id, permissions)
         background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
@@ -436,23 +322,15 @@ class ProjectObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int, project_id: int) -> ResponseData:
-        try:
-            projects.get_project(project_id)
-        except errors.ProjectDoesNotExistError:
-            return {
-                "message": f"project {project_id} does not exist"
-            }, 404
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, str):
-            return {
-                "message": "JSON string body required"
-            }, 400
         try:
-            permissions = Permissions.from_name(request_json)
-        except ValueError:
-            return {
-                "message": "Permissions name required"
-            }, 400
+            validate(_ProjectId, project_id)
+        except ValidatingError as e:
+            return e.response[0], 404
+        try:
+            permissions: Permissions = validate(_Permissions, request_json)
+        except ValidatingError as e:
+            return e.response
         object_permissions.set_project_object_permissions(object_id, project_id, permissions)
         background_tasks.post_trigger_object_permissions_webhooks(object_id)
         return permissions.name.lower(), 200
@@ -481,11 +359,10 @@ class PublicObjectPermissions(Resource):
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, bool):
-            return {
-                "message": "JSON boolean body required"
-            }, 400
-        is_public = bool(request_json)
+        try:
+            is_public: bool = validate(typing.Annotated[bool, Strict()], request_json)
+        except ValidatingError as e:
+            return e.response
         object_permissions.set_object_permissions_for_all_users(
             object_id=object_id,
             permissions=Permissions.READ if is_public else Permissions.NONE
@@ -505,18 +382,10 @@ class AuthenticatedUserObjectPermissions(Resource):
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, str):
-            return {
-                "message": "JSON string body required"
-            }, 400
         try:
-            permissions = Permissions.from_name(request_json)
-            if permissions not in {Permissions.NONE, Permissions.READ}:
-                raise ValueError("invalid permissions level")
-        except ValueError:
-            return {
-                "message": 'expected "none" or "read"'
-            }, 400
+            permissions: Permissions = validate(_UnknownPermissions, request_json)
+        except ValidatingError as e:
+            return e.response
         object_permissions.set_object_permissions_for_all_users(
             object_id=object_id,
             permissions=permissions
@@ -544,18 +413,10 @@ class AnonymousUserObjectPermissions(Resource):
                 "message": "anonymous users are disabled"
             }, 400
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, str):
-            return {
-                "message": "JSON string body required"
-            }, 400
         try:
-            permissions = Permissions.from_name(request_json)
-            if permissions not in {Permissions.NONE, Permissions.READ}:
-                raise ValueError("invalid permissions level")
-        except ValueError:
-            return {
-                "message": 'expected "none" or "read"'
-            }, 400
+            permissions: Permissions = validate(_UnknownPermissions, request_json)
+        except ValidatingError as e:
+            return e.response
         object_permissions.set_object_permissions_for_anonymous_users(
             object_id=object_id,
             permissions=permissions
