@@ -25,6 +25,7 @@ Pillow
 Pint
 plotly < 7
 psycopg2-binary
+pydantic
 pyotp
 pysaml2
 qrcode

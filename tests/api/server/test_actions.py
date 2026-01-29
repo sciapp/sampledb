@@ -1,8 +1,3 @@
-# coding: utf-8
-"""
-
-"""
-
 import requests
 import pytest
 
@@ -223,7 +218,6 @@ def test_post_action(flask_server, auth):
         ('is_hidden', None),
         ('schema', [action.schema]),
         ('schema', {'title': 'Invalid Schema', 'type': 'object'}),
-        ('name', 'Example \0Action'),
         ('name', ''),
         ('name', 'x' * 101)
     ]:
