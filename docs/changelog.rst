@@ -19,6 +19,7 @@ Currently in development.
 - Split setting for showing topics in navbar for actions and instruments tabs
 - Added webhook type for changes to object permissions
 - Fixed array tables
+- Added documentation for differential backups using borgmatic
 
 
 Version 0.32
