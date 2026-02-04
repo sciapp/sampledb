@@ -110,7 +110,7 @@ Add the borgmatic container as backup service to your compose file named for exa
 	    - pgdata:/var/lib/postgresql/data/pgdata:rw
 	  restart: always
 
-In ``./data/borgmatic.d`` create ``config.yaml``. This conifguartion file should look like this:
+In ``./data/borgmatic.d`` create ``config.yaml``. This configuration file should look like this:
 
 .. code-block:: yaml
 
