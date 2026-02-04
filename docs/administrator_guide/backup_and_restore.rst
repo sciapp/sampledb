@@ -53,7 +53,7 @@ Differential Backup Using Borgmatic
 
 In case of large databases, the additional space required for more than one backup can be prohibitive. Differential backups instead only save changes since the last full backup. 
 
-Borg is a well-established tool for performing differential backups. Brogmatic provides it in a docker container and adds some utility. Both are free and open source software.
+`Borg <https://www.borgbackup.org/>`_ is a well-established tool for performing differential backups. `Borgmatic <https://torsion.org/borgmatic/>`_ provides it in a docker container and adds some utility. Both are free and open source software.
 
 For this configuration we recommend the use of docker compose. Change to the directory containing your compose file and create the directories required for borgmatic:
 
