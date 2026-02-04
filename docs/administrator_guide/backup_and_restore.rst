@@ -55,7 +55,7 @@ In case of large databases, the additional space required for more than one back
 
 `Borg <https://www.borgbackup.org/>`_ is a well-established tool for performing differential backups. `Borgmatic <https://torsion.org/borgmatic/>`_ provides it in a docker container and adds some utility. Both are free and open source software.
 
-For this configuration we recommend the use of docker compose. Change to the directory containing your compose file and create the directories required for borgmatic:
+For this configuration we suggest the use of docker compose. Change to the directory containing your compose file and create the directories required for borgmatic:
 
 .. code-block:: bash
 
