@@ -94,7 +94,7 @@ Add the borgmatic container as backup service to your compose file named for exa
 	    - SAMPLEDB_MAIL_SERVER=mail.example.com
 	    - SAMPLEDB_MAIL_SENDER=sampledb@example.com
 	    - SAMPLEDB_ADMIN_PASSWORD=password
-	    # This varaible includes the postgres password, set it the same as in the sampledb-postgres service.
+	    # This variable includes the postgres password, set it the same as in the sampledb-postgres service.
 	    - SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres
 	  restart: always
 	  depends_on:
