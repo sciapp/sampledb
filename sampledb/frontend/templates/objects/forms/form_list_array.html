@@ -1,4 +1,4 @@
-{% set container_style = schema.get('style') %}
+{% set container_style = get_style_variant(schema.get("style"), template_mode) %}
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set minItems = schema.get('minItems', 0) %}
 {% set maxItems = schema.get('maxItems', -1) %}

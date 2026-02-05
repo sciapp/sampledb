@@ -1,5 +1,5 @@
 {% with %}
-  {% if schema.get('style') == 'include' and data and 'object_id' in data and 'component_uuid' not in data %}
+  {% if get_style_variant(schema.get("style"), template_mode) == 'include' and data and 'object_id' in data and 'component_uuid' not in data %}
     {% if included_referenced_object_ids is not defined %}
       {% set included_referenced_object_ids = [] %}
     {% endif %}

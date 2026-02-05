@@ -280,6 +280,7 @@ def object_data_to_html(
             id_prefix=id_prefix_root_placeholder + '_',
             workflow_display_mode=workflow_display_mode,
             files=files,
+            template_mode='view',
         )
     finally:
         flask.current_app.jinja_env.filters['get_hash'] = get_hash
