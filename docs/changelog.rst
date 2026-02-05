@@ -21,6 +21,7 @@ Currently in development.
 - Added previous versions to documentation
 - Fixed array tables
 - Fixed style variants
+- Fixed editing of language settings
 
 
 Version 0.32
