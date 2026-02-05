@@ -247,7 +247,7 @@ check-translations:
     # compare current and generated messages to ensure there are no changes missing in the current messages
     - diff --color=always extracted_messages_current_de_without_header.po extracted_messages_generated_de_without_header.po
 
-documentation:
+generate-documentation-images:
   stage: test
   needs: []
   image: python:3.13-slim-trixie
@@ -269,11 +269,40 @@ documentation:
     - python3 -m pip install -r requirements.documentation.txt
     # generate documentation images using current version
     - python3 docs/utils/generate_images.py
-    # build documentation
-    - python3 -m sphinx -b html -t iffSamples docs/ build_documentation/
+    - mv docs/static/img/generated generated_images
   artifacts:
     paths:
-    - build_documentation
+      - generated_images
+
+documentation:
+  stage: test
+  needs: [generate-documentation-images]
+  image: python:3.13-slim-trixie
+  tags:
+    - kubernetes-executor
+  script:
+    - apt-get update
+    # set up Python 3
+    - apt-get install -y git python3-pip make
+    # clone SampleDB-Docs repo
+    - git clone --depth=1 https://github.com/sciapp/sampledb-docs.git
+    # install dependencies
+    - python3 -m pip install -r sampledb-docs/requirements.txt
+    # set up develop docs
+    - mkdir sampledb-docs/develop
+    - mv docs sampledb-docs/develop/
+    - mv generated_images sampledb-docs/develop/
+    - ln -s ../../../generated_images sampledb-docs/develop/docs/static/img/generated
+    - python3 -c "import vcversioner; vcversioner.find_version()"
+    - mv version.txt sampledb-docs/develop/
+    # build documentation
+    - cd sampledb-docs
+    - make build/merged
+    - cd ..
+    - mv sampledb-docs/build/merged build_documentation
+  artifacts:
+    paths:
+      - build_documentation
 
 build-image:
   stage: build
