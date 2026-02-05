@@ -5979,6 +5979,10 @@ msgstr ""
 " relative Zeitangabe in Sekunden und Wert"
 
 #, python-format
+msgid "Copy %(item_name)s"
+msgstr "%(item_name)s kopieren"
+
+#, python-format
 msgid "Remove %(item_name)s"
 msgstr "%(item_name)s entfernen"
 
