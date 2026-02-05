@@ -566,6 +566,29 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-sort-referencable-objects">
+        {{ _('Sort referencable objects') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-sort-referencable-objects" id="input-sort-referencable-objects-id" value="id" {% if user_settings["SORT_REFERENCABLE_OBJECTS"] == "id" %}checked="checked"{% endif %}>
+          {{ _('By ID &mdash; Sort referencable objects by their ID, from newest to oldest') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-sort-referencable-objects" id="input-sort-referencable-objects-name" value="name" {% if user_settings["SORT_REFERENCABLE_OBJECTS"] == "name" %}checked="checked"{% endif %}>
+          {{ _('By Name &mdash; Sort referencable objects by their name, from A to Z') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-sort-referencable-objects" id="input-sort-referencable-objects-default" value="default" {% if user_settings["SORT_REFERENCABLE_OBJECTS"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
       <label class="col-md-4 control-label" for="select-locale">
         {{ _('Language') }}
       </label>

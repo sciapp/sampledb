@@ -88,15 +88,15 @@ def property_value(property_name: str, language_code: str = 'en') -> typing.Call
         return sqlalchemy.sql.expression.case(
             (
                 sqlalchemy.and_(columns.data[property_name]['_type'].astext == 'text', sqlalchemy.func.jsonb_typeof(columns.data[property_name]['text']) == 'string'),
-                columns.data[property_name]['text'].astext
+                sqlalchemy.sql.expression.func.lower(columns.data[property_name]['text'].astext)
             ),
             (
                 sqlalchemy.and_(columns.data[property_name]['_type'].astext == 'text', columns.data[property_name]['text'].has_key(language_code)),
-                columns.data[property_name]['text'][language_code].astext
+                sqlalchemy.sql.expression.func.lower(columns.data[property_name]['text'][language_code].astext)
             ),
             (
                 sqlalchemy.and_(columns.data[property_name]['_type'].astext == 'text', columns.data[property_name]['text'].has_key('en')),
-                columns.data[property_name]['text']['en'].astext
+                sqlalchemy.sql.expression.func.lower(columns.data[property_name]['text']['en'].astext)
             ),
             (
                 columns.data[property_name]['_type'].astext == 'quantity',

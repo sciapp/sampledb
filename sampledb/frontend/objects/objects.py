@@ -1202,6 +1202,9 @@ def referencable_objects() -> FlaskResponseT:
         permissions=required_perm,
         action_ids=action_ids
     )
+    sort_referencable_objects = get_user_settings(flask_login.current_user.id)['SORT_REFERENCABLE_OBJECTS'] or flask.current_app.config['SORT_REFERENCABLE_OBJECTS']
+    if str(sort_referencable_objects).lower() == 'name':
+        referencable_objects.sort(key=lambda x: get_translated_text(x.name_json).lower())
 
     def dictify(x: ObjectInfo) -> typing.Dict[str, typing.Any]:
         name = get_translated_text(x.name_json) or '—'

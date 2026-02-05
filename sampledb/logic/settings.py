@@ -26,6 +26,7 @@ DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "USE_SCHEMA_EDITOR": True,
     "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE": None,
     "SHOW_OBJECT_TITLE": None,
+    "SORT_REFERENCABLE_OBJECTS": None,
     "FULL_WIDTH_OBJECTS_TABLE": None,
     "WORKFLOW_VIEW_MODALS": None,
     "WORKFLOW_VIEW_COLLAPSED": None,
@@ -141,6 +142,8 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
     # custom data type verification can be included here
     if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'FULL_WIDTH_OBJECTS_TABLE', 'WORKFLOW_VIEW_MODALS', 'WORKFLOW_VIEW_COLLAPSED'}:
         return value is None or isinstance(value, bool)
+    if key in {'SORT_REFERENCABLE_OBJECTS'}:
+        return value is None or isinstance(value, str)
     return False
 
 

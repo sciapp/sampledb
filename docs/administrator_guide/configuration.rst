@@ -387,5 +387,7 @@ Miscellaneous
      - Sets if objects in a workflow view should be collapsed or expanded. Set to True to collapse objects, False to expand object contents (default: False).
    * - SAMPLEDB_EXTERNAL_LINKS
      - Sets external links, see :ref:`External Links <external_links>`.
+   * - SAMPLEDB_SORT_REFERENCABLE_OBJECTS
+     - If set to ``"name"``, referencable objects will be sorted by their name by default rather than their ID. Users may override this setting in their preferences.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.
