@@ -18,7 +18,8 @@ itsdangerous
 kaleido
 ldap3
 Markdown
-py-minisign @ git+https://github.com/x13a/py-minisign.git
+# Use this commit of py-minisgn until pysaml2 fixes its dependencies, so that the two packages use compatible versions of cryptography
+py-minisign @ git+https://github.com/x13a/py-minisign.git@f8844ec44bad7247b59e05d70c841830303c7497
 Pillow
 Pint
 plotly
@@ -28,5 +29,5 @@ pysaml2
 qrcode
 requests
 simple_openid_connect
-SQLAlchemy==2.0.41
+SQLAlchemy
 weasyprint
