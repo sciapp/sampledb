@@ -629,7 +629,7 @@ def get_template(template_mode: str, default_prefix: str, schema: typing.Dict[st
         template_mode=template_mode,
         default_prefix=default_prefix,
         schema_type=schema['type'],
-        schema_style=get_style_variant(schema.get('style'), template_mode),
+        schema_style=get_style_variant(schema.get("style"), template_mode),
         container_style=get_style_variant(container_style, template_mode)
     )
 
@@ -666,7 +666,7 @@ def get_template_impl(template_mode: str, default_prefix: str, schema_type: str,
 def get_property_template(template_mode: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[typing.Union[str, typing.Dict[str, str]]]) -> str:
     return get_property_template_impl(
         template_mode=template_mode,
-        schema_style=get_style_variant(schema.get('style'), template_mode),
+        schema_style=get_style_variant(schema.get("style"), template_mode),
         container_style=get_style_variant(container_style, template_mode)
     )
 

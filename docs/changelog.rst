@@ -20,6 +20,7 @@ Currently in development.
 - Added webhook type for changes to object permissions
 - Added previous versions to documentation
 - Fixed array tables
+- Fixed style variants
 
 
 Version 0.32

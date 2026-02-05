@@ -1,7 +1,7 @@
 {% if not property_path %}
   {% set root_schema = schema %}
 {% endif %}
-{% set container_style = get_style_variant(schema.style, template_mode) %}
+{% set container_style = get_style_variant(schema.get("style"), template_mode) %}
 <div style="font-size:1.5em; margin-bottom: 0.25em; {% if property_path %}margin-left:4px;{% endif %}">
   {% if container_style in ("collapsible", "expandable") %}
     <i class="fa fa-w {% if container_style == "collapsible" %}fa-minus-square-o{% else %}fa-plus-square-o{% endif %} collapse-expand-button" data-id-prefix="{{ id_prefix }}" style="font-size:0.8em;" data-toggle="tooltip" data-placement="top" title="{% if container_style == "collapsible" %}{{ _("Collapse") }}{% else %}{{ _("Expand") }}{% endif %}" data-collapse-text="{{ _("Collapse") }}" data-expand-text="{{ _("Expand") }}"></i>

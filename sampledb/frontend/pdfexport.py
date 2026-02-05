@@ -282,7 +282,7 @@ def create_html_for_pdfexport(
 
     soup = BeautifulSoup(html, 'html.parser')
     for tag_name, url_attribute in [('a', 'href'), ('img', 'src')]:
-        for element in soup.findAll(tag_name):
+        for element in soup.find_all(tag_name):
             url = element.get(url_attribute)
             if url and not urllib.parse.urlparse(url).netloc:
                 element[url_attribute] = url_mapper(urllib.parse.urljoin(base_url, url), exported_files)
