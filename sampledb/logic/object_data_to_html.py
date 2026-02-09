@@ -15,6 +15,7 @@ from .languages import get_user_language
 from .schemas.utils import data_iter, schema_iter
 from .object_permissions import get_objects_with_permissions, get_object_if_user_has_permissions
 from .utils import get_hash
+from .settings import get_user_setting
 
 
 def _get_object_if_current_user_has_read_permissions(object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
@@ -38,6 +39,7 @@ def _get_object_data_to_html_cache_entry(
         user_language: str,
         metadata_language: str,
         timezone: str,
+        show_object_title: typing.Optional[bool],
         workflow_display_mode: bool,
         increase_cache_hit_counter: bool = True
 ) -> typing.Optional[ObjectDataToHTMLCacheEntry]:
@@ -47,6 +49,7 @@ def _get_object_data_to_html_cache_entry(
         user_language=user_language,
         metadata_language=metadata_language,
         timezone=timezone,
+        show_object_title=show_object_title,
         workflow_display_mode=workflow_display_mode,
     ).first()
     if cache_entry is not None and increase_cache_hit_counter:
@@ -63,6 +66,7 @@ def _set_object_data_to_html_cache_entry(
         user_language: str,
         metadata_language: str,
         timezone: str,
+        show_object_title: typing.Optional[bool],
         workflow_display_mode: bool,
         html: str,
         object_dependencies: typing.List[typing.Tuple[int, typing.Optional[str], typing.Optional[int]]],
@@ -78,6 +82,7 @@ def _set_object_data_to_html_cache_entry(
         user_language=user_language,
         metadata_language=metadata_language,
         timezone=timezone,
+        show_object_title=show_object_title,
         workflow_display_mode=workflow_display_mode,
         html=html,
         object_dependencies=object_dependencies,
@@ -119,6 +124,7 @@ def object_data_to_html(
     timezone = flask_login.current_user.timezone
     can_cache = flask.current_app.config['ENABLE_OBJECT_DATA_HTML_CACHE'] and timezone is not None
     user_language = get_user_language(flask_login.current_user).lang_code
+    show_object_title = get_user_setting(flask_login.current_user.id, 'SHOW_OBJECT_TITLE')
     if can_cache:
         cache_entry = _get_object_data_to_html_cache_entry(
             object_id=object_id,
@@ -126,6 +132,7 @@ def object_data_to_html(
             user_language=user_language,
             metadata_language=metadata_language or user_language,
             timezone=typing.cast(str, timezone),
+            show_object_title=show_object_title,
             workflow_display_mode=workflow_display_mode
         )
     else:
@@ -270,6 +277,7 @@ def object_data_to_html(
             data=data,
             schema=schema,
             metadata_language=metadata_language,
+            show_object_title=show_object_title,
             diff=None,
             previous_schema=None,
             indent_level=0,
@@ -292,6 +300,7 @@ def object_data_to_html(
             user_language=user_language,
             metadata_language=metadata_language or user_language,
             timezone=flask_login.current_user.timezone,  # type: ignore
+            show_object_title=show_object_title,
             workflow_display_mode=workflow_display_mode,
             html=html,
             object_dependencies=list(object_dependencies),
