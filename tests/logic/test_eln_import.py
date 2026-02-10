@@ -31,6 +31,13 @@ def user(flask_server):
 def eln_zip_bytes(user, app, flask_server):
     set_up_state(user)
 
+    object = logic.objects.get_objects()[0]
+    logic.objects.update_object(
+        object_id=object.object_id,
+        data={**object.data, "name": {"_type": "text", "text": {"en": "Updated Object"}}},
+        user_id=user.id,
+    )
+
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
     with app.test_request_context('/'):
@@ -182,6 +189,10 @@ def test_parse_sampledb_eln_file(app, flask_server, sampledb_eln_import_id):
 
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by == f"{flask_server.base_url}".rstrip('/')
+
+    assert len(parsed_eln_import.objects[0].versions) == 2
+    assert parsed_eln_import.objects[0].versions[0].version_id == 0 and parsed_eln_import.objects[0].versions[0].data['name']['text'] == 'Object'
+    assert parsed_eln_import.objects[0].versions[1].version_id == 1 and parsed_eln_import.objects[0].versions[1].data['name']['text'] == {'en': 'Updated Object'}
 
 
 def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):

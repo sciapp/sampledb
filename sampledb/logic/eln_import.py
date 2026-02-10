@@ -965,6 +965,7 @@ def parse_eln_file(
                     )
                 if 'hasPart' in object_node and not isinstance(object_node['hasPart'], list):
                     object_node['hasPart'] = [object_node['hasPart']]
+                potential_version_ids: typing.List[str] = []
                 for object_part_ref in object_node.get('hasPart', []):
                     _eln_assert(isinstance(object_part_ref, dict), "Invalid reference")
                     _eln_assert(list(object_part_ref.keys()) == ['@id'], "Invalid reference")
@@ -1081,6 +1082,21 @@ def parse_eln_file(
                                 date_created=date_created,
                             ))
                     if eln_dialect == 'SampleDB' and _node_has_type(object_part, 'Dataset'):
+                        potential_version_ids.append(object_part['@id'])
+                if eln_dialect == 'SampleDB':
+                    is_based_on = object_node.get('isBasedOn', [])
+                    if type(is_based_on) is not list:
+                        is_based_on = [is_based_on]
+                    for object_part_ref in is_based_on:
+                        if type(object_part_ref) is dict:
+                            object_part_id = object_part_ref.get('@id')
+                            if type(object_part_id) is str and object_part_id in graph_nodes_by_id:
+                                object_part = graph_nodes_by_id[object_part_id]
+                                if _node_has_type(object_part, 'Dataset'):
+                                    if object_part['@id'] not in potential_version_ids:
+                                        potential_version_ids.append(object_part['@id'])
+                    for potential_version_id in potential_version_ids:
+                        object_part = graph_nodes_by_id[potential_version_id]
                         _eln_assert(any(object_part['@id'].startswith(object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_suffix in ('version/', 'versions/')), "SampleDB .eln file must only contain versions as Dataset parts of objects")
                         try:
                             version_id = int(object_part['@id'].strip('/').rsplit('/', maxsplit=1)[1])

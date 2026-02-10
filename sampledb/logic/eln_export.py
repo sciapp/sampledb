@@ -171,7 +171,12 @@ def generate_ro_crate_metadata(
             ],
             "hasPart": [
                 {
-                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/data.json",
+                }
+                for version_info in object_info['versions']
+            ] + [
+                {
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/schema.json",
                 }
                 for version_info in object_info['versions']
             ] + [

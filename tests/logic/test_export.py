@@ -354,7 +354,7 @@ def test_eln_export(user, app):
                     assert result_dict['passed']
                     assert result.passed(severity)
                 else:
-                    assert len(result_dict['issues']) == 1 and result_dict['issues'][0]['check']['identifier'] == 'ro-crate-1.1_5.3'
+                    assert len(result_dict['issues']) == 2 and result_dict['issues'][0]['check']['identifier'] == 'ro-crate-1.1_5.3' and result_dict['issues'][1]['check']['identifier'] == 'ro-crate-1.1_13.1'
 
 
 def test_eln_export_property_values(user, app):
