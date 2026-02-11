@@ -273,6 +273,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
     }
     linked_object = None
     show_object_title = False
+    may_edit_linked_object = False
     if instrument.object_id is not None:
         linked_object_permissions = get_user_object_permissions(object_id=instrument.object_id, user_id=flask_login.current_user.id)
         if Permissions.READ in linked_object_permissions:
@@ -290,6 +291,8 @@ def instrument(instrument_id: int) -> FlaskResponseT:
                     "get_action_type": get_action_type,
                     "get_shares_for_object": get_shares_for_object,
                 })
+        if Permissions.WRITE in linked_object_permissions:
+            may_edit_linked_object = not flask_login.current_user.is_readonly
 
     if is_instrument_responsible_user or instrument.users_can_view_log_entries:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
@@ -497,6 +500,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
         linked_object=linked_object,
+        may_edit_linked_object=may_edit_linked_object,
         object_link_form=object_link_form,
         linkable_action_ids=linkable_action_ids,
         already_linked_object_ids=already_linked_object_ids,
