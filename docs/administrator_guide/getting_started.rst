@@ -38,7 +38,6 @@ Next, start the SampleDB container:
         -e SAMPLEDB_MAIL_SENDER=sampledb@example.com \
         -e SAMPLEDB_ADMIN_PASSWORD=password \
         -e SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres \
-        -v `pwd`/files:/home/sampledb/files:rw \
         --restart=always \
         --name sampledb \
         -p 8000:8000 \

@@ -25,7 +25,6 @@ If you're using a docker-compose workflow, simply add a volume line to mount the
 
 ~~~yaml
 volumes:
-  - ./files:/home/sampledb/files
   # only for dev
   - ./sampledb:/home/sampledb/sampledb
 ~~~
