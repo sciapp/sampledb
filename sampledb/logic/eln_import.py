@@ -1666,9 +1666,11 @@ def _convert_property_value_trees_to_schema_and_data(
         item_schema['title'] = {
             'en': 'Item'
         }
-        titles = items[0][3][:-1]
+        titles = list(items[0][3][:-1])
         if not titles:
             titles = ['Array']
+        elif not titles[-1]:
+            titles[-1] = 'Array'
         return {
             'title': {
                 'en': titles[-1]
