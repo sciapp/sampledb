@@ -2693,6 +2693,16 @@ def test_object_data_to_html(flask_server, app, driver, user):
             "plot": {
                 "title": "Example Plotly Chart",
                 "type": "plotly_chart"
+            },
+            "nested_object": {
+                "title": "Nested Object",
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "title" : "Text",
+                        "type": "text"
+                    }
+                }
             }
         },
         "required": ["name"]
@@ -2738,6 +2748,12 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 ["2025-01-02 03:04:05.678900", 1, 1],
                 ["2025-01-02 03:04:06.678900", 2, 2]
             ]
+        },
+        "nested_object": {
+            "text": {
+                "_type": "text",
+                "text": "Test"
+            }
         }
     }
     action = sampledb.logic.actions.create_action(
@@ -2784,24 +2800,28 @@ def test_object_data_to_html(flask_server, app, driver, user):
             'LOCALE': 'en',
             'AUTO_TZ': False,
             'TIMEZONE': 'UTC',
+            'SHOW_OBJECT_TITLE': True,
         },
         {
             'AUTO_LC': False,
             'LOCALE': 'en',
             'AUTO_TZ': False,
             'TIMEZONE': 'Europe/Berlin',
+            'SHOW_OBJECT_TITLE': True,
         },
         {
             'AUTO_LC': False,
             'LOCALE': 'de',
             'AUTO_TZ': False,
             'TIMEZONE': 'UTC',
+            'SHOW_OBJECT_TITLE': True,
         },
         {
             'AUTO_LC': False,
             'LOCALE': 'de',
             'AUTO_TZ': False,
             'TIMEZONE': 'Europe/Berlin',
+            'SHOW_OBJECT_TITLE': True,
         },
     ]:
         sampledb.logic.settings.set_user_settings(user.id, settings_data)
@@ -2813,6 +2833,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 user_language=settings_data['LOCALE'],
                 metadata_language=settings_data['LOCALE'],
                 timezone=settings_data['TIMEZONE'],
+                show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                 workflow_display_mode=False,
                 increase_cache_hit_counter=False
             )
@@ -2830,6 +2851,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 user_language=settings_data['LOCALE'],
                 metadata_language=settings_data['LOCALE'],
                 timezone=settings_data['TIMEZONE'],
+                show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                 workflow_display_mode=False,
                 increase_cache_hit_counter=False
             )
@@ -2848,6 +2870,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 user_language=settings_data['LOCALE'],
                 metadata_language=settings_data['LOCALE'],
                 timezone=settings_data['TIMEZONE'],
+                show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                 workflow_display_mode=False,
                 increase_cache_hit_counter=False
             )
@@ -2866,6 +2889,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 user_language = settings_data['LOCALE'],
                 metadata_language = settings_data['LOCALE'],
                 timezone = settings_data['TIMEZONE'],
+                show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                 workflow_display_mode = False,
                 increase_cache_hit_counter = False
             )
@@ -2891,6 +2915,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                     user_language=settings_data['LOCALE'],
                     metadata_language=language_code,
                     timezone=settings_data['TIMEZONE'],
+                    show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                     workflow_display_mode=False,
                     increase_cache_hit_counter=False
                 )
@@ -2908,6 +2933,8 @@ def test_object_data_to_html(flask_server, app, driver, user):
             lambda: sampledb.logic.components.update_component(component.id, component.name, "https://example.com", component.description),
             lambda: sampledb.logic.files.update_file_information(object_id=object.id, file_id=file.id, user_id=user.id, title="Test File", description=""),
             lambda: sampledb.logic.files.update_file_information(object_id=object.id, file_id=file.id, user_id=user.id, title="Example File", description=""),
+            lambda: sampledb.logic.settings.set_user_settings(user.id, {'SHOW_OBJECT_TITLE': False}),
+            lambda: sampledb.logic.settings.set_user_settings(user.id, {'SHOW_OBJECT_TITLE': True}),
         ]:
             function()
 
@@ -2928,6 +2955,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                     user_language=settings_data['LOCALE'],
                     metadata_language=settings_data['LOCALE'],
                     timezone=settings_data['TIMEZONE'],
+                    show_object_title=sampledb.logic.settings.get_user_setting(user.id, 'SHOW_OBJECT_TITLE'),
                     workflow_display_mode=False,
                     increase_cache_hit_counter=False
                 )
@@ -2946,6 +2974,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                     user_language=settings_data['LOCALE'],
                     metadata_language=settings_data['LOCALE'],
                     timezone=settings_data['TIMEZONE'],
+                    show_object_title=sampledb.logic.settings.get_user_setting(user.id, 'SHOW_OBJECT_TITLE'),
                     workflow_display_mode=False,
                     increase_cache_hit_counter=False
                 )
@@ -2979,6 +3008,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                     user_language=settings_data['LOCALE'],
                     metadata_language=settings_data['LOCALE'],
                     timezone=settings_data['TIMEZONE'],
+                    show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                     workflow_display_mode=False,
                     increase_cache_hit_counter=False
                 )
@@ -3029,6 +3059,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 user_language=settings_data['LOCALE'],
                 metadata_language=settings_data['LOCALE'],
                 timezone=settings_data['TIMEZONE'],
+                show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                 workflow_display_mode=True,
                 increase_cache_hit_counter=False
             )
@@ -3047,6 +3078,7 @@ def test_object_data_to_html(flask_server, app, driver, user):
                 user_language=settings_data['LOCALE'],
                 metadata_language=settings_data['LOCALE'],
                 timezone=settings_data['TIMEZONE'],
+                show_object_title=settings_data['SHOW_OBJECT_TITLE'],
                 workflow_display_mode=True,
                 increase_cache_hit_counter=False
             )

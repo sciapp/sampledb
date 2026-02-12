@@ -252,6 +252,7 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         'eln_imports_add_signed_by',
         "topics_split_show_in_navbar",
         'webhook_type_add_object_permissions',
+        "object_data_to_html_cache_entries_add_show_object_title",
     ]
 
     migrations = []

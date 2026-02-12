@@ -31,5 +31,7 @@ class ObjectDataToHTMLCacheEntry(Model):
 
     cache_hit_counter: Mapped[int] = db.Column(db.Integer, nullable=False)
 
+    show_object_title: Mapped[typing.Optional[bool]] = db.Column(db.Boolean, nullable=True)
+
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ObjectDataToHTMLCacheEntry"]]
