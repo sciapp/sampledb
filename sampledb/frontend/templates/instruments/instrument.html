@@ -145,6 +145,10 @@
   {% endif %}
   {% if instrument.object_id and instrument.show_linked_object_data %}
     <h2>{{ _('Information') }}</h2>
+    <a href="{{ url_for(".object", object_id=instrument.object_id) }}" class="btn btn-default">{{ _('View %(object_name)s', object_name=(linked_object.data['name']['text'] | get_translated_text)) }}</a>
+    {% if may_edit_linked_object %}
+      <a href="{{ url_for(".object", object_id=instrument.object_id, mode='edit') }}" class="btn btn-primary">{{ _('Edit %(object_name)s', object_name=(linked_object.data['name']['text'] | get_translated_text)) }}</a>
+    {% endif %}
     {% if linked_object and linked_object.schema and linked_object.data %}
       {% set id_prefix_root = "object" %}
       {% set property_path = () %}
