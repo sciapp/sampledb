@@ -18,6 +18,8 @@ itsdangerous
 kaleido
 ldap3
 Markdown
+# the builds of numpy 2.4.0 have some hardware requirements in the wheels that are likely erroneous and are not fulfilled by some systems
+numpy<2.4.0
 # Use this commit of py-minisgn until pysaml2 fixes its dependencies, so that the two packages use compatible versions of cryptography
 py-minisign @ git+https://github.com/x13a/py-minisign.git@f8844ec44bad7247b59e05d70c841830303c7497
 Pillow
