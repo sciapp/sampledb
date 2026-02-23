@@ -34,7 +34,7 @@ from .schemas.validate import validate
 from . import errors, object_log
 from .units import get_unit_for_un_cefact_code, ureg
 from ..models import eln_imports, users, Language, Permissions, UserType, Object
-from .eln_sanitizer import sanitize, SANITIZER_VERSION
+from .eln_sanitizer import ELNSanitizer
 
 ALLOWED_PREVIEW_MIME_TYPES = [
     "text/html",
@@ -235,7 +235,7 @@ def get_eln_import_preview_file(
 def update_sanitized_eln_preview() -> None:
     preview_files = eln_imports.ELNImportPreviewFile.query.filter(
         eln_imports.ELNImportPreviewFile.mime_type.startswith("text/"),
-        eln_imports.ELNImportPreviewFile.sanitizer_version < SANITIZER_VERSION
+        eln_imports.ELNImportPreviewFile.sanitizer_version < ELNSanitizer.SANITIZER_VERSION
     ).all()
 
     for preview_file in preview_files:
@@ -246,13 +246,11 @@ def _update_sanitizer_version(
     result: eln_imports.ELNImportPreviewFile,
 ) -> None:
     root_dir = os.path.dirname(result.filepath)
-    result.sanitizer_version = SANITIZER_VERSION
-    result.sanitized_binary_data = sanitize(
+    result.sanitizer_version = ELNSanitizer.SANITIZER_VERSION
+    sanitizer = ELNSanitizer(eln_import_id=result.eln_import_id, root_path=root_dir, referenced_files=[])
+    result.sanitized_binary_data = sanitizer.sanitize(
         result.binary_data.decode('utf-8'),
         result.mime_type,
-        result.eln_import_id,
-        root_dir,
-        []
     ).encode()
     db.session.add(result)
     db.session.commit()
@@ -563,7 +561,7 @@ def import_eln_file(
                 eln_import_id=eln_import_id,
                 binary_data=preview_file.content,
                 sanitized_binary_data=preview_file.sanitized_content,
-                sanitizer_version=SANITIZER_VERSION,
+                sanitizer_version=ELNSanitizer.SANITIZER_VERSION,
                 mime_type=preview_file.mime_type,
             ))
             db.session.commit()
@@ -1400,12 +1398,14 @@ def parse_eln_preview(
                         files: list[str] = []
                         if mime_type.startswith("text/"):
                             binary_data = ro_crate_file.read()
-                            sanitized_content = sanitize(
-                                binary_data.decode("utf-8"),
-                                mime_type,
-                                eln_import_id,
+                            sanitizer = ELNSanitizer(
+                                eln_import_id=eln_import_id,
                                 root_path=os.path.split(path.removeprefix(root_path_name))[0],
                                 referenced_files=files
+                            )
+                            sanitized_content = sanitizer.sanitize(
+                                binary_data.decode("utf-8"),
+                                mime_type,
                             )
                             safe_binary_data = sanitized_content.encode()
                         else:
@@ -1508,12 +1508,14 @@ def parse_eln_preview_file(
     if mime_type not in ALLOWED_PREVIEW_MIME_TYPES:
         raise errors.ELNImportPreviewIllegalMimeTypeError()
     if mime_type.startswith("text"):
-        sanitized_content = sanitize(
-            binary_data.decode(),
-            mime_type=mime_type,
+        sanitizer = ELNSanitizer(
             eln_import_id=eln_import_id,
             root_path=os.path.split(os.path.join('/ro-crate-preview_files/', subpath))[0] if subpath is not None else '/',
-            referenced_files=[],
+            referenced_files=None
+        )
+        sanitized_content = sanitizer.sanitize(
+            binary_data.decode(),
+            mime_type=mime_type,
         )
         safe_binary_data = sanitized_content.encode()
     else:
