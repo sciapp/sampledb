@@ -4297,6 +4297,17 @@ msgstr ""
 " erzeugten .eln-Dateien importieren."
 
 #, python-format
+msgid ""
+"This ELN file provides a preview: <a href=\"%(preview_url)s\" "
+"target=\"_blank\">Open preview</a>"
+msgstr ""
+"Diese ELN-Datei bietet eine Vorschau: <a href=\"%(preview_url)s\" "
+"target=\"_blank\">Vorschau öffnen</a>"
+
+msgid "Import preview"
+msgstr "Vorschau importieren"
+
+#, python-format
 msgid "This .eln file was signed by %(sign_url)s."
 msgstr "Diese .eln-Datei wurde von %(sign_url)s signiert."
 
