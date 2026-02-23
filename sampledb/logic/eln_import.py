@@ -12,6 +12,7 @@ import typing
 import urllib.parse
 import zipfile
 from urllib.parse import urlsplit
+from mimetypes import guess_file_type
 
 import flask
 import requests
@@ -33,6 +34,14 @@ from .schemas.validate import validate
 from . import errors, object_log
 from .units import get_unit_for_un_cefact_code, ureg
 from ..models import eln_imports, users, Language, Permissions, UserType, Object
+from .eln_sanitizer import sanitize, SANITIZER_VERSION
+
+ALLOWED_PREVIEW_MIME_TYPES = [
+    "text/html",
+    "text/css",
+    "image/jpeg",
+    "image/png"
+]
 
 
 @dataclasses.dataclass
@@ -66,6 +75,27 @@ class ELNImport:
     @property
     def imported(self) -> bool:
         return self.import_utc_datetime is not None
+
+
+@dataclasses.dataclass
+class ELNImportPreviewFile:
+    filepath: str
+    eln_import_id: int
+    binary_data: bytes
+    sanitized_binary_data: typing.Optional[bytes]
+    sanitizer_version: int
+    mime_type: str
+
+    @classmethod
+    def from_database(cls, eln_import_preview_file: eln_imports.ELNImportPreviewFile) -> 'ELNImportPreviewFile':
+        return ELNImportPreviewFile(
+            filepath=eln_import_preview_file.filepath,
+            eln_import_id=eln_import_preview_file.eln_import_id,
+            binary_data=eln_import_preview_file.binary_data,
+            sanitized_binary_data=eln_import_preview_file.sanitized_binary_data,
+            sanitizer_version=eln_import_preview_file.sanitizer_version,
+            mime_type=eln_import_preview_file.mime_type
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -129,6 +159,15 @@ class ParsedELNImport:
     import_notes: typing.Dict[str, typing.List[str]]
     signed_by: typing.Optional[str]
     object_parts_relationships: typing.Dict[str, typing.List[str]]
+    has_preview: bool
+
+
+@dataclasses.dataclass(frozen=True)
+class ParsedELNPreviewFile:
+    content: bytes
+    sanitized_content: typing.Optional[bytes]
+    filepath: str
+    mime_type: str
 
 
 def get_eln_import(eln_import_id: int) -> ELNImport:
@@ -175,6 +214,56 @@ def mark_eln_import_invalid(
     eln_import.invalid_reason = invalid_reason
     db.session.add(eln_import)
     db.session.commit()
+
+
+def get_eln_import_preview_file(
+    eln_import_id: int,
+    subpath: typing.Optional[str],
+) -> ELNImportPreviewFile:
+    if subpath is None:
+        filepath = 'ro-crate-preview.html'
+    else:
+        filepath = os.path.normpath(f'ro-crate-preview_files/{subpath}')
+
+    result = eln_imports.ELNImportPreviewFile.query.filter_by(eln_import_id=eln_import_id, filepath=filepath).first()
+    if result is None:
+        raise errors.ELNImportPreviewFileDoesNotExistError()
+
+    return ELNImportPreviewFile.from_database(result)
+
+
+def update_sanitized_eln_preview() -> None:
+    preview_files = eln_imports.ELNImportPreviewFile.query.filter(
+        eln_imports.ELNImportPreviewFile.mime_type.startswith("text/"),
+        eln_imports.ELNImportPreviewFile.sanitizer_version < SANITIZER_VERSION
+    ).all()
+
+    for preview_file in preview_files:
+        _update_sanitizer_version(preview_file)
+
+
+def _update_sanitizer_version(
+    result: eln_imports.ELNImportPreviewFile,
+) -> None:
+    root_dir = os.path.dirname(result.filepath)
+    result.sanitizer_version = SANITIZER_VERSION
+    result.sanitized_binary_data = sanitize(
+        result.binary_data.decode('utf-8'),
+        result.mime_type,
+        result.eln_import_id,
+        root_dir,
+        []
+    ).encode()
+    db.session.add(result)
+    db.session.commit()
+
+
+def has_eln_preview(eln_import_id: int) -> bool:
+    try:
+        get_eln_import_preview_file(eln_import_id, None)
+    except errors.ELNImportPreviewFileDoesNotExistError:
+        return False
+    return True
 
 
 def _create_eln_import_action(
@@ -224,7 +313,8 @@ def _create_eln_import_action(
 
 def import_eln_file(
         eln_import_id: int,
-        action_type_ids: typing.Optional[typing.List[typing.Optional[int]]] = None
+        action_type_ids: typing.Optional[typing.List[typing.Optional[int]]] = None,
+        import_preview: bool = True,
 ) -> typing.Tuple[typing.List[int], typing.Dict[typing.Optional[str], User], typing.List[str]]:
     errors = []
 
@@ -413,6 +503,7 @@ def import_eln_file(
                 utc_datetime=comment_info.date_created,
                 is_imported=True
             )
+
     for eln_object_id, eln_object_part_ids in parsed_data.object_parts_relationships.items():
         if eln_object_id not in imported_object_ids_by_eln_object_id:
             continue
@@ -463,6 +554,20 @@ def import_eln_file(
             user_id=user_id,
             create_log_entries=False
         )
+
+    if import_preview:
+        eln_preview, ignored_files = parse_eln_preview(eln_import_id)
+        for preview_file in eln_preview:
+            db.session.add(eln_imports.ELNImportPreviewFile(
+                filepath=preview_file.filepath,
+                eln_import_id=eln_import_id,
+                binary_data=preview_file.content,
+                sanitized_binary_data=preview_file.sanitized_content,
+                sanitizer_version=SANITIZER_VERSION,
+                mime_type=preview_file.mime_type,
+            ))
+            db.session.commit()
+
     return imported_object_ids, users_by_id, errors
 
 
@@ -1264,10 +1369,167 @@ def _parse_dataset_node(
     return parsed_objects, import_notes, parsed_object_parts_relationships
 
 
+def parse_eln_preview(
+    eln_import_id: int
+) -> tuple[list[ParsedELNPreviewFile], list[str]]:
+    preview_files: list[ParsedELNPreviewFile] = []
+    eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
+    ignored_files: list[str] = []
+
+    if eln_import is None:
+        raise errors.ELNImportDoesNotExistError()
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(eln_import.binary_data)) as zip_file:
+            _eln_assert(zip_file.testzip() is None, ".eln file must be valid .zip file")
+
+            member_names = {
+                os.path.normpath(member_name): member_name
+                for member_name in zip_file.namelist()
+            }
+            root_path_names = set()
+            for member_name in member_names:
+                path_name, _ = os.path.split(member_name)
+                root_path_names.add(path_name.split(os.sep)[0])
+            _eln_assert(len(root_path_names) == 1, ".eln file must contain a single root directory")
+            root_path_name = list(root_path_names)[0]
+
+            def parse_preview_file(path: str, mime_type: str) -> tuple[typing.Optional[ParsedELNPreviewFile], list[str]]:
+                try:
+                    with zip_file.open(member_names[path]) as ro_crate_file:
+                        files: list[str] = []
+                        if mime_type.startswith("text/"):
+                            binary_data = ro_crate_file.read()
+                            sanitized_content = sanitize(
+                                binary_data.decode("utf-8"),
+                                mime_type,
+                                eln_import_id,
+                                root_path=os.path.split(path.removeprefix(root_path_name))[0],
+                                referenced_files=files
+                            )
+                            safe_binary_data = sanitized_content.encode()
+                        else:
+                            binary_data = ro_crate_file.read()
+                            safe_binary_data = None
+                        return (ParsedELNPreviewFile(
+                            content=binary_data,
+                            sanitized_content=safe_binary_data,
+                            filepath=path.removeprefix(f"{root_path_name}/"),
+                            mime_type=mime_type,
+                        ), files)
+                except Exception:
+                    raise errors.InvalidELNFileError(f"{path} must be a UTF-8 encoded text file")
+                return None, []
+
+            if os.path.normpath(f"{root_path_name}/ro-crate-preview.html") not in member_names:
+                return [], []
+
+            parsed_index_preview, files = parse_preview_file(os.path.normpath(f'{root_path_name}/ro-crate-preview.html'), mime_type="text/html")
+            if parsed_index_preview is not None:
+                preview_files.append(parsed_index_preview)
+                imported_files = {'/ro-crate-preview.html'}
+                referenced_files = set(files) - imported_files
+
+                while len(referenced_files) > 0:
+                    filename = referenced_files.pop()
+                    full_filename = os.path.normpath(f"{root_path_name}/{filename}")
+                    if full_filename in member_names:
+                        mime_type = guess_file_type(full_filename)[0]
+                        if mime_type is None or mime_type not in ALLOWED_PREVIEW_MIME_TYPES:
+                            ignored_files.append(full_filename)
+                            continue
+                        parsed_preview_file, files = parse_preview_file(full_filename, mime_type)
+                        if parsed_preview_file is not None:
+                            preview_files.append(parsed_preview_file)
+                            imported_files.add(filename)
+                            referenced_files.update(set(files) - imported_files)
+    except zipfile.BadZipfile:
+        raise errors.InvalidELNFileError(".eln file must be valid .zip file")
+    except Exception as e:
+        raise errors.InvalidELNFileError("Unknown error") from e
+
+    return preview_files, ignored_files
+
+
+def parse_eln_preview_file(
+    eln_import_id: int,
+    subpath: typing.Optional[str]
+) -> ParsedELNPreviewFile:
+    """
+    Parses the preview file of the given ELN import and returns the content.
+    If `subpath` is None, the ro-crate-preview.html will be parsed.
+    Otherwise if `subpath` is not none, the file with the given subpath in ro_crate_preview_files/ will be parsed.
+
+    :param eln_import_id: the ID of the ELN import
+    :param subpath: the subpath of the file to parse within ro_crate_preview_files/ or None
+    :return: the content of the file
+    """
+    eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
+    if eln_import is None:
+        raise errors.ELNImportDoesNotExistError()
+
+    binary_data = None
+    try:
+        with zipfile.ZipFile(io.BytesIO(eln_import.binary_data)) as zip_file:
+            _eln_assert(zip_file.testzip() is None, ".eln file must be valid .zip file")
+
+            member_names = {
+                os.path.normpath(member_name): member_name
+                for member_name in zip_file.namelist()
+            }
+            root_path_names = set()
+            for member_name in member_names:
+                path_name, _ = os.path.split(member_name)
+                root_path_names.add(path_name.split(os.sep)[0])
+            _eln_assert(len(root_path_names) == 1, ".eln file must contain a single root directory")
+            root_path_name = list(root_path_names)[0]
+
+            if subpath is None:
+                ro_crate_file_name = os.path.normpath(root_path_name + '/ro-crate-preview.html')
+            else:
+                ro_crate_file_name = os.path.normpath(root_path_name + '/ro-crate-preview_files/' + subpath)
+
+            if ro_crate_file_name in member_names:
+                try:
+                    with zip_file.open(member_names[ro_crate_file_name]) as ro_crate_file:
+                        binary_data = ro_crate_file.read()
+                except Exception:
+                    raise errors.InvalidELNFileError(f"Failed to parse preview file: {ro_crate_file_name}")
+            else:
+                raise errors.ELNImportPreviewFileDoesNotExistError()
+    except zipfile.BadZipfile:
+        raise errors.InvalidELNFileError(".eln file must be valid .zip file")
+    except (errors.InvalidELNFileError, errors.ELNImportPreviewFileDoesNotExistError) as e:
+        raise e
+    except Exception as e:
+        raise errors.InvalidELNFileError("Unknown error") from e
+
+    mime_type = guess_file_type(ro_crate_file_name)[0]
+    if mime_type not in ALLOWED_PREVIEW_MIME_TYPES:
+        raise errors.ELNImportPreviewIllegalMimeTypeError()
+    if mime_type.startswith("text"):
+        sanitized_content = sanitize(
+            binary_data.decode(),
+            mime_type=mime_type,
+            eln_import_id=eln_import_id,
+            root_path=os.path.split(os.path.join('/ro-crate-preview_files/', subpath))[0] if subpath is not None else '/',
+            referenced_files=[],
+        )
+        safe_binary_data = sanitized_content.encode()
+    else:
+        safe_binary_data = binary_data
+
+    return ParsedELNPreviewFile(
+        content=binary_data,
+        sanitized_content=safe_binary_data,
+        filepath=ro_crate_file_name.removeprefix(f"{root_path_name}/"),
+        mime_type=mime_type,
+    )
+
+
 def parse_eln_file(
         eln_import_id: int
 ) -> ParsedELNImport:
-
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
     if eln_import is None:
         raise errors.ELNImportDoesNotExistError()
@@ -1278,7 +1540,8 @@ def parse_eln_file(
         users=[],
         import_notes={},
         signed_by=None,
-        object_parts_relationships={}
+        object_parts_relationships={},
+        has_preview=False,
     )
 
     try:
@@ -1296,6 +1559,16 @@ def parse_eln_file(
                 root_path_names.add(path_name.split(os.sep)[0])
             _eln_assert(len(root_path_names) == 1, ".eln file must contain a single root directory")
             root_path_name = list(root_path_names)[0]
+
+            ro_crate_preview_file_name = os.path.normpath(root_path_name + '/ro-crate-preview.html')
+            parsed_data = ParsedELNImport(
+                objects=parsed_data.objects,
+                users=parsed_data.users,
+                import_notes=parsed_data.import_notes,
+                signed_by=parsed_data.signed_by,
+                object_parts_relationships=parsed_data.object_parts_relationships,
+                has_preview=ro_crate_preview_file_name in member_names,
+            )
 
             ro_crate_metadata_file_name = root_path_name + '/ro-crate-metadata.json'
             ro_crate_metadata_file_name = os.path.normpath(ro_crate_metadata_file_name)
@@ -1332,6 +1605,7 @@ def parse_eln_file(
                             import_notes=parsed_data.import_notes,
                             signed_by=ro_crate_metadata_sig.trusted_comment.removesuffix("/.well-known/keys.json") if has_valid_signature else None,
                             object_parts_relationships=parsed_data.object_parts_relationships,
+                            has_preview=parsed_data.has_preview,
                         )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")

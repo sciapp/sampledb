@@ -32,6 +32,7 @@ class ImportELNFileObjectForm(FlaskForm):
 class ImportELNFileForm(FlaskForm):
     object_forms = FieldList(FormField(ImportELNFileObjectForm))
     federated_identities = StringField()
+    import_preview = BooleanField(default=True)
 
 
 class DeleteELNImportForm(FlaskForm):
@@ -78,6 +79,42 @@ def upload_eln_import() -> FlaskResponseT:
     )
 
 
+@frontend.route("/eln_imports/<int:eln_import_id>/preview")
+@flask_login.login_required
+def eln_preview(eln_import_id: int) -> FlaskResponseT:
+    subpath = flask.request.args.get('subpath', None)
+    try:
+        eln_import = logic.eln_import.get_eln_import(eln_import_id)
+    except logic.errors.ELNImportDoesNotExistError:
+        return flask.abort(404)
+    if eln_import.imported:
+        try:
+            preview_file = logic.eln_import.get_eln_import_preview_file(eln_import_id, subpath)
+        except (logic.errors.ELNImportPreviewFileDoesNotExistError, logic.errors.InvalidELNFileError):
+            return flask.abort(404)
+        if preview_file.mime_type.startswith("text/"):
+            if preview_file.sanitized_binary_data is None:
+                return flask.abort(404)
+            return flask.Response(
+                preview_file.sanitized_binary_data.decode(),
+                mimetype=preview_file.mime_type
+            )
+        return flask.Response(preview_file.binary_data, mimetype=preview_file.mime_type)
+    else:
+        try:
+            parsed_preview_file = logic.eln_import.parse_eln_preview_file(eln_import_id, subpath)
+        except (logic.errors.ELNImportPreviewFileDoesNotExistError, logic.errors.InvalidELNFileError, logic.errors.ELNImportDoesNotExistError, logic.errors.ELNImportPreviewIllegalMimeTypeError):
+            return flask.abort(404)
+        if parsed_preview_file.mime_type.startswith("text/"):
+            if parsed_preview_file.sanitized_content is None:
+                return flask.abort(404)
+            return flask.Response(
+                parsed_preview_file.sanitized_content.decode(),
+                mimetype=parsed_preview_file.mime_type
+            )
+        return flask.Response(parsed_preview_file.content, mimetype=parsed_preview_file.mime_type)
+
+
 @frontend.route('/eln_imports/<int:eln_import_id>', methods=['POST', 'GET'])
 @flask_login.login_required
 def eln_import(eln_import_id: int) -> FlaskResponseT:
@@ -92,6 +129,7 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
     if eln_import.imported:
         imported_users = logic.eln_import.get_eln_import_users(eln_import_id)
         fed_identities: dict[int, list[tuple[typing.Optional[ModifyELNIdentityForm], FederatedIdentity]]] = {}
+        has_eln_preview = logic.eln_import.has_eln_preview(eln_import_id)
 
         for eln_user in imported_users:
             identity = logic.users.get_federated_identity_by_eln_user(eln_user.id)
@@ -106,7 +144,8 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
             eln_import=eln_import,
             imported_objects=logic.eln_import.get_eln_import_objects(eln_import_id),
             imported_users=logic.eln_import.get_eln_import_users(eln_import_id),
-            fed_identities=fed_identities
+            fed_identities=fed_identities,
+            has_eln_preview=has_eln_preview
         )
     else:
         if not flask.current_app.config['ENABLE_ELN_FILE_IMPORT']:
@@ -149,7 +188,8 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
                 action_type_ids=[
                     object_form.action_type_id.data
                     for object_form in import_eln_file_form.object_forms.entries
-                ]
+                ],
+                import_preview=import_eln_file_form.import_preview.data
             )
 
             if errors:
@@ -195,6 +235,7 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
                 return flask.redirect(flask.url_for('.objects', ids=','.join(str(object_id) for object_id in imported_object_ids)))
         return flask.render_template(
             'eln_files/import_eln_file.html',
+            eln_import_id=eln_import_id,
             import_eln_file_form=import_eln_file_form,
             parsed_eln_file_data=parsed_eln_file_data,
         )
