@@ -277,6 +277,31 @@ def test_parse_sampledb_eln_file(app, flask_server, sampledb_eln_import_id):
 
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by == f"{flask_server.base_url}".rstrip('/')
+    assert parsed_eln_import.has_preview is True
+
+
+def test_parse_sampledb_preview(app, flask_server, sampledb_eln_import_id):
+    parsed_eln_previews, _ = logic.eln_import.parse_eln_preview(sampledb_eln_import_id)
+
+    assert len(parsed_eln_previews) == 1
+    assert parsed_eln_previews[0].filepath == "ro-crate-preview.html"
+    assert parsed_eln_previews[0].mime_type == "text/html"
+    assert parsed_eln_previews[0].content is not None
+    assert parsed_eln_previews[0].sanitized_content is not None
+
+
+def test_parse_sampledb_preview_file(app, flask_server, sampledb_eln_import_id):
+    parsed_eln_preview = logic.eln_import.parse_eln_preview_file(sampledb_eln_import_id, None)
+
+    assert parsed_eln_preview.filepath == "ro-crate-preview.html"
+    assert parsed_eln_preview.mime_type == "text/html"
+    assert parsed_eln_preview.content is not None
+    assert parsed_eln_preview.sanitized_content is not None
+
+
+def test_parse_sampledb_preview_file_not_available(app, flask_server, sampledb_eln_import_id):
+    with pytest.raises(logic.errors.ELNImportPreviewFileDoesNotExistError):
+        logic.eln_import.parse_eln_preview_file(sampledb_eln_import_id, "not_available.png")
 
     assert len(parsed_eln_import.objects[0].versions) == 2
     assert parsed_eln_import.objects[0].versions[0].version_id == 0 and parsed_eln_import.objects[0].versions[0].data['name']['text'] == 'Object'
