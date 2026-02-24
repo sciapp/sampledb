@@ -1210,7 +1210,7 @@ def test_convert_property_values_to_data_and_schema():
     )
     sampledb.logic.schemas.validate_schema(schema)
     sampledb.logic.schemas.validate(data, schema)
-    assert schema, data == (
+    assert (data, schema) == (
         {
             "name": {
                 "_type": "text",
@@ -1227,7 +1227,9 @@ def test_convert_property_values_to_data_and_schema():
             "temperature": {
                 "_type": "quantity",
                 "magnitude": 20,
-                "units": "degree_Celsius"
+                "units": "degree_Celsius",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 293.15
             },
             "bool_array": [
                 {
@@ -1255,20 +1257,24 @@ def test_convert_property_values_to_data_and_schema():
                 {
                     "_type": "text",
                     "text": {
-                        "en": "False"
+                        "en": "false"
                     }
                 }
             ],
             "temperature_array": [
                 {
                     "_type": "quantity",
-                    "magnitude": 10,
-                    "units": "degree_Celsius"
+                    "magnitude": 20,
+                    "units": "degree_Celsius",
+                    "dimensionality": "[temperature]",
+                    "magnitude_in_base_units": 293.15
                 },
                 {
                     "_type": "quantity",
-                    "magnitude": 20,
-                    "units": "degree_Celsius"
+                    "magnitude": 10,
+                    "units": "degree_Celsius",
+                    "dimensionality": "[temperature]",
+                    "magnitude_in_base_units": 283.15
                 }
             ],
             "description": {
@@ -1336,7 +1342,7 @@ def test_convert_property_values_to_data_and_schema():
                 "temperature_array": {
                     "items": {
                         "title": {
-                            "en": "temperature"
+                            "en": "Item"
                         },
                         "type": "quantity",
                         "units": "degree_Celsius"
