@@ -51,6 +51,13 @@ class ELNSanitizer:
             self.referenced_files = referenced_files
 
     def sanitize(self, content: str, mime_type: str) -> str:
+        """
+        Sanitizes content based on its mime type. Currently only text/html and text/css are sanitized.
+
+        :param content: String that should be sanitized
+        :param mime_type: Mime type of content
+        :return: Sanitized string if mime type is text/html or text/css. Otherwise an empty string is returned.
+        """
         if mime_type == "text/html":
             return self._sanitize_html(content)
         if mime_type == "text/css":
@@ -58,6 +65,12 @@ class ELNSanitizer:
         return ""
 
     def _sanitize_html(self, html_content: str) -> str:
+        """
+        Entrypoint for the html sanitization.
+
+        :param html_content: HTML String that should be sanitized.
+        :return: Sanitized `html_content`
+        """
         soup = BeautifulSoup(html_content, 'html.parser')
         for tag in soup.find_all():
             try:
@@ -143,6 +156,12 @@ class ELNSanitizer:
         tag.decompose()
 
     def _sanitize_css_stylesheet(self, css_content: str) -> str:
+        """
+        Parses and sanitizes a css stylesheet (css file content or content of <style>-tags).
+
+        :param css_content: CSS string that should be sanitized.
+        :return: Sanitized css string
+        """
         parsed_rules = tinycss2.parse_stylesheet(css_content, skip_whitespace=True, skip_comments=True)
         sanitized_rules = self._css_sanitize_rules(parsed_rules)
         return typing.cast(str, tinycss2.serialize(sanitized_rules))
@@ -280,6 +299,12 @@ class ELNSanitizer:
         return True, preview_url
 
     def _transform_url_to_preview_url(self, normalized_fullpath: str) -> typing.Optional[str]:
+        """
+        Transform the path to a given preview file within the eln archive into the required schema used by SampleDB.
+
+        :param normalized_fullpath: Path to the preview file.
+        :return: URL to the specified file or none if it is not a valid path to a preview file.
+        """
         if normalized_fullpath.startswith("/"):
             normalized_fullpath = normalized_fullpath[1:]
 
