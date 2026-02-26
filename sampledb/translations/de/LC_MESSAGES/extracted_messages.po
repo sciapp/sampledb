@@ -8013,10 +8013,6 @@ msgstr ""
 "Schlüssel gefunden"
 
 #, python-format
-msgid "Failed to import %(file_url)s as URL file"
-msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
-
-#, python-format
 msgid ""
 "Missing data or schema for version %(version_id)s of object "
 "%(eln_object_id)s"
@@ -8031,6 +8027,10 @@ msgid ""
 msgstr ""
 "Ungültige Daten oder Schema in Version %(version_id)s von Objekt "
 "%(eln_object_id)s (%(error)s)"
+
+#, python-format
+msgid "Failed to import %(file_url)s as URL file"
+msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
 
 msgid "The .eln file did not contain any valid flexible metadata for this object."
 msgstr ""

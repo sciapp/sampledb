@@ -128,6 +128,7 @@ class ParsedELNImport:
     users: typing.List[ParsedELNUser]
     import_notes: typing.Dict[str, typing.List[str]]
     signed_by: typing.Optional[str]
+    object_parts_relationships: typing.Dict[str, typing.List[str]]
 
 
 def get_eln_import(eln_import_id: int) -> ELNImport:
@@ -289,6 +290,7 @@ def import_eln_file(
             eln_import_action = _create_eln_import_action(action_type_id)
         action_ids_by_action_type_id[action_type_id] = eln_import_action.action_id
     imported_object_ids = []
+    imported_object_ids_by_eln_object_id = {}
     for object_index, object_data in enumerate(zip(parsed_data.objects, action_type_ids)):
         object_info, action_type_id = object_data
         versions_by_id = {
@@ -349,6 +351,7 @@ def import_eln_file(
                         is_imported=True
                     )
         imported_object_ids.append(imported_object.id)
+        imported_object_ids_by_eln_object_id[object_info.id] = imported_object.id
         for file_index, file_info in enumerate(object_info.files):
             file_user_id = user_id
             if isinstance(file_info, ParsedELNDatabaseFile):
@@ -410,6 +413,54 @@ def import_eln_file(
                 utc_datetime=comment_info.date_created,
                 is_imported=True
             )
+    for eln_object_id, eln_object_part_ids in parsed_data.object_parts_relationships.items():
+        if eln_object_id not in imported_object_ids_by_eln_object_id:
+            continue
+        object_id = imported_object_ids_by_eln_object_id[eln_object_id]
+        object_part_ids = [
+            imported_object_ids_by_eln_object_id[eln_object_part_id]
+            for eln_object_part_id in eln_object_part_ids
+            if eln_object_part_id in imported_object_ids_by_eln_object_id
+        ]
+        if not object_part_ids:
+            continue
+        current_object = get_object(object_id=object_id)
+        if current_object.data is None or current_object.schema is None:
+            continue
+        # TODO: sanitize key
+        parts_property_name = 'parts'
+        schema = copy.deepcopy(current_object.schema)
+        schema['properties'][parts_property_name] = {
+            "type": "array",
+            "title": {
+                "en": "Parts",
+                "de": "Teile"
+            },
+            "items": {
+                "type": "object_reference",
+                "title": {
+                    "en": "Part",
+                    "de": "Teil"
+                },
+                "style": "include"
+            }
+        }
+        schema['propertyOrder'].append(parts_property_name)
+        data = copy.deepcopy(current_object.data)
+        data[parts_property_name] = [
+            {
+                "_type": "object_reference",
+                "object_id": object_part_id
+            }
+            for object_part_id in object_part_ids
+        ]
+        update_object(
+            object_id=object_id,
+            data=data,
+            schema=schema,
+            user_id=user_id,
+            create_log_entries=False
+        )
     return imported_object_ids, users_by_id, errors
 
 
@@ -860,6 +911,9 @@ def _parse_file_node(
             file_node['contentSize'] = int(file_node['contentSize'])
         except ValueError:
             pass
+    # SciLog is missing contentSize, so determine file size automatically if missing
+    if 'contentSize' not in file_node:
+        file_node['contentSize'] = len(file_data)
     _eln_assert(isinstance(file_node.get('contentSize'), int), "Invalid content size for File")
     _eln_assert(len(file_data) == file_node['contentSize'], "Content size mismatch for File")
     if 'sha256' in file_node:
@@ -924,8 +978,9 @@ def _parse_dataset_node(
         root_path_name: str,
         member_names: typing.Dict[str, str],
         zip_file: zipfile.ZipFile,
-) -> typing.Tuple[typing.Sequence[ParsedELNObject], typing.Dict[str, typing.List[str]]]:
-    parsed_objects = []
+) -> typing.Tuple[typing.Sequence[ParsedELNObject], typing.Dict[str, typing.List[str]], typing.Dict[str, typing.List[str]]]:
+    parsed_objects: typing.List[ParsedELNObject] = []
+    parsed_object_parts_relationships: typing.Dict[str, typing.List[str]] = {}
     import_notes: typing.Dict[str, typing.List[str]] = {}
 
     _eln_assert(isinstance(object_node.get('name'), str), "Missing name for Dataset")
@@ -1085,6 +1140,24 @@ def _parse_dataset_node(
         )
         fallback_schema_properties = typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])
         fallback_schema_property_order = typing.cast(typing.List[str], fallback_schema['propertyOrder'])
+    if not has_metadata:
+        fallback_data['import_note'] = {
+            '_type': 'text',
+            'text': {
+                'en': 'The .eln file did not contain any valid flexible metadata for this object.',
+                'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
+            }
+        }
+        import_notes[object_node["@id"]].append(gettext('The .eln file did not contain any valid flexible metadata for this object.'))
+        fallback_schema_property_order.append('import_note')
+        fallback_schema_properties['import_note'] = {
+            'type': 'text',
+            'languages': ['en', 'de'],
+            'title': {
+                'en': 'Import Note',
+                'de': 'Import-Hinweis'
+            }
+        }
     if 'hasPart' in object_node and not isinstance(object_node['hasPart'], list):
         object_node['hasPart'] = [object_node['hasPart']]
     potential_version_ids: typing.List[str] = []
@@ -1105,15 +1178,36 @@ def _parse_dataset_node(
             )
             files.extend(parsed_files)
             import_notes[object_node["@id"]].extend(file_import_notes)
-        if eln_dialect == 'SampleDB' and _node_has_type(object_part, 'Dataset'):
-            potential_version_ids.append(object_part['@id'])
+        if _node_has_type(object_part, 'Dataset'):
+            if eln_dialect == 'SampleDB' and object_part['@id'] in object_node.get('isBasedOn', []):
+                potential_version_ids.append(object_part['@id'])
+            else:
+                parsed_part_objects, part_import_notes, part_parsed_object_parts_relationships = _parse_dataset_node(
+                    graph_nodes_by_id=graph_nodes_by_id,
+                    object_node=object_part,
+                    eln_dialect=eln_dialect,
+                    root_path_name=root_path_name,
+                    member_names=member_names,
+                    zip_file=zip_file,
+                )
+                parsed_objects.extend(parsed_part_objects)
+                import_notes.update(part_import_notes)
+                if object_node['@id'] not in parsed_object_parts_relationships:
+                    parsed_object_parts_relationships[object_node['@id']] = []
+                parsed_object_parts_relationships[object_node['@id']].append(object_part['@id'])
+                for object_id, object_part_ids in part_parsed_object_parts_relationships.items():
+                    if object_id not in parsed_object_parts_relationships:
+                        parsed_object_parts_relationships[object_id] = []
+                    for object_part_id in object_part_ids:
+                        if object_part_id not in parsed_object_parts_relationships[object_id]:
+                            parsed_object_parts_relationships[object_id].append(object_part_id)
     if eln_dialect == 'SampleDB':
         is_based_on = object_node.get('isBasedOn', [])
         if type(is_based_on) is not list:
             is_based_on = [is_based_on]
         for object_part_ref in is_based_on:
             if type(object_part_ref) is dict:
-                object_part_id = object_part_ref.get('@id')
+                object_part_id = typing.cast(str, object_part_ref.get('@id'))
                 if type(object_part_id) is str and object_part_id in graph_nodes_by_id:
                     object_part = graph_nodes_by_id[object_part_id]
                     if _node_has_type(object_part, 'Dataset'):
@@ -1144,24 +1238,6 @@ def _parse_dataset_node(
         if 'dateCreated' in object_node:
             _eln_assert(isinstance(object_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
             date_created = _parse_eln_import_datetime(object_node['dateCreated'])
-        if not has_metadata:
-            fallback_data['import_note'] = {
-                '_type': 'text',
-                'text': {
-                    'en': 'The .eln file did not contain any valid flexible metadata for this object.',
-                    'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
-                }
-            }
-            import_notes[object_node["@id"]].append(gettext('The .eln file did not contain any valid flexible metadata for this object.'))
-            fallback_schema_property_order.append('import_note')
-            fallback_schema_properties['import_note'] = {
-                'type': 'text',
-                'languages': ['en', 'de'],
-                'title': {
-                    'en': 'Import Note',
-                    'de': 'Import-Hinweis'
-                }
-            }
         versions.append(ParsedELNVersion(
             version_id=0,
             data=fallback_data,
@@ -1180,7 +1256,7 @@ def _parse_dataset_node(
         type_id=object_type_id,
     ))
 
-    return parsed_objects, import_notes
+    return parsed_objects, import_notes, parsed_object_parts_relationships
 
 
 def parse_eln_file(
@@ -1196,7 +1272,8 @@ def parse_eln_file(
         objects=[],
         users=[],
         import_notes={},
-        signed_by=None
+        signed_by=None,
+        object_parts_relationships={}
     )
 
     try:
@@ -1244,10 +1321,11 @@ def parse_eln_file(
                         parsed_data.import_notes["Signature"] = [note]
                     else:
                         parsed_data = ParsedELNImport(
-                            parsed_data.objects,
-                            parsed_data.users,
-                            parsed_data.import_notes,
-                            ro_crate_metadata_sig.trusted_comment.removesuffix("/.well-known/keys.json") if has_valid_signature else None
+                            objects=parsed_data.objects,
+                            users=parsed_data.users,
+                            import_notes=parsed_data.import_notes,
+                            signed_by=ro_crate_metadata_sig.trusted_comment.removesuffix("/.well-known/keys.json") if has_valid_signature else None,
+                            object_parts_relationships=parsed_data.object_parts_relationships,
                         )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")
@@ -1317,7 +1395,7 @@ def parse_eln_file(
                 _eln_assert(object_node_ref['@id'] in graph_nodes_by_id, "Reference to unknown ID")
 
                 object_node = graph_nodes_by_id[object_node_ref['@id']]
-                parsed_objects, dataset_import_notes = _parse_dataset_node(
+                parsed_objects, dataset_import_notes, parsed_object_parts_relationships = _parse_dataset_node(
                     graph_nodes_by_id=graph_nodes_by_id,
                     object_node=object_node,
                     eln_dialect=eln_dialect,
@@ -1327,6 +1405,12 @@ def parse_eln_file(
                 )
                 parsed_data.objects.extend(parsed_objects)
                 parsed_data.import_notes.update(dataset_import_notes)
+                for object_id, object_part_ids in parsed_object_parts_relationships.items():
+                    if object_id not in parsed_data.object_parts_relationships:
+                        parsed_data.object_parts_relationships[object_id] = []
+                    for object_part_id in object_part_ids:
+                        if object_part_id not in parsed_data.object_parts_relationships[object_id]:
+                            parsed_data.object_parts_relationships[object_id].append(object_part_id)
             for graph_node in graph_nodes_by_id.values():
                 if _node_has_type(graph_node, 'Person'):
                     if 'name' in graph_node and graph_node['name'] is None:

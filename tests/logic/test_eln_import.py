@@ -1046,7 +1046,7 @@ def test_import_pasta_eln_file(user):
     assert all(len(import_notes) <= 1 for import_notes in parsed_eln_import.import_notes.values())
     object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
-    assert len(object_ids) == 16
+    assert len(object_ids) == 26
     assert len(users_by_id) == 1
     assert 'author_Steffen_Brinckmann' in users_by_id
     assert users_by_id['author_Steffen_Brinckmann'].eln_object_id == 'author_Steffen_Brinckmann'
@@ -1522,3 +1522,128 @@ def test_import_reference_eln_files(user, eln_file_path):
     assert not errors
     assert len(object_ids) >= 1
     assert len(users_by_id) >= 1
+
+
+def test_import_nested_datasets(user):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files', 'SciLog', 'export.eln'), 'rb') as eln_export_file:
+        eln_zip_bytes = eln_export_file.read()
+    eln_import_id = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.eln',
+        zip_bytes=eln_zip_bytes
+    ).id
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    assert len(parsed_eln_import.objects) == 6
+    assert all(len(parsed_object.versions) == 1 for parsed_object in parsed_eln_import.objects)
+    objects_by_name = {
+        parsed_object.versions[0].data['name']['text']['en']: parsed_object
+        for parsed_object in parsed_eln_import.objects
+    }
+    assert set(objects_by_name.keys()) == {
+      'SciLog ELN export: logbook-001',
+      'Paragraph 69773b85d55e4cd59458ceb3',
+      'Paragraph 696e3faad55e4c82fc58ceae',
+      'Paragraph 696e3f8bd55e4c64c058ceac',
+      'Comment 697a17c2668d1584a73c7c01',
+      'Paragraph 696e3f24d55e4cdffa58ceaa',
+    }
+    assert parsed_eln_import.object_parts_relationships ==  {
+        './696e3f05d55e4c57ec58cea9/': [
+            './696e3f24d55e4cdffa58ceaa/',
+            './696e3f8bd55e4c64c058ceac/',
+            './696e3faad55e4c82fc58ceae/',
+            './69773b85d55e4cd59458ceb3/',
+            './697a17c2668d1584a73c7c01/'
+        ]
+    }
+    assert parsed_eln_import.import_notes == {
+        parsed_object.id: ['The .eln file did not contain any valid flexible metadata for this object.']
+        for parsed_object in parsed_eln_import.objects
+    }
+    imported_object_ids, imported_users, errors = sampledb.logic.eln_import.import_eln_file(eln_import_id)
+    imported_objects = [
+        sampledb.logic.objects.get_object(object_id)
+        for object_id in imported_object_ids
+    ]
+    imported_objects_by_eln_object_id = {
+        object.eln_object_id: object
+        for object in imported_objects
+    }
+    assert imported_objects_by_eln_object_id['./696e3f05d55e4c57ec58cea9/'].schema == {
+        "type": "object",
+        "title": {
+            "en": "Object Information",
+            "de": "Objektinformationen"
+        },
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": {
+                    "en": "Name",
+                    "de": "Name"
+                }
+            },
+            "description": {
+                "type": "text",
+                "title": {
+                    "en": "Description",
+                    "de": "Beschreibung"
+                },
+                "multiline": False
+            },
+            "import_note": {
+                "type": "text",
+                "languages": ["en", "de"],
+                "title": {
+                    "en": "Import Note",
+                    "de": "Import-Hinweis"
+                }
+            },
+            "parts": {
+                "type": "array",
+                "title": {
+                    "en": "Parts",
+                    "de": "Teile"
+                },
+                "items": {
+                    "type": "object_reference",
+                    "title": {
+                        "en": "Part",
+                        "de": "Teil"
+                    },
+                    "style": "include"
+                }
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "description", "import_note", "parts"]
+    }
+    assert imported_objects_by_eln_object_id['./696e3f05d55e4c57ec58cea9/'].data == {
+        "name": {
+            "_type": "text",
+            "text": {
+                "en": "SciLog ELN export: logbook-001"
+            }
+        },
+        "description": {
+            "_type": "text",
+            "text": {
+                "en": "test new logbook"
+            }
+        },
+        "import_note": {
+            "_type": "text",
+            "text": {
+                "en": "The .eln file did not contain any valid flexible metadata for this object.",
+                "de": "Die .eln-Datei enthielt keine g\xfcltigen flexiblen Metadaten f\xfcr dieses Objekt."
+            }
+        },
+        "parts": [
+            {
+                "_type": "object_reference",
+                "object_id": imported_objects_by_eln_object_id[eln_object_id].object_id
+            }
+            for eln_object_id in parsed_eln_import.object_parts_relationships['./696e3f05d55e4c57ec58cea9/']
+        ]
+    }
+    assert not errors
