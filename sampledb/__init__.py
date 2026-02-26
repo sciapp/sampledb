@@ -219,14 +219,15 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             # if ENABLE_NUMERIC_TAGS is not set explicitly, only enable numeric tags if they already exist
             app.config['ENABLE_NUMERIC_TAGS'] = sampledb.logic.utils.do_numeric_tags_exist()
 
+    with app.test_request_context():
+        sampledb.logic.eln_import.update_sanitized_eln_preview()
+
     with app.app_context():
         sampledb.logic.utils.print_deprecation_warnings()
 
         if app.config['ENABLE_BACKGROUND_TASKS']:
             sampledb.logic.background_tasks.reset_claimed_background_tasks()
             sampledb.logic.background_tasks.start_handler_threads(app)
-
-        sampledb.logic.eln_import.update_sanitized_eln_preview()
 
     def signal_handler(sig: int, _: typing.Any) -> None:
         if sig == signal.SIGTERM:

@@ -42,13 +42,18 @@ class ELNSanitizer:
     # The version is used to detect changes to the sanitizer and update the sanitized content of files in the database.
     SANITIZER_VERSION = 1
 
-    def __init__(self, eln_import_id: int, root_path: str, referenced_files: typing.Optional[list[str]]):
+    def __init__(self, eln_import_id: int, root_path: str, referenced_files: typing.Optional[list[str]], valid_preview_files: typing.Optional[list[str]]):
         self.eln_import_id = eln_import_id
         self.root_path = root_path
         if referenced_files is None:
             self.referenced_files = []
         else:
             self.referenced_files = referenced_files
+
+        if valid_preview_files is None:
+            self.valid_preview_files: list[str] = []
+        else:
+            self.valid_preview_files = valid_preview_files
 
     def sanitize(self, content: str, mime_type: str) -> str:
         """
@@ -305,12 +310,16 @@ class ELNSanitizer:
         :param normalized_fullpath: Path to the preview file.
         :return: URL to the specified file or none if it is not a valid path to a preview file.
         """
+
         if normalized_fullpath.startswith("/"):
             normalized_fullpath = normalized_fullpath[1:]
 
+        if normalized_fullpath not in self.valid_preview_files:
+            return None
+
         if normalized_fullpath.startswith("ro-crate-preview.html"):
-            return f"{flask.url_for(".eln_preview", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
+            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
         elif normalized_fullpath.startswith("ro-crate-preview_files/"):
-            referenced_subpath = normalized_fullpath[len("ro-crate-preview_files/"):]
-            return flask.url_for(".eln_preview", eln_import_id=self.eln_import_id, subpath=referenced_subpath)
+            subpath = normalized_fullpath[len("ro-crate-preview_files/"):]
+            return flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
         return None
