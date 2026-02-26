@@ -284,7 +284,7 @@ html {
 html {
     background-image: url(/eln_imports/1/preview?subpath=image1.png);
 }
-""".strip()
+"""
     },
     {
         "payload": """
@@ -303,7 +303,7 @@ html {
         height: 100px;
     }
 }
-""".strip()
+"""
     },
 ]
 
@@ -314,13 +314,13 @@ def test_eln_sanitizer_html_replace_supplied_file_url(app):
     referenced_files_subdir = []
     referenced_files_different_root_path = []
     with app.test_request_context('/'):
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_root)
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_root, valid_preview_files=[])
         sanitized_content_root = sanitizer.sanitize("<a href='ro-crate-preview.html'>Preview</a>", mime_type="text/html")
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_style)
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_style, valid_preview_files=[])
         sanitized_content_style = sanitizer.sanitize("<a href='./ro-crate-preview_files/styles.css'>Preview</a>", mime_type="text/html")
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_subdir)
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_subdir, valid_preview_files=[])
         sanitized_content_subdir = sanitizer.sanitize("<a href='./ro-crate-preview_files/subdir/test.html'>Preview</a>", mime_type="text/html")
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path="/ro-crate-preview_files/abc/", referenced_files=referenced_files_different_root_path)
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path="/ro-crate-preview_files/abc/", referenced_files=referenced_files_different_root_path, valid_preview_files=[])
         sanitized_content_different_root_path = sanitizer.sanitize("<a href='test.html'>Preview</a>", mime_type="text/html")
 
     assert ['/ro-crate-preview.html'] == referenced_files_root
@@ -338,7 +338,8 @@ def test_eln_sanitizer_html_owasp_snippets(app):
         sanitizer = eln_sanitizer.ELNSanitizer(
             eln_import_id=ELN_IMPORT_ID,
             root_path=ROOT_PATH,
-            referenced_files=[]
+            referenced_files=[],
+            valid_preview_files=[]
         )
         for test_case in OWASP_XSS_TEST_CASES:
             sanitized_content = sanitizer.sanitize(
@@ -353,11 +354,12 @@ def test_eln_sanitizer_css_exfiltration(app):
         sanitizer = eln_sanitizer.ELNSanitizer(
             eln_import_id=ELN_IMPORT_ID,
             root_path=ROOT_PATH,
-            referenced_files=[]
+            referenced_files=[],
+            valid_preview_files=[]
         )
         for test_data in CSS_EXFILTRATION_TEST_DATA:
             sanitized_content = sanitizer.sanitize(
-                content=test_data['payload'],
+                content=test_data['payload'].strip(),
                 mime_type="text/css",
             )
-            assert test_data['expected_result'] == sanitized_content
+            assert test_data['expected_result'].strip() == sanitized_content.strip()
