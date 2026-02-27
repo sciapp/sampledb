@@ -313,15 +313,24 @@ def test_eln_sanitizer_html_replace_supplied_file_url(app):
     referenced_files_style = []
     referenced_files_subdir = []
     referenced_files_different_root_path = []
+    valid_preview_files = [
+        'ro-crate-preview.html',
+        'ro-crate-preview_files/styles.css',
+        'ro-crate-preview_files/subdir/test.html',
+        'ro-crate-preview_files/abc/test.html',
+    ]
+
     with app.test_request_context('/'):
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_root, valid_preview_files=[])
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_root, valid_preview_files=valid_preview_files)
         sanitized_content_root = sanitizer.sanitize("<a href='ro-crate-preview.html'>Preview</a>", mime_type="text/html")
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_style, valid_preview_files=[])
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_style, valid_preview_files=valid_preview_files)
         sanitized_content_style = sanitizer.sanitize("<a href='./ro-crate-preview_files/styles.css'>Preview</a>", mime_type="text/html")
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_subdir, valid_preview_files=[])
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path=ROOT_PATH, referenced_files=referenced_files_subdir, valid_preview_files=valid_preview_files)
         sanitized_content_subdir = sanitizer.sanitize("<a href='./ro-crate-preview_files/subdir/test.html'>Preview</a>", mime_type="text/html")
-        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path="/ro-crate-preview_files/abc/", referenced_files=referenced_files_different_root_path, valid_preview_files=[])
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path="/ro-crate-preview_files/abc/", referenced_files=referenced_files_different_root_path, valid_preview_files=valid_preview_files)
         sanitized_content_different_root_path = sanitizer.sanitize("<a href='test.html'>Preview</a>", mime_type="text/html")
+        sanitizer = eln_sanitizer.ELNSanitizer(eln_import_id=ELN_IMPORT_ID, root_path="/ro-crate-preview_files/abc/", referenced_files=[], valid_preview_files=valid_preview_files)
+        sanitized_content_different_root_path_not_available = sanitizer.sanitize("<a href='not_available.html'>Preview</a>", mime_type="text/html")
 
     assert ['/ro-crate-preview.html'] == referenced_files_root
     assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview">Preview</a>' == sanitized_content_root
@@ -331,6 +340,7 @@ def test_eln_sanitizer_html_replace_supplied_file_url(app):
     assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=subdir/test.html">Preview</a>' == sanitized_content_subdir
     assert ['/ro-crate-preview_files/abc/test.html'] == referenced_files_different_root_path
     assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=abc/test.html">Preview</a>' == sanitized_content_different_root_path
+    assert '<a>Preview</a>' == sanitized_content_different_root_path_not_available
 
 
 def test_eln_sanitizer_html_owasp_snippets(app):
@@ -350,12 +360,16 @@ def test_eln_sanitizer_html_owasp_snippets(app):
 
 
 def test_eln_sanitizer_css_exfiltration(app):
+    valid_preview_files = [
+        'ro-crate-preview_files/styles.css',
+        'ro-crate-preview_files/image1.png'
+    ]
     with app.test_request_context('/'):
         sanitizer = eln_sanitizer.ELNSanitizer(
             eln_import_id=ELN_IMPORT_ID,
             root_path=ROOT_PATH,
             referenced_files=[],
-            valid_preview_files=[]
+            valid_preview_files=valid_preview_files,
         )
         for test_data in CSS_EXFILTRATION_TEST_DATA:
             sanitized_content = sanitizer.sanitize(
