@@ -20,7 +20,7 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
         WHERE component_id IS NULL
     """)).scalar()
 
-    if hashes != [(None, )] or object_count == 0:
+    if [hash.tuple() for hash in hashes] != [(None, )] or object_count == 0:
         return False
 
     # Perform migration
