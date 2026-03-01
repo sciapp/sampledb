@@ -184,6 +184,7 @@ def test_solve_conflict_apply_local(flask_server, user, conflict):
     modified_data = copy.deepcopy(DATA)
     modified_data['name']['text']['en'] = "Local Version"
     assert o.data == modified_data
+    assert c.utc_datetime_solved is not None
     assert not c.discarded
 
 
@@ -205,6 +206,7 @@ def test_solve_conflict_apply_imported(flask_server, user, conflict):
     modified_data = copy.deepcopy(DATA)
     modified_data['name']['text']['en'] = "Imported Version"
     assert o.data == modified_data
+    assert c.utc_datetime_solved is not None
     assert not c.discarded
 
 
@@ -235,4 +237,5 @@ def test_solve_conflict_interactive_solving(flask_server, driver, user, conflict
     assert c.version_solved_in == o.version_id
     assert o.data['name']['text']['en'] == "Interactive Version"
     assert c.solver_id == user.id
+    assert c.utc_datetime_solved is not None
     assert not c.discarded
