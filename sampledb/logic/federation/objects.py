@@ -1504,6 +1504,7 @@ def _create_or_update_object_version_conflict(
             local_version_id=local_version_id,
             automerged=automerged,
             solver_id=solver_id,
+            utc_datetime_solved=datetime.datetime.now(datetime.timezone.utc)
         )
         notes.append(_("A conflict with version #%(version_id)s was solved.", version_id=fed_version_id))
     else:
@@ -1518,4 +1519,5 @@ def _create_or_update_object_version_conflict(
             local_version_id=local_version_id,
             automerged=automerged,
             solver_id=solver_id,
+            utc_datetime_solved=datetime.datetime.now(datetime.timezone.utc)
         )

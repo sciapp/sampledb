@@ -39,6 +39,8 @@ class ObjectVersionConflict:
     local_version_id: typing.Optional[int]
     discarded: bool
     automerged: bool
+    utc_datetime: typing.Optional[datetime.datetime]
+    utc_datetime_solved: typing.Optional[datetime.datetime]
 
     _component_cache: typing.List[Component] = field(default_factory=lambda: [], repr=False, kw_only=True)
 
@@ -59,7 +61,9 @@ class ObjectVersionConflict:
             version_solved_in=object_version_conflict.version_solved_in,
             local_version_id=object_version_conflict.local_version_id,
             discarded=object_version_conflict.discarded,
-            automerged=object_version_conflict.automerged
+            automerged=object_version_conflict.automerged,
+            utc_datetime=object_version_conflict.utc_datetime,
+            utc_datetime_solved=object_version_conflict.utc_datetime_solved,
         )
 
 
@@ -280,6 +284,8 @@ def create_object_version_conflict(
     local_version_id: typing.Optional[int] = None,
     automerged: bool = False,
     solver_id: typing.Optional[int] = None,
+    utc_datetime: typing.Optional[datetime.datetime] = None,
+    utc_datetime_solved: typing.Optional[datetime.datetime] = None,
 ) -> ObjectVersionConflict:
     """
     Creates a new object version conflict.
@@ -292,6 +298,8 @@ def create_object_version_conflict(
     :param local_version_id: the local version ID of the latest local version which was used to solve the conflict or none
     :param automerged: True if the conflict was automatically merged
     :param solver_id: the local ID of the user who solved the conflict or none
+    :param utc_datetime: the creation datetime of the conflict
+    :param utc_datetime_solved: the datetime when the conflict was solved
     :return: the newly created object version conflict
     :raise errors.ObjectVersionConflictAlreadyExistsError: if the object version conflict already exists
     :raise errors.ObjectDoesNotExistError: if the `object_id` does not exist in the database
@@ -326,7 +334,9 @@ def create_object_version_conflict(
         version_solved_in=version_solved_in,
         local_version_id=local_version_id,
         automerged=automerged,
-        solver_id=solver_id
+        solver_id=solver_id,
+        utc_datetime=utc_datetime,
+        utc_datetime_solved=utc_datetime_solved
     )
 
     db.session.add(conflictModel)
@@ -344,6 +354,8 @@ def update_object_version_conflict(
     local_version_id: typing.Optional[int] = None,
     automerged: bool = False,
     solver_id: typing.Optional[int] = None,
+    utc_datetime: typing.Optional[datetime.datetime] = None,
+    utc_datetime_solved: typing.Optional[datetime.datetime] = None,
 ) -> None:
     """
     Updates an object version conflict.
@@ -356,6 +368,8 @@ def update_object_version_conflict(
     :param local_version_id: the local version ID of the latest local version which was used to solve the conflict or none
     :param automerged: True if the conflict was automatically merged
     :param solver_id: the local ID of the user who solved the conflict or none
+    :param utc_datetime: the creation datetime of the conflict
+    :param utc_datetime_solved: the datetime when the conflict was solved
     :raise errors.ObjectVersionConflictDoesNotExistError: if the object version conflict does not exist
     """
     conflict = ObjectVersionConflictModel.query.filter_by(
@@ -371,6 +385,8 @@ def update_object_version_conflict(
     conflict.local_version_id = local_version_id
     conflict.automerged = automerged
     conflict.solver_id = solver_id
+    conflict.utc_datetime = utc_datetime
+    conflict.utc_datetime_solved = utc_datetime_solved
 
     db.session.add(conflict)
     db.session.commit()
@@ -382,7 +398,7 @@ def solve_conflict(
     local_version_id: int,
     solver_id: typing.Optional[int] = None,
     add_object_log: bool = True,
-    automerged: bool = False
+    automerged: bool = False,
 ) -> None:
     """
     Marks an object version conflict as solved and sets properties for the conflict solution.
@@ -413,6 +429,7 @@ def solve_conflict(
     conflict.local_version_id = local_version_id
     conflict.solver_id = solver_id
     conflict.automerged = automerged
+    conflict.utc_datetime_solved = datetime.datetime.now(datetime.timezone.utc)
     db.session.add(conflict)
     db.session.commit()
 

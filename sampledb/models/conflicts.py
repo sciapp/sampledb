@@ -1,3 +1,4 @@
+import datetime
 import typing
 
 from sqlalchemy.orm import Mapped, Query, relationship
@@ -23,6 +24,8 @@ class ObjectVersionConflict(Model):
     base_version_id: Mapped[int] = db.Column(db.Integer, nullable=False)
     local_version_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True, default=None)
     automerged: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
+    utc_datetime_solved: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query['ObjectVersionConflict']]
@@ -37,7 +40,9 @@ class ObjectVersionConflict(Model):
         local_version_id: typing.Optional[int] = None,
         solver_id: typing.Optional[int] = None,
         version_solved_in: typing.Optional[int] = None,
-        automerged: bool = False
+        automerged: bool = False,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        utc_datetime_solved: typing.Optional[datetime.datetime] = None
     ) -> None:
         super().__init__(
             object_id=object_id,
@@ -48,5 +53,7 @@ class ObjectVersionConflict(Model):
             local_version_id=local_version_id,
             solver_id=solver_id,
             version_solved_in=version_solved_in,
-            automerged=automerged
+            automerged=automerged,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
+            utc_datetime_solved=utc_datetime_solved
         )
