@@ -7,6 +7,7 @@ Version 0.33
 Currently in development.
 
 - Implemented caching for object data rendered to html
+- Fixed validation of object_reference properties for federated actions or action types
 - Improved search query builder
 - Improved HTTP API for users and locations
 - Added support for default values to object reference schemas

@@ -11,6 +11,7 @@ from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from ..action_permissions import set_action_permissions_for_all_users
 from ..actions import get_action, get_mutable_action, create_action, Action
 from ..action_translations import set_action_translation, get_action_translations_for_action
+from ..action_types import get_action_type
 from ..languages import get_languages, get_language, get_language_by_lang_code, get_language_codes
 from ..instruments import get_instrument
 from ..markdown_images import get_markdown_image, find_referenced_markdown_images
@@ -397,6 +398,7 @@ def schema_entry_preprocessor(
         schema: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
         refs: typing.List[typing.Tuple[str, int]]
 ) -> None:
+    action: typing.Optional[Action]
     if type(schema) is list:
         for entry in schema:
             schema_entry_preprocessor(entry, refs)
@@ -427,3 +429,50 @@ def schema_entry_preprocessor(
                     schema_entry_preprocessor(schema['properties'][property], refs)
         if schema.get('type') == 'array':
             schema_entry_preprocessor(schema['items'], refs)
+        if schema.get('type') == 'object_reference':
+            if 'action_id' in schema:
+                if type(schema['action_id']) in (int, dict):
+                    schema['action_id'] = [schema['action_id']]
+                if type(schema['action_id']) is list:
+                    valid_action_ids = schema['action_id']
+                    schema['action_id'] = []
+                    for valid_action_id in valid_action_ids:
+                        if type(valid_action_id) is int:
+                            try:
+                                action = get_action(valid_action_id)
+                            except errors.ActionDoesNotExistError:
+                                action = None
+                            if action is None or action.fed_id is None or action.component is None:
+                                valid_action_id = {
+                                    'action_id': valid_action_id,
+                                    'component_uuid': flask.current_app.config['FEDERATION_UUID']
+                                }
+                            else:
+                                valid_action_id = {
+                                    'action_id': action.fed_id,
+                                    'component_uuid': action.component.uuid
+                                }
+                        schema['action_id'].append(valid_action_id)
+            if 'action_type_id' in schema:
+                if type(schema['action_type_id']) in (int, dict):
+                    schema['action_id'] = [schema['action_type_id']]
+                if type(schema['action_type_id']) is list:
+                    valid_action_type_ids = schema['action_type_id']
+                    schema['action_type_id'] = []
+                    for valid_action_type_id in valid_action_type_ids:
+                        if type(valid_action_type_id) is int:
+                            try:
+                                action_type = get_action_type(valid_action_type_id)
+                            except errors.ActionTypeDoesNotExistError:
+                                action_type = None
+                            if action_type is None or action_type.fed_id is None or action_type.component is None:
+                                valid_action_type_id = {
+                                    'action_type_id': valid_action_type_id,
+                                    'component_uuid': flask.current_app.config['FEDERATION_UUID']
+                                }
+                            else:
+                                valid_action_type_id = {
+                                    'action_id': action_type.fed_id,
+                                    'component_uuid': action_type.component.uuid
+                                }
+                        schema['action_type_id'].append(valid_action_type_id)
