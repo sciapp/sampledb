@@ -68,7 +68,7 @@ Add the borgmatic container as backup service into the `compose file <https://gi
 	services:
 	  backup:
 	    image: ghcr.io/borgmatic-collective/borgmatic:2.0.12
-	    container_name: borgmatic
+	    container_name: backup
 	    restart: always
 	    volumes:
 	      - /var/run/docker.sock:/var/run/docker.sock
@@ -122,7 +122,8 @@ In ``./data/borgmatic.d`` create ``config.yaml``. This configuration file should
 	  - name: all
 	    hostname: db
 	    port: 5432
-	    # Remember to set username and password to the same values as in the compose file
+	    # Remember to set username and password to the same values as in the compose file.
+	    # If no username is set there, it is the default "postgres".
 	    username: postgres
 	    password: password
 
@@ -170,7 +171,7 @@ Secure the repository keys, by exporting them and backing them up at a secure lo
 
 .. code-block:: bash
 
-	docker exec -it backup borg key export --paper /mnt/borg-repository/repo encrypted-key-backup.txt
+	docker exec -it backup borg key export --paper /mnt/borg-repository/repo > encrypted-key-backup.txt
 
 Do a manual backup to see if everything works as intended:
 
