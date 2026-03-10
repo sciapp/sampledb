@@ -26,6 +26,7 @@ authors = [
     { name="Dorothea Henkel" },
     { name="Du Kim Nguyen" },
     { name="Frederik Peters" },
+	{ name="Martin Florian Seidler", email="f.seidler@fz-juelich.de" },
 ]
 description = "A sample and measurement metadata database"
 readme = "README.md"
