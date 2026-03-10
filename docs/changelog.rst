@@ -19,6 +19,10 @@ Currently in development.
 - Split setting for showing topics in navbar for actions and instruments tabs
 - Added webhook type for changes to object permissions
 - Fixed array tables
+- Fixed style variants
+- Fixed editing of language settings
+- Added OIDC session expiration and Back-Channel Logout
+- Added HTTP API endpoints for bulk object permission management
 - Added documentation for differential backups using borgmatic
 
 
