@@ -28,6 +28,7 @@ Currently in development.
 - Fixed editing of language settings
 - Added OIDC session expiration and Back-Channel Logout
 - Added HTTP API endpoints for bulk object permission management
+- Added documentation for differential backups using borgmatic
 
 
 Version 0.32
