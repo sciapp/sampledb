@@ -67,8 +67,8 @@ class Login(Model):
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     type: Mapped[AuthenticationType] = db.Column(db.Enum(AuthenticationType), nullable=False)
-    created_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False, default=functions.now())
-    expires_at: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    created_at: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False, default=functions.now())
+    expires_at: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
     user: Mapped['User'] = relationship('User')
 
