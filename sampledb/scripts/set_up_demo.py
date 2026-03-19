@@ -1820,4 +1820,52 @@ This example shows how Markdown can be used for instrument Notes.
             schema=horizontal_object_action_schema,
         )
 
+        versioned_reference_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "versioned_object_reference": {
+                        "title": {
+                            "en": "Versioned Object Reference"
+                        },
+                        "type": "object_reference",
+                        "style": "versioned"
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "propertyOrder": [
+                    "name", "versioned_object_reference"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, versioned_reference_action.id, name="Versioned Object Reference Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(versioned_reference_action.id, sampledb.models.Permissions.READ)
+        sampledb.logic.objects.create_object(
+            action_id=versioned_reference_action.id,
+            data={
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "Versioned Object Reference Demo Object"}
+                },
+                "versioned_object_reference": {
+                    "_type": "object_reference",
+                    "object_id": object.object_id,
+                    "version_id": 0,
+                }
+            },
+            user_id=instrument_responsible_user.id
+        )
+
     print("Success: set up demo data", flush=True)
