@@ -635,8 +635,8 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
     """
     if not isinstance(instance, dict):
         raise ValidationError('instance must be dict', path)
-    valid_keys = {'_type', 'object_id'}
-    required_keys = valid_keys
+    valid_keys = {'_type', 'object_id', 'version_id'}
+    required_keys = {'_type', 'object_id'}
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
@@ -650,6 +650,11 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
         raise ValidationError('object_id must be int', path)
     if instance['object_id'] < 1:
         raise ValidationError('object_id must be positive', path)
+    if 'version_id' in instance and instance['version_id'] is not None:
+        if not isinstance(instance['version_id'], int):
+            raise ValidationError('version_id must be int or None', path)
+        if instance['version_id'] < 0:
+            raise ValidationError('version_id must not be negative', path)
     if 'component_uuid' in instance and instance['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
         pass
     elif 'eln_source_url' in instance:
@@ -659,6 +664,8 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
             object = objects.get_object(object_id=instance['object_id'])
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
+        if 'version_id' in instance and instance['version_id'] is not None and instance['version_id'] > object.version_id:
+            raise ValidationError('object version does not exist', path)
         action = None
         action_type = None
         if object.action_id is not None:

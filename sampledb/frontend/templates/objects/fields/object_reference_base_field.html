@@ -98,3 +98,13 @@
     </select>
   {% endif %}
 {% endif %}
+
+{% set style = get_style_variant(schema.get("style"), template_mode) %}
+{% if style == "versioned" %}
+  <div class="input-group">
+    <span class="input-group-addon">
+      <input type="checkbox" {% if (data and data.get("version_id") is not none) or form_data.get(id_prefix+'_vid') %}checked="checked"{% endif %}> {{ _('Specific Version')}}
+    </span>
+    <input name="{{ id_prefix }}_vid" type="number" value="{% if form_data.get(id_prefix+'_vid') %}{{ form_data.get(id_prefix+'_vid') }}{% elif data and data.get("version_id") is not none %}{{ data.get("version_id") }}{% endif %}" class="form-control" min="0" step="1" data-sampledb-default-object-selected="{{ selected_id }}" data-sampledb-default-version-selected="{% if form_data.get(id_prefix+'_vid') %}{{ form_data.get(id_prefix+'_vid') }}{% elif data and data.get("version_id") is not none %}{{ data.get("version_id") }}{% endif %}"/>
+  </div>
+{% endif %}

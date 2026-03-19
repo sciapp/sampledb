@@ -1674,6 +1674,55 @@ def test_validate_object_reference(flask_server):
     validate(instance, schema)
 
 
+def test_validate_object_reference_with_version_id():
+    user = sampledb.logic.users.create_user(
+        name='Test User',
+        email='example@example.com',
+        type=sampledb.models.UserType.PERSON,
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    referenced_object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    schema: typing.Dict[str, typing.Any] = {
+        'title': 'Example',
+        'type': 'object_reference'
+    }
+    instance = {
+        '_type': 'object_reference',
+        'object_id': referenced_object.object_id,
+        'version_id': referenced_object.version_id,
+    }
+    validate(instance, schema)
+
+    instance = {
+        '_type': 'object_reference',
+        'object_id': referenced_object.object_id,
+        'version_id': referenced_object.version_id + 1,
+    }
+    with pytest.raises(sampledb.logic.errors.ValidationError):
+        validate(instance, schema)
+
+    instance = {
+        '_type': 'object_reference',
+        'object_id': referenced_object.object_id,
+        'version_id': -1,
+    }
+    with pytest.raises(sampledb.logic.errors.ValidationError):
+        validate(instance, schema)
+
+
 def test_validate_object_reference_with_filter_operator():
     user = sampledb.logic.users.create_user("User", "example@example.com", sampledb.models.UserType.PERSON)
     action = sampledb.logic.actions.create_action(

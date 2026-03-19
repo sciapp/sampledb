@@ -129,7 +129,7 @@ function updateObjectPickers () {
           if (el.is_eln_imported) {
             isELNImported = ' data-icon="fa fa-file-archive-o" ';
           }
-          return '<option' + isFederationImported + isELNImported + 'value="' + el.id + '" ' + dataTokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
+          return '<option' + isFederationImported + isELNImported + 'value="' + el.id + '" ' + dataTokens + ' data-action-id="' + el.action_id + '" data-version-id="' + el.version_id + '">' + el.text + '</option>';
         }).join(''));
     } else {
       $x.typeahead('destroy');
