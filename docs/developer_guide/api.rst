@@ -2168,6 +2168,149 @@ Reading a basic group
     :statuscode 200: no error
     :statuscode 404: the basic group does not exist
 
+
+Reading the list of members for a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/groups/(int:group_id)/member_users/
+
+    Get the member users of a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/groups/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "user_id": 1,
+                "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 404: the basic group does not exist
+
+
+Reading a member of a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/groups/(int:group_id)/member_users/(int:user_id)
+
+    Get the information for a specific member user (`user_id`) of a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/groups/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+        }
+
+    :>json number user_id: the user's ID
+    :>json string href: the link to the user
+    :statuscode 200: no error
+    :statuscode 404: the basic group or user does not exist, or the user is not a member of this basic group
+
+
+Adding a member to a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/groups/(int:group_id)/member_users/
+
+    Add a specific member user (`user_id`) to a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/groups/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "user_id": 1
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: /api/v1/groups/1/member_users/1
+
+    :<json number user_id: the user's ID
+    :statuscode 201: no error
+    :statuscode 400: the request data was invalid, or the user is already a member of this basic group
+    :statuscode 404: the basic group or user does not exist
+
+
+Removing a member from a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:delete:: /api/v1/groups/(int:group_id)/member_users/(int:user_id)
+
+    Remove a specific user (`user_id`) from a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        DELETE /api/v1/groups/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "message": "user 1 has been removed from group 1"
+        }
+
+    :statuscode 200: no error
+    :statuscode 404: the basic group or user does not exist, or the user is not a member of this basic group
+
+
 Project Groups
 --------------
 
@@ -2277,6 +2420,200 @@ Reading a project group
     :>json array member_groups: the project group's member basic groups
     :statuscode 200: no error
     :statuscode 404: the project group does not exist
+
+
+Reading the list of members for a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/projects/(int:project_id)/member_users/
+
+    Get the member users of a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/projects/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "user_id": 1,
+                "permissions": "grant",
+                "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 404: the project group does not exist
+
+
+Reading a member of a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/projects/(int:project_id)/member_users/(int:user_id)
+
+    Get the information for a specific member user (`user_id`) of a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/projects/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "permissions": "grant",
+            "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+        }
+
+    :>json number user_id: the user's ID
+    :>json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :>json string href: the link to the user
+    :statuscode 200: no error
+    :statuscode 404: the project group or user does not exist, or the user is not a member of this project group
+
+
+Adding a member to a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/projects/(int:project_id)/member_users/
+
+    Add a specific member user (`user_id`) to a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/projects/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "user_id": 1,
+            "permissions": "read"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: /api/v1/projects/1/member_users/1
+
+    :<json number user_id: the user's ID
+    :<json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :statuscode 201: no error
+    :statuscode 400: the request data was invalid, or the user is already a member of this project group
+    :statuscode 404: the project group or user does not exist
+
+
+Updating the permissions for a member of a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/projects/(int:project_id)/member_users/(int:user_id)
+
+    Update the permissions of a specific member user (`user_id`) of a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/projects/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "permissions": "read"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "permissions": "read",
+            "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+        }
+
+    :<json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :>json number user_id: the user's ID
+    :>json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :>json string href: the link to the user
+    :statuscode 200: no error
+    :statuscode 400: the request data was invalid, or the user is the only user with grant permissions for the project group
+    :statuscode 404: the project group or user does not exist, or the user is not a member of this project group
+
+
+Removing a member from a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:delete:: /api/v1/projects/(int:project_id)/member_users/(int:user_id)
+
+    Remove a specific user (`user_id`) from a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        DELETE /api/v1/projects/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "message": "user 1 has been removed from project 1"
+        }
+
+    :statuscode 200: no error
+    :statuscode 400: the user is the only user with grant permissions for the project group
+    :statuscode 404: the project group or user does not exist, or the user is not a member of this project group
+
 
 Locations
 ---------

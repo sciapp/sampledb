@@ -29,6 +29,7 @@ Currently in development.
 - Added OIDC session expiration and Back-Channel Logout
 - Added HTTP API endpoints for bulk object permission management
 - Added documentation for differential backups using borgmatic
+- Added HTTP API endpoints for managing basic group and project group memberships
 
 
 Version 0.32
