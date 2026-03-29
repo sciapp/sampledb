@@ -143,6 +143,31 @@ def remote_import_object(object_id: int, component_id: int, import_status: typin
     )
 
 
+def create_version_conflict(object_id: int, component_id: int, fed_version_id: int) -> None:
+    _store_new_fed_object_log_entry(
+        type=models.FedObjectLogEntryType.CREATE_VERSION_CONFLICT,
+        object_id=object_id,
+        component_id=component_id,
+        user_id=None,
+        data={
+            'fed_version_id': fed_version_id
+        }
+    )
+
+
+def solve_version_conflict(object_id: int, component_id: int, fed_version_id: int, automerged: bool, user_id: typing.Optional[int]) -> None:
+    _store_new_fed_object_log_entry(
+        type=models.FedObjectLogEntryType.SOLVE_VERSION_CONFLICT,
+        object_id=object_id,
+        component_id=component_id,
+        user_id=user_id,
+        data={
+            'fed_version_id': fed_version_id,
+            'automerged': automerged
+        }
+    )
+
+
 def _store_new_fed_location_log_entry(
         type: models.FedLocationLogEntryType,
         location_id: int,
@@ -381,7 +406,7 @@ def _store_new_fed_comment_log_entry(
         type: models.FedCommentLogEntryType,
         comment_id: int,
         component_id: int,
-        data: typing.Dict[str, typing.Any]
+        data: typing.Dict[str, typing.Any],
 ) -> None:
     get_comment(comment_id)
     check_component_exists(component_id)
@@ -396,21 +421,25 @@ def _store_new_fed_comment_log_entry(
     db.session.commit()
 
 
-def import_comment(comment_id: int, component_id: int) -> None:
+def import_comment(comment_id: int, component_id: int, imported_from_component_id: int) -> None:
     _store_new_fed_comment_log_entry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment_id,
         component_id=component_id,
-        data={}
+        data={
+            'imported_from_component_id': imported_from_component_id,
+        }
     )
 
 
-def update_comment(comment_id: int, component_id: int) -> None:
+def update_comment(comment_id: int, component_id: int, imported_from_component_id: int) -> None:
     _store_new_fed_comment_log_entry(
         type=models.FedCommentLogEntryType.UPDATE_COMMENT,
         comment_id=comment_id,
         component_id=component_id,
-        data={}
+        data={
+            'imported_from_component_id': imported_from_component_id,
+        }
     )
 
 
@@ -435,23 +464,27 @@ def _store_new_fed_file_log_entry(
     db.session.commit()
 
 
-def import_file(file_id: int, object_id: int, component_id: int) -> None:
+def import_file(file_id: int, object_id: int, component_id: int, imported_from_component_id: int) -> None:
     _store_new_fed_file_log_entry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file_id,
         object_id=object_id,
         component_id=component_id,
-        data={}
+        data={
+            'imported_from_component_id': imported_from_component_id,
+        }
     )
 
 
-def update_file(file_id: int, object_id: int, component_id: int) -> None:
+def update_file(file_id: int, object_id: int, component_id: int, imported_from_component_id: int) -> None:
     _store_new_fed_file_log_entry(
         type=models.FedFileLogEntryType.UPDATE_FILE,
         file_id=file_id,
         object_id=object_id,
         component_id=component_id,
-        data={}
+        data={
+            'imported_from_component_id': imported_from_component_id,
+        }
     )
 
 

@@ -1663,7 +1663,8 @@ def test_validate_object_reference(flask_server):
         schema=action.schema,
         data=object.data,
         user_id=None,
-        utc_datetime=datetime.datetime.now()
+        utc_datetime=datetime.datetime.now(),
+        imported_from_component_id=other_component.id
     )
     instance = {
         '_type': 'object_reference',

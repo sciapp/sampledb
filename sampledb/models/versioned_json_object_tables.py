@@ -42,7 +42,10 @@ class DataValidator(typing.Protocol):
         schema: typing.Dict[str, typing.Any],
         path: typing.Optional[typing.List[str]] = None,
         allow_disabled_languages: bool = False,
-        strict: bool = False
+        strict: bool = False,
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None,
+        component_id: typing.Optional[int] = None,
+        is_conflict: bool = False,
     ) -> None:
         ...
 
@@ -74,7 +77,13 @@ class Object:
     component_id: typing.Optional[int]
     eln_import_id: typing.Optional[int]
     eln_object_id: typing.Optional[str]
+    version_component_id: typing.Optional[int]
+    hash_data: typing.Optional[str]
+    hash_metadata: typing.Optional[str]
+    imported_from_component_id: typing.Optional[int]
     _component_cache: typing.List[typing.Optional['Component']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
+    _version_component_cache: typing.List[typing.Optional['Component']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
+    _imported_from_component_cache: typing.List[typing.Optional['Component']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
     _eln_import_cache: typing.List[typing.Optional['ELNImport']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
 
     @property
@@ -100,11 +109,76 @@ class Object:
         return self._component_cache[0]
 
     @property
+    def version_component(self) -> typing.Optional['Component']:
+        if self.version_component_id is not None and self._version_component_cache[0] is None:
+            from ..logic.components import get_component
+            self._version_component_cache[0] = get_component(self.version_component_id)
+        return self._version_component_cache[0]
+
+    @property
+    def imported_from_component(self) -> typing.Optional['Component']:
+        if self.imported_from_component_id is not None and self._imported_from_component_cache[0] is None:
+            from ..logic.components import get_component
+            self._version_component_cache[0] = get_component(self.imported_from_component_id)
+        return self._imported_from_component_cache[0]
+
+    @property
     def eln_import(self) -> typing.Optional['ELNImport']:
         if self.eln_import_id is not None and self._eln_import_cache[0] is None:
             from ..logic.eln_import import get_eln_import
             self._eln_import_cache[0] = get_eln_import(self.eln_import_id)
         return self._eln_import_cache[0]
+
+
+@dataclasses.dataclass
+class FederatedObject:
+    object_id: int
+    fed_version_id: int
+    version_component_id: int
+    data: typing.Optional[dict[str, typing.Any]]
+    schema: typing.Optional[dict[str, typing.Any]]
+    action_id: typing.Optional[int]
+    utc_datetime: typing.Optional[datetime.datetime]
+    user_id: typing.Optional[int]
+    local_parent: typing.Optional[int]
+    hash_data: typing.Optional[str]
+    hash_metadata: typing.Optional[str]
+    imported_from_component_id: int
+    _object_cache: typing.Optional[Object] = dataclasses.field(default_factory=lambda: None, repr=False, kw_only=True)
+
+    @property
+    def component_id(self) -> typing.Optional[int]:
+        if self._object_cache is None:
+            from ..logic.objects import get_object
+            self._object_cache = get_object(self.object_id)
+        return self._object_cache.component_id
+
+    @property
+    def fed_object_id(self) -> typing.Optional[int]:
+        if self._object_cache is None:
+            from ..logic.objects import get_object
+            self._object_cache = get_object(self.object_id)
+        return self._object_cache.fed_object_id
+
+    def as_object(self) -> Object:
+        return Object(
+            object_id=self.object_id,
+            version_id=self.fed_version_id,
+            component_id=self.component_id,
+            data=self.data,
+            schema=self.schema,
+            action_id=self.action_id,
+            utc_datetime=self.utc_datetime,
+            user_id=self.user_id,
+            eln_object_id=None,
+            eln_import_id=None,
+            fed_version_id=self.fed_version_id,
+            fed_object_id=self.fed_object_id,
+            version_component_id=self.version_component_id,
+            hash_data=self.hash_data,
+            hash_metadata=self.hash_metadata,
+            imported_from_component_id=self.imported_from_component_id,
+        )
 
 
 class VersionedJSONSerializableObjectTables:
@@ -168,11 +242,15 @@ class VersionedJSONSerializableObjectTables:
             db.Column('tags_cache', db.JSON),
             db.Column('eln_import_id', db.Integer, nullable=True),
             db.Column('eln_object_id', db.String, nullable=True),
+            db.Column('version_component_id', db.Integer, nullable=True),
+            db.Column('hash_data', db.String, nullable=True),
+            db.Column('hash_metadata', db.String, nullable=True),
+            db.Column('imported_from_component_id', db.Integer, nullable=True),
             db.CheckConstraint(
-                '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (eln_import_id IS NOT NULL AND eln_object_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
+                '(fed_object_id IS NOT NULL AND component_id IS NOT NULL) OR (version_component_id IS NOT NULL) OR (eln_import_id IS NOT NULL AND eln_object_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND utc_datetime IS NOT NULL)',
                 name=table_name_prefix + '_current_not_null_check'
             ),
-            db.UniqueConstraint('fed_object_id', 'fed_version_id', 'component_id', name=table_name_prefix + '_current_fed_object_id_component_id_key')
+            db.UniqueConstraint('fed_object_id', 'fed_version_id', 'component_id', name=table_name_prefix + '_current_fed_object_id_component_id_key'),
         )
         self._previous_table = db.Table(
             table_name_prefix + '_previous',
@@ -189,9 +267,13 @@ class VersionedJSONSerializableObjectTables:
             db.Column('component_id', db.Integer, nullable=True),
             db.Column('eln_import_id', db.Integer, nullable=True),
             db.Column('eln_object_id', db.String, nullable=True),
+            db.Column('version_component_id', db.Integer, nullable=True),
+            db.Column('hash_data', db.String, nullable=True),
+            db.Column('hash_metadata', db.String, nullable=True),
+            db.Column('imported_from_component_id', db.Integer, nullable=True),
             db.PrimaryKeyConstraint('object_id', 'version_id'),
             db.CheckConstraint(
-                '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (eln_import_id IS NOT NULL AND eln_object_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
+                '(fed_object_id IS NOT NULL AND component_id IS NOT NULL) OR (version_component_id IS NOT NULL) OR (eln_import_id IS NOT NULL AND eln_object_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND utc_datetime IS NOT NULL)',
                 name=table_name_prefix + '_previous_not_null_check'
             )
         )
@@ -207,21 +289,76 @@ class VersionedJSONSerializableObjectTables:
             db.Column('user_id', db.Integer, nullable=True),
             db.Column('utc_datetime', db.TIMESTAMP(timezone=True), nullable=True),
             db.Column('utc_datetime_subversion', db.TIMESTAMP(timezone=True), nullable=False),
+            db.Column('version_component_id', db.Integer, nullable=True),
+            db.Column('hash_metadata', db.String, nullable=True),
+            db.Column('imported_from_component_id', db.Integer, nullable=True),
             db.PrimaryKeyConstraint('object_id', 'version_id', 'subversion_id')
         )
+
+        self._federation_table = db.Table(
+            table_name_prefix + '_federation',
+            self.metadata,
+            db.Column('object_id', db.Integer, nullable=False),
+            db.Column('version_component_id', db.Integer, nullable=False),
+            db.Column('fed_version_id', db.Integer, nullable=False),
+            db.Column('data', postgresql.JSONB, nullable=True),
+            db.Column('schema', postgresql.JSONB, nullable=True),
+            db.Column('action_id', db.Integer, nullable=True),
+            db.Column('utc_datetime', db.TIMESTAMP(timezone=True), nullable=True),
+            db.Column('user_id', db.Integer, nullable=True),
+            db.Column('local_parent', db.Integer, nullable=True),
+            db.Column('hash_data', db.String, nullable=True),
+            db.Column('hash_metadata', db.String, nullable=True),
+            db.Column('imported_from_component_id', db.Integer, nullable=False),
+            db.PrimaryKeyConstraint('object_id', 'fed_version_id', 'version_component_id')
+        )
+
+        self._federation_subversions_table = db.Table(
+            table_name_prefix + '_federation_subversions',
+            self.metadata,
+            db.Column('object_id', db.Integer, nullable=False),
+            db.Column('version_component_id', db.Integer, nullable=False),
+            db.Column('fed_version_id', db.Integer, nullable=False),
+            db.Column('subversion_id', db.Integer, nullable=False),
+            db.Column('data', postgresql.JSONB, nullable=True),
+            db.Column('schema', postgresql.JSONB, nullable=True),
+            db.Column('action_id', db.Integer, nullable=True),
+            db.Column('utc_datetime', db.TIMESTAMP(timezone=True), nullable=True),
+            db.Column('utc_datetime_subversion', db.TIMESTAMP(timezone=True), nullable=True),
+            db.Column('user_id', db.Integer, nullable=True),
+            db.Column('imported_from_component_id', db.Integer, nullable=False),
+            db.PrimaryKeyConstraint('object_id', 'fed_version_id', 'version_component_id', 'subversion_id')
+        )
+
         if user_id_column is not None:
             self._current_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
             self._previous_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
             self._subversions_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
+            self._federation_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
+            self._federation_subversions_table.append_constraint(db.ForeignKeyConstraint(['user_id'], [user_id_column]))
         if action_id_column is not None:
             self._current_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
             self._previous_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
             self._subversions_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
+            self._federation_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
+            self._federation_subversions_table.append_constraint(db.ForeignKeyConstraint(['action_id'], [action_id_column]))
         elif action_schema_column is not None:
             raise ValueError("Using action_schema_column requires using the action_id_column as well!")
         if component_id_column is not None:
             self._current_table.append_constraint(db.ForeignKeyConstraint(['component_id'], [component_id_column]))
             self._previous_table.append_constraint(db.ForeignKeyConstraint(['component_id'], [component_id_column]))
+
+            self._current_table.append_constraint(db.ForeignKeyConstraint(['version_component_id'], [component_id_column]))
+            self._previous_table.append_constraint(db.ForeignKeyConstraint(['version_component_id'], [component_id_column]))
+            self._subversions_table.append_constraint(db.ForeignKeyConstraint(['version_component_id'], [component_id_column]))
+            self._federation_table.append_constraint(db.ForeignKeyConstraint(['version_component_id'], [component_id_column]))
+            self._federation_subversions_table.append_constraint(db.ForeignKeyConstraint(['version_component_id'], [component_id_column]))
+
+            self._current_table.append_constraint(db.ForeignKeyConstraint(['imported_from_component_id'], [component_id_column]))
+            self._previous_table.append_constraint(db.ForeignKeyConstraint(['imported_from_component_id'], [component_id_column]))
+            self._subversions_table.append_constraint(db.ForeignKeyConstraint(['imported_from_component_id'], [component_id_column]))
+            self._federation_table.append_constraint(db.ForeignKeyConstraint(['imported_from_component_id'], [component_id_column]))
+            self._federation_subversions_table.append_constraint(db.ForeignKeyConstraint(['imported_from_component_id'], [component_id_column]))
         if eln_import_id_column is not None:
             self._current_table.append_constraint(db.ForeignKeyConstraint(['eln_import_id'], [eln_import_id_column]))
             self._previous_table.append_constraint(db.ForeignKeyConstraint(['eln_import_id'], [eln_import_id_column]))
@@ -250,9 +387,14 @@ class VersionedJSONSerializableObjectTables:
             component_id: typing.Optional[int] = None,
             eln_import_id: typing.Optional[int] = None,
             eln_object_id: typing.Optional[str] = None,
+            version_component_id: typing.Optional[int] = None,
+            hash_data: typing.Optional[str] = None,
+            hash_metadata: typing.Optional[str] = None,
+            imported_from_component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             validate_data: bool = True,
-            data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
+            data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            calculate_hashes: bool = True
     ) -> Object:
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
@@ -266,10 +408,15 @@ class VersionedJSONSerializableObjectTables:
         :param fed_version_id: the version ID of this object on a federated component
         :param eln_import_id: the ID of an .eln file import
         :param eln_object_id: the ID of this object in the .eln file
+        :param version_component_id: the ID of the component where a user created this version
+        :param hash_data: the hash value of the data and schema of the object
+        :param hash_metadata: the hash value of the user and utc_datetime of the object
+        :param imported_from_component_id: the ID of the component from which the version was imported
         :param component_id: the ID of the component that created this object
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_data: whether the data must be validated
         :param data_validator_arguments: additional keyword arguments to the data validator
+        :param calculate_hashes: whether to calculate data and metadata hashes if none (and values for hashes are available)
         :return: the newly created object as object_type
         :raise ValueError: if the schema and action are None for a local object
         """
@@ -301,7 +448,17 @@ class VersionedJSONSerializableObjectTables:
                             data_validator_arguments = {}
                         if 'allow_disabled_languages' not in data_validator_arguments:
                             data_validator_arguments['allow_disabled_languages'] = False
+                        data_validator_arguments['component_id'] = component_id
                         self._data_validator(data, schema, **data_validator_arguments)
+
+        if calculate_hashes and hash_data is None and data is not None and schema is not None:
+            from ..logic.federation.conflicts import calculate_data_hash
+            hash_data = calculate_data_hash(data, schema)
+
+        if calculate_hashes and hash_metadata is None and user_id is not None and utc_datetime is not None:
+            from ..logic.federation.conflicts import calculate_metadata_hash
+            hash_metadata = calculate_metadata_hash(user_id, utc_datetime)
+
         version_id = 0
         object_id = typing.cast(int, connection.execute(
             self._current_table
@@ -320,6 +477,10 @@ class VersionedJSONSerializableObjectTables:
                 component_id=component_id,
                 eln_import_id=eln_import_id,
                 eln_object_id=eln_object_id,
+                version_component_id=version_component_id,
+                hash_data=hash_data,
+                hash_metadata=hash_metadata,
+                imported_from_component_id=imported_from_component_id,
             )
             .returning(
                 self._current_table.c.object_id
@@ -338,6 +499,10 @@ class VersionedJSONSerializableObjectTables:
             component_id=component_id,
             eln_import_id=eln_import_id,
             eln_object_id=eln_object_id,
+            version_component_id=version_component_id,
+            hash_data=hash_data,
+            hash_metadata=hash_metadata,
+            imported_from_component_id=imported_from_component_id,
         )
         return obj
 
@@ -347,8 +512,14 @@ class VersionedJSONSerializableObjectTables:
             object_id: int,
             data: typing.Optional[typing.Dict[str, typing.Any]],
             schema: typing.Optional[typing.Dict[str, typing.Any]],
-            user_id: int,
+            user_id: typing.Optional[int],
             utc_datetime: typing.Optional[datetime.datetime] = None,
+            fed_version_id: typing.Optional[int] = None,
+            version_component_id: typing.Optional[int] = None,
+            hash_data: typing.Optional[str] = None,
+            hash_metadata: typing.Optional[str] = None,
+            calculate_hashes: bool = True,
+            imported_from_component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             validate_schema: bool = True,
             validate_data: bool = True,
@@ -365,6 +536,12 @@ class VersionedJSONSerializableObjectTables:
         :param schema: a JSON schema describing data (optional, defaults to the current object schema)
         :param user_id: the ID of the user who updated the object
         :param utc_datetime: the datetime (in UTC) when the object was updated (optional, defaults to now(timezone.utc))
+        :param fed_version_id: the ID of the version of the component where the object was created
+        :param version_component_id: the ID the component where the version was created by a user
+        :param hash_data: hash value of the data of the object
+        :param hash_metadata: hash value of the metadata of the object
+        :param calculate_hashes: whether to calculate data and metadata hashes if none
+        :param imported_from_component_id: the ID of the component from which the version was imported
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_schema: whether the schema should be validated
         :param validate_data: whether the data should be validated
@@ -374,6 +551,7 @@ class VersionedJSONSerializableObjectTables:
         assert connection is not None  # ensured by decorator
         if utc_datetime is None:
             utc_datetime = datetime.datetime.now(datetime.timezone.utc)
+        current_object = self.get_current_object(object_id=object_id, connection=connection)
         if schema is not None or data is not None:
             if schema is None:
                 schema_row = connection.execute(
@@ -387,6 +565,7 @@ class VersionedJSONSerializableObjectTables:
             if validate_data and self._data_validator and schema is not None and data is not None:
                 if data_validator_arguments is None:
                     data_validator_arguments = {}
+                data_validator_arguments['component_id'] = current_object.component_id if current_object else None
                 self._data_validator(data, schema, **data_validator_arguments)
 
         # Copy current version to previous versions
@@ -407,6 +586,10 @@ class VersionedJSONSerializableObjectTables:
                     'component_id',
                     'eln_import_id',
                     'eln_object_id',
+                    'version_component_id',
+                    'hash_data',
+                    'hash_metadata',
+                    'imported_from_component_id',
                 ],
                 self._current_table
                 .select()
@@ -423,12 +606,26 @@ class VersionedJSONSerializableObjectTables:
                     self._current_table.c.component_id,
                     self._current_table.c.eln_import_id,
                     self._current_table.c.eln_object_id,
+                    self._current_table.c.version_component_id,
+                    self._current_table.c.hash_data,
+                    self._current_table.c.hash_metadata,
+                    self._current_table.c.imported_from_component_id,
                 )
                 .where(self._current_table.c.object_id == db.bindparam('oid'))
             ),
             [{'oid': object_id}]
         ).rowcount != 1:
             return None
+
+        if calculate_hashes:
+            if hash_data is None:
+                from ..logic.federation.conflicts import calculate_data_hash
+                hash_data = calculate_data_hash(data, schema, object_id=object_id)
+
+            if hash_metadata is None:
+                from ..logic.federation.conflicts import calculate_metadata_hash
+                hash_metadata = calculate_metadata_hash(user_id, utc_datetime)
+
         # Update current version to new version
         connection.execute(
             self._current_table
@@ -441,7 +638,12 @@ class VersionedJSONSerializableObjectTables:
                 tags_cache=data.get('tags') if data else None,
                 schema=schema,
                 user_id=user_id,
-                utc_datetime=utc_datetime
+                utc_datetime=utc_datetime,
+                fed_version_id=fed_version_id,
+                version_component_id=version_component_id,
+                hash_data=hash_data,
+                hash_metadata=hash_metadata,
+                imported_from_component_id=imported_from_component_id,
             ),
             [{'oid': object_id}]
         )
@@ -463,7 +665,8 @@ class VersionedJSONSerializableObjectTables:
             self._schema_validator(object_version.schema)
         if object_version.schema is not None and object_version.data is not None and self._data_validator:
             # allow disabled languages, as they were enabled when the version was created
-            self._data_validator(object_version.data, object_version.schema, allow_disabled_languages=True)
+            current_object = self.get_current_object(object_id)
+            self._data_validator(object_version.data, object_version.schema, allow_disabled_languages=True, component_id=current_object.component_id if current_object else None)
         return self.update_object(
             object_id=object_id,
             data=object_version.data,
@@ -471,8 +674,12 @@ class VersionedJSONSerializableObjectTables:
             user_id=user_id,
             utc_datetime=utc_datetime,
             connection=connection,
+            hash_data=object_version.hash_data,
+            hash_metadata=object_version.hash_metadata,
+            imported_from_component_id=object_version.imported_from_component_id,
             validate_schema=False,
-            validate_data=False
+            validate_data=False,
+            calculate_hashes=False,
         )
 
     @_use_transaction
@@ -480,12 +687,16 @@ class VersionedJSONSerializableObjectTables:
             self,
             fed_object_id: int,
             fed_version_id: int,
-            component_id: int,
+            component_id: typing.Optional[int],
             action_id: typing.Optional[int],
             data: typing.Optional[typing.Dict[str, typing.Any]],
             schema: typing.Optional[typing.Dict[str, typing.Any]],
             user_id: typing.Optional[int],
             utc_datetime: typing.Optional[datetime.datetime],
+            version_component_id: typing.Optional[int],
+            hash_data: typing.Optional[str],
+            hash_metadata: typing.Optional[str],
+            imported_from_component_id: int,
             connection: typing.Optional[db.engine.Connection] = None,
             allow_disabled_languages: bool = False,
             get_missing_schema_from_action: bool = True
@@ -512,12 +723,32 @@ class VersionedJSONSerializableObjectTables:
                 self._schema_validator(schema)
             if not (data is None and fed_object_id is not None and fed_version_id is not None):
                 if self._data_validator:
-                    self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages)
+                    self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages, component_id=component_id)
                     validate_data = False
 
-        current = self.get_current_fed_object(component_id, fed_object_id)
+        if component_id:
+            current = self.get_current_fed_object(component_id, fed_object_id)
+        else:
+            current = self.get_current_object(fed_object_id)
+
         if current is None:
-            object = self.create_object(data, schema, user_id, action_id, utc_datetime, fed_object_id, fed_version_id, component_id, connection=connection, validate_data=validate_data)
+            object = self.create_object(
+                data,
+                schema,
+                user_id,
+                action_id,
+                utc_datetime,
+                fed_object_id,
+                fed_version_id,
+                component_id,
+                version_component_id=version_component_id,
+                hash_data=hash_data,
+                hash_metadata=hash_metadata,
+                calculate_hashes=False,
+                imported_from_component_id=imported_from_component_id,
+                connection=connection,
+                validate_data=validate_data
+            )
             return object
         elif current.fed_version_id is None or current.fed_version_id < fed_version_id:
             # Copy current version to previous versions
@@ -537,7 +768,11 @@ class VersionedJSONSerializableObjectTables:
                         'fed_version_id',
                         'component_id',
                         'eln_import_id',
-                        'eln_object_id'
+                        'eln_object_id',
+                        'version_component_id',
+                        'hash_data',
+                        'hash_metadata',
+                        'imported_from_component_id'
                     ],
                     self._current_table
                     .select()
@@ -554,6 +789,10 @@ class VersionedJSONSerializableObjectTables:
                         self._current_table.c.component_id,
                         self._current_table.c.eln_import_id,
                         self._current_table.c.eln_object_id,
+                        self._current_table.c.version_component_id,
+                        self._current_table.c.hash_data,
+                        self._current_table.c.hash_metadata,
+                        self._current_table.c.imported_from_component_id,
                     )
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
                 ),
@@ -575,9 +814,13 @@ class VersionedJSONSerializableObjectTables:
                     action_id=action_id,
                     user_id=user_id,
                     utc_datetime=utc_datetime,
-                    fed_object_id=fed_object_id,
+                    fed_object_id=fed_object_id if component_id else None,
                     fed_version_id=fed_version_id,
-                    component_id=component_id
+                    component_id=component_id,
+                    version_component_id=version_component_id,
+                    hash_data=hash_data,
+                    hash_metadata=hash_metadata,
+                    imported_from_component_id=imported_from_component_id,
                 ),
                 [{'oid': current.object_id}]
             )
@@ -604,12 +847,16 @@ class VersionedJSONSerializableObjectTables:
                     utc_datetime=utc_datetime,
                     fed_object_id=fed_object_id,
                     fed_version_id=fed_version_id,
-                    component_id=component_id
+                    component_id=component_id,
+                    version_component_id=version_component_id,
+                    hash_data=hash_data,
+                    hash_metadata=hash_metadata,
+                    imported_from_component_id=imported_from_component_id,
                 ),
                 [{'oid': current.object_id}]
             ).rowcount != 1:
                 return None
-        return self.get_fed_object_version(component_id, fed_object_id, fed_version_id, connection=connection)
+        return self.get_object_version(current.object_id, fed_version_id, version_component_id=version_component_id, connection=connection)
 
     @_use_transaction
     def update_object_version(
@@ -622,6 +869,10 @@ class VersionedJSONSerializableObjectTables:
             user_id: typing.Optional[int],
             utc_datetime: typing.Optional[datetime.datetime],
             utc_datetime_subversion: typing.Optional[datetime.datetime] = None,
+            version_component_id: typing.Optional[int] = None,
+            hash_metadata: typing.Optional[str] = None,
+            hash_data_none_replacement: typing.Optional[str] = None,
+            imported_from_component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             allow_disabled_languages: bool = False,
             get_missing_schema_from_action: bool = True
@@ -640,6 +891,10 @@ class VersionedJSONSerializableObjectTables:
         :param user_id: the ID of the user who updated the object
         :param utc_datetime: the datetime (in UTC) when the object was updated
         :param utc_datetime_subversion: the datetime (in UTC) when the object update has been applied (optional, defaults to now(timezone.utc))
+        :param version_component_id: the ID of the component where the object version was created
+        :param hash_metadata: the hash value of the object metadata
+        :param hash_data_none_replacement: sets the hash value of the object data to this value if the current hash is none
+        :param imported_from_component_id: the ID of the component from which the version was imported
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param allow_disabled_languages: whether using disabled languages should be allowed in this update
         :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
@@ -665,7 +920,8 @@ class VersionedJSONSerializableObjectTables:
                 self._schema_validator(schema)
             if data is not None:
                 if self._data_validator:
-                    self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages)
+                    current_object = self.get_current_object(object_id)
+                    self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages, component_id=current_object.component_id if current_object else None)
 
         assert connection is not None  # ensured by decorator
         previous_objects = connection.execute(
@@ -683,6 +939,10 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.component_id,
                 self._previous_table.c.eln_import_id,
                 self._previous_table.c.eln_object_id,
+                self._previous_table.c.version_component_id,
+                self._previous_table.c.hash_data,
+                self._previous_table.c.hash_metadata,
+                self._previous_table.c.imported_from_component_id,
             )
             .where(db.and_(
                 self._previous_table.c.object_id == object_id,
@@ -699,8 +959,6 @@ class VersionedJSONSerializableObjectTables:
                 object_data = current_object
             else:
                 return None
-        if object_data.fed_object_id is None or object_data.fed_version_id is None or object_data.component_id is None:
-            return None
 
         previous_subversion_id = connection.execute(
             db.select(
@@ -729,7 +987,10 @@ class VersionedJSONSerializableObjectTables:
                     schema=object_data.schema,
                     user_id=object_data.user_id,
                     utc_datetime=object_data.utc_datetime,
-                    utc_datetime_subversion=utc_datetime_subversion
+                    utc_datetime_subversion=utc_datetime_subversion,
+                    version_component_id=object_data.version_component_id,
+                    hash_metadata=object_data.hash_metadata,
+                    imported_from_component_id=object_data.imported_from_component_id
                 )
         ).rowcount != 1:
             return None
@@ -752,11 +1013,159 @@ class VersionedJSONSerializableObjectTables:
                 schema=schema,
                 user_id=user_id,
                 utc_datetime=utc_datetime,
+                version_component_id=version_component_id,
+                hash_data=object_data.hash_data or hash_data_none_replacement,
+                hash_metadata=hash_metadata,
+                imported_from_component_id=imported_from_component_id,
                 **cache_values
             ),
             [{'oid': object_id, 'vid': version_id}]
         )
         return self.get_object_version(object_id, version_id, connection=connection)
+
+    @_use_transaction
+    def add_subversion(
+        self,
+        object_id: int,
+        version_id: int,
+        action_id: typing.Optional[int],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        user_id: typing.Optional[int],
+        utc_datetime: typing.Optional[datetime.datetime],
+        version_component_id: typing.Optional[int],
+        hash_metadata: typing.Optional[str],
+        utc_datetime_subversion: typing.Optional[datetime.datetime] = None,
+        imported_from_component_id: typing.Optional[int] = None,
+        connection: typing.Optional[db.engine.Connection] = None,
+        allow_disabled_languages: bool = False,
+        get_missing_schema_from_action: bool = True
+    ) -> bool:
+        """
+        Add a new subversion directly to the subversion table.
+
+        Before adding the version to the subversion table if a corresponding version exist in previous_table or current_table.
+        Additionally if the subversion already exist (based on each field of the entry), it is not added.
+
+        :param object_id: the ID of the existing object
+        :param version_id: the version ID of the existing object
+        :param action_id: the ID of the existing action
+        :param schema: a JSON schema describing data (optional, defaults to the current object schema)
+        :param data: a JSON serializable object containing the updated object data
+        :param user_id: the ID of the user who updated the object
+        :param utc_datetime: the datetime (in UTC) when the object was updated
+        :param version_component_id: the ID of the component where the object version was created
+        :param hash_metadata: the hash value of the object metadata
+        :param utc_datetime_subversion: the datetime (in UTC) when the object update has been applied (optional, defaults to now(timezone.utc))
+        :param imported_from_component_id: the ID of the component from which the version was imported
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :param allow_disabled_languages: whether using disabled languages should be allowed in this update
+        :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
+        :return: True if a new subversion was added
+        """
+        assert connection is not None  # ensured by decorator
+        if utc_datetime_subversion is None:
+            utc_datetime_subversion = datetime.datetime.now(datetime.timezone.utc)
+        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None and self._action_id_column is not None:
+            action = connection.execute(
+                db.select(self._action_schema_column).where(self._action_id_column == action_id)
+            ).fetchone()
+            if action is None:
+                schema = None
+            else:
+                schema = action[0]
+        if schema is not None:
+            if self._schema_validator:
+                self._schema_validator(schema)
+            if data is not None:
+                if self._data_validator:
+                    current_object = self.get_current_object(object_id, connection=connection)
+                    self._data_validator(data, schema, allow_disabled_languages=allow_disabled_languages, component_id=current_object.component_id if current_object else None)
+
+        previous_objects = connection.execute(
+            db.select(
+                self._previous_table.c.object_id,
+                self._previous_table.c.version_id,
+                self._previous_table.c.action_id,
+                self._previous_table.c.data,
+                self._previous_table.c.schema,
+                self._previous_table.c.user_id,
+                self._previous_table.c.utc_datetime,
+                self._previous_table.c.fed_object_id,
+                self._previous_table.c.fed_version_id,
+                self._previous_table.c.component_id,
+                self._previous_table.c.eln_import_id,
+                self._previous_table.c.eln_object_id,
+                self._previous_table.c.version_component_id,
+                self._previous_table.c.hash_data,
+                self._previous_table.c.hash_metadata,
+                self._previous_table.c.imported_from_component_id,
+            ).where(
+                db.and_(
+                    self._previous_table.c.object_id == object_id,
+                    self._previous_table.c.version_id == version_id
+                )
+            )
+        ).fetchall()
+
+        if not previous_objects:
+            if current_object := self.get_current_object(object_id, connection=connection):
+                if current_object.version_id != version_id:
+                    return False
+            else:
+                return False
+        previous_subversion_id = connection.execute(
+            db.select(
+                db.sql.func.max(self._subversions_table.c.subversion_id)
+            ).where(
+                db.and_(
+                    self._subversions_table.c.object_id == object_id,
+                    self._subversions_table.c.version_id == version_id
+                )
+            )
+        ).scalar()
+
+        subversion_id = previous_subversion_id + 1 if previous_subversion_id is not None else 0
+
+        subversion_exists = connection.execute(
+            db.select(
+                self._subversions_table.c.subversion_id
+            ).where(
+                self._subversions_table.c.object_id == object_id,
+                self._subversions_table.c.version_id == version_id,
+                self._subversions_table.c.action_id == action_id,
+                self._subversions_table.c.data == data,
+                self._subversions_table.c.schema == schema,
+                self._subversions_table.c.user_id == user_id,
+                self._subversions_table.c.utc_datetime == utc_datetime,
+                self._subversions_table.c.version_component_id == version_component_id,
+                self._subversions_table.c.hash_metadata == hash_metadata,
+                self._subversions_table.c.imported_from_component_id == imported_from_component_id,
+            )
+        ).fetchall()
+
+        if subversion_exists:
+            return False
+
+        if connection.execute(
+            self._subversions_table.insert()
+            .values(
+                object_id=object_id,
+                version_id=version_id,
+                subversion_id=subversion_id,
+                action_id=action_id,
+                data=data,
+                schema=schema,
+                user_id=user_id,
+                utc_datetime=utc_datetime,
+                utc_datetime_subversion=utc_datetime_subversion,
+                version_component_id=version_component_id,
+                hash_metadata=hash_metadata,
+                imported_from_component_id=imported_from_component_id,
+            )
+        ).rowcount != 1:
+            return False
+        return True
 
     @_use_transaction
     def is_existing_object(
@@ -781,6 +1190,7 @@ class VersionedJSONSerializableObjectTables:
             self,
             object_id: int,
             version_id: int,
+            version_component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None
     ) -> bool:
         """
@@ -788,10 +1198,20 @@ class VersionedJSONSerializableObjectTables:
 
         :param object_id: the ID of a possibly existing object
         :param version_id: the version ID to check
+        :param version_component_id: the ID of the component of the object version (None, checks the regular object history. Otherwise, checks the federated object version)
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: whether the object version exists
         """
         assert connection is not None  # ensured by decorator
+        if version_component_id is not None:
+            return connection.execute(
+                db.select(self._federation_table).where(
+                    self._federation_table.c.object_id == object_id,
+                    self._federation_table.c.fed_version_id == version_id,
+                    self._federation_table.c.version_component_id == version_component_id,
+                )
+            ).fetchone() is not None
+
         current_version_id = connection.execute(
             db.select(self._current_table.c.version_id).where(
                 self._current_table.c.object_id == object_id,
@@ -838,6 +1258,10 @@ class VersionedJSONSerializableObjectTables:
                 self._current_table.c.component_id,
                 self._current_table.c.eln_import_id,
                 self._current_table.c.eln_object_id,
+                self._current_table.c.version_component_id,
+                self._current_table.c.hash_data,
+                self._current_table.c.hash_metadata,
+                self._current_table.c.imported_from_component_id,
             )
             .where(self._current_table.c.object_id == object_id)
         ).fetchone()
@@ -867,6 +1291,10 @@ class VersionedJSONSerializableObjectTables:
                 db.null(),  # component_id
                 db.null(),  # eln_import_id
                 db.null(),  # eln_object_id
+                self._subversions_table.c.version_component_id,
+                db.null(),  # hash_data
+                self._subversions_table.c.hash_metadata,
+                self._subversions_table.c.imported_from_component_id,
             )
             .where(
                 db.and_(
@@ -905,6 +1333,10 @@ class VersionedJSONSerializableObjectTables:
                 self._current_table.c.component_id,
                 self._current_table.c.eln_import_id,
                 self._current_table.c.eln_object_id,
+                self._current_table.c.version_component_id,
+                self._current_table.c.hash_data,
+                self._current_table.c.hash_metadata,
+                self._current_table.c.imported_from_component_id,
             )
             .where(db.and_(
                 self._current_table.c.component_id == component_id,
@@ -921,6 +1353,7 @@ class VersionedJSONSerializableObjectTables:
             component_id: int,
             fed_object_id: int,
             fed_version_id: int,
+            local_version: bool = False,
             connection: typing.Optional[db.engine.Connection] = None
     ) -> typing.Optional[Object]:
         """
@@ -941,17 +1374,21 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.component_id,
                 self._previous_table.c.eln_import_id,
                 self._previous_table.c.eln_object_id,
+                self._previous_table.c.version_component_id,
+                self._previous_table.c.hash_data,
+                self._previous_table.c.hash_metadata,
+                self._previous_table.c.imported_from_component_id,
             )
             .where(db.and_(db.and_(
                 self._previous_table.c.component_id == component_id,
                 self._previous_table.c.fed_object_id == fed_object_id),
-                self._previous_table.c.fed_version_id == fed_version_id
+                self._previous_table.c.fed_version_id == fed_version_id if not local_version else self._previous_table.c.version_id == fed_version_id
             ))
         ).fetchall()
         if previous_objects:
             return Object(*previous_objects[0])
         current_object = self.get_current_fed_object(component_id, fed_object_id, connection=connection)
-        if current_object is not None and current_object.fed_version_id == fed_version_id:
+        if current_object is not None and ((current_object.fed_version_id == fed_version_id and not local_version) or (current_object.version_id == fed_version_id and local_version)):
             return current_object
         return None
 
@@ -1005,6 +1442,10 @@ class VersionedJSONSerializableObjectTables:
             table.c.component_id,
             table.c.eln_import_id,
             table.c.eln_object_id,
+            table.c.version_component_id,
+            table.c.hash_data,
+            table.c.hash_metadata,
+            table.c.imported_from_component_id,
             db.sql.expression.text('COUNT(*) OVER()')
         )
 
@@ -1092,10 +1533,14 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.component_id,
                 self._previous_table.c.eln_import_id,
                 self._previous_table.c.eln_object_id,
+                self._previous_table.c.version_component_id,
+                self._previous_table.c.hash_data,
+                self._previous_table.c.hash_metadata,
+                self._previous_table.c.imported_from_component_id,
             )
             .where(self._previous_table.c.object_id == object_id)
-            # .order_by(db.asc(self._previous_table.c.version_id))
-            .order_by(db.asc(self._previous_table.c.utc_datetime))
+            .order_by(db.asc(self._previous_table.c.version_id))
+            # .order_by(db.asc(self._previous_table.c.utc_datetime))
         ).fetchall()
         objects = []
         for obj in previous_objects:
@@ -1108,6 +1553,7 @@ class VersionedJSONSerializableObjectTables:
             self,
             object_id: int,
             version_id: int,
+            version_component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None
     ) -> typing.Optional[Object]:
         """
@@ -1115,6 +1561,7 @@ class VersionedJSONSerializableObjectTables:
 
         :param object_id: the ID of the existing object
         :param version_id: the ID of the object's existing version
+        :param version_component_id: the ID the component where the version was created
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: the object as object_type or None if the object or this version of it does not exist
         """
@@ -1134,16 +1581,25 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.component_id,
                 self._previous_table.c.eln_import_id,
                 self._previous_table.c.eln_object_id,
+                self._previous_table.c.version_component_id,
+                self._previous_table.c.hash_data,
+                self._previous_table.c.hash_metadata,
+                self._previous_table.c.imported_from_component_id,
             )
             .where(db.and_(
                 self._previous_table.c.object_id == object_id,
-                self._previous_table.c.version_id == version_id
+                self._previous_table.c.version_id == version_id if version_component_id is None else (
+                    db.and_(
+                        self._previous_table.c.fed_version_id == version_id,
+                        self._previous_table.c.version_component_id == version_component_id
+                    )
+                )
             ))
         ).fetchall()
         if previous_objects:
             return Object(*previous_objects[0])
         current_object = self.get_current_object(object_id, connection=connection)
-        if current_object is not None and current_object.version_id == version_id:
+        if current_object is not None and (current_object.version_id == version_id and version_component_id is None or current_object.fed_version_id == version_id and version_component_id is not None):
             return current_object
         return None
 
@@ -1151,25 +1607,31 @@ class VersionedJSONSerializableObjectTables:
     def get_current_object_version_id(
             self,
             object_id: int,
+            component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None
     ) -> typing.Optional[int]:
         """
         Get the ID of the current version of an object.
 
         :param object_id: the ID of an existing object
+        :param component_id: the ID of the component where the object was created
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :return: the object's current version ID, or None
         """
         assert connection is not None  # ensured by decorator
-        current_object_info = connection.execute(
-            db
-            .select(
-                self._current_table.c.version_id,
-            )
-            .where(
+        select_statement = db.select(
+            self._current_table.c.version_id
+        )
+        if component_id is None:
+            select_statement = select_statement.where(
                 self._current_table.c.object_id == object_id
             )
-        ).fetchone()
+        else:
+            select_statement = select_statement.where(
+                self._current_table.c.fed_object_id == object_id,
+                self._current_table.c.component_id == component_id
+            )
+        current_object_info = connection.execute(select_statement).fetchone()
         if current_object_info is None:
             return None
         return typing.cast(int, current_object_info[0])
@@ -1210,3 +1672,332 @@ class VersionedJSONSerializableObjectTables:
     @property
     def current_table(self) -> db.Table:
         return self._current_table
+
+    @_use_transaction
+    def get_federated_objects_by_component(
+        self,
+        component_id: int,
+        connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.List[Object]:
+        """
+        Returns all objects shared by a component.
+
+        :param component_id: the ID of the component
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: federated objects shared by component with id component_id
+        """
+        assert connection is not None  # ensured by decorator
+
+        select_statement = db.select(
+            self._current_table.c.object_id,
+            self._current_table.c.version_id,
+            self._current_table.c.action_id,
+            self._current_table.c.data,
+            self._current_table.c.schema,
+            self._current_table.c.user_id,
+            self._current_table.c.utc_datetime,
+            self._current_table.c.fed_object_id,
+            self._current_table.c.fed_version_id,
+            self._current_table.c.component_id,
+            self._current_table.c.eln_import_id,
+            self._current_table.c.eln_object_id,
+            self._current_table.c.version_component_id,
+            self._current_table.c.hash_data,
+            self._current_table.c.hash_metadata,
+            self._current_table.c.imported_from_component_id,
+        ).where(
+            self._current_table.c.component_id == component_id
+        ).select_from(
+            self._current_table
+        ).order_by(
+            self._current_table.c.component_id,
+            self._current_table.c.fed_version_id
+        )
+
+        objects = connection.execute(select_statement).fetchall()
+        return [Object(*obj) for obj in objects]
+
+    @_use_transaction
+    def create_conflicting_federated_object(
+        self,
+        object_id: int,
+        fed_version_id: int,
+        version_component_id: int,
+        data: typing.Optional[dict[str, typing.Any]],
+        schema: typing.Optional[dict[str, typing.Any]],
+        action_id: typing.Optional[int],
+        utc_datetime: typing.Optional[datetime.datetime],
+        user_id: typing.Optional[int],
+        local_parent: typing.Optional[int],
+        hash_data: typing.Optional[str],
+        hash_metadata: typing.Optional[str],
+        imported_from_component_id: int,
+        connection: typing.Optional[db.engine.Connection] = None
+    ) -> FederatedObject:
+        """
+        Create a conflicting version in the federation table.
+
+        :param object_id: the ID of the existing object
+        :param fed_version_id: the version ID of the existing object at the federation partner
+        :param version_component_id: the ID of the component where the version was created
+        :param data: a JSON serializable object containing the object data
+        :param schema: a JSON schema describing data
+        :param action_id: the ID of the action
+        :param utc_datetime: the datetime (in UTC) when the object version was created
+        :param user_id: the ID of the user who created the object version
+        :param local_parent: the ID of the local parent object version (None if parent is a conflicting version)
+        :param hash_data: the hash of the data and schema
+        :param hash_metadata: the hash of the metadata (user and time)
+        :param imported_from_component_id: the ID of the component from which the version was imported
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the created federated object
+        """
+        assert connection is not None  # ensured by decorator
+        insert_statement = db.insert(
+            self._federation_table
+        ).values(
+            object_id=object_id,
+            fed_version_id=fed_version_id,
+            version_component_id=version_component_id,
+            data=data,
+            schema=schema,
+            action_id=action_id,
+            utc_datetime=utc_datetime,
+            user_id=user_id,
+            local_parent=local_parent,
+            hash_data=hash_data,
+            hash_metadata=hash_metadata,
+            imported_from_component_id=imported_from_component_id,
+        )
+        connection.execute(insert_statement)
+
+        return FederatedObject(
+            object_id=object_id,
+            fed_version_id=fed_version_id,
+            version_component_id=version_component_id,
+            data=data,
+            schema=schema,
+            action_id=action_id,
+            utc_datetime=utc_datetime,
+            user_id=user_id,
+            local_parent=local_parent,
+            hash_data=hash_data,
+            hash_metadata=hash_metadata,
+            imported_from_component_id=imported_from_component_id
+        )
+
+    @_use_transaction
+    def get_conflicting_federated_object(
+        self,
+        object_id: int,
+        fed_version_id: int,
+        version_component_id: int,
+        connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[FederatedObject]:
+        """
+        Get a conflicting federated object version.
+
+        :param object_id: the local ID of the existing object
+        :param fed_version_id: the version ID of the existing object at the federation partner
+        :param version_component_id: the ID of the component where the object version was created
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the federated object version or none
+        """
+        assert connection is not None  # ensured by decorator
+
+        object = self.get_current_object(object_id)
+        if object is None:
+            return None
+
+        select_statement = db.select(
+            self._federation_table.c.object_id,
+            self._federation_table.c.fed_version_id,
+            self._federation_table.c.version_component_id,
+            self._federation_table.c.data,
+            self._federation_table.c.schema,
+            self._federation_table.c.action_id,
+            self._federation_table.c.utc_datetime,
+            self._federation_table.c.user_id,
+            self._federation_table.c.local_parent,
+            self._federation_table.c.hash_data,
+            self._federation_table.c.hash_metadata,
+            self._federation_table.c.imported_from_component_id,
+        ).where(
+            self._federation_table.c.object_id == object_id,
+            self._federation_table.c.fed_version_id == fed_version_id,
+        ).select_from(self._federation_table)
+
+        if object.component_id is None:
+            select_statement = select_statement.where(
+                self._federation_table.c.version_component_id == version_component_id
+            )
+
+        result = connection.execute(select_statement).fetchone()
+        if not result:
+            return None
+
+        return FederatedObject(*result)
+
+    @_use_transaction
+    def get_first_conflicting_object_version_by_conflict(
+        self,
+        object_id: int,
+        version_component_id: int,
+        local_parent: int,
+        connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[FederatedObject]:
+        """
+        Get the first federated object version of an object version conflict.
+
+        :param object_id: the local ID of the existing object
+        :param version_component_id: the ID of the component where the object version was created
+        :param local_parent: the local version ID of the parent
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the first federated object version of an conflict or none
+        """
+        assert connection is not None
+
+        object = self.get_current_object(object_id)
+
+        if object is None:
+            return None
+
+        select_statement = db.select(
+            self._federation_table.c.object_id,
+            self._federation_table.c.fed_version_id,
+            self._federation_table.c.version_component_id,
+            self._federation_table.c.data,
+            self._federation_table.c.schema,
+            self._federation_table.c.action_id,
+            self._federation_table.c.utc_datetime,
+            self._federation_table.c.user_id,
+            self._federation_table.c.local_parent,
+            self._federation_table.c.hash_data,
+            self._federation_table.c.hash_metadata,
+            self._federation_table.c.imported_from_component_id,
+        ).select_from(self._federation_table).where(
+            self._federation_table.c.object_id == object_id,
+            self._federation_table.c.local_parent == local_parent
+        )
+
+        if object.component_id is None:
+            select_statement = select_statement.where(
+                self._federation_table.c.version_component_id == version_component_id,
+            )
+
+        result = connection.execute(select_statement).fetchone()
+
+        if not result:
+            return None
+
+        return FederatedObject(*result)
+
+    @_use_transaction
+    def update_conflicting_federated_object(
+        self,
+        object_id: int,
+        fed_version_id: int,
+        version_component_id: int,
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
+        action_id: typing.Optional[int],
+        user_id: typing.Optional[int],
+        utc_datetime: typing.Optional[datetime.datetime],
+        imported_from_component_id: int,
+        utc_datetime_subversion: typing.Optional[datetime.datetime] = None,
+        connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[FederatedObject]:
+        """
+        Update a conflicting object version and add updated version to the federated subversions table.
+
+        :param object_id: the ID of the existing object
+        :param fed_version_id: the version ID of the existing object at the federation partner
+        :param version_component_id: the ID of the component where the version was created
+        :param data: a JSON serializable object containing the object data
+        :param schema: a JSON schema describing data
+        :param action_id: the ID of the action
+        :param user_id: the ID of the user who created the object version
+        :param utc_datetime: the datetime (in UTC) when the object version was created
+        :param imported_from_component_id: the ID of the component from which the version was imported
+        :param utc_datetime_subversion: the datetime (in UTC) when the object subversion was created
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the updated federated object
+        """
+        assert connection is not None  # ensured by decorator
+
+        if utc_datetime_subversion is None:
+            utc_datetime_subversion = datetime.datetime.now(datetime.timezone.utc)
+
+        object_data = connection.execute(
+            db.select(
+                self._federation_table.c.object_id,
+                self._federation_table.c.fed_version_id,
+                self._federation_table.c.version_component_id,
+                self._federation_table.c.data,
+                self._federation_table.c.schema,
+                self._federation_table.c.action_id,
+                self._federation_table.c.utc_datetime,
+                self._federation_table.c.user_id,
+                self._federation_table.c.local_parent,
+                self._federation_table.c.hash_data,
+                self._federation_table.c.hash_metadata,
+                self._federation_table.c.imported_from_component_id,
+            ).select_from(self._federation_table)
+            .where(
+                self._federation_table.c.object_id == object_id,
+                self._federation_table.c.fed_version_id == fed_version_id,
+                self._federation_table.c.version_component_id == version_component_id
+            )
+        ).fetchall()
+
+        if object_data is None:
+            return None
+        current_object = FederatedObject(*object_data[0])
+
+        previous_subversion_id = connection.execute(
+            db.select(
+                db.sql.func.max(self._federation_subversions_table.c.subversion_id)
+            ).select_from(self._federation_subversions_table)
+            .where(
+                self._federation_subversions_table.c.object_id == object_id,
+                self._federation_subversions_table.c.version_component_id == version_component_id,
+            )
+        ).scalar()
+
+        subversion_id = previous_subversion_id + 1 if previous_subversion_id is not None else 0
+
+        connection.execute(
+            self._federation_subversions_table.insert().values(
+                object_id=object_id,
+                version_component_id=version_component_id,
+                fed_version_id=fed_version_id,
+                subversion_id=subversion_id,
+                utc_datetime_subversion=utc_datetime_subversion,
+                data=current_object.data,
+                schema=current_object.schema,
+                action_id=current_object.action_id,
+                utc_datetime=current_object.utc_datetime,
+                user_id=current_object.user_id,
+                imported_from_component_id=current_object.imported_from_component_id,
+            )
+        )
+
+        connection.execute(
+            self._federation_table.update().values(
+                object_id=object_id,
+                version_component_id=version_component_id,
+                fed_version_id=fed_version_id,
+                data=data,
+                schema=schema,
+                action_id=action_id,
+                utc_datetime=utc_datetime,
+                user_id=user_id,
+                imported_from_component_id=imported_from_component_id,
+            ).where(
+                self._federation_table.c.object_id == object_id,
+                self._federation_table.c.fed_version_id == fed_version_id,
+                self._federation_table.c.version_component_id == version_component_id,
+            )
+        )
+
+        return self.get_conflicting_federated_object(object_id, fed_version_id, version_component_id)

@@ -282,7 +282,9 @@ def test_get_object_version(flask_server, auth, user, action):
         schema=None,
         data=None,
         user_id=None,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        version_component_id=component.id,
+        imported_from_component_id=component.id,
     )
     sampledb.logic.object_permissions.set_user_object_permissions(imported_object.object_id, user.id, sampledb.models.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 0), auth=auth)
@@ -308,7 +310,9 @@ def test_get_object_version(flask_server, auth, user, action):
         schema=None,
         data=None,
         user_id=None,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        version_component_id=component.id,
+        imported_from_component_id=component.id,
     )
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 1), auth=auth)
     assert r.status_code == 200
@@ -334,7 +338,9 @@ def test_get_object_version(flask_server, auth, user, action):
         schema=object.schema,
         data=object.data,
         user_id=None,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        version_component_id=component.id,
+        imported_from_component_id=component.id,
     )
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 2), auth=auth)
     assert r.status_code == 200
@@ -363,7 +369,9 @@ def test_get_object_version(flask_server, auth, user, action):
         schema=None,
         data=None,
         user_id=None,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
+        version_component_id=component.id,
+        imported_from_component_id=component.id,
     )
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 3), auth=auth)
     assert r.status_code == 200
