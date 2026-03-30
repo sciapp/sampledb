@@ -850,8 +850,12 @@ def objects() -> FlaskResponseT:
                 if property_name not in search_paths:
                     search_paths[property_name] = copy.deepcopy(search_path_info)
                 else:
-                    search_paths[property_name]['types'].extend(search_path_info['types'])
-                    search_paths[property_name]['titles'].extend(search_path_info['titles'])
+                    for property_type in search_path_info['types']:
+                        if property_type not in search_paths[property_name]['types']:
+                            search_paths[property_name]['types'].append(property_type)
+                    for property_title in search_path_info['titles']:
+                        if property_title not in search_paths[property_name]['titles']:
+                            search_paths[property_name]['titles'].append(property_title)
 
     filter_location_infos = []
     if filter_location_ids:
