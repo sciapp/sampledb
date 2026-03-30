@@ -102,9 +102,14 @@ def objects() -> FlaskResponseT:
         user_id=flask_login.current_user.id,
         include_hidden_actions=True
     )
-    all_action_types = logic.action_types.get_action_types(
-        filter_fed_defaults=True
+    all_action_types_including_fed_defaults = logic.action_types.get_action_types(
+        filter_fed_defaults=False
     )
+    all_action_types = [
+        action_type
+        for action_type in all_action_types_including_fed_defaults
+        if action_type.fed_id is None or action_type.fed_id < 0
+    ]
     all_actions = [
         action
         for action in all_actions_including_hidden
@@ -812,10 +817,19 @@ def objects() -> FlaskResponseT:
 
     filter_actions = all_actions
     if filter_action_type_ids:
+        fed_default_action_types = {
+            action_type.id: action_type.fed_id
+            for action_type in all_action_types_including_fed_defaults
+            if action_type.fed_id is not None and action_type.fed_id < 0
+        }
         filter_actions = [
             action
             for action in filter_actions
-            if action.type_id in filter_action_type_ids
+            if action.type_id in filter_action_type_ids or (
+                action.fed_id is not None and
+                action.type_id in fed_default_action_types and
+                fed_default_action_types[action.type_id] in filter_action_type_ids
+            )
         ]
     if filter_action_ids:
         filter_actions = [
