@@ -128,6 +128,7 @@ class ParsedELNImport:
     users: typing.List[ParsedELNUser]
     import_notes: typing.Dict[str, typing.List[str]]
     signed_by: typing.Optional[str]
+    object_parts_relationships: typing.Dict[str, typing.List[str]]
 
 
 def get_eln_import(eln_import_id: int) -> ELNImport:
@@ -289,6 +290,7 @@ def import_eln_file(
             eln_import_action = _create_eln_import_action(action_type_id)
         action_ids_by_action_type_id[action_type_id] = eln_import_action.action_id
     imported_object_ids = []
+    imported_object_ids_by_eln_object_id = {}
     for object_index, object_data in enumerate(zip(parsed_data.objects, action_type_ids)):
         object_info, action_type_id = object_data
         versions_by_id = {
@@ -349,6 +351,7 @@ def import_eln_file(
                         is_imported=True
                     )
         imported_object_ids.append(imported_object.id)
+        imported_object_ids_by_eln_object_id[object_info.id] = imported_object.id
         for file_index, file_info in enumerate(object_info.files):
             file_user_id = user_id
             if isinstance(file_info, ParsedELNDatabaseFile):
@@ -410,6 +413,54 @@ def import_eln_file(
                 utc_datetime=comment_info.date_created,
                 is_imported=True
             )
+    for eln_object_id, eln_object_part_ids in parsed_data.object_parts_relationships.items():
+        if eln_object_id not in imported_object_ids_by_eln_object_id:
+            continue
+        object_id = imported_object_ids_by_eln_object_id[eln_object_id]
+        object_part_ids = [
+            imported_object_ids_by_eln_object_id[eln_object_part_id]
+            for eln_object_part_id in eln_object_part_ids
+            if eln_object_part_id in imported_object_ids_by_eln_object_id
+        ]
+        if not object_part_ids:
+            continue
+        current_object = get_object(object_id=object_id)
+        if current_object.data is None or current_object.schema is None:
+            continue
+        # TODO: sanitize key
+        parts_property_name = 'parts'
+        schema = copy.deepcopy(current_object.schema)
+        schema['properties'][parts_property_name] = {
+            "type": "array",
+            "title": {
+                "en": "Parts",
+                "de": "Teile"
+            },
+            "items": {
+                "type": "object_reference",
+                "title": {
+                    "en": "Part",
+                    "de": "Teil"
+                },
+                "style": "include"
+            }
+        }
+        schema['propertyOrder'].append(parts_property_name)
+        data = copy.deepcopy(current_object.data)
+        data[parts_property_name] = [
+            {
+                "_type": "object_reference",
+                "object_id": object_part_id
+            }
+            for object_part_id in object_part_ids
+        ]
+        update_object(
+            object_id=object_id,
+            data=data,
+            schema=schema,
+            user_id=user_id,
+            create_log_entries=False
+        )
     return imported_object_ids, users_by_id, errors
 
 
@@ -608,6 +659,606 @@ def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) 
     )
 
 
+def _parse_comment_node(
+    graph_nodes_by_id: typing.Dict[str, typing.Dict[str, typing.Any]],
+    comment_ref: typing.Dict[typing.Any, typing.Any],
+) -> typing.Tuple[ParsedELNComment, typing.List[str]]:
+    if '@id' in comment_ref and comment_ref['@id'] in graph_nodes_by_id:
+        _eln_assert(list(comment_ref.keys()) == ['@id'], "Invalid comment reference")
+        comment_node = graph_nodes_by_id[comment_ref['@id']]
+    else:
+        comment_node = comment_ref
+    author_ref = comment_node.get('author')
+    if author_ref is None:
+        author_id = None
+    else:
+        _eln_assert(isinstance(author_ref, dict), "Invalid author reference or node")
+        author_ref = typing.cast(typing.Dict[str, typing.Any], author_ref)
+        if '@id' in author_ref and author_ref['@id'] in graph_nodes_by_id:
+            author_id = author_ref['@id']
+            if graph_nodes_by_id[author_id] != author_ref:
+                _eln_assert(list(author_ref.keys()) == ['@id'], "Invalid author reference")
+            author_node = graph_nodes_by_id[author_id]
+        else:
+            author_node = author_ref
+            if '@id' in author_node:
+                author_id = author_node['@id']
+            else:
+                _eln_assert('identifier' in author_node, "Invalid author node")
+                author_id = author_node['identifier']
+                author_node['@id'] = author_id
+            if author_id in graph_nodes_by_id:
+                pass
+                # TODO: the following check should be performed but is currently omitted to allow importing elabFTW exports, which may contain conflicting user information
+                # _eln_assert(graph_nodes_by_id[author_id] == author_node, "Invalid author reference")
+            else:
+                graph_nodes_by_id[author_id] = author_node
+        _eln_assert(_node_has_type(author_node, 'Person'), "Reference to node of wrong type")
+    _eln_assert(isinstance(comment_node.get('text'), str), "Invalid text for Comment")
+    _eln_assert(isinstance(comment_node.get('dateCreated'), str), "Invalid dateCreated for Comment")
+    date_created: typing.Optional[datetime.datetime]
+    try:
+        date_created = datetime.datetime.fromisoformat(comment_node['dateCreated'])
+    except Exception:
+        raise errors.InvalidELNFileError("Invalid dateCreated for Comment")
+    return (
+        ParsedELNComment(
+            text=comment_node['text'],
+            date_created=date_created,
+            author_id=author_id
+        ),
+        []
+    )
+
+
+def _parse_dataset_node_keywords(
+        dataset_node_keywords: typing.Any
+) -> typing.List[str]:
+    if isinstance(dataset_node_keywords, list):
+        keywords = [
+            keyword
+            for keyword in dataset_node_keywords
+            if isinstance(keyword, str)
+        ]
+    elif isinstance(dataset_node_keywords, str):
+        keywords = [
+            keyword
+            for keyword in dataset_node_keywords.split(',')
+        ]
+    else:
+        return []
+    tags = []
+    for keyword in keywords:
+        keyword = keyword.strip().lower()
+        # skip duplicate tags
+        if keyword in tags:
+            continue
+        # skip tags with invalid characters
+        if any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in keyword):
+            continue
+        # skip numeric tags unless enabled
+        if all(c in string.digits for c in keyword) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
+            continue
+        tags.append(keyword)
+    return tags
+
+
+def _parse_sampledb_object_version_node(
+        graph_nodes_by_id: typing.Dict[str, typing.Dict[str, typing.Any]],
+        version_node: typing.Dict[typing.Any, typing.Any],
+        object_node: typing.Dict[typing.Any, typing.Any],
+        eln_source_url: str,
+        root_path_name: str,
+        member_names: typing.Dict[str, str],
+        zip_file: zipfile.ZipFile,
+        fallback_data: typing.Dict[str, typing.Any],
+        fallback_schema: typing.Dict[str, typing.Any],
+) -> typing.Tuple[ParsedELNVersion, typing.List[str]]:
+    _eln_assert(any(version_node['@id'].startswith(object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_suffix in ('version/', 'versions/')), "SampleDB .eln file must only contain versions as Dataset parts of objects")
+    try:
+        version_id = int(version_node['@id'].strip('/').rsplit('/', maxsplit=1)[1])
+    except ValueError:
+        raise errors.InvalidELNFileError("SampleDB .eln file must only contain versions as Dataset parts of objects")
+    _eln_assert(isinstance(version_node.get('hasPart'), list), "SampleDB .eln file must contain data and schema for each version")
+    _eln_assert(len(version_node['hasPart']) == 2, "SampleDB .eln file must contain data and schema for each version")
+    _eln_assert({'@id': version_node['@id'] + ('/' if not version_node['@id'].endswith('/') else '') + 'data.json'} in version_node['hasPart'], "SampleDB .eln file must contain data and schema for each version")
+    _eln_assert({'@id': version_node['@id'] + ('/' if not version_node['@id'].endswith('/') else '') + 'schema.json'} in version_node['hasPart'], "SampleDB .eln file must contain data and schema for each version")
+    data_file_name = version_node['@id'] + '/data.json'
+    if data_file_name.startswith('./'):
+        data_file_name = data_file_name[1:]
+    elif not data_file_name.startswith('/'):
+        data_file_name = '/' + data_file_name
+    data_file_name = root_path_name + data_file_name
+    data_file_name = os.path.normpath(data_file_name)
+    _eln_assert(data_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
+    schema_file_name = version_node['@id'] + '/schema.json'
+    if schema_file_name.startswith('./'):
+        schema_file_name = schema_file_name[1:]
+    elif not schema_file_name.startswith('/'):
+        schema_file_name = '/' + schema_file_name
+    schema_file_name = root_path_name + schema_file_name
+    schema_file_name = os.path.normpath(schema_file_name)
+    _eln_assert(schema_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
+    try:
+        with zip_file.open(member_names[data_file_name]) as data_file:
+            data_file_content = data_file.read()
+            _eln_assert(isinstance(graph_nodes_by_id[version_node['@id'] + 'data.json'].get('sha256'), str), "Invalid SHA256 hash for data.json")
+            _eln_assert(hashlib.sha256(data_file_content).hexdigest() == graph_nodes_by_id[version_node['@id'] + 'data.json']['sha256'], "Hash mismatch for data.json")
+            version_data = json.loads(data_file_content.decode('utf-8'))
+        with zip_file.open(member_names[schema_file_name]) as schema_file:
+            schema_file_content = schema_file.read()
+            _eln_assert(isinstance(graph_nodes_by_id[version_node['@id'] + 'schema.json'].get('sha256'), str), "Invalid SHA256 hash for schema.json")
+            _eln_assert(hashlib.sha256(schema_file_content).hexdigest() == graph_nodes_by_id[version_node['@id'] + 'schema.json']['sha256'], "Hash mismatch for schema.json")
+            version_schema = json.loads(schema_file_content.decode('utf-8'))
+    except errors.InvalidELNFileError:
+        raise
+    except Exception:
+        raise errors.InvalidELNFileError("SampleDB .eln file must contain data and schema for each version")
+    creator_ref = version_node.get('creator')
+    if creator_ref is None and isinstance(version_node.get('author'), dict):
+        creator_ref = version_node.get('author')
+    creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
+    date_created = None
+    if 'dateCreated' in version_node:
+        _eln_assert(isinstance(version_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
+        date_created = _parse_eln_import_datetime(version_node['dateCreated'])
+    if version_schema is None or version_data is None:
+        return (
+            ParsedELNVersion(
+                version_id=version_id,
+                data=None,
+                schema=None,
+                user_id=creator_id,
+                date_created=date_created
+            ),
+            [
+                gettext('Missing data or schema for version %(version_id)s of object %(eln_object_id)s', version_id=version_id, eln_object_id=object_node['@id'])
+            ]
+        )
+    _remove_template_ids(version_schema)
+    _replace_references(version_data, eln_source_url)
+    try:
+        validate_schema(version_schema, strict=False)
+        validate(version_data, version_schema, allow_disabled_languages=True, strict=False, file_names_by_id=None)
+    except errors.ValidationError as e:
+        return (
+            ParsedELNVersion(
+                version_id=version_id,
+                data=fallback_data,
+                schema=fallback_schema,
+                user_id=creator_id,
+                date_created=date_created
+            ),
+            [
+                gettext('Invalid data or schema in version %(version_id)s of object %(eln_object_id)s (%(error)s)', version_id=version_id, eln_object_id=object_node['@id'], error=e)
+            ]
+        )
+    return (
+        ParsedELNVersion(
+            version_id=version_id,
+            data=version_data,
+            schema=version_schema,
+            user_id=creator_id,
+            date_created=date_created
+        ),
+        []
+    )
+
+
+def _parse_file_node(
+        graph_nodes_by_id: typing.Dict[str, typing.Dict[str, typing.Any]],
+        file_node: typing.Dict[typing.Any, typing.Any],
+        object_node_id: str,
+        eln_dialect: typing.Optional[str],
+        root_path_name: str,
+        member_names: typing.Dict[str, str],
+        zip_file: zipfile.ZipFile,
+) -> typing.Tuple[typing.Sequence[typing.Union[ParsedELNDatabaseFile, ParsedELNURLFile]], typing.List[str]]:
+    if 'name' in file_node:
+        _eln_assert(isinstance(file_node.get('name'), str), "Invalid name for File")
+        file_title = file_node['name']
+    else:
+        file_title = file_node['@id']
+    description = ''
+    if 'description' in file_node:
+        description_node = file_node.get('description')
+        if isinstance(description_node, dict):
+            if list(description_node.keys()) == ['@id']:
+                _eln_assert(description_node['@id'] in graph_nodes_by_id, "Reference to unknown ID")
+                description_node = graph_nodes_by_id[description_node['@id']]
+            _eln_assert(isinstance(description_node, dict), "Invalid description")
+            _eln_assert(_node_has_type(description_node, 'TextObject'), "Invalid description for File")
+            description = description_node.get('text', '')
+        else:
+            _eln_assert(isinstance(description_node, str), "Invalid description for File")
+            description = typing.cast(str, description_node)
+    file_path = file_node['@id']
+    try:
+        file_url_parse_result = urllib.parse.urlparse(file_path)
+    except ValueError:
+        file_url_parse_result = None
+    if file_url_parse_result is not None and file_url_parse_result.netloc and file_url_parse_result.scheme in ('http', 'https'):
+        file_url = file_node.get('url', file_path)
+        try:
+            parse_url(file_url, valid_schemes=('http', 'https'))
+        except Exception:
+            return [], [gettext('Failed to import %(file_url)s as URL file', file_url=file_url)]
+        date_created = None
+        if 'dateCreated' in file_node:
+            _eln_assert(isinstance(file_node.get('dateCreated'), str), "Invalid dateCreated for File")
+            date_created = _parse_eln_import_datetime(file_node['dateCreated'])
+        author_ref = file_node.get('author')
+        author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
+        return [ParsedELNURLFile(
+            url=file_url,
+            title=file_title,
+            description=description,
+            user_id=author_id,
+            date_created=date_created
+        )], []
+    if file_path.startswith('./'):
+        file_path = file_path[1:]
+    elif not file_path.startswith('/'):
+        file_path = '/' + file_path
+    file_path = root_path_name + file_path
+    file_path = os.path.normpath(file_path)
+    _eln_assert(file_path in member_names, "File not found in .eln file (1)")
+    file_name = os.path.split(file_path)[1]
+    with zip_file.open(member_names[file_path]) as file:
+        file_data = file.read()
+    if isinstance(file_node.get('contentSize'), str):
+        try:
+            file_node['contentSize'] = int(file_node['contentSize'])
+        except ValueError:
+            pass
+    # SciLog is missing contentSize, so determine file size automatically if missing
+    if 'contentSize' not in file_node:
+        file_node['contentSize'] = len(file_data)
+    _eln_assert(isinstance(file_node.get('contentSize'), int), "Invalid content size for File")
+    _eln_assert(len(file_data) == file_node['contentSize'], "Content size mismatch for File")
+    if 'sha256' in file_node:
+        _eln_assert(isinstance(file_node.get('sha256'), str), "Invalid SHA256 hash for File")
+        _eln_assert(hashlib.sha256(file_data).hexdigest() == file_node['sha256'], "Hash mismatch for File")
+    if eln_dialect == 'SampleDB' and file_node['@id'] == object_node_id + ('/' if not object_node_id.endswith('/') else '') + 'files.json':
+        try:
+            files_info = json.loads(file_data.decode('utf-8'))
+        except Exception:
+            raise errors.InvalidELNFileError("Invalid files.json for SampleDB .eln file")
+        _eln_assert(isinstance(files_info, list), "Invalid files.json for SampleDB .eln file")
+        parsed_files = []
+        for file_info in files_info:
+            _eln_assert(isinstance(file_info, dict), "Invalid files.json for SampleDB .eln file")
+            if 'url' not in file_info:
+                continue
+            _eln_assert(isinstance(file_info.get('url'), str), "Invalid URL file for SampleDB .eln file")
+            _eln_assert(isinstance(file_info.get('title'), str) or file_info.get('title') is None, "Invalid URL file for SampleDB .eln file")
+            _eln_assert(isinstance(file_info.get('description'), str) or file_info.get('description') is None, "Invalid URL file for SampleDB .eln file")
+            _eln_assert(isinstance(file_info.get('uploader_id'), int), "Invalid URL file for SampleDB .eln file")
+            author_sampledb_id = file_info.get('uploader_id')
+            try:
+                file_url = file_info['url']
+                parse_url(file_url, valid_schemes=('http', 'https'))
+            except Exception:
+                raise errors.InvalidELNFileError("Invalid URL file for SampleDB .eln file")
+            try:
+                date_created = datetime.datetime.strptime(file_info.get('utc_datetime', ''),
+                                                          '%Y-%m-%dT%H:%M:%S.%f')
+                date_created = date_created.replace(tzinfo=datetime.timezone.utc)
+            except Exception:
+                date_created = None
+            parsed_files.append(ParsedELNURLFile(
+                url=file_url,
+                title=file_info.get('title'),
+                description=file_info.get('description'),
+                user_id=f'./users/{author_sampledb_id}',
+                date_created=date_created
+            ))
+        return parsed_files, []
+    else:
+        date_created = None
+        if 'dateCreated' in file_node:
+            _eln_assert(isinstance(file_node.get('dateCreated'), str), "Invalid dateCreated for File")
+            date_created = _parse_eln_import_datetime(file_node['dateCreated'])
+        author_ref = file_node.get('author')
+        author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
+        return [ParsedELNDatabaseFile(
+            name=file_name,
+            title=file_title,
+            description=file_node.get('description'),
+            content=file_data,
+            user_id=author_id,
+            date_created=date_created,
+        )], []
+
+
+def _parse_dataset_node(
+        graph_nodes_by_id: typing.Dict[str, typing.Dict[str, typing.Any]],
+        object_node: typing.Dict[typing.Any, typing.Any],
+        eln_dialect: typing.Optional[str],
+        root_path_name: str,
+        member_names: typing.Dict[str, str],
+        zip_file: zipfile.ZipFile,
+) -> typing.Tuple[typing.Sequence[ParsedELNObject], typing.Dict[str, typing.List[str]], typing.Dict[str, typing.List[str]]]:
+    parsed_objects: typing.List[ParsedELNObject] = []
+    parsed_object_parts_relationships: typing.Dict[str, typing.List[str]] = {}
+    import_notes: typing.Dict[str, typing.List[str]] = {}
+
+    _eln_assert(isinstance(object_node.get('name'), str), "Missing name for Dataset")
+    name = object_node['name']
+
+    import_notes[object_node["@id"]] = []
+
+    _eln_assert(isinstance(object_node.get('description', ''), (str, dict)), "Invalid description for Dataset")
+    description = object_node.get('description', '')
+    if isinstance(description, dict):
+        if list(description.keys()) == ['@id']:
+            _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
+            description = graph_nodes_by_id[description['@id']]
+        _eln_assert(isinstance(description, dict), "Invalid description")
+        _eln_assert(_node_has_type(description, 'TextObject'), "Invalid description for Dataset")
+        description_is_markdown = description.get('encodingFormat') == 'text/markdown'
+        description = description.get('text', '')
+    else:
+        description_is_markdown = False
+
+    if 'url' in object_node:
+        _eln_assert(isinstance(object_node.get('url'), str), "Invalid URL for Dataset")
+        try:
+            url = object_node['url']
+            parse_url(url, valid_schemes=('http', 'https'))
+        except Exception:
+            raise errors.InvalidELNFileError("Invalid URL for Dataset")
+    else:
+        url = None
+    if eln_dialect == 'SampleDB':
+        _eln_assert(object_node['@id'].startswith('./objects/'), "Invalid @id for Dataset for SampleDB .eln file")
+        try:
+            original_object_id_str = object_node['@id'][len('./objects/'):].rstrip('/')
+            original_object_id = int(original_object_id_str)
+            _eln_assert(str(original_object_id) == original_object_id_str and original_object_id > 0, "Invalid @id for Dataset for SampleDB .eln file")
+        except ValueError:
+            _eln_assert(False, "Invalid @id for Dataset for SampleDB .eln file")
+        _eln_assert(isinstance(url, str), "Invalid url for Dataset for SampleDB .eln file")
+        _eln_assert(url.endswith(object_node['@id'].rstrip('/')[1:]), "Invalid url for Dataset for SampleDB .eln file")
+        eln_source_url = url[:-len(object_node['@id'][2:])]
+    else:
+        eln_source_url = None
+
+    if object_node.get('genre') in {'sample', 'measurement', 'simulation', 'experiment', 'procedure'}:
+        object_type = {
+            'experiment': 'measurement',
+            'procedure': 'measurement'
+        }.get(object_node['genre'], object_node['genre'])
+        object_type_id = {
+            'sample': ActionType.SAMPLE_CREATION,
+            'measurement': ActionType.MEASUREMENT,
+            'simulation': ActionType.SIMULATION,
+        }.get(object_type)
+    else:
+        object_type = None
+        object_type_id = None
+
+    if 'comment' in object_node and not isinstance(object_node['comment'], list):
+        object_node['comment'] = [object_node['comment']]
+    comments: typing.List[ParsedELNComment] = []
+    for comment_ref in object_node.get('comment', []):
+        _eln_assert(isinstance(comment_ref, dict), "Invalid comment reference or node")
+        parsed_comment, comment_import_notes = _parse_comment_node(graph_nodes_by_id, comment_ref)
+        comments.append(parsed_comment)
+        import_notes[object_node["@id"]].extend(comment_import_notes)
+
+    files: typing.List[typing.Union[ParsedELNURLFile, ParsedELNDatabaseFile]] = []
+    versions: typing.List[ParsedELNVersion] = []
+
+    fallback_data = {
+        'name': {
+            '_type': 'text',
+            'text': {'en': name}
+        }
+    }
+    fallback_schema = {
+        'type': 'object',
+        'title': {
+            'en': 'Object Information',
+            'de': 'Objektinformationen',
+        },
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': {
+                    'en': 'Name',
+                    'de': 'Name'
+                }
+            }
+        },
+        'required': ['name'],
+        'propertyOrder': ['name']
+    }
+    fallback_schema_properties = typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])
+    fallback_schema_property_order = typing.cast(typing.List[str], fallback_schema['propertyOrder'])
+    if description:
+        fallback_data['description'] = {
+            '_type': 'text',
+            'text': {'en': description},
+        }
+        if description_is_markdown:
+            fallback_data['description']['is_markdown'] = True  # type: ignore[assignment]
+        fallback_schema_properties['description'] = {
+            'type': 'text',
+            'title': {
+                'en': 'Description',
+                'de': 'Beschreibung'
+            },
+            'multiline': '\n' in description
+        }
+        if description_is_markdown:
+            fallback_schema_properties['description']['multiline'] = False
+            fallback_schema_properties['description']['markdown'] = True
+        fallback_schema_property_order.append('description')
+    if 'keywords' in object_node:
+        tags = _parse_dataset_node_keywords(object_node['keywords'])
+        fallback_schema_properties['tags'] = {
+            'type': 'tags',
+            'title': {
+                'en': 'Tags',
+                'de': 'Tags'
+            }
+        }
+        fallback_schema_property_order.append('tags')
+        fallback_data['tags'] = {
+            '_type': 'tags',
+            'tags': tags
+        }
+    else:
+        tags = []
+    has_metadata = False
+    if 'variableMeasured' in object_node and object_node['variableMeasured'] is not None:
+        if not isinstance(object_node['variableMeasured'], list):
+            object_node['variableMeasured'] = [object_node['variableMeasured']]
+        has_metadata = True
+        property_values = []
+        for property_value in object_node['variableMeasured']:
+            _eln_assert(isinstance(property_value, dict), "Invalid variableMeasured item for Dataset")
+            if '@id' in property_value and property_value['@id'] in graph_nodes_by_id:
+                property_value = graph_nodes_by_id[property_value['@id']]
+            # skip untyped variableMeasured entries, e.g. used by elabFTW for elabftw_metadata
+            if '@type' not in property_value:
+                continue
+            _eln_assert(_node_has_type(property_value, 'PropertyValue'), "Invalid variableMeasured item type for Dataset")
+            _eln_assert(isinstance(property_value.get('propertyID'), str), "Invalid variableMeasured item propertyID for Dataset")
+            _eln_assert(isinstance(property_value.get('name', ''), str), "Invalid variableMeasured item name for Dataset")
+            _eln_assert(isinstance(property_value.get('value'), (str, bool, int, float)), "Invalid variableMeasured item value for Dataset")
+            _eln_assert(isinstance(property_value.get('unitCode', ''), str), "Invalid variableMeasured item unitCode for Dataset")
+            _eln_assert(isinstance(property_value.get('unitText', ''), str), "Invalid variableMeasured item unitText for Dataset")
+            property_values.append(property_value)
+        fallback_data, fallback_schema = _convert_property_values_to_data_and_schema(
+            property_values=property_values,
+            name=name,
+            description=description,
+            description_is_markdown=description_is_markdown,
+            tags=tags
+        )
+        fallback_schema_properties = typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])
+        fallback_schema_property_order = typing.cast(typing.List[str], fallback_schema['propertyOrder'])
+    if not has_metadata:
+        fallback_data['import_note'] = {
+            '_type': 'text',
+            'text': {
+                'en': 'The .eln file did not contain any valid flexible metadata for this object.',
+                'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
+            }
+        }
+        import_notes[object_node["@id"]].append(gettext('The .eln file did not contain any valid flexible metadata for this object.'))
+        fallback_schema_property_order.append('import_note')
+        fallback_schema_properties['import_note'] = {
+            'type': 'text',
+            'languages': ['en', 'de'],
+            'title': {
+                'en': 'Import Note',
+                'de': 'Import-Hinweis'
+            }
+        }
+    if 'hasPart' in object_node and not isinstance(object_node['hasPart'], list):
+        object_node['hasPart'] = [object_node['hasPart']]
+    potential_version_ids: typing.List[str] = []
+    for object_part_ref in object_node.get('hasPart', []):
+        _eln_assert(isinstance(object_part_ref, dict), "Invalid reference")
+        _eln_assert(list(object_part_ref.keys()) == ['@id'], "Invalid reference")
+        _eln_assert(object_part_ref['@id'] in graph_nodes_by_id, "Reference to unknown ID")
+        object_part = graph_nodes_by_id[object_part_ref['@id']]
+        if _node_has_type(object_part, 'File'):
+            parsed_files, file_import_notes = _parse_file_node(
+                graph_nodes_by_id=graph_nodes_by_id,
+                file_node=object_part,
+                object_node_id=object_node['@id'],
+                eln_dialect=eln_dialect,
+                root_path_name=root_path_name,
+                member_names=member_names,
+                zip_file=zip_file,
+            )
+            files.extend(parsed_files)
+            import_notes[object_node["@id"]].extend(file_import_notes)
+        if _node_has_type(object_part, 'Dataset'):
+            if eln_dialect == 'SampleDB' and object_part['@id'] in object_node.get('isBasedOn', []):
+                potential_version_ids.append(object_part['@id'])
+            else:
+                parsed_part_objects, part_import_notes, part_parsed_object_parts_relationships = _parse_dataset_node(
+                    graph_nodes_by_id=graph_nodes_by_id,
+                    object_node=object_part,
+                    eln_dialect=eln_dialect,
+                    root_path_name=root_path_name,
+                    member_names=member_names,
+                    zip_file=zip_file,
+                )
+                parsed_objects.extend(parsed_part_objects)
+                import_notes.update(part_import_notes)
+                if object_node['@id'] not in parsed_object_parts_relationships:
+                    parsed_object_parts_relationships[object_node['@id']] = []
+                parsed_object_parts_relationships[object_node['@id']].append(object_part['@id'])
+                for object_id, object_part_ids in part_parsed_object_parts_relationships.items():
+                    if object_id not in parsed_object_parts_relationships:
+                        parsed_object_parts_relationships[object_id] = []
+                    for object_part_id in object_part_ids:
+                        if object_part_id not in parsed_object_parts_relationships[object_id]:
+                            parsed_object_parts_relationships[object_id].append(object_part_id)
+    if eln_dialect == 'SampleDB':
+        is_based_on = object_node.get('isBasedOn', [])
+        if type(is_based_on) is not list:
+            is_based_on = [is_based_on]
+        for object_part_ref in is_based_on:
+            if type(object_part_ref) is dict:
+                object_part_id = typing.cast(str, object_part_ref.get('@id'))
+                if type(object_part_id) is str and object_part_id in graph_nodes_by_id:
+                    object_part = graph_nodes_by_id[object_part_id]
+                    if _node_has_type(object_part, 'Dataset'):
+                        if object_part['@id'] not in potential_version_ids:
+                            potential_version_ids.append(object_part['@id'])
+        for potential_version_id in potential_version_ids:
+            version_node = graph_nodes_by_id[potential_version_id]
+            parsed_version, version_import_notes = _parse_sampledb_object_version_node(
+                graph_nodes_by_id=graph_nodes_by_id,
+                version_node=version_node,
+                object_node=object_node,
+                eln_source_url=eln_source_url,
+                root_path_name=root_path_name,
+                member_names=member_names,
+                zip_file=zip_file,
+                fallback_data=fallback_data,
+                fallback_schema=fallback_schema,
+            )
+            if parsed_version is not None:
+                versions.append(parsed_version)
+            import_notes[object_node["@id"]].extend(version_import_notes)
+    if not versions:
+        creator_ref = object_node.get('creator')
+        if creator_ref is None and isinstance(object_node.get('author'), dict):
+            creator_ref = object_node.get('author')
+        creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
+        date_created = None
+        if 'dateCreated' in object_node:
+            _eln_assert(isinstance(object_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
+            date_created = _parse_eln_import_datetime(object_node['dateCreated'])
+        versions.append(ParsedELNVersion(
+            version_id=0,
+            data=fallback_data,
+            schema=fallback_schema,
+            user_id=creator_id,
+            date_created=date_created
+        ))
+    parsed_objects.append(ParsedELNObject(
+        id=object_node['@id'],
+        name=name,
+        url=url,
+        files=files,
+        versions=versions,
+        comments=comments,
+        type=object_type,
+        type_id=object_type_id,
+    ))
+
+    return parsed_objects, import_notes, parsed_object_parts_relationships
+
+
 def parse_eln_file(
         eln_import_id: int
 ) -> ParsedELNImport:
@@ -621,7 +1272,8 @@ def parse_eln_file(
         objects=[],
         users=[],
         import_notes={},
-        signed_by=None
+        signed_by=None,
+        object_parts_relationships={}
     )
 
     try:
@@ -634,7 +1286,7 @@ def parse_eln_file(
             }
             root_path_names = set()
             for member_name in member_names:
-                path_name, file_name = os.path.split(member_name)
+                path_name, _ = os.path.split(member_name)
                 root_path_names.add(path_name.split(os.sep)[0])
             _eln_assert(len(root_path_names) == 1, ".eln file must contain a single root directory")
             root_path_name = list(root_path_names)[0]
@@ -669,10 +1321,11 @@ def parse_eln_file(
                         parsed_data.import_notes["Signature"] = [note]
                     else:
                         parsed_data = ParsedELNImport(
-                            parsed_data.objects,
-                            parsed_data.users,
-                            parsed_data.import_notes,
-                            ro_crate_metadata_sig.trusted_comment.removesuffix("/.well-known/keys.json") if has_valid_signature else None
+                            objects=parsed_data.objects,
+                            users=parsed_data.users,
+                            import_notes=parsed_data.import_notes,
+                            signed_by=ro_crate_metadata_sig.trusted_comment.removesuffix("/.well-known/keys.json") if has_valid_signature else None,
+                            object_parts_relationships=parsed_data.object_parts_relationships,
                         )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")
@@ -742,468 +1395,22 @@ def parse_eln_file(
                 _eln_assert(object_node_ref['@id'] in graph_nodes_by_id, "Reference to unknown ID")
 
                 object_node = graph_nodes_by_id[object_node_ref['@id']]
-                _eln_assert(isinstance(object_node.get('name'), str), "Missing name for Dataset")
-                name = object_node['name']
-
-                parsed_data.import_notes[object_node["@id"]] = []
-
-                _eln_assert(isinstance(object_node.get('description', ''), (str, dict)), "Invalid description for Dataset")
-                description = object_node.get('description', '')
-                if isinstance(description, dict):
-                    if list(description.keys()) == ['@id']:
-                        _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
-                        description = graph_nodes_by_id[description['@id']]
-                    _eln_assert(isinstance(object_node_ref, dict), "Invalid description")
-                    _eln_assert(_node_has_type(description, 'TextObject'), "Invalid description for Dataset")
-                    description_is_markdown = description.get('encodingFormat') == 'text/markdown'
-                    description = description.get('text', '')
-                else:
-                    description_is_markdown = False
-
-                if 'url' in object_node:
-                    _eln_assert(isinstance(object_node.get('url'), str), "Invalid URL for Dataset")
-                    try:
-                        url = object_node['url']
-                        parse_url(url, valid_schemes=('http', 'https'))
-                    except Exception:
-                        raise errors.InvalidELNFileError("Invalid URL for Dataset")
-                else:
-                    url = None
-                if eln_dialect == 'SampleDB':
-                    _eln_assert(object_node_ref['@id'].startswith('./objects/'), "Invalid @id for Dataset for SampleDB .eln file")
-                    try:
-                        original_object_id_str = object_node_ref['@id'][len('./objects/'):].rstrip('/')
-                        original_object_id = int(original_object_id_str)
-                        _eln_assert(str(original_object_id) == original_object_id_str and original_object_id > 0, "Invalid @id for Dataset for SampleDB .eln file")
-                    except ValueError:
-                        _eln_assert(False, "Invalid @id for Dataset for SampleDB .eln file")
-                    _eln_assert(isinstance(url, str), "Invalid url for Dataset for SampleDB .eln file")
-                    _eln_assert(url.endswith(object_node_ref['@id'].rstrip('/')[1:]), "Invalid url for Dataset for SampleDB .eln file")
-                    eln_source_url = url[:-len(object_node_ref['@id'][2:])]
-                else:
-                    eln_source_url = None
-
-                if object_node.get('genre') in {'sample', 'measurement', 'simulation', 'experiment', 'procedure'}:
-                    object_type = {
-                        'experiment': 'measurement',
-                        'procedure': 'measurement'
-                    }.get(object_node['genre'], object_node['genre'])
-                    object_type_id = {
-                        'sample': ActionType.SAMPLE_CREATION,
-                        'measurement': ActionType.MEASUREMENT,
-                        'simulation': ActionType.SIMULATION,
-                    }.get(object_type)
-                else:
-                    object_type = None
-                    object_type_id = None
-
-                if 'comment' in object_node and not isinstance(object_node['comment'], list):
-                    object_node['comment'] = [object_node['comment']]
-                comments: typing.List[ParsedELNComment] = []
-                for comment_ref in object_node.get('comment', []):
-                    _eln_assert(isinstance(comment_ref, dict), "Invalid comment reference or node")
-                    if '@id' in comment_ref and comment_ref['@id'] in graph_nodes_by_id:
-                        _eln_assert(list(comment_ref.keys()) == ['@id'], "Invalid comment reference")
-                        comment_node = graph_nodes_by_id[comment_ref['@id']]
-                    else:
-                        comment_node = comment_ref
-                    author_ref = comment_node.get('author')
-                    if author_ref is None:
-                        author_id = None
-                    else:
-                        _eln_assert(isinstance(author_ref, dict), "Invalid author reference or node")
-                        author_ref = typing.cast(typing.Dict[str, typing.Any], author_ref)
-                        if '@id' in author_ref and author_ref['@id'] in graph_nodes_by_id:
-                            author_id = author_ref['@id']
-                            if graph_nodes_by_id[author_id] != author_ref:
-                                _eln_assert(list(author_ref.keys()) == ['@id'], "Invalid author reference")
-                            author_node = graph_nodes_by_id[author_id]
-                        else:
-                            author_node = author_ref
-                            if '@id' in author_node:
-                                author_id = author_node['@id']
-                            else:
-                                _eln_assert('identifier' in author_node, "Invalid author node")
-                                author_id = author_node['identifier']
-                                author_node['@id'] = author_id
-                            if author_id in graph_nodes_by_id:
-                                pass
-                                # TODO: the following check should be performed but is currently omitted to allow importing elabFTW exports, which may contain conflicting user information
-                                # _eln_assert(graph_nodes_by_id[author_id] == author_node, "Invalid author reference")
-                            else:
-                                graph_nodes_by_id[author_id] = author_node
-                        _eln_assert(_node_has_type(author_node, 'Person'), "Reference to node of wrong type")
-                    _eln_assert(isinstance(comment_node.get('text'), str), "Invalid text for Comment")
-                    _eln_assert(isinstance(comment_node.get('dateCreated'), str), "Invalid dateCreated for Comment")
-                    date_created: typing.Optional[datetime.datetime]
-                    try:
-                        date_created = datetime.datetime.fromisoformat(comment_node['dateCreated'])
-                    except Exception:
-                        raise errors.InvalidELNFileError("Invalid dateCreated for Comment")
-                    comments.append(ParsedELNComment(
-                        text=comment_node['text'],
-                        date_created=date_created,
-                        author_id=author_id
-                    ))
-
-                files: typing.List[typing.Union[ParsedELNURLFile, ParsedELNDatabaseFile]] = []
-                versions: typing.List[ParsedELNVersion] = []
-
-                fallback_data = {
-                    'name': {
-                        '_type': 'text',
-                        'text': {'en': name}
-                    }
-                }
-                if description:
-                    fallback_data['description'] = {
-                        '_type': 'text',
-                        'text': {'en': description},
-                    }
-                    if description_is_markdown:
-                        fallback_data['description']['is_markdown'] = True  # type: ignore[assignment]
-                fallback_schema = {
-                    'type': 'object',
-                    'title': {
-                        'en': 'Object Information',
-                        'de': 'Objektinformationen',
-                    },
-                    'properties': {
-                        'name': {
-                            'type': 'text',
-                            'title': {
-                                'en': 'Name',
-                                'de': 'Name'
-                            }
-                        }
-                    },
-                    'required': ['name'],
-                    'propertyOrder': ['name']
-                }
-                fallback_schema_properties = typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])
-                fallback_schema_property_order = typing.cast(typing.List[str], fallback_schema['propertyOrder'])
-                if description:
-                    fallback_schema_properties['description'] = {
-                        'type': 'text',
-                        'title': {
-                            'en': 'Description',
-                            'de': 'Beschreibung'
-                        },
-                        'multiline': '\n' in description
-                    }
-                    if description_is_markdown:
-                        fallback_schema_properties['description']['multiline'] = False
-                        fallback_schema_properties['description']['markdown'] = True
-                    fallback_schema_property_order.append('description')
-                has_metadata = False
-                if 'keywords' in object_node:
-                    fallback_schema_properties['tags'] = {
-                        'type': 'tags',
-                        'title': {
-                            'en': 'Tags',
-                            'de': 'Tags'
-                        }
-                    }
-                    fallback_schema_property_order.append('tags')
-                    if isinstance(object_node['keywords'], list):
-                        keywords = [
-                            keyword
-                            for keyword in object_node['keywords']
-                            if isinstance(keyword, str)
-                        ]
-                    elif isinstance(object_node['keywords'], str):
-                        keywords = [
-                            keyword
-                            for keyword in object_node['keywords'].split(',')
-                        ]
-                    else:
-                        keywords = []
-                    tags = []
-                    for keyword in keywords:
-                        keyword = keyword.strip().lower()
-                        # skip duplicate tags
-                        if keyword in tags:
-                            continue
-                        # skip tags with invalid characters
-                        if any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in keyword):
-                            continue
-                        # skip numeric tags unless enabled
-                        if all(c in string.digits for c in keyword) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
-                            continue
-                        tags.append(keyword)
-                    fallback_data['tags'] = {
-                        '_type': 'tags',
-                        'tags': tags
-                    }
-                else:
-                    tags = []
-                if 'variableMeasured' in object_node and object_node['variableMeasured'] is not None:
-                    if not isinstance(object_node['variableMeasured'], list):
-                        object_node['variableMeasured'] = [object_node['variableMeasured']]
-                    has_metadata = True
-                    property_values = []
-                    for property_value in object_node['variableMeasured']:
-                        _eln_assert(isinstance(property_value, dict), "Invalid variableMeasured item for Dataset")
-                        if '@id' in property_value and property_value['@id'] in graph_nodes_by_id:
-                            property_value = graph_nodes_by_id[property_value['@id']]
-                        # skip untyped variableMeasured entries, e.g. used by elabFTW for elabftw_metadata
-                        if '@type' not in property_value:
-                            continue
-                        _eln_assert(_node_has_type(property_value, 'PropertyValue'), "Invalid variableMeasured item type for Dataset")
-                        _eln_assert(isinstance(property_value.get('propertyID'), str), "Invalid variableMeasured item propertyID for Dataset")
-                        _eln_assert(isinstance(property_value.get('name', ''), str), "Invalid variableMeasured item name for Dataset")
-                        _eln_assert(isinstance(property_value.get('value'), (str, bool, int, float)), "Invalid variableMeasured item value for Dataset")
-                        _eln_assert(isinstance(property_value.get('unitCode', ''), str), "Invalid variableMeasured item unitCode for Dataset")
-                        _eln_assert(isinstance(property_value.get('unitText', ''), str), "Invalid variableMeasured item unitText for Dataset")
-                        property_values.append(property_value)
-                    fallback_data, fallback_schema = _convert_property_values_to_data_and_schema(
-                        property_values=property_values,
-                        name=name,
-                        description=description,
-                        description_is_markdown=description_is_markdown,
-                        tags=tags
-                    )
-                if 'hasPart' in object_node and not isinstance(object_node['hasPart'], list):
-                    object_node['hasPart'] = [object_node['hasPart']]
-                for object_part_ref in object_node.get('hasPart', []):
-                    _eln_assert(isinstance(object_part_ref, dict), "Invalid reference")
-                    _eln_assert(list(object_part_ref.keys()) == ['@id'], "Invalid reference")
-                    _eln_assert(object_part_ref['@id'] in graph_nodes_by_id, "Reference to unknown ID")
-                    object_part = graph_nodes_by_id[object_part_ref['@id']]
-                    if _node_has_type(object_part, 'File'):
-                        if 'name' in object_part:
-                            _eln_assert(isinstance(object_part.get('name'), str), "Invalid name for File")
-                            file_title = object_part['name']
-                        else:
-                            file_title = object_part['@id']
-                        if 'description' in object_part:
-                            description = object_part.get('description')
-                            if isinstance(description, dict):
-                                if list(description.keys()) == ['@id']:
-                                    _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
-                                    description = graph_nodes_by_id[description['@id']]
-                                _eln_assert(isinstance(object_node_ref, dict), "Invalid description")
-                                _eln_assert(_node_has_type(description, 'TextObject'), "Invalid description for File")
-                                description = description.get('text', '')
-                            else:
-                                _eln_assert(isinstance(object_part.get('description'), str), "Invalid description for File")
-                        file_path = object_part['@id']
-                        try:
-                            file_url_parse_result = urllib.parse.urlparse(file_path)
-                        except ValueError:
-                            file_url_parse_result = None
-                        if file_url_parse_result is not None and file_url_parse_result.netloc and file_url_parse_result.scheme in ('http', 'https'):
-                            file_url = object_part.get('url', file_path)
-                            try:
-                                parse_url(file_url, valid_schemes=('http', 'https'))
-                            except Exception:
-                                parsed_data.import_notes[object_node["@id"]].append(gettext('Failed to import %(file_url)s as URL file', file_url=file_url))
-                            else:
-                                date_created = None
-                                if 'dateCreated' in object_part:
-                                    _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for File")
-                                    date_created = _parse_eln_import_datetime(object_part['dateCreated'])
-                                author_ref = object_part.get('author')
-                                author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
-                                files.append(ParsedELNURLFile(
-                                    url=file_url,
-                                    title=file_title,
-                                    description=description,
-                                    user_id=author_id,
-                                    date_created=date_created
-                                ))
-                            continue
-                        if file_path.startswith('./'):
-                            file_path = file_path[1:]
-                        elif not file_path.startswith('/'):
-                            file_path = '/' + file_path
-                        file_path = root_path_name + file_path
-                        file_path = os.path.normpath(file_path)
-                        _eln_assert(file_path in member_names, "File not found in .eln file (1)")
-                        file_name = os.path.split(file_path)[1]
-                        with zip_file.open(member_names[file_path]) as file:
-                            file_data = file.read()
-                        if isinstance(object_part.get('contentSize'), str):
-                            try:
-                                object_part['contentSize'] = int(object_part['contentSize'])
-                            except ValueError:
-                                pass
-                        _eln_assert(isinstance(object_part.get('contentSize'), int), "Invalid content size for File")
-                        _eln_assert(len(file_data) == object_part['contentSize'], "Content size mismatch for File")
-                        if 'sha256' in object_part:
-                            _eln_assert(isinstance(object_part.get('sha256'), str), "Invalid SHA256 hash for File")
-                            _eln_assert(hashlib.sha256(file_data).hexdigest() == object_part['sha256'], "Hash mismatch for File")
-                        if eln_dialect == 'SampleDB' and object_part['@id'] == object_node_ref['@id'] + ('/' if not object_node_ref['@id'].endswith('/') else '') + 'files.json':
-                            try:
-                                files_info = json.loads(file_data.decode('utf-8'))
-                            except Exception:
-                                raise errors.InvalidELNFileError("Invalid files.json for SampleDB .eln file")
-                            _eln_assert(isinstance(files_info, list), "Invalid files.json for SampleDB .eln file")
-                            for file_info in files_info:
-                                _eln_assert(isinstance(file_info, dict), "Invalid files.json for SampleDB .eln file")
-                                if 'url' not in file_info:
-                                    continue
-                                _eln_assert(isinstance(file_info.get('url'), str), "Invalid URL file for SampleDB .eln file")
-                                _eln_assert(isinstance(file_info.get('title'), str) or file_info.get('title') is None, "Invalid URL file for SampleDB .eln file")
-                                _eln_assert(isinstance(file_info.get('description'), str) or file_info.get('description') is None, "Invalid URL file for SampleDB .eln file")
-                                _eln_assert(isinstance(file_info.get('uploader_id'), int), "Invalid URL file for SampleDB .eln file")
-                                author_sampledb_id = file_info.get('uploader_id')
-                                try:
-                                    file_url = file_info['url']
-                                    parse_url(file_url, valid_schemes=('http', 'https'))
-                                except Exception:
-                                    raise errors.InvalidELNFileError("Invalid URL file for SampleDB .eln file")
-                                try:
-                                    date_created = datetime.datetime.strptime(file_info.get('utc_datetime', ''), '%Y-%m-%dT%H:%M:%S.%f')
-                                    date_created = date_created.replace(tzinfo=datetime.timezone.utc)
-                                except Exception:
-                                    date_created = None
-                                files.append(ParsedELNURLFile(
-                                    url=file_url,
-                                    title=file_info.get('title'),
-                                    description=file_info.get('description'),
-                                    user_id=f'./users/{author_sampledb_id}',
-                                    date_created=date_created
-                                ))
-                        else:
-                            date_created = None
-                            if 'dateCreated' in object_part:
-                                _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for File")
-                                date_created = _parse_eln_import_datetime(object_part['dateCreated'])
-                            author_ref = object_part.get('author')
-                            author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
-                            files.append(ParsedELNDatabaseFile(
-                                name=file_name,
-                                title=file_title,
-                                description=object_part.get('description'),
-                                content=file_data,
-                                user_id=author_id,
-                                date_created=date_created,
-                            ))
-                    if eln_dialect == 'SampleDB' and _node_has_type(object_part, 'Dataset'):
-                        _eln_assert(any(object_part['@id'].startswith(object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_suffix in ('version/', 'versions/')), "SampleDB .eln file must only contain versions as Dataset parts of objects")
-                        try:
-                            version_id = int(object_part['@id'].strip('/').rsplit('/', maxsplit=1)[1])
-                        except ValueError:
-                            raise errors.InvalidELNFileError("SampleDB .eln file must only contain versions as Dataset parts of objects")
-                        _eln_assert(isinstance(object_part.get('hasPart'), list), "SampleDB .eln file must contain data and schema for each version")
-                        _eln_assert(len(object_part['hasPart']) == 2, "SampleDB .eln file must contain data and schema for each version")
-                        _eln_assert({'@id': object_part['@id'] + ('/' if not object_part['@id'].endswith('/') else '') + 'data.json'} in object_part['hasPart'], "SampleDB .eln file must contain data and schema for each version")
-                        _eln_assert({'@id': object_part['@id'] + ('/' if not object_part['@id'].endswith('/') else '') + 'schema.json'} in object_part['hasPart'], "SampleDB .eln file must contain data and schema for each version")
-                        data_file_name = object_part['@id'] + '/data.json'
-                        if data_file_name.startswith('./'):
-                            data_file_name = data_file_name[1:]
-                        elif not data_file_name.startswith('/'):
-                            data_file_name = '/' + data_file_name
-                        data_file_name = root_path_name + data_file_name
-                        data_file_name = os.path.normpath(data_file_name)
-                        _eln_assert(data_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
-                        schema_file_name = object_part['@id'] + '/schema.json'
-                        if schema_file_name.startswith('./'):
-                            schema_file_name = schema_file_name[1:]
-                        elif not schema_file_name.startswith('/'):
-                            schema_file_name = '/' + schema_file_name
-                        schema_file_name = root_path_name + schema_file_name
-                        schema_file_name = os.path.normpath(schema_file_name)
-                        _eln_assert(schema_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
-                        try:
-                            with zip_file.open(member_names[data_file_name]) as data_file:
-                                data_file_content = data_file.read()
-                                _eln_assert(isinstance(graph_nodes_by_id[object_part['@id'] + 'data.json'].get('sha256'), str), "Invalid SHA256 hash for data.json")
-                                _eln_assert(hashlib.sha256(data_file_content).hexdigest() == graph_nodes_by_id[object_part['@id'] + 'data.json']['sha256'], "Hash mismatch for data.json")
-                                version_data = json.loads(data_file_content.decode('utf-8'))
-                            with zip_file.open(member_names[schema_file_name]) as schema_file:
-                                schema_file_content = schema_file.read()
-                                _eln_assert(isinstance(graph_nodes_by_id[object_part['@id'] + 'schema.json'].get('sha256'), str), "Invalid SHA256 hash for schema.json")
-                                _eln_assert(hashlib.sha256(schema_file_content).hexdigest() == graph_nodes_by_id[object_part['@id'] + 'schema.json']['sha256'], "Hash mismatch for schema.json")
-                                version_schema = json.loads(schema_file_content.decode('utf-8'))
-                        except errors.InvalidELNFileError:
-                            raise
-                        except Exception:
-                            raise errors.InvalidELNFileError("SampleDB .eln file must contain data and schema for each version")
-                        creator_ref = object_part.get('creator')
-                        if creator_ref is None and isinstance(object_part.get('author'), dict):
-                            creator_ref = object_part.get('author')
-                        creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
-                        date_created = None
-                        if 'dateCreated' in object_part:
-                            _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for Dataset")
-                            date_created = _parse_eln_import_datetime(object_part['dateCreated'])
-                        if version_schema is None or version_data is None:
-                            versions.append(ParsedELNVersion(
-                                version_id=version_id,
-                                data=None,
-                                schema=None,
-                                user_id=creator_id,
-                                date_created=date_created
-                            ))
-                            parsed_data.import_notes[object_node["@id"]].append(gettext('Missing data or schema for version %(version_id)s of object %(eln_object_id)s', version_id=version_id, eln_object_id=object_node['@id']))
-                        else:
-                            _remove_template_ids(version_schema)
-                            _replace_references(version_data, eln_source_url)
-                            try:
-                                validate_schema(version_schema, strict=False)
-                                validate(version_data, version_schema, allow_disabled_languages=True, strict=False, file_names_by_id=None)
-                                versions.append(ParsedELNVersion(
-                                    version_id=version_id,
-                                    data=version_data,
-                                    schema=version_schema,
-                                    user_id=creator_id,
-                                    date_created=date_created
-                                ))
-                            except errors.ValidationError as e:
-                                versions.append(ParsedELNVersion(
-                                    version_id=version_id,
-                                    data=fallback_data,
-                                    schema=fallback_schema,
-                                    user_id=creator_id,
-                                    date_created=date_created
-                                ))
-                                parsed_data.import_notes[object_node["@id"]].append(gettext('Invalid data or schema in version %(version_id)s of object %(eln_object_id)s (%(error)s)', version_id=version_id, eln_object_id=object_node['@id'], error=e))
-                if not versions:
-                    creator_ref = object_node.get('creator')
-                    if creator_ref is None and isinstance(object_node.get('author'), dict):
-                        creator_ref = object_node.get('author')
-                    creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
-                    date_created = None
-                    if 'dateCreated' in object_node:
-                        _eln_assert(isinstance(object_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
-                        date_created = _parse_eln_import_datetime(object_node['dateCreated'])
-                    if not has_metadata:
-                        fallback_data['import_note'] = {
-                            '_type': 'text',
-                            'text': {
-                                'en': 'The .eln file did not contain any valid flexible metadata for this object.',
-                                'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
-                            }
-                        }
-                        parsed_data.import_notes[object_node["@id"]].append(gettext('The .eln file did not contain any valid flexible metadata for this object.'))
-                        fallback_schema_property_order.append('import_note')
-                        fallback_schema_properties['import_note'] = {
-                            'type': 'text',
-                            'languages': ['en', 'de'],
-                            'title': {
-                                'en': 'Import Note',
-                                'de': 'Import-Hinweis'
-                            }
-                        }
-                    versions.append(ParsedELNVersion(
-                        version_id=0,
-                        data=fallback_data,
-                        schema=fallback_schema,
-                        user_id=creator_id,
-                        date_created=date_created
-                    ))
-                parsed_data.objects.append(ParsedELNObject(
-                    id=object_node_ref['@id'],
-                    name=name,
-                    url=url,
-                    files=files,
-                    versions=versions,
-                    comments=comments,
-                    type=object_type,
-                    type_id=object_type_id,
-                ))
+                parsed_objects, dataset_import_notes, parsed_object_parts_relationships = _parse_dataset_node(
+                    graph_nodes_by_id=graph_nodes_by_id,
+                    object_node=object_node,
+                    eln_dialect=eln_dialect,
+                    root_path_name=root_path_name,
+                    member_names=member_names,
+                    zip_file=zip_file,
+                )
+                parsed_data.objects.extend(parsed_objects)
+                parsed_data.import_notes.update(dataset_import_notes)
+                for object_id, object_part_ids in parsed_object_parts_relationships.items():
+                    if object_id not in parsed_data.object_parts_relationships:
+                        parsed_data.object_parts_relationships[object_id] = []
+                    for object_part_id in object_part_ids:
+                        if object_part_id not in parsed_data.object_parts_relationships[object_id]:
+                            parsed_data.object_parts_relationships[object_id].append(object_part_id)
             for graph_node in graph_nodes_by_id.values():
                 if _node_has_type(graph_node, 'Person'):
                     if 'name' in graph_node and graph_node['name'] is None:
@@ -1650,9 +1857,11 @@ def _convert_property_value_trees_to_schema_and_data(
         item_schema['title'] = {
             'en': 'Item'
         }
-        titles = items[0][3][:-1]
+        titles = list(items[0][3][:-1])
         if not titles:
             titles = ['Array']
+        elif not titles[-1]:
+            titles[-1] = 'Array'
         return {
             'title': {
                 'en': titles[-1]

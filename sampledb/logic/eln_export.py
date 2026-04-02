@@ -171,7 +171,12 @@ def generate_ro_crate_metadata(
             ],
             "hasPart": [
                 {
-                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/data.json",
+                }
+                for version_info in object_info['versions']
+            ] + [
+                {
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/schema.json",
                 }
                 for version_info in object_info['versions']
             ] + [
@@ -264,7 +269,10 @@ def generate_ro_crate_metadata(
                 "name": "schema.json",
                 "encodingFormat": "application/json",
                 "contentSize": str(len(schema_json)),
-                "sha256": hashlib.sha256(schema_json).hexdigest()
+                "sha256": hashlib.sha256(schema_json).hexdigest(),
+                "author": {
+                    "@id": f"./users/{version_info['user_id']}"
+                } if version_info['user_id'] is not None else None,
             })
 
             data_json = json.dumps(version_info['data'], indent=2).encode('utf-8')
@@ -276,7 +284,10 @@ def generate_ro_crate_metadata(
                 "name": "data.json",
                 "encodingFormat": "application/json",
                 "contentSize": str(len(data_json)),
-                "sha256": hashlib.sha256(data_json).hexdigest()
+                "sha256": hashlib.sha256(data_json).hexdigest(),
+                "author": {
+                    "@id": f"./users/{version_info['user_id']}"
+                } if version_info['user_id'] is not None else None,
             })
 
         for comment in object_info['comments']:
