@@ -4,7 +4,7 @@ Changelog
 Version 0.33
 ------------
 
-Currently in development.
+Released on April 7th, 2026.
 
 - Implemented caching for object data rendered to html
 - Fixed validation of object_reference properties for federated actions or action types
