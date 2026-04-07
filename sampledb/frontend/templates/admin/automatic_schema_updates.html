@@ -297,7 +297,15 @@
             <td class="text-right">
               {% if updatable_object_check.automatic_schema_update and updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE %}
                 {% if updatable_object_check.automatic_schema_update.result.object_ids_success %}
-                  <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_success) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}</a>
+                  {% set object_ids = updatable_object_check.automatic_schema_update.result.object_ids_success | join(',') %}
+                  {% if object_ids | length > 1000 %}
+                    <form method="post" action="{{ url_for('.objects') }}" style="display: inline; margin: 0 -2px; line-height: 1" class="form-inline">
+                      <input type="hidden" name="ids" value="{{ object_ids }}"/>
+                      <button type="submit" class="btn-link" style="padding: 0">{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}</button>
+                    </form>
+                  {% else %}
+                    <a href="{{ url_for(".objects", ids=object_ids) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_success | length }}</a>
+                  {% endif %}
                 {% else %}
                   0
                 {% endif %}
@@ -308,7 +316,15 @@
             <td class="text-right">
               {% if updatable_object_check.automatic_schema_update and updatable_object_check.automatic_schema_update.status == AutomaticSchemaUpdateStatus.DONE %}
                 {% if updatable_object_check.automatic_schema_update.result.object_ids_failure %}
-                  <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_failure) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}</a>
+                  {% set object_ids = updatable_object_check.automatic_schema_update.result.object_ids_failure | join(',') %}
+                  {% if object_ids | length > 1000 %}
+                    <form method="post" action="{{ url_for('.objects') }}" style="display: inline; margin: 0 -2px; line-height: 1" class="form-inline">
+                      <input type="hidden" name="ids" value="{{ object_ids }}"/>
+                      <button type="submit" class="btn-link" style="padding: 0">{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}</button>
+                    </form>
+                  {% else %}
+                    <a href="{{ url_for(".objects", ids=(updatable_object_check.automatic_schema_update.result.object_ids_failure) | join(',')) }}">{{ updatable_object_check.automatic_schema_update.result.object_ids_failure | length }}</a>
+                  {% endif %}
                 {% else %}
                   0
                 {% endif %}

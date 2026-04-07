@@ -7,6 +7,7 @@ import json
 import requests
 import pytest
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
 
 import sampledb
 import sampledb.models
@@ -698,3 +699,74 @@ def test_remove_group_from_project(flask_server, user_session):
     sampledb.db.session.rollback()
 
     assert sampledb.logic.projects.get_project_member_group_ids_and_permissions(project_id) == {}
+
+def test_external_links(flask_server, app, driver, user):
+    project1 = sampledb.logic.projects.create_project("Project 1", "", user.id)
+    project2 = sampledb.logic.projects.create_project("Project 2", "", user.id)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+
+    sampledb.frontend.utils.merge_external_links.cache_clear()
+    flask_server.app.config['PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID'] = {
+        '*': [
+            {
+                'links': [
+                    {
+                        'name': {'en': 'Example Link 1'},
+                        'url': 'http://example.org/link1'
+                    },
+                    {
+                        'name': {'en': 'Example Link 2'},
+                        'url': 'http://example.org/link2'
+                    }
+                ],
+                'label': {'en': 'Links'},
+                'icon': 'fa-external-link',
+                'id_placeholder': '<ID>'
+            }
+        ],
+        project1.id: [
+            {
+                'links': [
+                    {
+                        'name': {'en': 'Example Link 3'},
+                        'url': 'http://example.org/link3'
+                    }
+                ],
+                'label': {'en': 'Links'},
+                'icon': 'fa-external-link',
+                'id_placeholder': '<ID>'
+            }
+        ]
+    }
+
+    driver.get(flask_server.base_url + f'projects/{project1.id}')
+    external_links = driver.find_elements(By.CSS_SELECTOR, 'ul[aria-labelledby="linksDropdownMenuButton"] li a')
+    assert {(external_link.get_attribute("textContent"), external_link.get_attribute('href')) for external_link in external_links} == {
+        (
+            'Example Link 1',
+            'http://example.org/link1'
+        ),
+        (
+            'Example Link 2',
+            'http://example.org/link2'
+        ),
+        (
+            'Example Link 3',
+            'http://example.org/link3'
+        ),
+    }
+
+    driver.get(flask_server.base_url + f'projects/{project2.id}')
+    external_links = driver.find_elements(By.CSS_SELECTOR, 'ul[aria-labelledby="linksDropdownMenuButton"] li a')
+    assert {(external_link.get_attribute("textContent"), external_link.get_attribute('href')) for external_link in external_links} == {
+        (
+            'Example Link 1',
+            'http://example.org/link1'
+        ),
+        (
+            'Example Link 2',
+            'http://example.org/link2'
+        ),
+    }
+    sampledb.frontend.utils.merge_external_links.cache_clear()

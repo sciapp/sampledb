@@ -82,7 +82,8 @@ def main(arguments: typing.List[str]) -> None:
                 "de": "Dies ist ein Beispielthema."
             },
             show_on_frontpage=False,
-            show_in_navbar=True,
+            show_in_action_navbar=True,
+            show_in_instrument_navbar=True,
             description_is_markdown=False,
             short_description_is_markdown=False
         )

@@ -39,7 +39,7 @@ def ansi_color(text: str, color: int) -> str:
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
-        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.get_id() if flask_login.current_user else None,
+        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.id if flask_login.current_user else None,
         on_unauthorized: typing.Callable[[int], FlaskResponseT] = lambda object_id: flask.abort(403),
         may_enable_anonymous_users: bool = True
 ) -> typing.Callable[[typing.Any], typing.Any]:
@@ -119,8 +119,7 @@ def generate_secret_key(num_bits: int) -> str:
     :return: the base64 encoded secret key
     """
     num_bytes = num_bits // 8
-    binary_key = os.urandom(num_bytes)
-    base64_key = base64.b64encode(binary_key).decode('ascii')
+    base64_key = secrets.token_urlsafe(num_bytes)
     return base64_key
 
 

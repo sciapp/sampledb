@@ -1,4 +1,4 @@
-{% set container_style = schema.get('style') %}
+{% set container_style = get_style_variant(schema.get("style"), template_mode) %}
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set minItems = schema.get('minItems', 0) %}
 {% set maxItems = schema.get('maxItems', -1) %}
@@ -36,7 +36,12 @@
     {% set diff = item_diff %}
      <div class="col-md-9 {% if loop.index0 or loop.last %}col-md-offset-3{% endif %} {% if loop.last %}array-template{% endif %}" {% if loop.last %}disabled="disabled"{% endif %} data-id-prefix="{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em" data-array-item="list">
       {% include "objects/forms/form_any.html" %}
-      <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
+      <div style="flex-grow: 0; flex-basis: 4em; display: flex;">
+        <div style="height: 34px; margin-left: 11px; margin-right: 6px; display: flex; flex-direction: column;">
+          <button type="button" id="action_{{ id_prefix }}_moveup" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="list_array_moveup" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-up fa-fw" style="display: block; margin-top:-1px"></i></button>
+          <button type="button" id="action_{{ id_prefix }}_movedown" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="list_array_movedown" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-down fa-fw" style="display: block; margin-top:-1px"></i></button>
+        </div>
+        <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" style="height:34px; padding: 6px 7px; margin-right: 6px" data-object-form-button="list_array_copy" data-element-id="{{ property_path[-1] }}"><i class="fa fa-clone fa-fw"></i></button>
         <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px; padding: 6px 7px" data-object-form-button="list_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-minus fa-fw"></i></button>
       </div>
       </div>

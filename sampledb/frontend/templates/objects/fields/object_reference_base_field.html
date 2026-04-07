@@ -29,6 +29,12 @@
   {% else %}
     {% set selected_id = data.object_id | string %}
   {% endif %}
+{% elif schema is not none and "default" in schema and (mode != 'edit' or is_template) %}
+  {% if current_value_text is not none %}
+    {% set selected_id = "-1" %}
+  {% else %}
+    {% set selected_id = schema.default | string %}
+  {% endif %}
 {% else %}
   {% set selected_id = none %}
 {% endif %}
@@ -36,6 +42,8 @@
 {% if not filter_operator %}
   {% set filter_operator = 'and' %}
 {% endif %}
+{% set schema_action_ids = convert_schema_action_ids_to_local_action_ids(schema_action_ids) %}
+{% set schema_action_type_ids = convert_schema_action_type_ids_to_local_action_type_ids(schema_action_type_ids) %}
 {% if schema_action_ids is none and schema_action_type_ids is none %}
   {% set valid_action_ids = none %}
 {% else %}

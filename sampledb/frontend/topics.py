@@ -125,7 +125,8 @@ class TopicForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
 
     show_on_frontpage = BooleanField()
-    show_in_navbar = BooleanField()
+    show_in_action_navbar = BooleanField()
+    show_in_instrument_navbar = BooleanField()
     description_is_markdown = BooleanField()
     short_description_is_markdown = BooleanField()
 
@@ -217,7 +218,8 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
         if 'action_submit' not in flask.request.form:
             topic_language_ids = [int(translation['language_id']) for translation in translations]
             topic_form.show_on_frontpage.data = topic.show_on_frontpage
-            topic_form.show_in_navbar.data = topic.show_in_navbar
+            topic_form.show_in_action_navbar.data = topic.show_in_action_navbar
+            topic_form.show_in_instrument_navbar.data = topic.show_in_instrument_navbar
             topic_form.description_is_markdown.data = topic.description_is_markdown
             topic_form.short_description_is_markdown.data = topic.short_description_is_markdown
 
@@ -300,7 +302,8 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                     description=descriptions,
                     short_description=short_descriptions,
                     show_on_frontpage=topic_form.show_on_frontpage.data,
-                    show_in_navbar=topic_form.show_in_navbar.data,
+                    show_in_action_navbar=topic_form.show_in_action_navbar.data,
+                    show_in_instrument_navbar=topic_form.show_in_instrument_navbar.data,
                     description_is_markdown=topic_form.description_is_markdown.data,
                     short_description_is_markdown=topic_form.short_description_is_markdown.data
                 )
@@ -312,7 +315,8 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                     description=descriptions,
                     short_description=short_descriptions,
                     show_on_frontpage=topic_form.show_on_frontpage.data,
-                    show_in_navbar=topic_form.show_in_navbar.data,
+                    show_in_action_navbar=topic_form.show_in_action_navbar.data,
+                    show_in_instrument_navbar=topic_form.show_in_instrument_navbar.data,
                     description_is_markdown=topic_form.description_is_markdown.data,
                     short_description_is_markdown=topic_form.short_description_is_markdown.data
                 )

@@ -1075,6 +1075,37 @@ def federated_identity(base_url, driver):
 
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/federated_identity.png', (0, heading.location['y'] - y_offset, width, button.location['y'] + button.rect['height'] - y_offset))
 
+def external_links(base_url, app, driver, action):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    app.config['ACTION_LINKS_BY_ACTION_ID'] = {
+        action.id: [
+            {
+                "label": "Links",
+                "icon": "fa-external-link",
+                "id_placeholder": "<ID>",
+                "links": [
+                    {
+                        "url": "https://example.org/actions/<ID>",
+                        "name": "Action Page"
+                    }
+                ]
+            }
+        ]
+    }
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'actions/{}'.format(action.id))
+    heading = driver.find_elements(By.TAG_NAME, 'h1')[0]
+    driver.find_element(By.ID, 'linksDropdownMenuButton').click()
+
+    for anchor in driver.find_elements(By.TAG_NAME, 'a'):
+        if 'Create Sample' in anchor.text:
+            break
+    else:
+        assert False
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/external_links.png', (0, heading.location['y'], width, min(heading.location['y'] + max_height, anchor.location['y'] + anchor.rect['height']+50)))
+
 
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
@@ -1442,3 +1473,4 @@ with app.app_context():
             search_query_builder(flask_server.base_url, driver)
             federation_graph(flask_server.base_url, driver)
             federated_identity(flask_server.base_url, driver)
+            external_links(flask_server.base_url, flask_server.app, driver, instrument_action)

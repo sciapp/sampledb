@@ -102,7 +102,7 @@
       {% else %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left" id="nav-search">
         <div class="input-group">
-          <input type="text" id="input-search" class="form-control" placeholder="{{ _('Search…') }}" name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
+          <input type="text" id="input-search" class="form-control" placeholder="{{ _('Search objects…') }}" name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit"><span class="sr-only">{{ _('Search') }}</span><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -117,18 +117,25 @@
           </span>
         </div>
       </form>
-      {% if config['DISABLE_TOPICS'] %}
-        {% set nav_topics = [] %}
-      {% else %}
-        {% set nav_topics = get_topics(filter_navbar=True) %}
+      {% set action_navbar_topics = [] %}
+      {% set instrument_navbar_topics = [] %}
+      {% if not config['DISABLE_TOPICS'] %}
+        {% for topic in get_topics(filter_navbar=True) %}
+          {% if topic.show_in_action_navbar %}
+            {% do action_navbar_topics.append(topic) %}
+          {% endif %}
+          {% if topic.show_in_instrument_navbar %}
+            {% do instrument_navbar_topics.append(topic) %}
+          {% endif %}
+        {% endfor %}
       {% endif %}
       <ul class="nav navbar-nav">
         {% if not config['DISABLE_INSTRUMENTS'] %}
-          {% if nav_topics %}
+          {% if instrument_navbar_topics %}
             <li class="dropdown">
               <a href="{{ url_for('frontend.instruments') }}" style="display:inline-block; padding-right: 0;">{{ _('Instruments') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
               <ul class="dropdown-menu">
-                {% for topic in nav_topics %}
+                {% for topic in instrument_navbar_topics %}
                   <li><a href="{{ url_for('frontend.instruments', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
                 {% endfor %}
               </ul>
@@ -145,9 +152,9 @@
               <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
-            {% if nav_topics %}
+            {% if action_navbar_topics %}
             <li role="separator" class="divider"></li>
-            {% for topic in nav_topics %}
+            {% for topic in action_navbar_topics %}
             <li><a href="{{ url_for('frontend.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
             {% endfor %}
             {% endif %}
@@ -307,7 +314,7 @@
 </div>
 <footer>
   <div class="container">
-    <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_legal_notice %} &bullet; <a href="{{ service_legal_notice }}">{{ _('Legal Notice') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}{% if service_accessibility %} &bullet; <a href="{{ service_accessibility }}">{{ _('Accessibility') }}</a>{% endif %}</p>
+    <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_legal_notice %} &bullet; <a href="{{ service_legal_notice }}">{{ _('Legal Notice') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}{% if service_accessibility %} &bullet; <a href="{{ service_accessibility }}">{{ _('Accessibility') }}</a>{% endif %}</p>
   </div>
 </footer>
 
@@ -346,7 +353,7 @@
 
 
 {% block template_values %}
-  {% do set_template_value("translations.search", _('Search…')) %}
+  {% do set_template_value("translations.search", _('Search objects…')) %}
   {% do set_template_value("translations.advanced_search", _('Advanced Search…')) %}
   {% do set_template_value("translations.automatic_sign_out_after_x_minutes_of_inactivity", _('Sign out in PLACEHOLDER')) %}
   {% do set_template_value("translations.treepicker_expand_all_text", _('Expand All')) %}

@@ -22,9 +22,11 @@ authors = [
     { name="Nils Holle", email="nils.holle@uni-muenster.de" },
     { name="Moritz Hannemann", email="m.hannemann@fz-juelich.de" },
     { name="Moritz Velde", email="m.velde@fz-juelich.de" },
+    { name="Florian Bauer", email="fl.bauer@fz-juelich.de" },
     { name="Dorothea Henkel" },
     { name="Du Kim Nguyen" },
     { name="Frederik Peters" },
+	{ name="Martin Florian Seidler", email="f.seidler@fz-juelich.de" },
 ]
 description = "A sample and measurement metadata database"
 readme = "README.md"

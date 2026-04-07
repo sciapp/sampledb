@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-test
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -222,7 +222,7 @@ check-migrations-postgres-17:
 check-translations:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     - apt-get update
     # set up Python 3
@@ -247,10 +247,10 @@ check-translations:
     # compare current and generated messages to ensure there are no changes missing in the current messages
     - diff --color=always extracted_messages_current_de_without_header.po extracted_messages_generated_de_without_header.po
 
-documentation:
+generate-documentation-images:
   stage: test
   needs: []
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   services:
     - name: postgres:15
       alias: postgres-documentation
@@ -269,15 +269,44 @@ documentation:
     - python3 -m pip install -r requirements.documentation.txt
     # generate documentation images using current version
     - python3 docs/utils/generate_images.py
-    # build documentation
-    - python3 -m sphinx -b html -t iffSamples docs/ build_documentation/
+    - mv docs/static/img/generated generated_images
   artifacts:
     paths:
-    - build_documentation
+      - generated_images
+
+documentation:
+  stage: test
+  needs: [generate-documentation-images]
+  image: python:3.13-slim-trixie
+  tags:
+    - kubernetes-executor
+  script:
+    - apt-get update
+    # set up Python 3
+    - apt-get install -y git python3-pip make
+    # clone SampleDB-Docs repo
+    - git clone --depth=1 https://github.com/sciapp/sampledb-docs.git
+    # install dependencies
+    - python3 -m pip install -r sampledb-docs/requirements.txt
+    # set up develop docs
+    - mkdir sampledb-docs/develop
+    - mv docs sampledb-docs/develop/
+    - mv generated_images sampledb-docs/develop/
+    - ln -s ../../../generated_images sampledb-docs/develop/docs/static/img/generated
+    - python3 -c "import vcversioner; vcversioner.find_version()"
+    - mv version.txt sampledb-docs/develop/
+    # build documentation
+    - cd sampledb-docs
+    - make build/merged
+    - cd ..
+    - mv sampledb-docs/build/merged build_documentation
+  artifacts:
+    paths:
+      - build_documentation
 
 build-image:
   stage: build
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   script:
@@ -295,7 +324,7 @@ build-image:
 test-container-status:
   stage: test
   needs: ["build-image"]
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   variables:
@@ -389,7 +418,7 @@ deploy-to-github:
 
 deploy-to-github-container-registry:
   stage: deploy
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   only:
@@ -413,7 +442,7 @@ deploy-to-github-container-registry:
 
 deploy-to-dockerhub:
   stage: deploy
-  image: docker:stable
+  image: docker:latest
   tags:
     - privileged-executor
   only:
@@ -437,7 +466,7 @@ deploy-to-dockerhub:
 
 build-package:
   stage: build
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   script:
     # Determine version
     - apt-get update
@@ -458,7 +487,7 @@ build-package:
 deploy-to-testpypi:
   stage: deploy
   needs: ["build-package"]
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   only:
     - develop@Scientific-IT-Systems/SampleDB
   script:
@@ -471,7 +500,7 @@ deploy-to-testpypi:
 deploy-to-pypi:
   stage: deploy
   needs: ["build-package"]
-  image: python:3.13-slim-trixie
+  image: python:3.14-slim-trixie
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:

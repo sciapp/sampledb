@@ -15,10 +15,10 @@ from .instruments import Instrument, Instruments
 from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryVersions, InstrumentLogEntryVersion, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
 from .locations import Location, Locations, ObjectLocationAssignment, ObjectLocationAssignments, LocationType, LocationTypes
 from .object_log import ObjectLogEntries
-from .object_permissions import UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions, AuthenticatedUserObjectPermissions, AnonymousUserObjectPermissions
+from .object_permissions import ObjectPermissions, UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions, AuthenticatedUserObjectPermissions, AnonymousUserObjectPermissions, CopyObjectsPermissions
 from .users import CurrentUser, User, Users
-from .groups import Group, Groups
-from .projects import Project, Projects
+from .groups import Group, Groups, GroupMemberUser, GroupMemberUsers
+from .projects import Project, Projects, ProjectMemberUser, ProjectMemberUsers
 
 api = Blueprint('api', __name__)
 CORS(api)
@@ -50,10 +50,12 @@ api.add_url_rule('/api/v1/locations/', endpoint='locations', view_func=Locations
 api.add_url_rule('/api/v1/locations/<int:location_id>', endpoint='location', view_func=Location.as_view('location'))
 api.add_url_rule('/api/v1/location_types/', endpoint='location_types', view_func=LocationTypes.as_view('location_types'))
 api.add_url_rule('/api/v1/location_types/<int(signed=True):location_type_id>', endpoint='location_type', view_func=LocationType.as_view('location_type'))
+api.add_url_rule('/api/v1/objects/permissions/copy/', endpoint='copy_objects_permissions', view_func=CopyObjectsPermissions.as_view('copy_objects_permissions'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/files/', endpoint='object_files', view_func=ObjectFiles.as_view('object_files'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/files/<int:file_id>', endpoint='object_file', view_func=ObjectFile.as_view('object_file'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/locations/', endpoint='object_location_assignments', view_func=ObjectLocationAssignments.as_view('object_location_assignments'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/locations/<int:object_location_assignment_index>', endpoint='object_location_assignment', view_func=ObjectLocationAssignment.as_view('object_location_assignment'))
+api.add_url_rule('/api/v1/objects/<int:object_id>/permissions/', endpoint='object_permissions', view_func=ObjectPermissions.as_view('object_permissions'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/permissions/users/', endpoint='users_object_permissions', view_func=UsersObjectPermissions.as_view('users_object_permissions'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/permissions/users/<int:user_id>', endpoint='user_object_permissions', view_func=UserObjectPermissions.as_view('user_object_permissions'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/permissions/groups/', endpoint='groups_object_permissions', view_func=GroupsObjectPermissions.as_view('groups_object_permissions'))
@@ -68,6 +70,10 @@ api.add_url_rule('/api/v1/users/<int:user_id>', endpoint='user', view_func=User.
 api.add_url_rule('/api/v1/users/me', endpoint='current_user', view_func=CurrentUser.as_view('current_user'))
 api.add_url_rule('/api/v1/groups/', endpoint='groups', view_func=Groups.as_view('groups'))
 api.add_url_rule('/api/v1/groups/<int:group_id>', endpoint='group', view_func=Group.as_view('group'))
+api.add_url_rule('/api/v1/groups/<int:group_id>/member_users/', endpoint='group_member_users', view_func=GroupMemberUsers.as_view('group_member_users'))
+api.add_url_rule('/api/v1/groups/<int:group_id>/member_users/<int:user_id>', endpoint='group_member_user', view_func=GroupMemberUser.as_view('group_member_user'))
 api.add_url_rule('/api/v1/projects/', endpoint='projects', view_func=Projects.as_view('projects'))
 api.add_url_rule('/api/v1/projects/<int:project_id>', endpoint='project', view_func=Project.as_view('project'))
+api.add_url_rule('/api/v1/projects/<int:project_id>/member_users/', endpoint='project_member_users', view_func=ProjectMemberUsers.as_view('project_member_users'))
+api.add_url_rule('/api/v1/projects/<int:project_id>/member_users/<int:user_id>', endpoint='project_member_user', view_func=ProjectMemberUser.as_view('project_member_user'))
 api.add_url_rule('/api/v1/object_log_entries/', endpoint='object_log_entries', view_func=ObjectLogEntries.as_view('object_log_entry'))

@@ -29,10 +29,10 @@ def _decimal_compatible_log(x: typing.Any) -> typing.Any:
 # (natural) logarithm of a decimal.Decimal instance is calculated using ln().
 pint.facets.nonmultiplicative.definitions.log = _decimal_compatible_log  # type: ignore
 
-ureg = pint.UnitRegistry(non_int_type=decimal.Decimal)
+ureg: pint.UnitRegistry[decimal.Decimal] = pint.UnitRegistry(non_int_type=decimal.Decimal)
 ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
 
-int_ureg = pint.UnitRegistry()
+int_ureg: pint.UnitRegistry[int] = pint.UnitRegistry()
 int_ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
 
 with open(os.path.join(os.path.dirname(__file__), 'un_cefact_code_unit_pairs.json'), encoding='utf-8') as _json_file:
@@ -100,7 +100,7 @@ def get_magnitude_in_base_units(
     :raise errors.InvalidUnitsError: if the units cannot be understood
     """
     try:
-        return typing.cast(decimal.Decimal, ureg.Quantity(magnitude, ureg.Unit(units)).to_base_units().magnitude)
+        return ureg.Quantity(magnitude, ureg.Unit(units)).to_base_units().magnitude
     except Exception:
         raise errors.InvalidUnitsError()
 
@@ -167,20 +167,24 @@ def get_old_dimensionality(units: typing.Optional[str]) -> str:
     numerator_items = []
     denominator_items = []
     for dimension, exponent in dimensionality.items():
-        if exponent > 0:
-            numerator_items.append((dimension, exponent))
+        if type(exponent) is complex:
+            int_exponent = int(exponent.real)
         else:
-            denominator_items.append((dimension, -exponent))
+            int_exponent = int(exponent)  # type: ignore[arg-type]
+        if int_exponent > 0:
+            numerator_items.append((dimension, int_exponent))
+        else:
+            denominator_items.append((dimension, -int_exponent))
     # sort by dimension, rather than by exponent
     numerator_items.sort()
     denominator_items.sort()
     numerator_str = ' * '.join([
-        f'{dimension} ** {int(exponent)}' if exponent > 1 else str(dimension)
-        for dimension, exponent in numerator_items
+        f'{dimension} ** {int_exponent}' if int_exponent > 1 else str(dimension)
+        for dimension, int_exponent in numerator_items
     ])
     denominator_str = ' / '.join([
-        f'{dimension} ** {int(exponent)}' if exponent > 1 else str(dimension)
-        for dimension, exponent in denominator_items
+        f'{dimension} ** {int_exponent}' if int_exponent > 1 else str(dimension)
+        for dimension, int_exponent in denominator_items
     ])
     if denominator_str and numerator_str:
         return numerator_str + ' / ' + denominator_str

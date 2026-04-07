@@ -97,10 +97,12 @@ OpenID Connect (OIDC)
      - If set, other login methods and invitations will be disabled. This does not affect API keys.
    * - SAMPLEDB_OIDC_CREATE_ACCOUNT
      - Which method should be used to create or link accounts. If ``auto_link`` (the default), new accounts will be automatically created and existing accounts linked via email. If ``deny_existing``, new accounts will be automatically created, but existing accounts must be manually configured to use OIDC. If ``no``, authentication methods must be manually added.
-   * - OIDC_ACCESS_TOKEN_AS_API_KEY
+   * - SAMPLEDB_OIDC_ACCESS_TOKEN_AS_API_KEY
      - If set, then OIDC Access Tokens may be used as API keys using ``Bearer Authentication``. Depending on the Access Token, validation may require an HTTP request to the OIDC provider, which can be enabled using ``OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION``.
-   * - OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION
+   * - SAMPLEDB_OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION
      - If set, then Access Tokens may be validated by making an HTTP request to the OIDC provider. Otherwise, they can only be validated if they are a JWT.
+   * - SAMPLEDB_OIDC_USE_SESSION
+     - If set, then the session's lifetime will be bound to the that of the ID Token.
 
 If you use OIDC for user management, you can use these variables to configure how SampleDB should use your OIDC provider. See :ref:`OIDC<oidc>` for a detailed explanation.
 
@@ -130,6 +132,8 @@ Customization
      - The alignment (left, center or right) of the logo, if SAMPLEDB_PDFEXPORT_LOGO_URL is set (default: right)
    * - SAMPLEDB_PDFEXPORT_LOGO_WIDTH
      - The width of the logo in millimeters (default: 30). Large logos will overlap with the content of the object export, so make sure the size and alignment do not cause any issues.
+   * - SAMPLEDB_DOCUMENTATION_ROOT_URL
+     - The root URL for the documentation (default: https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/)
    * - SAMPLEDB_HELP_URL
      - The URL to use for the help link
 
@@ -319,8 +323,10 @@ Miscellaneous
      - The path to the pybabel executable (default: ``pybabel``)
    * - SAMPLEDB_EXTRA_USER_FIELDS
      - A JSON-encoded dict containing extra user fields, e.g. ``{"phone": {"name": {"en": "Phone No."}, "placeholder": {"en": "Phone No."}}}`` (default: ``{}``)
+   * - SAMPLEDB_SHOW_DOWNTIME_WARNING
+     - If set, a warning will be shown indicating that the instance may occasionally be offline during updates. (default: False)
    * - SAMPLEDB_SHOW_PREVIEW_WARNING
-     - If set, a warning will be shown indicating that the instance is a preview installation and that data will be deleted.
+     - If set, a warning will be shown indicating that the instance is a preview installation and that data will be deleted. (default: False)
    * - SAMPLEDB_DISABLE_INLINE_EDIT
      - If set, the inline edit mode will be disabled and users will not be able to edit individual fields.
    * - SAMPLEDB_SHOW_OBJECT_TITLE
@@ -379,5 +385,9 @@ Miscellaneous
      - Use modals to display workflow views by default if set to True, else the workflow views are displayed directly on the objects page (default: False)
    * - SAMPLEDB_WORKFLOW_VIEW_COLLAPSED
      - Sets if objects in a workflow view should be collapsed or expanded. Set to True to collapse objects, False to expand object contents (default: False).
+   * - SAMPLEDB_EXTERNAL_LINKS
+     - Sets external links, see :ref:`External Links <external_links>`.
+   * - SAMPLEDB_SORT_REFERENCABLE_OBJECTS
+     - If set to ``"name"``, referencable objects will be sorted by their name by default rather than their ID. Users may override this setting in their preferences.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

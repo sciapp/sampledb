@@ -13,7 +13,7 @@ from flask_babel import _
 from ...logic.federation.update import update_poke_component
 from .. import frontend
 from ... import logic
-from ...logic import user_log
+from ...logic import user_log, background_tasks
 from ...logic.actions import get_action
 from ...logic.caching import cache_per_request
 from ...logic.components import get_component_by_uuid
@@ -28,7 +28,7 @@ from ...logic.components import get_component, get_components
 from .forms import CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ...utils import object_permissions_required, FlaskResponseT
-from ..utils import get_user_if_exists, check_current_user_is_not_readonly, get_groups_form_data
+from ..utils import check_current_user_is_not_readonly, get_groups_form_data
 from ...models import Permissions, Object
 
 
@@ -177,7 +177,6 @@ def object_permissions(object_id: int) -> FlaskResponseT:
         all_user_permissions=all_user_permissions,
         anonymous_user_permissions=anonymous_user_permissions,
         federation_shares=component_policies,
-        get_user=get_user_if_exists,
         get_component=get_component,
         Permissions=Permissions,
         permissions_form=permissions_form,
@@ -217,6 +216,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
         if copy_permissions_form.validate_on_submit():
             logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
             logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)
+            background_tasks.post_trigger_object_permissions_webhooks(object_id)
             flask.flash(_("Successfully copied object permissions."), 'success')
     elif 'add_component_policy' in flask.request.form and add_component_policy_form.validate_on_submit():
         component_id = add_component_policy_form.component_id.data
@@ -276,6 +276,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
             flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
         except requests.ConnectionError:
             flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         flask.flash(_("Successfully updated object permissions."), 'success')
     elif 'edit_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
         component_id = edit_component_policy_form.component_id.data
@@ -335,6 +336,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
             flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
         except requests.ConnectionError:
             flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
         flask.flash(_("Successfully updated object permissions."), 'success')
     else:
         if handle_permission_forms(
@@ -346,6 +348,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
             permissions_form
         ):
             user_log.edit_object_permissions(user_id=flask_login.current_user.id, object_id=object_id)
+            background_tasks.post_trigger_object_permissions_webhooks(object_id)
             flask.flash(_("Successfully updated object permissions."), 'success')
         else:
             flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')

@@ -97,6 +97,45 @@ def set_project_object_permissions(object_id: int, project_id: int, permissions:
     object_permissions.set_permissions_for_project(resource_id=object_id, project_id=project_id, permissions=permissions)
 
 
+class AllObjectPermissionsDict(typing.TypedDict):
+    users: typing.Dict[int, Permissions]
+    groups: typing.Dict[int, Permissions]
+    projects: typing.Dict[int, Permissions]
+    authenticated: Permissions
+    anonymous: Permissions
+
+
+def get_all_object_permissions(object_id: int) -> AllObjectPermissionsDict:
+    objects.check_object_exists(object_id=object_id)
+    user_permissions = get_object_permissions_for_users(
+        object_id=object_id,
+        include_instrument_responsible_users=False,
+        include_groups=False,
+        include_projects=False,
+        include_admin_permissions=False,
+    )
+    basic_group_permissions = get_object_permissions_for_groups(
+        object_id=object_id,
+        include_projects=False,
+    )
+    project_permissions = get_object_permissions_for_projects(
+        object_id=object_id,
+    )
+    all_user_permissions = get_object_permissions_for_all_users(
+        object_id=object_id
+    )
+    anonymous_user_permissions = get_object_permissions_for_anonymous_users(
+        object_id=object_id
+    )
+    return {
+        "users": user_permissions,
+        "groups": basic_group_permissions,
+        "projects": project_permissions,
+        "authenticated": all_user_permissions,
+        "anonymous": anonymous_user_permissions
+    }
+
+
 def _get_object_responsible_user_ids(object_id: int) -> typing.List[int]:
     object = objects.get_object(object_id)
     if object.action_id is None:

@@ -16,7 +16,7 @@ from flask_babel import _
 import flask
 
 from .conditions import are_conditions_fulfilled
-from ...logic import actions, objects, datatypes, users, languages
+from .. import actions, errors, objects, datatypes, users, languages
 from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError, InvalidURLError
 from .utils import units_are_valid
@@ -659,23 +659,48 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
             object = objects.get_object(object_id=instance['object_id'])
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
+        action = None
+        action_type = None
+        if object.action_id is not None:
+            try:
+                action = actions.get_action(object.action_id)
+                action_type = action.type
+            except errors.ActionDoesNotExistError:
+                pass
+
         filter_operator = schema.get('filter_operator', 'and')
         action_id_error = None
         if 'action_id' in schema:
-            if type(schema['action_id']) is int:
+            if type(schema['action_id']) in (int, dict):
                 valid_action_ids = [schema['action_id']]
             else:
                 valid_action_ids = schema['action_id']
             if valid_action_ids is not None:
                 if object.action_id is None:
                     action_id_error = 'object has no action'
-                elif object.action_id not in valid_action_ids:
+                elif not any(
+                    object.action_id == valid_action_id or (
+                        type(valid_action_id) is dict and
+                        action is not None and
+                        (
+                            (
+                                valid_action_id.get('component_uuid') == flask.current_app.config['FEDERATION_UUID'] and
+                                valid_action_id.get('action_id') == action.id
+                            ) or (
+                                action.component is not None and
+                                valid_action_id.get('component_uuid') == action.component.uuid and
+                                valid_action_id.get('action_id') == action.fed_id
+                            )
+                        )
+                    )
+                    for valid_action_id in valid_action_ids
+                ):
                     action_id_error = 'object has wrong action'
         if filter_operator == 'and' and action_id_error:
             raise ValidationError(action_id_error, path)
         action_type_id_error = None
         if 'action_type_id' in schema:
-            if type(schema['action_type_id']) is int:
+            if type(schema['action_type_id']) in (int, dict):
                 valid_action_type_ids = [schema['action_type_id']]
             else:
                 valid_action_type_ids = schema['action_type_id']
@@ -683,10 +708,31 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 if object.action_id is None:
                     action_type_id_error = 'object has no action type'
                 else:
-                    action = actions.get_action(object.action_id)
-                    if action.type is None:
+                    if action is None or action.type is None:
                         action_type_id_error = 'object has no action type'
-                    elif action.type_id not in valid_action_type_ids and (action.type.fed_id is None or action.type.fed_id >= 0 or action.type.fed_id not in valid_action_type_ids):
+                    elif not any(
+                        action.type_id == valid_action_type_id or
+                        (
+                            type(valid_action_type_id) is int and
+                            valid_action_type_id < 0 and
+                            action_type is not None and
+                            action_type.fed_id == valid_action_type_id
+                        ) or (
+                            type(valid_action_type_id) is dict and
+                            action_type is not None and
+                            (
+                                (
+                                    valid_action_type_id.get('component_uuid') == flask.current_app.config['FEDERATION_UUID'] and
+                                    valid_action_type_id.get('action_type_id') == action_type.id
+                                ) or (
+                                    action_type.component is not None and
+                                    valid_action_type_id.get('component_uuid') == action_type.component.uuid and
+                                    valid_action_type_id.get('action_type_id') == action_type.fed_id
+                                )
+                            )
+                        )
+                        for valid_action_type_id in valid_action_type_ids
+                    ):
                         action_type_id_error = 'object has wrong action type'
         if filter_operator == 'and' and action_type_id_error:
             raise ValidationError(action_type_id_error, path)

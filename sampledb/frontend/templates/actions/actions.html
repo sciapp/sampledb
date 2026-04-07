@@ -20,7 +20,7 @@
     {% endif %}
     </ul>
   {% endif %}
-  <p class="text-muted">{% if action_type and action_type.description %}{{ action_type.description | get_translated_text(default='—') }}{% else %}{{ _('Actions represent processes like creating a sample or performing a measurement.') }}{% endif %} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">{{ _("Read more.") }}</a></p>
+  <p class="text-muted">{% if action_type and action_type.description %}{{ action_type.description | get_translated_text(default='—') }}{% else %}{{ _('Actions represent processes like creating a sample or performing a measurement.') }}{% endif %} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/actions.html">{{ _("Read more.") }}</a></p>
   {% if (current_user.is_admin or user_is_instrument_scientist) and not current_user.is_readonly and (not action_type or not action_type.admin_only or current_user.is_admin) %}
     {% if action_type and filter_topic_infos %}
     <a href="{{ url_for('.new_action', action_type_id=action_type.id, topic_ids=filter_topic_ids | join(',')) }}" class="btn btn-default">{{ _("Create Action") }} </a>
@@ -74,7 +74,29 @@
       </div>
     </div>
   {% endif %}
+  <form class="form-inline" style="display: inline">
+    <label for="input-filter-by-name" class="sr-only">{{ _('Filter by name') }}</label>
+    <div class="input-group">
+      <input type="text" class="form-control" placeholder="{{ _('Filter by name') }}" id="input-filter-by-name" />
+      <span class="input-group-btn">
+        <button class="btn btn-default" type="reset"><span class="sr-only">{{ _('Clear') }}</span><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+      </span>
+    </div>
+    <span id="filter-by-name-result-text" style="display: none" class="text-muted">{{ _('Showing NUM_RESULTS_PLACEHOLDER of %(num_actions)s actions due to filter for &quot;FILTER_PLACEHOLDER&quot;.', num_actions=actions | length) }}</span>
+  </form>
+
   {% for action in actions %}
+    {% set name_parts = [] %}
+    {% if action.user is not none %}
+      {% set action_owner = get_user(action.user_id) %}
+      {% set federated_user, imported_user = get_federated_identity(action_owner) %}
+      {% do name_parts.extend([federated_user.get_name(), '/']) %}
+    {% endif %}
+    {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
+      {% do name_parts.extend([action.instrument.name | get_translated_text(default=_('Unnamed Instrument')), '—']) %}
+    {% endif %}
+    {% do name_parts.append(action.name | get_translated_text(default=_('Unnamed Action'))) %}
+    <div class="filter-by-name" data-filter-text="{{ name_parts | join(' ') }}">
     <h2>
       {% if action.user is not none %}
         {% set action_owner = get_user(action.user_id) %}
@@ -126,6 +148,7 @@
       {% endif %}
     </p>
     {% endif %}
+    </div>
   {% endfor %}
 {% endblock %}
 
@@ -137,5 +160,6 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/filter-by-name.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}

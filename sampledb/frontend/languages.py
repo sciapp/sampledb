@@ -103,11 +103,11 @@ def show_language_form(
         except logic.errors.LanguageDoesNotExistError:
             existing_language_for_code = None
         names = {}
-        for language in logic.languages.get_languages():
-            key = 'name_' + str(language.id)
+        for other_language in logic.languages.get_languages():
+            key = 'name_' + str(other_language.id)
             value = flask.request.form.get(key, '').strip()
             if value:
-                names[language.lang_code] = value
+                names[other_language.lang_code] = value
         names['en'] = language_form.name_english.data.strip()
         if language_id is None and existing_language_for_code is None:
             names[language_form.lang_code.data.strip().lower()] = flask.request.form.get('name_new', '').strip()

@@ -50,7 +50,7 @@ def _on_logout() -> werkzeug.Response:
 
 def _get_current_user_id() -> typing.Optional[int]:
     if flask_login.current_user.is_authenticated:
-        return flask_login.current_user.get_id()
+        return flask_login.current_user.id
     return None
 
 

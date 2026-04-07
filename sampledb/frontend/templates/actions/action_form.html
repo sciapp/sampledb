@@ -90,7 +90,7 @@
 
   {% if not current_user.is_admin %}
     <div class="alert alert-warning">
-      <p>{{ _('<strong>Warning:</strong> Custom Actions are an advanced feature that most users of %(service_name)s will not need. See the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">User Guide</a> for more information.', service_name=service_name) }}</p>
+      <p>{{ _('<strong>Warning:</strong> Custom Actions are an advanced feature that most users of %(service_name)s will not need. See the <a href="%(documentation_root_url)suser_guide/actions.html">User Guide</a> for more information.', service_name=service_name, documentation_root_url=config["DOCUMENTATION_ROOT_URL"]) }}</p>
     </div>
   {% endif %}
 

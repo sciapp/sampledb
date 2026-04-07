@@ -1,4 +1,4 @@
-{% set container_style = schema.get('style') %}
+{% set container_style = get_style_variant(schema.get("style"), template_mode) %}
 <div class="form-group row">
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if is_required and schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}{% if is_template %} data-template-toggle="tooltip" {% else %} data-toggle="tooltip" {% endif %} data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
@@ -19,7 +19,7 @@
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set col_order_index = col_order_index + 1 if col_order_index else 1 %}
 {% set parent_prefix = id_prefix %}
-<div {% if get_style_variant(schema.style, template_mode) == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
+<div {% if get_style_variant(schema.get("style"), template_mode) == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if schema['items']['type'] == 'object' %}
     {% set item_property_names = get_property_names_in_order(schema["items"], previous_schema["items"]) %}
@@ -83,6 +83,10 @@
                 {% if 'recipes' in schema %}
                   {% include "objects/forms/form_table_recipe.html" %}
                 {% endif %}
+                <div style="height: 34px; margin-left: 11px; margin-right: 6px; display: flex; flex-direction: column;">
+                  <button type="button" id="action_{{ id_prefix }}_moveup" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="table_array_moveup" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-up fa-fw" style="display: block; margin-top:-1px"></i></button>
+                  <button type="button" id="action_{{ id_prefix }}_movedown" class="btn btn-default form-move-button" style="height:17px; padding: 0 7px;" data-object-form-button="table_array_movedown" data-element-id="{{ property_path[-1] }}"><i class="fa fa-chevron-down fa-fw" style="display: block; margin-top:-1px"></i></button>
+                </div>
                 <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" data-object-form-button="table_array_copy"><i class="fa fa-clone fa-fw"></i></button>
                 <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger form-delete-button" data-object-form-button="table_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-times fa-fw"></i></button>
               </div>

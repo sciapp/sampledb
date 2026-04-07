@@ -4,7 +4,7 @@ Webhooks
 ========
 
 Webhooks can be used to inform an external service about events right after they occur.
-Currently, only the object/activity log can be subscribed to, which contains log entries for object creation, updates, new references, comments, files, and similar activities.
+Currently, only changes to object permissions and the object/activity log can be subscribed to, which contains log entries for object creation, updates, new references, comments, files, and similar activities.
 
 If webhooks are used, background tasks (see :ref:`SAMPLEDB_ENABLE_BACKGROUND_TASKS <miscellaneous_config>`) should be enabled to handle sending the messages in the background without blocking operations that create object log entries.
 

@@ -959,7 +959,7 @@ def _validate_object_reference_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'filter_operator', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'filter_operator', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip', 'default'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -972,19 +972,45 @@ def _validate_object_reference_schema(
     if 'action_type_id' in schema and not (
             schema['action_type_id'] is None or
             type(schema['action_type_id']) is int or
+            (
+                type(schema['action_type_id']) is dict and
+                set(schema['action_type_id'].keys()) == {'component_uuid', 'action_type_id'} and
+                type(schema['action_type_id']['component_uuid']) is str and
+                type(schema['action_type_id']['action_type_id']) is int
+            ) or
             type(schema['action_type_id']) is list and all(
-                type(action_type_id) is int for action_type_id in schema['action_type_id']
+                type(action_type_id) is int or
+                (
+                    type(action_type_id) is dict and
+                    set(action_type_id.keys()) == {'component_uuid', 'action_type_id'} and
+                    type(action_type_id['component_uuid']) is str and
+                    type(action_type_id['action_type_id']) is int
+                )
+                for action_type_id in schema['action_type_id']
             )
     ):
-        raise ValidationError('action_type_id must be int, None or a list of ints', path)
+        raise ValidationError('action_type_id must be int, dict, None or a list of ints or dicts', path)
     if 'action_id' in schema and not (
             schema['action_id'] is None or
             type(schema['action_id']) is int or
+            (
+                type(schema['action_id']) is dict and
+                set(schema['action_id'].keys()) == {'component_uuid', 'action_id'} and
+                type(schema['action_id']['component_uuid']) is str and
+                type(schema['action_id']['action_id']) is int
+            ) or
             type(schema['action_id']) is list and all(
-                type(action_type_id) is int for action_type_id in schema['action_id']
+                type(action_id) is int or
+                (
+                    type(action_id) is dict and
+                    set(action_id.keys()) == {'component_uuid', 'action_id'} and
+                    type(action_id['component_uuid']) is str and
+                    type(action_id['action_id']) is int
+                )
+                for action_id in schema['action_id']
             )
     ):
-        raise ValidationError('action_id must be int, None or a list of ints', path)
+        raise ValidationError('action_id must be int, dict, None or a list of ints or dicts', path)
     _validate_filter_operators(
         mapping=schema,
         filter_operator_keys=('filter_operator',),
@@ -994,6 +1020,16 @@ def _validate_object_reference_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
+    if 'default' in schema:
+        validate(
+            instance={
+                '_type': 'object_reference',
+                'object_id': schema['default']
+            },
+            schema=schema,
+            path=path,
+            strict=strict
+        )
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 

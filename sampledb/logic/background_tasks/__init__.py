@@ -7,7 +7,7 @@ from .core import start_handler_threads, stop_handler_threads, post_background_t
 from .send_mail import post_send_mail_task
 from .background_dataverse_export import post_dataverse_export_task
 from .poke_components import post_poke_components_task
-from .trigger_webhooks import post_trigger_object_log_webhooks
+from .trigger_webhooks import post_trigger_object_log_webhooks, post_trigger_object_permissions_webhooks
 
 __all__ = [
     'core',
@@ -24,5 +24,6 @@ __all__ = [
     'post_perform_automatic_schema_updates_task',
     'post_poke_components_task',
     'post_trigger_object_log_webhooks',
+    'post_trigger_object_permissions_webhooks',
     'reset_claimed_background_tasks',
 ]

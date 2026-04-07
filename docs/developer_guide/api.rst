@@ -537,6 +537,163 @@ Setting the permissions for anonymous users
     :statuscode 404: the object does not exist
 
 
+Reading all permissions of an object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/
+
+    Get all permission mappings.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "users": {
+                1: "grant"
+            },
+            "groups": {
+                2: "read"
+            },
+            "projects": {
+                2: "read"
+            },
+            "authenticated_users" : "none",
+            "anonymous_users": "none"
+        }
+
+    :<json object users: user_ids and their associated permission for this object
+    :<json object groups: group_ids and their associated permission for this object
+    :<json object projects: project_ids and their associated permission for this object
+    :<json object authenticated_users: permission all authenticated users have to this object
+    :<json object anonymous_users: permission all users have to this object
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting all permissions of an object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/
+
+    Set and/or change multiple permissions to the given object.
+    Does keep non-colliding permissions that are already set and will return all currently applied permissions for this object.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "users": {
+                1: "grant"
+            },
+            "groups": {
+                2: "read"
+            },
+            "projects": {
+                2: "write"
+            },
+            "authenticated_users" : "none",
+            "anonymous_users": "none"
+        }
+        
+    :<json object users: user_ids and their associated permission for this object (optional)
+    :<json object groups: group_ids and their associated permission for this object (optional)
+    :<json object projects: project_ids and their associated permission for this object (optional)
+    :<json object authenticated_users: permission all authenticated users have to this object (optional)
+    :<json object anonymous_users: permission all users have to this object (optional)
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "users": {
+                1: "grant"
+            },
+            "groups": {
+                2: "read"
+            },
+            "projects": {
+                2: "write"
+            },
+            "authenticated_users" : "none",
+            "anonymous_users": "none"
+        }
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (should be "read", "write", "grant" or "none")
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object or user does not exist
+
+
+Copying all permissions from one object to another
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/permissions/copy/
+
+    Sets the permissions of the target object exactly to the permissions of the source object.
+    Request object can either be a list of objects or one object providing a source- and a target-object_id.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/permissions/copy/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        [
+            {
+                "source_object_id": 1,
+                "target_object_id": 3,
+            },
+            {
+                "source_object_id": 4,
+                "target_object_id": 2,
+            }
+        ]
+
+    :<json number source_object_id: the object_id from which the permissions should be copied
+    :<json number target_object_id: the object_id where the copied permissions should be applied to
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+    :statuscode 200: no error
+    :statuscode 400: invalid data (must be either list of json objects or json object with properties 'source' and 'target')
+    :statuscode 403: user does not have GRANT permissions on 'target' object or READ permission on 'source' object
+    :statuscode 404: 'target' or 'source' object does not exist
+
+
 Reading all users' permissions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1829,6 +1986,9 @@ Reading a list of all users
             }
         ]
 
+    :<json string filter_hidden: set to `true` to only get hidden users or to `false` to only get non-hidden users (only for API requests by administrators)
+    :<json string filter_active: set to `true` to only get active users or to `false` to only get non-active users (only for API requests by administrators)
+    :<json string filter_readonly: set to `true` to only get read-only users or to `false` to only get non-read-only users (only for API requests by administrators)
     :statuscode 200: no error
 
 
@@ -1869,6 +2029,9 @@ Reading a user
     :>json string affiliation: the user's affiliation (optional)
     :>json string role: the user's role (optional)
     :>json string email: the user's email (only for API requests by administrators)
+    :>json string is_hidden: whether the user is hidden (only for API requests by administrators)
+    :>json string is_active: whether the user is active (only for API requests by administrators)
+    :>json string is_readonly: whether the user is read-only (only for API requests by administrators)
     :statuscode 200: no error
     :statuscode 404: the user does not exist
 
@@ -2005,6 +2168,149 @@ Reading a basic group
     :statuscode 200: no error
     :statuscode 404: the basic group does not exist
 
+
+Reading the list of members for a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/groups/(int:group_id)/member_users/
+
+    Get the member users of a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/groups/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "user_id": 1,
+                "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 404: the basic group does not exist
+
+
+Reading a member of a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/groups/(int:group_id)/member_users/(int:user_id)
+
+    Get the information for a specific member user (`user_id`) of a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/groups/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+        }
+
+    :>json number user_id: the user's ID
+    :>json string href: the link to the user
+    :statuscode 200: no error
+    :statuscode 404: the basic group or user does not exist, or the user is not a member of this basic group
+
+
+Adding a member to a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/groups/(int:group_id)/member_users/
+
+    Add a specific member user (`user_id`) to a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/groups/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "user_id": 1
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: /api/v1/groups/1/member_users/1
+
+    :<json number user_id: the user's ID
+    :statuscode 201: no error
+    :statuscode 400: the request data was invalid, or the user is already a member of this basic group
+    :statuscode 404: the basic group or user does not exist
+
+
+Removing a member from a basic group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:delete:: /api/v1/groups/(int:group_id)/member_users/(int:user_id)
+
+    Remove a specific user (`user_id`) from a specific basic group (`group_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        DELETE /api/v1/groups/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "message": "user 1 has been removed from group 1"
+        }
+
+    :statuscode 200: no error
+    :statuscode 404: the basic group or user does not exist, or the user is not a member of this basic group
+
+
 Project Groups
 --------------
 
@@ -2115,6 +2421,200 @@ Reading a project group
     :statuscode 200: no error
     :statuscode 404: the project group does not exist
 
+
+Reading the list of members for a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/projects/(int:project_id)/member_users/
+
+    Get the member users of a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/projects/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "user_id": 1,
+                "permissions": "grant",
+                "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+            }
+        ]
+
+    :statuscode 200: no error
+    :statuscode 404: the project group does not exist
+
+
+Reading a member of a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/projects/(int:project_id)/member_users/(int:user_id)
+
+    Get the information for a specific member user (`user_id`) of a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/projects/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "permissions": "grant",
+            "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+        }
+
+    :>json number user_id: the user's ID
+    :>json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :>json string href: the link to the user
+    :statuscode 200: no error
+    :statuscode 404: the project group or user does not exist, or the user is not a member of this project group
+
+
+Adding a member to a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/projects/(int:project_id)/member_users/
+
+    Add a specific member user (`user_id`) to a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/projects/1/member_users/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "user_id": 1,
+            "permissions": "read"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: /api/v1/projects/1/member_users/1
+
+    :<json number user_id: the user's ID
+    :<json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :statuscode 201: no error
+    :statuscode 400: the request data was invalid, or the user is already a member of this project group
+    :statuscode 404: the project group or user does not exist
+
+
+Updating the permissions for a member of a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/projects/(int:project_id)/member_users/(int:user_id)
+
+    Update the permissions of a specific member user (`user_id`) of a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/projects/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "permissions": "read"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "user_id": 1,
+            "permissions": "read",
+            "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+        }
+
+    :<json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :>json number user_id: the user's ID
+    :>json string permissions: the user's permissions (`"read"`, `"write"` or `"grant"`)
+    :>json string href: the link to the user
+    :statuscode 200: no error
+    :statuscode 400: the request data was invalid, or the user is the only user with grant permissions for the project group
+    :statuscode 404: the project group or user does not exist, or the user is not a member of this project group
+
+
+Removing a member from a project group
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:delete:: /api/v1/projects/(int:project_id)/member_users/(int:user_id)
+
+    Remove a specific user (`user_id`) from a specific project group (`project_id`).
+
+    **Note**: This route is only available to administrators.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        DELETE /api/v1/projects/1/member_users/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "message": "user 1 has been removed from project 1"
+        }
+
+    :statuscode 200: no error
+    :statuscode 400: the user is the only user with grant permissions for the project group
+    :statuscode 404: the project group or user does not exist, or the user is not a member of this project group
+
+
 Locations
 ---------
 
@@ -2202,6 +2702,101 @@ Reading a location
     :statuscode 404: the location does not exist
 
 
+Creating a new location
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/locations/
+
+    Create a new location.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/locations/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "name": "Example Location",
+            "description": "This is an example location",
+            "parent_location_id": null,
+            "type_id": -99
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/locations/1
+
+    :<json string name: the locations's name
+    :<json string description: the locations's description
+    :<json number parent_location_id: the parent location's ID
+    :<json number type_id: the location type's ID
+    :statuscode 201: the location was created successfully
+    :statuscode 403: management of locations is limited to administrators (configurable), management of locations of this location type is limited to administrators or the user does not have WRITE permissions for the parent location
+
+
+Updating a location
+^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/locations/(int:location_id)
+
+    Update the specific location (`location_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/locations/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "location_id": 1,
+            "name": "Example Location",
+            "description": "This is an example location",
+            "parent_location_id": null,
+            "type_id": -99,
+            "is_hidden": false,
+            "enable_object_assignments": true
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "location_id": 1,
+            "name": "Example Location",
+            "description": "This is an example location",
+            "parent_location_id": null,
+            "type_id": -99,
+            "is_hidden": false,
+            "enable_object_assignments": true
+        }
+
+    :<json number location_id: the location's ID (optional)
+    :<json string name: the locations's name
+    :<json string description: the locations's description
+    :<json number parent_location_id: the parent location's ID
+    :<json number type_id: the location type's ID
+    :<json bool is_hidden: whether or not the location is hidden
+    :<json bool enable_object_assignments: whether object assignments are enabled for this location
+    :statuscode 200: the location was updated successfully
+    :statuscode 403: management of locations is limited to administrators (configurable), management of locations of this location type is limited to administrators or the user does not have WRITE permissions for the parent location
+
+
 Reading a list of an object's locations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2279,6 +2874,45 @@ Reading an object's location
     :>json number utc_datetime: the datetime when the object was stored
     :statuscode 200: no error
     :statuscode 404: the object or the object location assignment does not exist
+
+
+Assigning a location or a responsible user to an object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/objects/(int:object_id)/locations/
+
+    Assign a location or responsible user to a specific object (`object_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/objects/1/locations/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "location_id": 2,
+            "responsible_user_id": "3",
+            "description": "This is an example location assignment."
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+        Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/locations/0
+
+    :<json number location_id: the ID of the location to assign the object to (optional if responsible_user_id is set)
+    :<json string responsible_user_id: the ID of the responsible user to assign the object to (optional if responsible_user_id is set)
+    :<json string description: the description for the object location assignment (optional)
+    :statuscode 201: the object has successfully been assigned to a location or a responsible user
+    :statuscode 403: the user does not have WRITE permissions for this object or READ permissions for this location
+    :statuscode 404: the object does not exist
 
 
 Location Types

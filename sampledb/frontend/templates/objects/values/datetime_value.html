@@ -1,5 +1,5 @@
 {% if data is not none %}
-  {% set style_variant = get_style_variant(schema.style, template_mode) %}
+  {% set style_variant = get_style_variant(schema.get("style"), template_mode) %}
   <span data-utc-datetime="{{ data.utc_datetime | generic_format_datetime }}"  {%- if style_variant == 'date' -%}data-sampledb-date-only="true"{%- elif style_variant == 'time' -%}data-sampledb-time-only="true"{%- endif -%}>
     {%- if style_variant == 'date' -%}
       {{ data.utc_datetime | babel_format_date }}

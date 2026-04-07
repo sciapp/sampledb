@@ -4,12 +4,16 @@ import glob
 import hashlib
 import io
 import itertools
+import json
 import os.path
 import string
 import sys
+import uuid
 import zipfile
 
 import pytest
+import requests
+import requests_mock
 
 import sampledb
 from sampledb.logic import errors, export, files
@@ -30,6 +34,13 @@ def user(flask_server):
 @pytest.fixture
 def eln_zip_bytes(user, app, flask_server):
     set_up_state(user)
+
+    object = logic.objects.get_objects()[0]
+    logic.objects.update_object(
+        object_id=object.object_id,
+        data={**object.data, "name": {"_type": "text", "text": {"en": "Updated Object"}}},
+        user_id=user.id,
+    )
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
@@ -109,6 +120,52 @@ def test_get_eln_import(user, sampledb_eln_import_id):
     with pytest.raises(errors.ELNImportDoesNotExistError):
         logic.eln_import.get_eln_import(sampledb_eln_import_id + 1)
 
+def test_get_eln_import_signed_by(flask_server, app, sampledb_eln_import_id):
+    assert logic.eln_import.get_import_signed_by(sampledb_eln_import_id) is None
+    assert logic.eln_import.get_import_signed_by(sampledb_eln_import_id + 1) is None
+
+    allow_http = app.config["ELN_FILE_IMPORT_ALLOW_HTTP"]
+    app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = True
+    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = allow_http
+
+    assert logic.eln_import.get_import_signed_by(sampledb_eln_import_id) == flask_server.base_url.rstrip('/')
+
+
+def test_get_eln_import_users(sampledb_eln_import_id):
+    assert not sampledb.logic.eln_import.get_eln_import_users(sampledb_eln_import_id)
+
+    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+
+    assert {user.name for user in sampledb.logic.eln_import.get_eln_import_users(sampledb_eln_import_id)} == {'Basic User'}
+
+
+def test_get_eln_import_objects(sampledb_eln_import_id):
+    assert not sampledb.logic.eln_import.get_eln_import_objects(sampledb_eln_import_id)
+
+    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+
+    assert {sampledb.logic.utils.get_translated_text(object.name, 'en') for object in sampledb.logic.eln_import.get_eln_import_objects(sampledb_eln_import_id)} == {'Updated Object'}
+
+
+def test_get_eln_import_for_object(flask_server, sampledb_eln_import_id):
+    assert logic.eln_import.get_eln_import_for_object(-1) is None
+    expected_object_url = logic.eln_import.parse_eln_file(sampledb_eln_import_id).objects[0].url
+    object_ids, _, _ = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    assert logic.eln_import.get_eln_import_for_object(object_ids[0]) == (logic.eln_import.get_eln_import(sampledb_eln_import_id), expected_object_url)
+
+
+def test_get_eln_import_object_url(sampledb_eln_import_id):
+    assert logic.eln_import.get_eln_import_object_url(-1) is None
+    expected_object_url = logic.eln_import.parse_eln_file(sampledb_eln_import_id).objects[0].url
+    object_ids, _, _ = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    assert logic.eln_import.get_eln_import_object_url(object_ids[0]) == expected_object_url
+
+
+def test_get_pending_eln_imports(user, sampledb_eln_import_id):
+    assert logic.eln_import.get_pending_eln_imports(user.id) == [logic.eln_import.get_eln_import(sampledb_eln_import_id)]
+    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    assert not logic.eln_import.get_pending_eln_imports(user.id)
 
 def test_remove_expired_eln_imports(user):
     eln_import = sampledb.models.ELNImport(
@@ -183,6 +240,10 @@ def test_parse_sampledb_eln_file(app, flask_server, sampledb_eln_import_id):
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by == f"{flask_server.base_url}".rstrip('/')
 
+    assert len(parsed_eln_import.objects[0].versions) == 2
+    assert parsed_eln_import.objects[0].versions[0].version_id == 0 and parsed_eln_import.objects[0].versions[0].data['name']['text'] == 'Object'
+    assert parsed_eln_import.objects[0].versions[1].version_id == 1 and parsed_eln_import.objects[0].versions[1].data['name']['text'] == {'en': 'Updated Object'}
+
 
 def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
     with zipfile.ZipFile(io.BytesIO(eln_zip_bytes_unsigned)) as zip_file:
@@ -203,6 +264,192 @@ def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
     parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by is None
+
+
+
+def test_parse_eln_file_without_objects(user, app, flask_server, eln_zip_bytes):
+    eln_zip_bytes_modified = io.BytesIO()
+    with zipfile.ZipFile(eln_zip_bytes_modified, 'w') as zip_file_modified:
+        with zipfile.ZipFile(io.BytesIO(eln_zip_bytes)) as zip_file:
+            for member_name in zip_file.namelist():
+                with zip_file.open(member_name) as member_file:
+                    member_content = member_file.read()
+                normalized_member_name = os.path.normpath(member_name)
+                if normalized_member_name == 'sampledb_export/ro-crate-metadata.json':
+                    ro_crate_metadata = json.loads(member_content.decode())
+                    nodes_by_id = {node['@id']: node for node in ro_crate_metadata['@graph']}
+                    nodes_by_id['./']['hasPart'] = []
+                    for node_id, node in nodes_by_id.items():
+                        if node_id.startswith('./objects/'):
+                            ro_crate_metadata['@graph'].remove(node)
+                    member_content = json.dumps(ro_crate_metadata).encode()
+                zip_file_modified.writestr(member_name, member_content)
+
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=eln_zip_bytes_modified.getvalue()
+    )
+    with pytest.raises(logic.errors.InvalidELNFileError) as exc_info:
+        logic.eln_import.parse_eln_file(eln_import.id)
+    assert str(exc_info.value) == ".eln file must contain at least one object"
+
+
+def test_parse_eln_file_invalid_zip(user, app, flask_server, eln_zip_bytes):
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=eln_zip_bytes[:-10] + b'Invalid'
+    )
+    with pytest.raises(logic.errors.InvalidELNFileError) as exc_info:
+        logic.eln_import.parse_eln_file(eln_import.id)
+    assert str(exc_info.value) == ".eln file must be valid .zip file"
+
+
+def test_parse_sampledb_eln_file_with_references(user, app, flask_server):
+    set_up_state(user)
+
+    object = logic.objects.get_objects()[0]
+    schema = object.schema
+    data = object.data
+    schema["properties"]["local_user"] = {
+        "type": "user",
+        "title": "User Reference"
+    }
+    data["local_user"] = {
+        "_type": "user",
+        "user_id": user.id
+    }
+    schema["properties"]["eln_user"] = {
+        "type": "user",
+        "title": "User Reference"
+    }
+    data["eln_user"] = {
+        "_type": "user",
+        "user_id": user.id,
+        "eln_source_url": "https://example.org",
+        "eln_user_url": "https://example.org/users/1"
+    }
+    schema["properties"]["fed_user"] = {
+        "type": "user",
+        "title": "User Reference"
+    }
+    data["fed_user"] = {
+        "_type": "user",
+        "user_id": 1,
+        "component_uuid": str(uuid.uuid4())
+    }
+    schema["properties"]["local_object"] = {
+        "type": "object_reference",
+        "title": "Object Reference"
+    }
+    data["local_object"] = {
+        "_type": "object_reference",
+        "object_id": object.id
+    }
+    schema["properties"]["eln_object"] = {
+        "type": "object_reference",
+        "title": "Object Reference"
+    }
+    data["eln_object"] = {
+        "_type": "object_reference",
+        "object_id": object.id,
+        "eln_source_url": "https://example.org",
+        "eln_object_url": "https://example.org/objects/1"
+    }
+    schema["properties"]["eln_object"] = {
+        "type": "object_reference",
+        "title": "Object Reference"
+    }
+    data["eln_object"] = {
+        "_type": "object_reference",
+        "object_id": object.id,
+        "eln_source_url": "https://example.org",
+        "eln_object_url": "https://example.org/objects/1"
+    }
+    schema["properties"]["fed_object"] = {
+        "type": "object_reference",
+        "title": "Object Reference"
+    }
+    data["fed_object"] = {
+        "_type": "object_reference",
+        "object_id": 1,
+        "component_uuid": str(uuid.uuid4())
+    }
+    schema["properties"]["array"] = {
+        "type": "array",
+        "title": "Array",
+        "items": {
+            "type": "text",
+            "title": "Text"
+        }
+    }
+    data["array"] = [
+        {
+            "_type": "text",
+            "text": "Test"
+        }
+    ]
+    logic.objects.update_object(
+        object_id=object.object_id,
+        data=data,
+        schema=schema,
+        user_id=user.id,
+    )
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
+    with app.test_request_context('/'):
+        zip_bytes = export.get_eln_archive(user.id)
+    app.config['SERVER_NAME'] = server_name
+
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=zip_bytes
+    )
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    app.config['SERVER_NAME'] = server_name
+
+    assert parsed_eln_import.objects[0].versions[1].data["local_user"] == {
+        "_type": "user",
+        "user_id": user.id,
+        "eln_source_url": flask_server.base_url.rstrip('/'),
+        "eln_user_url": f"{flask_server.base_url.rstrip('/')}/users/{user.id}"
+    }
+    assert parsed_eln_import.objects[0].versions[1].data["eln_user"] == {
+        "_type": "user",
+        "user_id": user.id,
+        "eln_source_url": flask_server.base_url.rstrip('/'),
+        "eln_user_url": f"{flask_server.base_url.rstrip('/')}/users/{user.id}"
+    }
+    assert parsed_eln_import.objects[0].versions[1].data["fed_user"] == {
+        "_type": "user",
+        "user_id": 1,
+        "component_uuid": data["fed_user"]["component_uuid"]
+    }
+
+    assert parsed_eln_import.objects[0].versions[1].data["local_object"] == {
+        "_type": "object_reference",
+        "object_id": object.id,
+        "eln_source_url": flask_server.base_url.rstrip('/'),
+        "eln_object_url": f"{flask_server.base_url.rstrip('/')}/objects/{user.id}"
+    }
+    assert parsed_eln_import.objects[0].versions[1].data["eln_object"] == {
+        "_type": "object_reference",
+        "object_id": object.id,
+        "eln_source_url": flask_server.base_url.rstrip('/'),
+        "eln_object_url": f"{flask_server.base_url.rstrip('/')}/objects/{user.id}"
+    }
+    assert parsed_eln_import.objects[0].versions[1].data["fed_object"] == {
+        "_type": "object_reference",
+        "object_id": 1,
+        "component_uuid": data["fed_object"]["component_uuid"]
+    }
 
 
 def test_parse_sampledb_eln_file_ro_crate_metadata_modified(user, app, flask_server):
@@ -254,6 +501,355 @@ def test_parse_sampledb_eln_file_ro_crate_metadata_modified(user, app, flask_ser
     assert "Signature" in parsed_eln_import.import_notes and parsed_eln_import.import_notes["Signature"] == ['Invalid URL scheme: http']
     assert all(len(import_notes) == 0 for key, import_notes in parsed_eln_import.import_notes.items() if key != "Signature")
     assert parsed_eln_import.signed_by is None
+
+
+@pytest.mark.parametrize(
+    [
+        'modifications',
+        'expected_import_notes',
+        'mock_urls'
+    ],
+    [
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: content
+            },
+            {
+                'Signature': ['Invalid URL scheme: http']
+            },
+            None
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: file:///keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['Invalid URL scheme: file']
+            },
+            None
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: ./keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['Missing URL scheme']
+            },
+            None
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://[' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['The signature does not contain a valid URL.']
+            },
+            None
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['The signature does not contain a valid URL pointing to /.well-known/keys.json.']
+            },
+            None
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://localhost:5432/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['Failed to connect to https://localhost:5432/.well-known/keys.json.']
+            },
+            None
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['Received an error from https://example.org/.well-known/keys.json.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "status_code": 404,
+                    "text": "Not Found"
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['https://example.org/.well-known/keys.json did not return a valid JSON object.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "text": "-"
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['https://example.org/.well-known/keys.json did not return a valid JSON list.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": "key"
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['Successfully fetched all 0 keys but no matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": []
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['There was an error checking 1 of 1 public keys. No matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": [[]]
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['There was an error checking 1 of 1 public keys. No matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": {}
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['There was an error checking 1 of 1 public keys. No matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": {
+                        "contentUrl": "https://example.org/.well-known/key.json"
+                    }
+                },
+                "https://example.org/.well-known/key.json": {
+                    "exc": requests.exceptions.ConnectionError()
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['There was an error checking 1 of 1 public keys. No matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": {
+                        "contentUrl": "https://example.org/.well-known/key.json"
+                    }
+                },
+                "https://example.org/.well-known/key.json": {
+                    "status_code": 404,
+                    "text": "Not Found"
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['There was an error checking 1 of 1 public keys. No matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": {
+                        "contentUrl": "https://example.org/.well-known/key.json"
+                    }
+                },
+                "https://example.org/.well-known/key.json": {
+                    "text": "A"
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['There was an error checking 1 of 1 public keys. No matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": {
+                        "contentUrl": "https://example.org/.well-known/key.json"
+                    }
+                },
+                "https://example.org/.well-known/key.json": {
+                    "text": "?"
+                }
+            }
+        ],
+        [
+            {
+                'sampledb_export/ro-crate-metadata.json.minisig': lambda content: (
+                        '\n'.join(
+                        'trusted comment: https://example.org/.well-known/keys.json' if line.startswith('trusted comment: ') else line
+                        for line in content.decode().split('\n')
+                    ).encode()
+                )
+            },
+            {
+                'Signature': ['Successfully fetched all 1 keys but no matching public key was found.']
+            },
+            {
+                "https://example.org/.well-known/keys.json": {
+                    "json": {
+                        "contentUrl": "https://example.org/.well-known/key.json"
+                    }
+                },
+                "https://example.org/.well-known/key.json": {
+                    "text": "RWSDLBYVmOlYksrC0wULAruKf78kq4JWFHd+7zP35XeJg9LUiIaRUDOm"
+                }
+            }
+        ],
+    ]
+)
+def test_parse_sampledb_eln_file_with_invalid_signature_file(user, app, flask_server, eln_zip_bytes, modifications, expected_import_notes, mock_urls):
+    eln_zip_bytes_modified = io.BytesIO()
+    with zipfile.ZipFile(eln_zip_bytes_modified, 'w') as zip_file_modified:
+        with zipfile.ZipFile(io.BytesIO(eln_zip_bytes)) as zip_file:
+            for member_name in zip_file.namelist():
+                with zip_file.open(member_name) as member_file:
+                    member_content = member_file.read()
+                normalized_member_name = os.path.normpath(member_name)
+                if normalized_member_name in modifications:
+                    member_content = modifications[normalized_member_name](member_content)
+                zip_file_modified.writestr(member_name, member_content)
+
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=eln_zip_bytes_modified.getvalue()
+    )
+
+    if mock_urls:
+        with requests_mock.Mocker() as mock:
+            for mock_url in mock_urls:
+                mock.get(mock_url, **mock_urls[mock_url])
+            parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    else:
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    for key in expected_import_notes:
+        assert key in parsed_eln_import.import_notes
+    for key, value in parsed_eln_import.import_notes.items():
+        if value:
+            assert key in expected_import_notes and value == expected_import_notes[key]
+        else:
+            assert key not in expected_import_notes
+    assert parsed_eln_import.signed_by is None
+
 
 @pytest.mark.parametrize(
     'modify_file',
@@ -307,6 +903,28 @@ def test_parse_sampledb_eln_file_object_modified(user, app, flask_server, modify
     with pytest.raises(errors.InvalidELNFileError) as exc_info:
         logic.eln_import.parse_eln_file(eln_import.id)
     assert 'Hash mismatch' in exc_info.value.args[0]
+
+
+def test_import_eln_file_invalid_args(sampledb_eln_import_id):
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id + 1)
+    assert not object_ids
+    assert not users_by_id
+    assert errors == ['Unknown ELN import']
+
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id, [sampledb.logic.action_types.ActionType.SAMPLE_CREATION] * 10)
+    assert not object_ids
+    assert not users_by_id
+    assert errors == ['Invalid Action Type ID information for this ELN file']
+
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    assert object_ids
+    assert users_by_id
+    assert not errors
+
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    assert not object_ids
+    assert not users_by_id
+    assert errors == ['This ELN file has already been imported']
 
 
 def test_import_sampledb_eln_file(sampledb_eln_import_id):
@@ -428,7 +1046,7 @@ def test_import_pasta_eln_file(user):
     assert all(len(import_notes) <= 1 for import_notes in parsed_eln_import.import_notes.values())
     object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
-    assert len(object_ids) == 16
+    assert len(object_ids) == 26
     assert len(users_by_id) == 1
     assert 'author_Steffen_Brinckmann' in users_by_id
     assert users_by_id['author_Steffen_Brinckmann'].eln_object_id == 'author_Steffen_Brinckmann'
@@ -534,19 +1152,65 @@ def test_convert_property_values_to_data_and_schema():
             "propertyOrder": ["name"]
         }
     )
-    assert sampledb.logic.eln_import._convert_property_values_to_data_and_schema(
+    data, schema = sampledb.logic.eln_import._convert_property_values_to_data_and_schema(
         property_values=[
             {
                 "@type": "PropertyValue",
                 "propertyID": "name",
                 "value": "Other Object"
-            }
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "temperature",
+                "value": 20,
+                "unitText": "degC"
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "bool_array.0",
+                "value": True
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "bool_array.1",
+                "value": False
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": ".0",
+                "value": "A"
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": ".1",
+                "value": "B\nC"
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": ".2",
+                "value": False
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "temperature_array.1",
+                "value": 10,
+                "unitText": "degC"
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "temperature_array.0",
+                "value": 20,
+                "unitText": "degC"
+            },
         ],
         name='Example Object',
         description='Example Description',
         description_is_markdown=True,
         tags=['test', 'tag']
-    ) == (
+    )
+    sampledb.logic.schemas.validate_schema(schema)
+    sampledb.logic.schemas.validate(data, schema)
+    assert (data, schema) == (
         {
             "name": {
                 "_type": "text",
@@ -560,6 +1224,59 @@ def test_convert_property_values_to_data_and_schema():
                     "en": "Other Object"
                 }
             },
+            "temperature": {
+                "_type": "quantity",
+                "magnitude": 20,
+                "units": "degree_Celsius",
+                "dimensionality": "[temperature]",
+                "magnitude_in_base_units": 293.15
+            },
+            "bool_array": [
+                {
+                    "_type": "bool",
+                    "value": True
+                },
+                {
+                    "_type": "bool",
+                    "value": False
+                }
+            ],
+            "property": [
+                {
+                    "_type": "text",
+                    "text": {
+                        "en": "A"
+                    }
+                },
+                {
+                    "_type": "text",
+                    "text": {
+                        "en": "B\nC"
+                    }
+                },
+                {
+                    "_type": "text",
+                    "text": {
+                        "en": "false"
+                    }
+                }
+            ],
+            "temperature_array": [
+                {
+                    "_type": "quantity",
+                    "magnitude": 20,
+                    "units": "degree_Celsius",
+                    "dimensionality": "[temperature]",
+                    "magnitude_in_base_units": 293.15
+                },
+                {
+                    "_type": "quantity",
+                    "magnitude": 10,
+                    "units": "degree_Celsius",
+                    "dimensionality": "[temperature]",
+                    "magnitude_in_base_units": 283.15
+                }
+            ],
             "description": {
                 "_type": "text",
                 "text": {
@@ -589,6 +1306,51 @@ def test_convert_property_values_to_data_and_schema():
                         "en": "name"
                     },
                     "type": "text"
+                },
+                "temperature": {
+                    "title": {
+                        "en": "temperature"
+                    },
+                    "type": "quantity",
+                    "units": "degree_Celsius"
+                },
+                "bool_array": {
+                    "items": {
+                        "title": {
+                            "en": "Item",
+                        },
+                        "type": "bool",
+                    },
+                    "title": {
+                        "en": "bool_array",
+                    },
+                    "type": "array",
+                },
+                "property": {
+                    "items": {
+                        "title": {
+                            "en": "Item",
+                        },
+                        "type": "text",
+                        "multiline": True
+                    },
+                    "title": {
+                        "en": "Array",
+                    },
+                    "type": "array",
+                },
+                "temperature_array": {
+                    "items": {
+                        "title": {
+                            "en": "Item"
+                        },
+                        "type": "quantity",
+                        "units": "degree_Celsius"
+                    },
+                    "title": {
+                        "en": "temperature_array",
+                    },
+                    "type": "array",
                 },
                 "description": {
                     "title": {
@@ -760,3 +1522,128 @@ def test_import_reference_eln_files(user, eln_file_path):
     assert not errors
     assert len(object_ids) >= 1
     assert len(users_by_id) >= 1
+
+
+def test_import_nested_datasets(user):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files', 'SciLog', 'export.eln'), 'rb') as eln_export_file:
+        eln_zip_bytes = eln_export_file.read()
+    eln_import_id = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.eln',
+        zip_bytes=eln_zip_bytes
+    ).id
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    assert len(parsed_eln_import.objects) == 6
+    assert all(len(parsed_object.versions) == 1 for parsed_object in parsed_eln_import.objects)
+    objects_by_name = {
+        parsed_object.versions[0].data['name']['text']['en']: parsed_object
+        for parsed_object in parsed_eln_import.objects
+    }
+    assert set(objects_by_name.keys()) == {
+      'SciLog ELN export: logbook-001',
+      'Paragraph 69773b85d55e4cd59458ceb3',
+      'Paragraph 696e3faad55e4c82fc58ceae',
+      'Paragraph 696e3f8bd55e4c64c058ceac',
+      'Comment 697a17c2668d1584a73c7c01',
+      'Paragraph 696e3f24d55e4cdffa58ceaa',
+    }
+    assert parsed_eln_import.object_parts_relationships ==  {
+        './696e3f05d55e4c57ec58cea9/': [
+            './696e3f24d55e4cdffa58ceaa/',
+            './696e3f8bd55e4c64c058ceac/',
+            './696e3faad55e4c82fc58ceae/',
+            './69773b85d55e4cd59458ceb3/',
+            './697a17c2668d1584a73c7c01/'
+        ]
+    }
+    assert parsed_eln_import.import_notes == {
+        parsed_object.id: ['The .eln file did not contain any valid flexible metadata for this object.']
+        for parsed_object in parsed_eln_import.objects
+    }
+    imported_object_ids, imported_users, errors = sampledb.logic.eln_import.import_eln_file(eln_import_id)
+    imported_objects = [
+        sampledb.logic.objects.get_object(object_id)
+        for object_id in imported_object_ids
+    ]
+    imported_objects_by_eln_object_id = {
+        object.eln_object_id: object
+        for object in imported_objects
+    }
+    assert imported_objects_by_eln_object_id['./696e3f05d55e4c57ec58cea9/'].schema == {
+        "type": "object",
+        "title": {
+            "en": "Object Information",
+            "de": "Objektinformationen"
+        },
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": {
+                    "en": "Name",
+                    "de": "Name"
+                }
+            },
+            "description": {
+                "type": "text",
+                "title": {
+                    "en": "Description",
+                    "de": "Beschreibung"
+                },
+                "multiline": False
+            },
+            "import_note": {
+                "type": "text",
+                "languages": ["en", "de"],
+                "title": {
+                    "en": "Import Note",
+                    "de": "Import-Hinweis"
+                }
+            },
+            "parts": {
+                "type": "array",
+                "title": {
+                    "en": "Parts",
+                    "de": "Teile"
+                },
+                "items": {
+                    "type": "object_reference",
+                    "title": {
+                        "en": "Part",
+                        "de": "Teil"
+                    },
+                    "style": "include"
+                }
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "description", "import_note", "parts"]
+    }
+    assert imported_objects_by_eln_object_id['./696e3f05d55e4c57ec58cea9/'].data == {
+        "name": {
+            "_type": "text",
+            "text": {
+                "en": "SciLog ELN export: logbook-001"
+            }
+        },
+        "description": {
+            "_type": "text",
+            "text": {
+                "en": "test new logbook"
+            }
+        },
+        "import_note": {
+            "_type": "text",
+            "text": {
+                "en": "The .eln file did not contain any valid flexible metadata for this object.",
+                "de": "Die .eln-Datei enthielt keine g\xfcltigen flexiblen Metadaten f\xfcr dieses Objekt."
+            }
+        },
+        "parts": [
+            {
+                "_type": "object_reference",
+                "object_id": imported_objects_by_eln_object_id[eln_object_id].object_id
+            }
+            for eln_object_id in parsed_eln_import.object_parts_relationships['./696e3f05d55e4c57ec58cea9/']
+        ]
+    }
+    assert not errors

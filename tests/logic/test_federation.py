@@ -5,6 +5,7 @@
 import base64
 import copy
 import typing
+import uuid
 from copy import deepcopy
 import datetime
 import flask
@@ -4264,7 +4265,7 @@ def test_import_object_import_status(component):
     assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc) <= datetime.datetime.now(datetime.timezone.utc)
 
 
-def test_schema_entry_preprocessor(action):
+def test_schema_entry_preprocessor(action, complex_action):
     schema = {
         'title': 'Test Schema',
         'type': 'object',
@@ -4365,6 +4366,60 @@ def test_schema_entry_preprocessor(action):
                         'component_uuid': sampledb.config.FEDERATION_UUID
                     }
                 }
+            }
+        },
+        'required': ['name']
+    }
+
+    other_component_uuid = str(uuid.uuid4())
+    schema = {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'object_reference': {
+                'type': 'object_reference',
+                'title': 'Object Reference',
+                'action_id': [
+                    complex_action.id,
+                    {'action_id': 1, 'component_uuid': other_component_uuid}
+                ],
+                'action_type_id': [
+                    sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+                    complex_action.type_id,
+                    {'action_type_id': 1, 'component_uuid': other_component_uuid}
+                ]
+            }
+        },
+        'required': ['name']
+    }
+    preprocessed_schema = copy.deepcopy(schema)
+    refs = []
+    schema_entry_preprocessor(preprocessed_schema, refs)
+    assert refs == []
+    assert preprocessed_schema == {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'object_reference': {
+                'type': 'object_reference',
+                'title': 'Object Reference',
+                'action_id': [
+                    {'action_id': complex_action.id, 'component_uuid': sampledb.config.FEDERATION_UUID},
+                    {'action_id': 1, 'component_uuid': other_component_uuid}
+                ],
+                'action_type_id': [
+                    {'action_type_id': sampledb.logic.action_types.ActionType.SAMPLE_CREATION, 'component_uuid': sampledb.config.FEDERATION_UUID},
+                    {'action_type_id': complex_action.type_id, 'component_uuid': sampledb.config.FEDERATION_UUID},
+                    {'action_type_id': 1, 'component_uuid': other_component_uuid}
+                ]
             }
         },
         'required': ['name']

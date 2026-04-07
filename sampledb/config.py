@@ -9,6 +9,7 @@ This configuration is the pure base, representing defaults. These values may be 
 """
 
 import base64
+import copy
 import io
 import json
 import os
@@ -68,6 +69,7 @@ def parse_configuration_values() -> None:
     for config_name in [
         'INVITATION_TIME_LIMIT',
         'MAX_CONTENT_LENGTH',
+        'MAX_FORM_MEMORY_SIZE',
         'MAX_BATCH_SIZE',
         'VALID_TIME_DELTA',
         'DOWNLOAD_SERVICE_TIME_LIMIT',
@@ -91,7 +93,8 @@ def parse_configuration_values() -> None:
         'EXTRA_USER_FIELDS',
         'DOWNLOAD_SERVICE_WHITELIST',
         'LABEL_PAPER_FORMATS',
-        'DEFAULT_NOTIFICATION_MODES'
+        'DEFAULT_NOTIFICATION_MODES',
+        'EXTERNAL_LINKS',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
@@ -113,6 +116,7 @@ def parse_configuration_values() -> None:
         'DISABLE_SUBPROJECTS',
         'ENFORCE_SPLIT_NAMES',
         'BUILD_TRANSLATIONS',
+        'SHOW_DOWNTIME_WARNING',
         'SHOW_PREVIEW_WARNING',
         'SHOW_OBJECT_TITLE',
         'FULL_WIDTH_OBJECTS_TABLE',
@@ -142,8 +146,11 @@ def parse_configuration_values() -> None:
         'OIDC_DISABLE_NONCE',
         'OIDC_ACCESS_TOKEN_AS_API_KEY',
         'OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION',
+        'OIDC_USE_SESSION',
         'WORKFLOW_VIEW_MODALS',
         'WORKFLOW_VIEW_COLLAPSED',
+        'ENABLE_ISOLATED_OBJECT_DATA_RENDERING',
+        'ENABLE_OBJECT_DATA_HTML_CACHE',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -270,8 +277,131 @@ def is_default_notification_modes_valid() -> bool:
     return True
 
 
+def parse_and_convert_external_links(
+        config: typing.Dict[str, typing.Any]
+) -> bool:
+    for config_name in [
+        'OBJECT_LINKS_BY_ACTION_ID',
+        'ACTION_LINKS_BY_ACTION_ID',
+        'INSTRUMENT_LINKS_BY_INSTRUMENT_ID',
+        'TOPIC_LINKS_BY_TOPIC_ID',
+        'LOCATION_LINKS_BY_LOCATION_ID',
+        'BASIC_GROUP_LINKS_BY_BASIC_GROUP_ID',
+        'PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID',
+    ]:
+        config[config_name] = {}
+    if type(config['EXTERNAL_LINKS']) is not list:
+        print(ansi_color(f'EXTERNAL_LINKS must be list, but got {EXTERNAL_LINKS!r}.\n', color=31))
+        return False
+    for entry_index, entry in enumerate(config['EXTERNAL_LINKS']):
+        if type(entry) is not dict:
+            print(ansi_color(f'EXTERNAL_LINKS entries must be dicts, but got {entry!r} for entry #{entry_index}.\n', color=31))
+            return False
+        if any(k not in {'label', 'icon', 'id_placeholder', 'applies_to_placeholder', 'links', 'applies_to'} for k in entry):
+            print(ansi_color(f'EXTERNAL_LINKS entries may only contain label, icon, id_placeholder, applies_to_placeholder, links and applies_to, but got {entry!r} for entry #{entry_index}.\n', color=31))
+            return False
+        if 'label' in entry:
+            if type(entry['label']) is not str and type(entry['label']) is not dict:
+                print(ansi_color(f'EXTERNAL_LINKS label must be string or dict, but got {entry['label']!r} for entry #{entry_index}.\n', color=31))
+                return False
+            if type(entry['label']) is str:
+                entry['label'] = {'en': entry['label']}
+            if not entry['label'] or (type(entry['label']) is dict and any(not v for v in entry['label'].values())):
+                print(ansi_color(f'EXTERNAL_LINKS labels must not be empty for entry #{entry_index}.\n', color=31))
+                return False
+            if type(entry['label']) is dict and any(type(k) is not str or type(v) is not str for k, v in entry['label'].items()):
+                print(ansi_color(f'EXTERNAL_LINKS labels must be string or a dict mapping strings to strings for entry #{entry_index}.\n', color=31))
+                return False
+            if "en" not in entry['label']:
+                print(ansi_color(f'EXTERNAL_LINKS labels must be a string or a dict containing at least the key "en" for entry #{entry_index}.\n', color=31))
+                return False
+        else:
+            entry['label'] = {'en': 'Links'}
+        if 'icon' in entry:
+            if type(entry['icon']) is not str or not entry['icon']:
+                print(ansi_color(f'EXTERNAL_LINKS icon must be non-empty string, but got {entry['icon']!r} for entry #{entry_index}.\n', color=31))
+                return False
+        else:
+            entry['icon'] = 'fa-external-link'
+        if 'id_placeholder' in entry:
+            if type(entry['id_placeholder']) is not str or not entry['id_placeholder']:
+                print(ansi_color(f'EXTERNAL_LINKS id_placeholder must be non-empty string, but got {entry['id_placeholder']!r} for entry #{entry_index}.\n', color=31))
+                return False
+        else:
+            entry['id_placeholder'] = '<ID>'
+        if 'applies_to_placeholder' in entry:
+            if type(entry['applies_to_placeholder']) is not str or not entry['applies_to_placeholder']:
+                print(ansi_color(f'EXTERNAL_LINKS applies_to_placeholder must be non-empty string, but got {entry['applies_to_placeholder']!r} for entry #{entry_index}.\n', color=31))
+                return False
+        else:
+            entry['applies_to_placeholder'] = '<A>'
+        if 'links' not in entry:
+            print(ansi_color(f'EXTERNAL_LINKS entries must contain links for entry #{entry_index}.\n', color=31))
+            return False
+        if type(entry['links']) is not list:
+            print(ansi_color(f'EXTERNAL_LINKS links must be list, but got {entry['links']!r} for entry #{entry_index}.\n', color=31))
+            return False
+        if not entry['links']:
+            print(ansi_color(f'EXTERNAL_LINKS links must not be empty for entry #{entry_index}.\n', color=31))
+            return False
+        for link_dict in entry['links']:
+            if type(link_dict) is not dict:
+                print(ansi_color(f'EXTERNAL_LINKS links must contain dicts, but got {link_dict!r} for entry #{entry_index}.\n', color=31))
+                return False
+            if set(link_dict.keys()) != {'url', 'name'}:
+                print(ansi_color(f'EXTERNAL_LINKS link dicts must contain url and name, but got {link_dict!r} for entry #{entry_index}.\n', color=31))
+                return False
+            if type(link_dict['url']) is not str or not link_dict['url']:
+                print(ansi_color(f'EXTERNAL_LINKS link dict urls must be non-empty strings, but got {link_dict['url']!r} for entry #{entry_index}.\n', color=31))
+                return False
+            if type(link_dict['name']) is not str and type(link_dict['name']) is not dict:
+                print(ansi_color(f'EXTERNAL_LINKS link dict names must strings or dicts, but got {link_dict['name']!r} for entry #{entry_index}.\n', color=31))
+                return False
+            if type(link_dict['name']) is str:
+                link_dict['name'] = {'en': link_dict['name']}
+            if not link_dict['name'] or (type(link_dict['name']) is dict and any(not v for v in link_dict['name'].values())):
+                print(ansi_color(f'EXTERNAL_LINKS link dict names must not be empty for entry #{entry_index}.\n', color=31))
+                return False
+        if 'applies_to' not in entry:
+            print(ansi_color(f'EXTERNAL_LINKS entries must contain applies_to for entry #{entry_index}.\n', color=31))
+            return False
+        if type(entry['applies_to']) is not dict:
+            print(ansi_color(f'EXTERNAL_LINKS applies_to must be dict, but got {entry['applies_to']!r} for entry #{entry_index}.\n', color=31))
+            return False
+        config_value_by_applies_to_key = {
+            'objects_by_action_id': (config['OBJECT_LINKS_BY_ACTION_ID'], 'object'),
+            'actions_by_action_id': (config['ACTION_LINKS_BY_ACTION_ID'], 'action'),
+            'instruments_by_instrument_id': (config['INSTRUMENT_LINKS_BY_INSTRUMENT_ID'], 'instrument'),
+            'topics_by_topic_id': (config['TOPIC_LINKS_BY_TOPIC_ID'], 'topic'),
+            'locations_by_location_id': (config['LOCATION_LINKS_BY_LOCATION_ID'], 'location'),
+            'basic_groups_by_basic_group_id': (config['BASIC_GROUP_LINKS_BY_BASIC_GROUP_ID'], 'basic_group'),
+            'project_groups_by_project_group_id': (config['PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID'], 'project_group'),
+        }
+        applies_to_unexpected_keys = set(entry['applies_to'].keys()) - set(config_value_by_applies_to_key.keys())
+        if applies_to_unexpected_keys:
+            print(ansi_color(f'EXTERNAL_LINKS applies_to contains unexpected keys {applies_to_unexpected_keys!r} for entry #{entry_index}.\n', color=31))
+            return False
+        for key, id_list in entry['applies_to'].items():
+            if type(id_list) is not list:
+                print(ansi_color(f'EXTERNAL_LINKS applies_to values must be lists for entry #{entry_index} and applies_to key {key}.\n', color=31))
+                return False
+            if any(type(v) is not int and v != '*' for v in id_list):
+                print(ansi_color(f'EXTERNAL_LINKS applies_to values must only contain integers or "*" for entry #{entry_index} and applies_to key {key}.\n', color=31))
+                return False
+            config_value, applies_to_type = config_value_by_applies_to_key[key]
+            entry_copy = copy.deepcopy(entry)
+            entry_copy['links'] = [
+                LinkConfig(name=link['name'], url=link['url'].replace(entry['applies_to_placeholder'], applies_to_type)) for link in entry['links']
+            ]
+            for id_value in id_list:
+                if id_value not in config_value:
+                    config_value[id_value] = []
+                config_value[id_value].append(entry_copy)
+    return True
+
+
 def check_config(
-        config: typing.Mapping[str, typing.Any]
+        config: typing.Dict[str, typing.Any]
 ) -> typing.Dict[str, typing.Any]:
     """
     Check whether all neccessary configuration values are set.
@@ -515,8 +645,8 @@ def check_config(
                         'supported anymore starting with SampleDB 0.26.0. '
                         'Please move them to "database" storage using an '
                         'earlier version of SampleDB. For more information, '
-                        'see: '
-                        'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage'
+                        'see: ' + config['DOCUMENTATION_ROOT_URL'] +
+                        'administrator_guide/deprecated_features.html#local-file-storage'
                         '\n',
                         color=31
                     ),
@@ -531,8 +661,8 @@ def check_config(
                         'are not supported anymore starting with SampleDB 0.26.0. '
                         'Please unset the FILE_STORAGE_PATH config variable and do '
                         'not mount a directory for local file storage. For more '
-                        'information, see: '
-                        'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage'
+                        'information, see: ' + config['DOCUMENTATION_ROOT_URL'] +
+                        'administrator_guide/deprecated_features.html#local-file-storage'
                         '\n',
                         color=31
                     ),
@@ -683,14 +813,18 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not parse_and_convert_external_links(config):
+        can_run = False
+        show_config_info = True
+
     if config['OIDC_CREATE_ACCOUNT'] not in ('no', 'deny_existing', 'auto_link'):
         can_run = False
         show_config_info = True
 
     if show_config_info:
         print(
-            'For more information on setting SampleDB configuration, see: '
-            'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
+            'For more information on setting SampleDB configuration, see: ' +
+            config['DOCUMENTATION_ROOT_URL'] +
             'administrator_guide/configuration.html',
             file=sys.stderr
         )
@@ -745,6 +879,7 @@ OIDC_ONLY = False
 OIDC_CREATE_ACCOUNT = 'auto_link'
 OIDC_ACCESS_TOKEN_AS_API_KEY = False
 OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION = False
+OIDC_USE_SESSION = False
 
 # email settings
 MAIL_SERVER = None
@@ -762,7 +897,8 @@ SERVICE_IMPRINT = None
 SERVICE_LEGAL_NOTICE = None
 SERVICE_PRIVACY_POLICY = None
 SERVICE_ACCESSIBILITY = None
-HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
+DOCUMENTATION_ROOT_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/'
+HELP_URL = DOCUMENTATION_ROOT_URL + '#documentation'
 
 # a map of file extensions and the MIME types they should be handled as
 # this is used to determine which user uploaded files should be served as
@@ -840,6 +976,7 @@ PYBABEL_PATH = 'pybabel'
 
 EXTRA_USER_FIELDS: typing.Dict[str, typing.Dict[str, typing.Dict[str, str]]] = {}
 
+SHOW_DOWNTIME_WARNING = False
 SHOW_PREVIEW_WARNING = False
 
 DISABLE_INLINE_EDIT = False
@@ -902,6 +1039,45 @@ MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
 
 DEFAULT_NOTIFICATION_MODES = None
 
+
+class LinkConfig(typing.TypedDict):
+    name: typing.Union[str, typing.Dict[str, str]]
+    url: str
+
+
+class LinkAppliesToConfig(typing.TypedDict, total=False):
+    objects_by_action_id: typing.List[typing.Union[typing.Literal['*'], int]]
+    actions_by_action_id: typing.List[typing.Union[typing.Literal['*'], int]]
+    instruments_by_instrument_id: typing.List[typing.Union[typing.Literal['*'], int]]
+    topics_by_topic_id: typing.List[typing.Union[typing.Literal['*'], int]]
+    basic_groups_by_basic_group_id: typing.List[typing.Union[typing.Literal['*'], int]]
+    project_groups_by_project_group_id: typing.List[typing.Union[typing.Literal['*'], int]]
+
+
+class LinkListConfig(typing.TypedDict):
+    label: typing.Union[str, typing.Dict[str, str]]
+    icon: str
+    id_placeholder: str
+    applies_to_placeholder: str
+    links: typing.List[LinkConfig]
+    applies_to: LinkAppliesToConfig
+
+
+EXTERNAL_LINKS: typing.List[LinkListConfig] = []
+OBJECT_LINKS_BY_ACTION_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+ACTION_LINKS_BY_ACTION_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+INSTRUMENT_LINKS_BY_INSTRUMENT_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+TOPIC_LINKS_BY_TOPIC_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+LOCATION_LINKS_BY_LOCATION_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+BASIC_GROUP_LINKS_BY_BASIC_GROUP_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+PROJECT_GROUP_LINKS_BY_PROJECT_GROUP_ID: typing.Dict[typing.Union[typing.Literal['*'], int], typing.List[LinkListConfig]] = {}
+
+SORT_REFERENCABLE_OBJECTS = 'id'
+
+# variables controlling object data rendering, these should only be modified for testing purposes
+ENABLE_ISOLATED_OBJECT_DATA_RENDERING = True
+ENABLE_OBJECT_DATA_HTML_CACHE = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -920,4 +1096,4 @@ if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
     DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]  # pylint: disable=unsubscriptable-object
 
 if OIDC_ONLY:
-    DISABLE_INVITATIONS = True
+    DISABLE_USER_INVITATIONS = True

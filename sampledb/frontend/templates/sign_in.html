@@ -81,7 +81,7 @@
       </form>
       {% endif %}
       {% if is_oidc_configured %}
-        <a class="btn btn-primary" href="{{ url_for('frontend.oidc_start') }}">
+        <a class="btn btn-primary" href="{{ url_for('frontend.oidc_start', next=request.args.get('next', '/')) }}">
           {{ _('Sign in with %(oidc_name)s', oidc_name=config['OIDC_NAME']) }}
         </a>
       {% endif %}

@@ -22,7 +22,6 @@ from wtforms.validators import DataRequired, ValidationError, InputRequired
 from . import frontend
 from .objects.permissions import get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
 from .objects.view import get_project_if_it_exists
-from .utils import get_user_if_exists
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location, get_instrument_object_links, set_instrument_object
@@ -269,12 +268,12 @@ def instrument(instrument_id: int) -> FlaskResponseT:
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
 
     template_kwargs = {
-        "get_user": get_user_if_exists,
         "get_component": get_component,
         "user_favorite_action_ids": user_favorite_action_ids,
     }
     linked_object = None
     show_object_title = False
+    may_edit_linked_object = False
     if instrument.object_id is not None:
         linked_object_permissions = get_user_object_permissions(object_id=instrument.object_id, user_id=flask_login.current_user.id)
         if Permissions.READ in linked_object_permissions:
@@ -292,6 +291,8 @@ def instrument(instrument_id: int) -> FlaskResponseT:
                     "get_action_type": get_action_type,
                     "get_shares_for_object": get_shares_for_object,
                 })
+        if Permissions.WRITE in linked_object_permissions:
+            may_edit_linked_object = not flask_login.current_user.is_readonly
 
     if is_instrument_responsible_user or instrument.users_can_view_log_entries:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
@@ -499,6 +500,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
         linked_object=linked_object,
+        may_edit_linked_object=may_edit_linked_object,
         object_link_form=object_link_form,
         linkable_action_ids=linkable_action_ids,
         already_linked_object_ids=already_linked_object_ids,
