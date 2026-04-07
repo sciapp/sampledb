@@ -43,6 +43,7 @@ from . import markdown_to_html
 from . import notebook_templates
 from . import notifications
 from . import objects
+from . import object_data_to_html
 from . import object_log
 from . import object_relationships
 from . import object_search
@@ -117,6 +118,7 @@ __all__ = [
     'notebook_templates',
     'notifications',
     'objects',
+    'object_data_to_html',
     'object_log',
     'object_relationships',
     'object_search',

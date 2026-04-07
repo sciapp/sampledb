@@ -11,7 +11,7 @@
 {% block content %}
   <h1>{{ _('Topics') }}</h1>
   {% if not config['DISABLE_TOPICS'] %}
-    <p class="text-muted">{{ _('Topics allow filtering information in %(service_name)s.', service_name=service_name) }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/topics.html"> {{ _('Read more.') }}</a></p>
+    <p class="text-muted">{{ _('Topics allow filtering information in %(service_name)s.', service_name=service_name) }} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/topics.html"> {{ _('Read more.') }}</a></p>
     {% if current_user.is_admin and not current_user.is_readonly %}
       <a href="{{ url_for('.new_topic') }}" class="btn btn-default"> {{ _('Create Topic') }}</a>
       <button type="button" class="btn btn-default" data-toggle="modal" data-target="#sortingModal">

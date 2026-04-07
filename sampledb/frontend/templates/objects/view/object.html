@@ -1,4 +1,4 @@
-{% set container_style = get_style_variant(schema.style, template_mode) %}
+{% set container_style = get_style_variant(schema.get("style"), template_mode) %}
 {% set show_title = ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title) and schema.title %}
 {% if show_title or container_style in ("collapsible", "expandable") %}
   <div style="font-size:1.5em; padding-left: {% if not indent_level %}14{% else %}9{% endif %}px; margin-bottom: 5px; margin-top: 10px;">

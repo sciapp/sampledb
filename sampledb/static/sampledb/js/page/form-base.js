@@ -72,6 +72,10 @@ function updateArrayButtonsHandler (button) {
     case 'table_array_clear':
       $(button).off('click').on('click', arrayFormClearHandler);
       break;
+    case 'array_copy':
+    case 'list_array_copy':
+      $(button).off('click').on('click', arrayFormCopyHandler);
+      break;
     case 'table_array_copy':
       $(button).off('click').on('click', arrayFormTableCopyHandler);
       break;
@@ -89,6 +93,16 @@ function updateArrayButtonsHandler (button) {
       break;
     case 'table_rows_clear':
       $(button).off('click').on('click', tableFormRowClearHandler);
+      break;
+    case 'array_moveup':
+    case 'list_array_moveup':
+    case 'array_movedown':
+    case 'list_array_movedown':
+      $(button).off('click').on('click', arrayFormMoveHandler);
+      break;
+    case 'table_array_moveup':
+    case 'table_array_movedown':
+      $(button).off('click').on('click', tableFormMoveHandler);
       break;
   }
 }
@@ -352,13 +366,19 @@ function getArrayButtons (arrayContainer) {
   const copyButtons = arrayContainer.find('[data-object-form-button$="_copy"]').filter(function (_, button) {
     return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
   });
+  const moveUpButtons = arrayContainer.find('[data-object-form-button$="_moveup"]').filter(function (_, button) {
+    return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
+  });
+  const moveDownButtons = arrayContainer.find('[data-object-form-button$="_movedown"]').filter(function (_, button) {
+    return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
+  });
   const deleteButtons = arrayContainer.find('[data-object-form-button$="_delete"]').filter(function (_, button) {
     return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
   });
   const clearButton = arrayContainer.find('[data-object-form-button$="_clear"]').filter(function (_, button) {
     return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
   });
-  return [addButton, copyButtons, deleteButtons, clearButton];
+  return [addButton, copyButtons, moveUpButtons, moveDownButtons, deleteButtons, clearButton];
 }
 
 /**
@@ -492,7 +512,7 @@ function arrayFormAddHandler (event) {
   });
   const clone = $(template.clone(true));
   clone.removeClass('array-template');
-  const existingDeleteButtons = getArrayButtons(arrayContainer)[2];
+  const existingDeleteButtons = getArrayButtons(arrayContainer)[4];
   // array has one more delete button than items because of the array template
   const nextIndex = existingDeleteButtons.length - 1;
 
@@ -506,29 +526,114 @@ function arrayFormAddHandler (event) {
   }
 }
 
-/**
-   * Handles object table array copy button events.
-   * @param event a PointerEvent
-   */
-function arrayFormTableCopyHandler (event) {
-  const button = $(event.currentTarget);
-  // add a new row first, which will then be filled and moved
-  arrayFormAddHandler(event);
-  const arrayContainer = button.closest('[data-array-container]');
-  const arrayPrefix = arrayContainer.data('id-prefix');
-  if (arrayPrefix.includes('!')) {
-    return;
+function copyFields (sourceItem, targetItem) {
+  const sourceFieldPrefix = sourceItem.data('id-prefix');
+  const targetFieldPrefix = targetItem.data('id-prefix');
+  // copy array sizes
+  const sourceHiddenFields = sourceItem.find('[name$="__hidden"]');
+  const arrayItemCallables = [];
+  for (const sourceHiddenField of sourceHiddenFields) {
+    const sourceHiddenFieldName = $(sourceHiddenField).attr('name');
+    const sourceIdPrefix = sourceHiddenFieldName.slice(0, -7);
+    if (sourceIdPrefix.includes('!')) {
+      continue;
+    }
+    const targetIdPrefix = targetFieldPrefix + sourceIdPrefix.slice(sourceFieldPrefix.length);
+    const sourceArrayContainer = sourceItem.find(`[data-id-prefix="${sourceIdPrefix}"][data-array-container]`);
+    if (sourceArrayContainer.length === 1) {
+      if (sourceArrayContainer.data('array-container') === 'array-table') {
+        arrayItemCallables.push(function () {
+          const targetArrayContainer = targetItem.find(`[data-id-prefix="${targetIdPrefix}"][data-array-container]`);
+          if (targetArrayContainer.length === 0) {
+            return false;
+          }
+          const numSourceRows = sourceArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          const numTargetRows = targetArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          if (numTargetRows > numSourceRows) {
+            for (let i = numTargetRows; i > numSourceRows; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_${i - 1}__?__deleterow"]`).trigger('click');
+            }
+          } else if (numTargetRows < numSourceRows) {
+            for (let i = numTargetRows; i < numSourceRows; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__addrow"]`).trigger('click');
+            }
+          }
+          const numSourceColumns = sourceArrayContainer.find('> thead > tr > th').length - 1;
+          const numTargetColumns = targetArrayContainer.find('> thead > tr > th').length - 1;
+          if (numTargetColumns > numSourceColumns) {
+            for (let i = numTargetColumns; i > numSourceColumns; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__deletecolumn"]`).trigger('click');
+            }
+          } else if (numTargetColumns < numSourceColumns) {
+            for (let i = numTargetColumns; i < numSourceColumns; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__addcolumn"]`).trigger('click');
+            }
+          }
+          return true;
+        });
+      } else if (sourceArrayContainer.data('array-container') === 'object-table') {
+        arrayItemCallables.push(function () {
+          const targetArrayContainer = targetItem.find(`[data-id-prefix="${targetIdPrefix}"][data-array-container]`);
+          if (targetArrayContainer.length === 0) {
+            return false;
+          }
+          const numSourceRows = sourceArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          const numTargetRows = targetArrayContainer.children('tbody').children('tr').not('.array-template').length;
+          if (numTargetRows > numSourceRows) {
+            for (let i = numTargetRows; i > numSourceRows; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_${i - 1}__delete"]`).trigger('click');
+            }
+          } else if (numTargetRows < numSourceRows) {
+            for (let i = numTargetRows; i < numSourceRows; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__add"]`).trigger('click');
+            }
+          }
+          return true;
+        });
+      } else {
+        arrayItemCallables.push(function () {
+          const targetArrayContainer = targetItem.find(`[data-id-prefix="${targetIdPrefix}"][data-array-container]`);
+          if (targetArrayContainer.length === 0) {
+            return false;
+          }
+          const numSourceItems = sourceArrayContainer.children('[data-array-item]').not('.array-template').length;
+          const numTargetItems = targetArrayContainer.children('[data-array-item]').not('.array-template').length;
+          if (numTargetItems > numSourceItems) {
+            for (let i = numTargetItems; i > numSourceItems; i--) {
+              targetItem.find(`[id="action_${targetIdPrefix}_${i - 1}__delete"]`).trigger('click');
+            }
+          } else if (numTargetItems < numSourceItems) {
+            for (let i = numTargetItems; i < numSourceItems; i++) {
+              targetItem.find(`[id="action_${targetIdPrefix}_?__add"]`).trigger('click');
+            }
+          }
+          return true;
+        });
+      }
+    }
   }
-  const tableBody = button.closest('tbody');
-  const sourceRow = button.closest('tr');
-  const targetRow = tableBody.children('tr').not('.array-template').last();
-  // move target row right behind source row
-  sourceRow.after(targetRow);
-  const sourceFieldPrefix = sourceRow.data('id-prefix');
-  const targetFieldPrefix = targetRow.data('id-prefix');
-  const targetFields = targetRow.find(`[name^="${targetFieldPrefix}"]`);
+
+  function callArrayItemCallables (arrayItemCallables) {
+    const failedArrayItemCallables = [];
+    for (const arrayItemCallable of arrayItemCallables) {
+      if (!arrayItemCallable.call()) {
+        failedArrayItemCallables.push(arrayItemCallable);
+      }
+    }
+    if (failedArrayItemCallables.length > 0) {
+      if (failedArrayItemCallables.length !== arrayItemCallables.length) {
+        callArrayItemCallables(failedArrayItemCallables);
+      }
+    }
+  }
+  callArrayItemCallables(arrayItemCallables);
+  // copy values of individual fields
+  const targetFields = targetItem.find(`[name^="${targetFieldPrefix}"]`);
   for (const targetField of targetFields) {
     const sourceFieldName = sourceFieldPrefix + targetField.name.substring(targetFieldPrefix.length);
+    if (sourceFieldName.includes('!')) {
+      continue;
+    }
     const sourceField = $(`[name=${sourceFieldName}]`)[0];
     if (sourceField.tagName === 'INPUT' || sourceField.tagName === 'TEXTAREA') {
       if (sourceField.type === 'checkbox') {
@@ -553,6 +658,55 @@ function arrayFormTableCopyHandler (event) {
     }
     $(targetField).trigger('change');
   }
+}
+
+/**
+   * Handles array copy button events.
+   * @param event a PointerEvent
+   */
+function arrayFormCopyHandler (event) {
+  const button = $(event.currentTarget);
+  // add a new item first, which will then be filled and moved
+  arrayFormAddHandler(event);
+  const arrayContainer = button.closest('[data-array-container]');
+  const arrayPrefix = arrayContainer.data('id-prefix');
+  if (arrayPrefix.includes('!')) {
+    return;
+  }
+  const sourceItem = button.closest('[data-array-item]');
+  const targetItem = arrayContainer.children('[data-array-item]').not('.array-template').last();
+  sourceItem.after(targetItem);
+  copyFields(sourceItem, targetItem);
+  // update array ID prefixes to match the changed order of rows
+  const sortedItemIndices = [];
+  for (const item of arrayContainer.children('[data-array-item]').not('.array-template')) {
+    const itemPrefix = $(item).data('id-prefix');
+    const itemIndex = (itemPrefix + '_').split('__').slice(-2)[0];
+    sortedItemIndices.push(Number.parseInt(itemIndex));
+  }
+  updateArrayIDPrefixes(arrayContainer, sortedItemIndices);
+  updateArrayButtonsEnabled(arrayContainer);
+}
+
+/**
+   * Handles object table array copy button events.
+   * @param event a PointerEvent
+   */
+function arrayFormTableCopyHandler (event) {
+  const button = $(event.currentTarget);
+  // add a new row first, which will then be filled and moved
+  arrayFormAddHandler(event);
+  const arrayContainer = button.closest('[data-array-container]');
+  const arrayPrefix = arrayContainer.data('id-prefix');
+  if (arrayPrefix.includes('!')) {
+    return;
+  }
+  const tableBody = button.closest('tbody');
+  const sourceRow = button.closest('tr');
+  const targetRow = tableBody.children('tr').not('.array-template').last();
+  // move target row right behind source row
+  sourceRow.after(targetRow);
+  copyFields(sourceRow, targetRow);
   // update array ID prefixes to match the changed order of rows
   const sortedRowIndices = [];
   for (const row of tableBody.find('tr').not('.array-template')) {
@@ -561,6 +715,77 @@ function arrayFormTableCopyHandler (event) {
     sortedRowIndices.push(Number.parseInt(rowIndex));
   }
   updateArrayIDPrefixes(arrayContainer, sortedRowIndices);
+  updateArrayButtonsEnabled(arrayContainer);
+}
+
+/**
+   * Handles array move button events.
+   * @param event a PointerEvent
+   */
+function arrayFormMoveHandler (event) {
+  const button = $(event.currentTarget);
+  const buttonAction = button.data('object-form-button');
+  const arrayContainer = button.closest('[data-array-container]');
+  const arrayPrefix = arrayContainer.data('id-prefix');
+  if (arrayPrefix.includes('!')) {
+    return;
+  }
+  window.arrayButtons.push(button.attr('id'));
+  const itemToMove = button.closest('[data-array-item]');
+  if (buttonAction.endsWith('_moveup')) {
+    const referenceItem = itemToMove.prev('[data-array-item]');
+    referenceItem.before(itemToMove);
+  } else if (buttonAction.endsWith('_movedown')) {
+    const referenceItem = itemToMove.next('[data-array-item]');
+    referenceItem.after(itemToMove);
+  }
+
+  // update array ID prefixes to match the changed order of items
+  const sortedItemIndices = [];
+  for (const item of arrayContainer.children('[data-array-item]').not('.array-template')) {
+    const itemPrefix = $(item).data('id-prefix');
+    const itemIndex = (itemPrefix + '_').split('__').slice(-2)[0];
+    sortedItemIndices.push(Number.parseInt(itemIndex));
+  }
+  updateArrayIDPrefixes(arrayContainer, sortedItemIndices);
+  updateArrayButtonsEnabled(arrayContainer);
+  if (arrayContainer.data('array-container') === 'list') {
+    // the first entry of a list is right of the label, all others need an additional offset
+    arrayContainer.children('div').not('.control-label').addClass('col-md-offset-3').first().removeClass('col-md-offset-3');
+  }
+}
+
+/**
+   * Handles object table array move button events.
+   * @param event a PointerEvent
+   */
+function tableFormMoveHandler (event) {
+  const button = $(event.currentTarget);
+  const buttonAction = button.data('object-form-button');
+  const arrayContainer = button.closest('[data-array-container]');
+  const arrayPrefix = arrayContainer.data('id-prefix');
+  if (arrayPrefix.includes('!')) {
+    return;
+  }
+  const tableBody = button.closest('tbody');
+  const rowToMove = button.closest('tr');
+  if (buttonAction.endsWith('_moveup')) {
+    const referenceRow = rowToMove.prev('tr');
+    referenceRow.before(rowToMove);
+  } else if (buttonAction.endsWith('_movedown')) {
+    const referenceRow = rowToMove.next('tr');
+    referenceRow.after(rowToMove);
+  }
+
+  // update array ID prefixes to match the changed order of rows
+  const sortedRowIndices = [];
+  for (const row of tableBody.find('tr').not('.array-template')) {
+    const rowPrefix = $(row).data('id-prefix');
+    const rowIndex = (rowPrefix + '_').split('__').slice(-2)[0];
+    sortedRowIndices.push(Number.parseInt(rowIndex));
+  }
+  updateArrayIDPrefixes(arrayContainer, sortedRowIndices);
+  updateArrayButtonsEnabled(arrayContainer);
 }
 
 /**
@@ -577,7 +802,7 @@ function arrayFormDeleteHandler (event) {
   window.arrayButtons.push(button.attr('id'));
   button.closest('[data-array-item]').remove();
   if (arrayContainer.data('array-container') === 'list') {
-    const [addButton, _copyButtons, deleteButtons, _clearButton] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
+    const [addButton, _copyButtons, _moveUpButtons, _moveDownButtons, deleteButtons, _clearButton] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
     // array has one more delete button than items because of the array template
     const numItems = deleteButtons.length - 1;
     if (numItems === 0) {
@@ -606,7 +831,7 @@ function arrayFormClearHandler (event) {
   window.arrayButtons.push(button.attr('id'));
   arrayContainer.find('[data-array-item]:not(.array-template)').remove();
   if (arrayContainer.data('array-container') === 'list') {
-    const [addButton, _copyButtons, deleteButtons, _clearButton] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
+    const [addButton, _copyButtons, _moveUpButtons, _moveDownButtons, deleteButtons, _clearButton] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
     // array has one more delete button than items because of the array template
     const numItems = deleteButtons.length - 1;
     if (numItems === 0) {
@@ -738,8 +963,14 @@ function tableFormRowDeleteHandler (event) {
   // remove row containing the button
   button.closest('tr').remove();
   // remove all columns from table header and footer if this was the last real row
-  if (arrayContainer.find('tbody > tr').not('.array-template').length === 0) {
+  const arrayRows = arrayContainer.find('tbody > tr').not('.array-template');
+  if (arrayRows.length === 0) {
     updateTableFormHead(arrayContainer, -arrayContainer.find('> thead > tr > th').not('.control-buttons').length);
+  } else {
+    for (let rowIndex = 0; rowIndex < arrayRows.length; rowIndex++) {
+      $(arrayRows[rowIndex]).data('row-id', rowIndex);
+      $(arrayRows[rowIndex]).attr('data-row-id', rowIndex);
+    }
   }
 
   updateArrayButtonsEnabled(arrayContainer);
@@ -783,7 +1014,7 @@ function appendFieldToRow (row, table, rowIndex, columnIndex) {
   td.removeClass('array-col-template');
   td.insertBefore(row.children().last());
   replaceTemplateIndex(td, `!index${table.data('template-order-index')}!`, rowIndex);
-  replaceTemplateIndex(td, `${rowIndex}__!cindex${table.data('col-order-index')}!`, columnIndex);
+  replaceTemplateIndex(td, `${rowIndex}__!cindex${table.data('col-order-index')}!`, `${rowIndex}__${columnIndex}`);
 }
 
 /**
@@ -917,7 +1148,7 @@ function updateArrayButtonsEnabled (arrayContainer) {
       deleteColumnButton.prop('disabled', numColumns <= minColumns);
     }
   } else {
-    const [addButton, copyButtons, deleteButtons, clearButton] = getArrayButtons(arrayContainer);
+    const [addButton, copyButtons, moveUpButtons, moveDownButtons, deleteButtons, clearButton] = getArrayButtons(arrayContainer);
 
     // array has one more delete button than items because of the array template
     const numItems = deleteButtons.length - 1;
@@ -928,6 +1159,18 @@ function updateArrayButtonsEnabled (arrayContainer) {
     copyButtons.prop('disabled', maxItems !== -1 && numItems >= maxItems);
     deleteButtons.prop('disabled', (numItems <= minItems) && (numItems !== 1 || isRequired));
     clearButton.prop('disabled', (numItems === 0) || (isRequired && minItems > 0));
+    if (moveUpButtons.length !== 0) {
+      moveUpButtons.prop('disabled', false);
+      moveUpButtons.filter(function (index, button) {
+        return !$(button).closest('[data-array-item]').hasClass('array-template');
+      }).first().prop('disabled', true);
+    }
+    if (moveDownButtons.length !== 0) {
+      moveDownButtons.prop('disabled', false);
+      moveDownButtons.filter(function (index, button) {
+        return !$(button).closest('[data-array-item]').hasClass('array-template');
+      }).last().prop('disabled', true);
+    }
   }
 }
 

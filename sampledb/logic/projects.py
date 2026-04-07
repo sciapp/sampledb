@@ -287,7 +287,7 @@ def get_project_member_user_ids_and_permissions(project_id: int, include_groups:
 
 def get_user_project_permissions(project_id: int, user_id: int, include_groups: bool = False) -> Permissions:
     """
-    Returns a the permissions of a single user for a project, optionally
+    Returns the permissions of a single user for a project, optionally
     including the users group memberships.
 
     :param project_id: the ID of an existing project

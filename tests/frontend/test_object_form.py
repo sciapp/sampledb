@@ -1,4 +1,18 @@
+
+import pytest
+from selenium.webdriver.common.by import By
+
+import sampledb
+import sampledb.models
+import sampledb.logic
 from sampledb.frontend.objects.object_form import get_errors_by_title
+
+from ..conftest import wait_for_page_load
+
+
+@pytest.fixture
+def user(flask_server):
+    return sampledb.logic.users.create_user(name="Example User", email="example@example.com", type=sampledb.models.UserType.PERSON)
 
 
 def test_get_errors_by_title_simple():
@@ -205,4 +219,534 @@ def test_get_errors_by_title_duplicates():
         "required": ["name"]
     }) == {
         "Object Name": {"error message"}
+    }
+
+
+@pytest.mark.parametrize(
+    [
+        'existing_item',
+        'default_item'
+    ],
+    [
+        [
+            [],
+            [
+                [
+                    {
+                        "_type": "text",
+                        "text": "Test"
+                    }
+                ]
+            ]
+        ],
+        [
+            [
+                [
+                    {
+                        "_type": "text",
+                        "text": "Test"
+                    }
+                ]
+            ],
+            []
+        ],
+        [
+            [
+                [
+                    {
+                        "_type": "text",
+                        "text": "Test"
+                    }
+                ]
+            ],
+            [
+                [
+                    {
+                        "_type": "text",
+                        "text": "A"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "B"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "C"
+                    }
+                ],
+                [
+                    {
+                        "_type": "text",
+                        "text": "D"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "E"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "F"
+                    }
+                ]
+            ]
+        ],
+        [
+            [
+                [
+                    {
+                        "_type": "text",
+                        "text": "A"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "B"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "C"
+                    }
+                ],
+                [
+                    {
+                        "_type": "text",
+                        "text": "D"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "E"
+                    },
+                    {
+                        "_type": "text",
+                        "text": "F"
+                    }
+                ]
+            ],
+            [
+                [
+                    {
+                        "_type": "text",
+                        "text": "Test"
+                    }
+                ]
+            ]
+        ]
+    ]
+)
+def test_copy_array_item_with_array_table(flask_server, driver, user, existing_item, default_item):
+    schema = {
+        "type": "object",
+        "title": "Example Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "array",
+                    "title": "Array Table",
+                    "style": "table",
+                    "items": {
+                        "type": "array",
+                        "title": "Row",
+                        "items": {
+                            "type": "text",
+                            "title": "Field"
+                        }
+                    },
+                    "default": default_item
+                },
+                "default": [
+                    existing_item
+                ]
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.models.Language.ENGLISH,
+        name="Test Action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'action_object__array__0__copy').click()
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    assert objects[0].schema == action.schema
+    assert objects[0].data == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': ''}
+        },
+        'array': [existing_item, existing_item]
+    }
+
+
+@pytest.mark.parametrize(
+    [
+        'existing_item',
+        'default_item'
+    ],
+    [
+        [
+            [],
+            [
+                {
+                    "a": {
+                        "_type": "text",
+                        "text": "Test"
+                    }
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "a": {
+                        "_type": "text",
+                        "text": "Test"
+                    }
+                }
+            ],
+            []
+        ]
+    ]
+)
+def test_copy_array_item_with_object_table(flask_server, driver, user, existing_item, default_item):
+    schema = {
+        "type": "object",
+        "title": "Example Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "array",
+                    "title": "Table",
+                    "style": "table",
+                    "items": {
+                        "type": "object",
+                        "title": "Row",
+                        "properties": {
+                            "a": {
+                                "type": "text",
+                                "title": "A"
+                            }
+                        }
+                    },
+                    "default": default_item
+                },
+                "default": [
+                    existing_item
+                ]
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.models.Language.ENGLISH,
+        name="Test Action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'action_object__array__0__copy').click()
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    assert objects[0].schema == action.schema
+    assert objects[0].data == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': ''}
+        },
+        'array': [existing_item, existing_item]
+    }
+
+
+@pytest.mark.parametrize(
+    [
+        'existing_item',
+        'default_item'
+    ],
+    [
+        [
+            [
+                {
+                    "_type": "text",
+                    "text": {"en": "Test"}
+                }
+            ],
+            []
+        ],
+        [
+            [],
+            [
+                {
+                    "_type": "text",
+                    "text": {"en": "Test"}
+                }
+            ]
+        ]
+    ]
+)
+def test_copy_array_item_with_array(flask_server, driver, user, existing_item, default_item):
+    schema = {
+        "type": "object",
+        "title": "Example Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "array",
+                    "title": "Inner Array",
+                    "items": {
+                        "type": "text",
+                        "title": "Item"
+                    },
+                    "default": default_item
+                },
+                "default": [
+                    existing_item
+                ]
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.models.Language.ENGLISH,
+        name="Test Action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'action_object__array__0__copy').click()
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    assert objects[0].schema == action.schema
+    assert objects[0].data == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': ''}
+        },
+        'array': [existing_item, existing_item]
+    }
+
+
+@pytest.mark.parametrize(
+    [
+        'existing_item',
+        'default_item'
+    ],
+    [
+        [
+            [
+                {
+                    "_type": "text",
+                    "text": "Test"
+                }
+            ],
+            []
+        ],
+        [
+            [],
+            [
+                {
+                    "_type": "text",
+                    "text": "Test"
+                }
+            ]
+        ]
+    ]
+)
+def test_copy_array_item_with_list(flask_server, driver, user, existing_item, default_item):
+    schema = {
+        "type": "object",
+        "title": "Example Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "array",
+                    "title": "Inner Array",
+                    "style": "list",
+                    "items": {
+                        "type": "text",
+                        "title": "Item"
+                    },
+                    "default": default_item
+                },
+                "default": [
+                    existing_item
+                ]
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.models.Language.ENGLISH,
+        name="Test Action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'action_object__array__0__copy').click()
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    assert objects[0].schema == action.schema
+    assert objects[0].data == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': ''}
+        },
+        'array': [existing_item, existing_item]
+    }
+
+
+def test_move_array_item(flask_server, driver, user):
+    schema = {
+        "type": "object",
+        "title": "Example Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name",
+                "minLength": 1
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "array",
+                    "title": "Inner Array",
+                    "items": {
+                        "type": "text",
+                        "title": "Item"
+                    }
+                },
+                "default": [
+                    [
+                        {
+                            "_type": "text",
+                            "text": {"en": "1"}
+                        }
+                    ],
+                    [
+                        {
+                            "_type": "text",
+                            "text": {"en": "2"}
+                        }
+                    ],
+                    []
+                ]
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        action_id=action.id,
+        language_id=sampledb.models.Language.ENGLISH,
+        name="Test Action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'action_object__array__0__movedown').click()
+        driver.find_element(By.ID, 'action_object__array__2__moveup').click()
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, 'input[name="object__name__text_en"]').send_keys('Test')
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    assert objects[0].schema == action.schema
+    assert objects[0].data == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': 'Test'}
+        },
+        'array': [
+            [
+                {
+                    "_type": "text",
+                    "text": {"en": "2"}
+                }
+            ],
+            [],
+            [
+                {
+                    "_type": "text",
+                    "text": {"en": "1"}
+                }
+            ]
+        ]
     }

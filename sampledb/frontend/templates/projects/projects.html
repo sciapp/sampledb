@@ -54,7 +54,7 @@
     {{ allowed_language_ids.append(language.id) or '' }}
   {% endfor %}
   <h1>{{ _('Project Groups') }}</h1>
-  <p class="text-muted">{{ _('A project group is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project group itself.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">{{ _('Read more.') }}</a></p>
+  <p class="text-muted">{{ _('A project group is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project group itself.') }} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/projects.html">{{ _('Read more.') }}</a></p>
   {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS'] or not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES']) %}
   <p>
     {% if current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS'] %}

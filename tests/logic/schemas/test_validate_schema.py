@@ -5,9 +5,11 @@
 import copy
 import datetime
 import sys
+import uuid
 
 import pytest
 
+import sampledb
 from sampledb.logic.schemas import validate_schema
 from sampledb.logic.errors import ValidationError
 from sampledb.models import ActionType
@@ -1504,6 +1506,44 @@ def test_validate_object_reference_schema_with_action_id():
         'action_id': 1
     }
     validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_id': [1]
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_id': [{'component_uuid': str(uuid.uuid4()), 'action_id': 1}]
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_object_reference_schema_with_action_type_id():
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': 1
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': [1]
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': [{'component_uuid': str(uuid.uuid4()), 'action_type_id': 1}]
+    }
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_object_reference_schema_with_filter_operator():
@@ -1530,6 +1570,80 @@ def test_validate_object_reference_schema_with_invalid_action_id_type():
         'note': 'Example Note',
         'action_type_id': ActionType.SAMPLE_CREATION,
         'action_id': '1'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_id': ['1']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_id': [{'component_uuid': str(uuid.uuid4()), 'action_id': '1'}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_id': [{'component_uuid': str(uuid.uuid4()), 'id': 1}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_id': [{'component_id': 1, 'action_id': 1}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+def test_validate_object_reference_schema_with_action_type_id_type():
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': '1'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': ['1']
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': [{'component_uuid': str(uuid.uuid4()), 'action_type_id': '1'}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': [{'component_uuid': str(uuid.uuid4()), 'id': 1}]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': [{'component_id': 1, 'action_type_id': 1}]
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
@@ -1595,6 +1709,52 @@ def test_validate_object_reference_schema_with_unknown_property():
         'type': 'object_reference',
         'object_id': 0
     }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_object_reference_schema_with_default():
+    user = sampledb.logic.users.create_user(name="User", email="example@example.com", type=sampledb.models.users.UserType.OTHER)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
+        }
+    )
+    object = sampledb.logic.objects.create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=action.schema
+    )
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'default': object.object_id
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['action_type_id'] = sampledb.models.ActionType.SAMPLE_CREATION
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['action_id'] = action.id
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['action_id'] = action2.id
+    del schema['default']
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['default'] = object.object_id
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema['action_id'] = action.id
+    schema['action_type_id'] = sampledb.models.ActionType.MEASUREMENT
+    del schema['default']
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['default'] = object.object_id
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
 

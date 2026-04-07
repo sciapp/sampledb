@@ -18,7 +18,8 @@ class Topic:
     description: typing.Dict[str, str]
     short_description: typing.Dict[str, str]
     show_on_frontpage: bool
-    show_in_navbar: bool
+    show_in_action_navbar: bool
+    show_in_instrument_navbar: bool
     description_is_markdown: bool
     short_description_is_markdown: bool
     order_index: typing.Optional[int]
@@ -34,7 +35,8 @@ class Topic:
             description=topic.description,
             short_description=topic.short_description,
             show_on_frontpage=topic.show_on_frontpage,
-            show_in_navbar=topic.show_in_navbar,
+            show_in_action_navbar=topic.show_in_action_navbar,
+            show_in_instrument_navbar=topic.show_in_instrument_navbar,
             description_is_markdown=topic.description_is_markdown,
             short_description_is_markdown=topic.short_description_is_markdown,
             order_index=topic.order_index
@@ -86,7 +88,7 @@ def get_topics(filter_frontpage: bool = False, filter_navbar: bool = False) -> t
     return [
         Topic.from_database(topic)
         for topic in query.all()
-        if (topic.show_in_navbar or not filter_navbar) and (topic.show_on_frontpage or not filter_frontpage)
+        if (topic.show_in_action_navbar or topic.show_in_instrument_navbar or not filter_navbar) and (topic.show_on_frontpage or not filter_frontpage)
     ]
 
 
@@ -96,7 +98,8 @@ def create_topic(
         description: typing.Dict[str, str],
         short_description: typing.Dict[str, str],
         show_on_frontpage: bool,
-        show_in_navbar: bool,
+        show_in_action_navbar: bool,
+        show_in_instrument_navbar: bool,
         description_is_markdown: bool,
         short_description_is_markdown: bool
 ) -> Topic:
@@ -109,7 +112,8 @@ def create_topic(
     :param short_description: (possibly empty) short descriptions for the topic in a dict.
         Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
-    :param show_in_navbar: whether this topic should be shown in the navbar
+    :param show_in_action_navbar: whether this topic should be shown in the actions tab of the  navbar
+    :param show_in_instrument_navbar: whether this topic should be shown in the instruments tab of the navbar
     :param description_is_markdown: whether the description is markdown
     :param short_description_is_markdown: whether the short description is markdown
     :return: the created topic
@@ -119,7 +123,8 @@ def create_topic(
         description=description,
         short_description=short_description,
         show_on_frontpage=show_on_frontpage,
-        show_in_navbar=show_in_navbar,
+        show_in_action_navbar=show_in_action_navbar,
+        show_in_instrument_navbar=show_in_instrument_navbar,
         description_is_markdown=description_is_markdown,
         short_description_is_markdown=short_description_is_markdown,
         order_index=None
@@ -136,7 +141,8 @@ def update_topic(
         description: typing.Dict[str, str],
         short_description: typing.Dict[str, str],
         show_on_frontpage: bool,
-        show_in_navbar: bool,
+        show_in_action_navbar: bool,
+        show_in_instrument_navbar: bool,
         description_is_markdown: bool,
         short_description_is_markdown: bool
 ) -> Topic:
@@ -150,7 +156,8 @@ def update_topic(
     :param short_description: (possibly empty) short descriptions for the topic in a dict.
         Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
-    :param show_in_navbar: whether this topic should be shown in the navbar
+    :param show_in_action_navbar: whether this topic should be shown in the actions tab of the  navbar
+    :param show_in_instrument_navbar: whether this topic should be shown in the instruments tab of the navbar
     :param description_is_markdown: whether the description is markdown
     :param short_description_is_markdown: whether the short description is markdown
     :return: the created topic
@@ -163,7 +170,8 @@ def update_topic(
     topic.description = description
     topic.short_description = short_description
     topic.show_on_frontpage = show_on_frontpage
-    topic.show_in_navbar = show_in_navbar
+    topic.show_in_action_navbar = show_in_action_navbar
+    topic.show_in_instrument_navbar = show_in_instrument_navbar
     topic.description_is_markdown = description_is_markdown
     topic.short_description_is_markdown = short_description_is_markdown
     db.session.add(topic)

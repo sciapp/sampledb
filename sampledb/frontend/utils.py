@@ -8,6 +8,7 @@ import dataclasses
 import decimal
 import difflib
 import io
+import itertools
 import json
 import base64
 import functools
@@ -45,13 +46,13 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User, get_user_by_federated_user
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for, get_hash
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.schemas import get_default_data
-from ..logic.actions import Action
-from ..logic.action_types import ActionType
+from ..logic.actions import Action, get_action
+from ..logic.action_types import ActionType, get_action_type
 from ..logic.info_pages import InfoPage, get_info_pages_for_endpoint
 from ..logic.instruments import Instrument
 from ..logic.instrument_log_entries import InstrumentLogFileAttachment
@@ -67,9 +68,11 @@ from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
 from ..logic.files import File, get_file as get_file_logic
+from ..logic.object_data_to_html import object_data_to_html
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
 from .info_pages import InfoPageAcknowledgementForm
+from ..config import LinkListConfig
 
 
 class JinjaFilter:
@@ -107,6 +110,7 @@ JinjaFilter()(markdown_to_safe_html)
 JinjaFilter()(get_translated_text)
 JinjaFilter()(get_all_translated_texts)
 JinjaFilter()(bool)
+JinjaFilter()(get_hash)
 
 JinjaFunction()(get_component_or_none)
 JinjaFunction()(get_component_id_by_uuid)
@@ -120,6 +124,7 @@ JinjaFunction()(apply_diff)
 JinjaFunction()(invert_diff)
 JinjaFunction()(get_import_signed_by)
 JinjaFunction()(InfoPageAcknowledgementForm)
+JinjaFunction()(object_data_to_html)
 
 qrcode_cache: typing.Dict[str, str] = {}
 
@@ -624,7 +629,7 @@ def get_template(template_mode: str, default_prefix: str, schema: typing.Dict[st
         template_mode=template_mode,
         default_prefix=default_prefix,
         schema_type=schema['type'],
-        schema_style=get_style_variant(schema.get('style'), template_mode),
+        schema_style=get_style_variant(schema.get("style"), template_mode),
         container_style=get_style_variant(container_style, template_mode)
     )
 
@@ -661,7 +666,7 @@ def get_template_impl(template_mode: str, default_prefix: str, schema_type: str,
 def get_property_template(template_mode: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[typing.Union[str, typing.Dict[str, str]]]) -> str:
     return get_property_template_impl(
         template_mode=template_mode,
-        schema_style=get_style_variant(schema.get('style'), template_mode),
+        schema_style=get_style_variant(schema.get("style"), template_mode),
         container_style=get_style_variant(container_style, template_mode)
     )
 
@@ -759,7 +764,8 @@ def get_local_decimal_delimiter() -> str:
     return typing.cast(str, numbers.format_decimal(1.2346, locale=flask_babel.get_locale())[1:2])
 
 
-@JinjaFunction()
+@JinjaFunction("get_user")
+@cache_per_request()
 def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
     try:
         return get_user(user_id, component_id)
@@ -767,12 +773,6 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
         return None
     except errors.ComponentDoesNotExistError:
         return None
-
-
-@JinjaFilter()
-@functools.lru_cache(maxsize=None)
-def get_hash(text: str) -> str:
-    return hashlib.sha256(text.encode('utf-8'), usedforsecurity=False).hexdigest()
 
 
 @functools.lru_cache(maxsize=None)
@@ -1256,14 +1256,6 @@ def get_locations_form_data(
         for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id], has_read_permissions=location_id in readable_location_ids), reverse=True):
             unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, name_prefix, subtree[location_id], id_path + [location_id]))
     return all_choices, choices
-
-
-@JinjaFunction()
-def get_user_or_none(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
-    try:
-        return get_user(user_id, component_id=component_id)
-    except errors.UserDoesNotExistError:
-        return None
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1914,3 +1906,75 @@ def get_info_pages() -> typing.Sequence[InfoPage]:
         user_id=current_user.id,
         exclude_disabled=True
     )
+
+
+@JinjaFunction()
+@functools.cache
+def merge_external_links(*external_link_config_keys: typing.Tuple[str, typing.Union[int, str]]) -> typing.Sequence[LinkListConfig]:
+    external_link_config_lists: typing.List[typing.Sequence[LinkListConfig]] = []
+    for config_key, id_or_wildcard in external_link_config_keys:
+        external_link_config_lists.append(flask.current_app.config[config_key].get(id_or_wildcard, []))
+    merged_external_link_config_list: typing.List[LinkListConfig] = []
+    for link_list_config in itertools.chain(*external_link_config_lists):
+        for existing_link_list_config in merged_external_link_config_list:
+            matching_keys: typing.List[typing.Union[typing.Literal['label'], typing.Literal['icon'], typing.Literal['id_placeholder']]] = ['label', 'icon', 'id_placeholder']
+            if all(existing_link_list_config[key] == link_list_config[key] for key in matching_keys):
+                for link_config in link_list_config['links']:
+                    if link_config not in existing_link_list_config['links']:
+                        existing_link_list_config['links'].append(copy.deepcopy(link_config))
+                break
+        else:
+            merged_external_link_config_list.append(copy.deepcopy(link_list_config))
+    return merged_external_link_config_list
+
+
+@JinjaFunction()
+def convert_schema_action_ids_to_local_action_ids(
+        schema_action_ids: typing.Optional[typing.Union[int, typing.Dict[str, typing.Any], typing.List[typing.Union[int, typing.Dict[str, typing.Any]]]]]
+) -> typing.Optional[typing.List[int]]:
+    if schema_action_ids is None:
+        return None
+    if type(schema_action_ids) is not list:
+        schema_action_ids = [typing.cast(typing.Union[int, typing.Dict[str, typing.Any]], schema_action_ids)]
+    local_action_ids = set()
+    for schema_action_id in schema_action_ids:
+        if type(schema_action_id) is int:
+            local_action_ids.add(schema_action_id)
+        if type(schema_action_id) is dict:
+            if schema_action_id['component_uuid'] == flask.current_app.config['FEDERATION_UUID']:
+                local_action_ids.add(schema_action_id['action_id'])
+            else:
+                component_id = get_component_id_by_uuid(schema_action_id['component_uuid'])
+                if component_id is not None:
+                    try:
+                        action = get_action(schema_action_id['action_id'], component_id)
+                        local_action_ids.add(action.id)
+                    except errors.ActionDoesNotExistError:
+                        pass
+    return list(local_action_ids)
+
+
+@JinjaFunction()
+def convert_schema_action_type_ids_to_local_action_type_ids(
+        schema_action_type_ids: typing.Optional[typing.Union[int, typing.Dict[str, typing.Any], typing.List[typing.Union[int, typing.Dict[str, typing.Any]]]]]
+) -> typing.Optional[typing.List[int]]:
+    if schema_action_type_ids is None:
+        return None
+    if type(schema_action_type_ids) is not list:
+        schema_action_type_ids = [typing.cast(typing.Union[int, typing.Dict[str, typing.Any]], schema_action_type_ids)]
+    local_action_type_ids = set()
+    for schema_action_type_id in schema_action_type_ids:
+        if type(schema_action_type_id) is int:
+            local_action_type_ids.add(schema_action_type_id)
+        if type(schema_action_type_id) is dict:
+            if schema_action_type_id['component_uuid'] == flask.current_app.config['FEDERATION_UUID']:
+                local_action_type_ids.add(schema_action_type_id['action_type_id'])
+            else:
+                component_id = get_component_id_by_uuid(schema_action_type_id['component_uuid'])
+                if component_id is not None:
+                    try:
+                        action_type = get_action_type(schema_action_type_id['action_type_id'], component_id)
+                        local_action_type_ids.add(action_type.id)
+                    except errors.ActionTypeDoesNotExistError:
+                        pass
+    return list(local_action_type_ids)

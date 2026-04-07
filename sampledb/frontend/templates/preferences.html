@@ -180,7 +180,7 @@
   <h3 id="api_tokens">{{ _('API Tokens')}}</h3>
   <div>
     <p>
-      <strong>{{ _('Note:')}}</strong> {{ _('API tokens are an authentication method for use with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
+      <strong>{{ _('Note:')}}</strong> {{ _('API tokens are an authentication method for use with the <a href="%(documentation_root_url)sdeveloper_guide/api.html">HTTP API</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"]) }}
     </p>
     <table class="table">
       {% if api_tokens %}
@@ -221,7 +221,7 @@
   <h3 id="api_access_tokens">{{ _('API Access Tokens')}}</h3>
   <div>
     <p>
-      <strong>{{ _('Note:')}}</strong> {{ _('API access tokens are short-lived tokens for the use by interactive applications or scripts to authenticate with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
+      <strong>{{ _('Note:')}}</strong> {{ _('API access tokens are short-lived tokens for the use by interactive applications or scripts to authenticate with the <a href="%(documentation_root_url)sdeveloper_guide/api.html">HTTP API</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"])}}
     </p>
     <table class="table">
       <thead>
@@ -301,7 +301,7 @@
     <h3 id="webhooks">{{ _('Webhooks') }}</h3>
     <div>
       <p>
-        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log, as described in <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/webhooks.html">the documentation</a>.')}}
+        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log or to changes to object permissions, as described in <a href="%(documentation_root_url)sdeveloper_guide/webhooks.html">the documentation</a>.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"])}}
       </p>
         <table class="table">
       {% if webhooks | length == 0 %}
@@ -309,6 +309,7 @@
       {% else %}
          <thead>
              <tr>
+                 <th>{{ _('Type') }}</th>
                  <th>{{ _('Name') }}</th>
                  <th>{{ _('Address') }}</th>
                  <th>{{ _('Last Contact') }}</th>
@@ -318,9 +319,10 @@
          <tbody>
            {% for webhook in webhooks %}
            <tr>
+             <td>{{ {'OBJECT_LOG': _('Object Log'), 'OBJECT_PERMISSIONS': _('Object Permissions')}.get(webhook.type.name, '—') }}</td>
              <td>{{ webhook.name or '—' }}</td>
              <td>{{ webhook.target_url }}</td>
-             <td>{% if not webhook.last_contact %}&mdash;{% else %}{{ webhook.last_contact }}{% endif %}</td>
+             <td>{% if not webhook.last_contact %}&mdash;{% else %}{{ webhook.last_contact | babel_format_datetime }}{% endif %}</td>
              <td class="text-right">
                <div class="btn-group">
                  <form method="post" name="form-remove-webhook" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
@@ -336,6 +338,7 @@
       {% endif %}
          <tfoot>
            <tr>
+             <td></td>
              <td></td>
              <td></td>
              <td></td>
@@ -558,6 +561,29 @@
       <div class="radio col-md-8 col-md-offset-4">
         <label>
           <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-default" value="default" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-sort-referencable-objects">
+        {{ _('Sort referencable objects') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-sort-referencable-objects" id="input-sort-referencable-objects-id" value="id" {% if user_settings["SORT_REFERENCABLE_OBJECTS"] == "id" %}checked="checked"{% endif %}>
+          {{ _('By ID &mdash; Sort referencable objects by their ID, from newest to oldest') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-sort-referencable-objects" id="input-sort-referencable-objects-name" value="name" {% if user_settings["SORT_REFERENCABLE_OBJECTS"] == "name" %}checked="checked"{% endif %}>
+          {{ _('By Name &mdash; Sort referencable objects by their name, from A to Z') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-sort-referencable-objects" id="input-sort-referencable-objects-default" value="default" {% if user_settings["SORT_REFERENCABLE_OBJECTS"] is none %}checked="checked"{% endif %}>
           {{ _('Default &mdash; Use the site-wide default setting') }}
         </label>
       </div>
@@ -832,6 +858,17 @@
         <form method="post" action="{{ url_for('.user_preferences', user_id=current_user.id) }}" class="form-horizontal">
           {{ add_webhook_form.csrf_token() }}
           <div class="modal-body">
+            <div class="form-group {% if add_webhook_form.type.errors %}has-error{% endif %}">
+              <label for="addWebhookType" class="col-sm-2 control-label">{{ _('Type') }}</label>
+              <div class="col-sm-10">
+                <select class="selectpicker" id="addWebhookType" name="{{ add_webhook_form.type.name }}" data-width="100%">
+                  {% for choice in add_webhook_form.type.choices %}
+                    <option {% if add_webhook_form.type.data == choice[0] %}selected="selected"{% endif %} value="{{ choice[0] }}">{{ _(choice[1]) }}</option>
+                  {% endfor %}
+                </select>
+                {% for error_message in add_webhook_form.type.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
             <div class="form-group {% if add_webhook_form.name.errors %}has-error{% endif %}">
               <label for="addWebhookName" class="col-sm-2 control-label">{{ _('Name') }}</label>
               <div class="col-sm-10">
@@ -875,7 +912,7 @@
             </div>
             <span class="help-block">
               {{ _('Make sure you save it &mdash; you won\'t be able to access it again.') }}
-              {{ _('See the <href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/webhooks.html#validation">documentation</a> on how to use and validate messages using a secret.') }}
+              {{ _('See the <a href="%(documentation_root_url)sdeveloper_guide/webhooks.html#validation">documentation</a> on how to use and validate messages using a secret.', documentation_root_url=config["DOCUMENTATION_ROOT_URL"]) }}
             </span>
           </div>
           <div class="modal-footer">

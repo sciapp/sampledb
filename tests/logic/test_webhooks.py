@@ -101,18 +101,40 @@ def test_get_object_log_webhooks_for_object(user1, user2, object, action):
     wh2 = webhooks.create_webhook(type=WebhookType.OBJECT_LOG, user_id=user1.id, target_url='https://example2.com')
     wh3 = webhooks.create_webhook(type=WebhookType.OBJECT_LOG, user_id=user2.id, target_url='https://example.com')
     wh4 = webhooks.create_webhook(type=WebhookType.OBJECT_LOG, user_id=user2.id, secret='This is a secret', target_url='https://example2.com')
+    wh5 = webhooks.create_webhook(type=WebhookType.OBJECT_PERMISSIONS, user_id=user2.id, target_url='https://example.com')
     webhooks_for_object = webhooks.get_object_log_webhooks_for_object(object.id)
     assert webhooks_for_object == [wh1, wh2]
     sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.READ)
     webhooks_for_object = webhooks.get_object_log_webhooks_for_object(object.id)
-    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.NONE)
     assert webhooks_for_object == [wh1, wh2, wh3, wh4]
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.NONE)
     sampledb.logic.users.set_user_administrator(user2.id, True)
     webhooks_for_object = webhooks.get_object_log_webhooks_for_object(object.id)
     assert webhooks_for_object == [wh1, wh2]
     sampledb.logic.settings.set_user_settings(user2.id, {'USE_ADMIN_PERMISSIONS': True})
     webhooks_for_object = webhooks.get_object_log_webhooks_for_object(object.id)
     assert webhooks_for_object == [wh1, wh2, wh3, wh4]
+
+def test_get_object_permissions_webhooks_for_object(user1, user2, object, action):
+    wh1 = webhooks.create_webhook(type=WebhookType.OBJECT_LOG, user_id=user1.id, target_url='https://example.com')
+    wh2 = webhooks.create_webhook(type=WebhookType.OBJECT_PERMISSIONS, user_id=user1.id, target_url='https://example2.com')
+    wh3 = webhooks.create_webhook(type=WebhookType.OBJECT_PERMISSIONS, user_id=user2.id, target_url='https://example.com')
+    wh4 = webhooks.create_webhook(type=WebhookType.OBJECT_PERMISSIONS, user_id=user2.id, secret='This is a secret', target_url='https://example2.com')
+    webhooks_for_object = webhooks.get_object_permissions_webhooks_for_object(object.id)
+    assert webhooks_for_object == [wh2]
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.WRITE)
+    webhooks_for_object = webhooks.get_object_permissions_webhooks_for_object(object.id)
+    assert webhooks_for_object == [wh2]
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.GRANT)
+    webhooks_for_object = webhooks.get_object_permissions_webhooks_for_object(object.id)
+    assert webhooks_for_object == [wh2, wh3, wh4]
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.NONE)
+    sampledb.logic.users.set_user_administrator(user2.id, True)
+    webhooks_for_object = webhooks.get_object_permissions_webhooks_for_object(object.id)
+    assert webhooks_for_object == [wh2]
+    sampledb.logic.settings.set_user_settings(user2.id, {'USE_ADMIN_PERMISSIONS': True})
+    webhooks_for_object = webhooks.get_object_permissions_webhooks_for_object(object.id)
+    assert webhooks_for_object == [wh2, wh3, wh4]
 
 
 def test_update_webhook(user1):

@@ -31,7 +31,8 @@ def is_converting_to_schema_necessary(
     new_data, messages = convert_to_schema(
         data=data,
         previous_schema=previous_schema,
-        new_schema=new_schema
+        new_schema=new_schema,
+        filter_out_new_none_properties=True
     )
     if data == new_data:
         return False, messages
@@ -59,7 +60,8 @@ def is_converting_to_schema_necessary(
 def convert_to_schema(
         data: typing.Dict[str, typing.Any],
         previous_schema: typing.Dict[str, typing.Any],
-        new_schema: typing.Dict[str, typing.Any]
+        new_schema: typing.Dict[str, typing.Any],
+        filter_out_new_none_properties: bool = False
 ) -> typing.Tuple[typing.Any, typing.Sequence[str]]:
     """
     Convert data from one schema to another.
@@ -67,6 +69,7 @@ def convert_to_schema(
     :param data: the sampledb object data
     :param previous_schema: the sampledb object schema for the given data
     :param new_schema: the target sampledb object schema
+    :param filter_out_new_none_properties: remove None values for new, non-required properties
     :return: the converted data and a list of conversion warnings/notes
     """
     result: typing.Optional[typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[str]]], typing.Sequence[str]]]
@@ -123,11 +126,11 @@ def convert_to_schema(
         if result:
             return result
     if new_schema['type'] == 'object':
-        result = _try_convert_object_to_object(data, new_schema, previous_schema)
+        result = _try_convert_object_to_object(data, new_schema, previous_schema, filter_out_new_none_properties=filter_out_new_none_properties)
         if result:
             return result
     if new_schema['type'] == 'array' and isinstance(data, list):
-        result = _try_convert_array_to_array(data, new_schema, previous_schema)
+        result = _try_convert_array_to_array(data, new_schema, previous_schema, filter_out_new_none_properties=filter_out_new_none_properties)
         if result:
             return result
     return copy.deepcopy(generate_placeholder(new_schema)), [_("Unable to convert property '%(title)s' of type '%(type)s'.", title=get_translated_text(new_schema['title']), type=new_schema['type'])]
@@ -180,7 +183,8 @@ def _try_convert_text_to_choices(
 def _try_convert_object_to_object(
         data: typing.Dict[str, typing.Any],
         new_schema: typing.Dict[str, typing.Any],
-        previous_schema: typing.Dict[str, typing.Any]
+        previous_schema: typing.Dict[str, typing.Any],
+        filter_out_new_none_properties: bool
 ) -> typing.Optional[typing.Tuple[typing.Dict[str, typing.Any], typing.Sequence[str]]]:
     upgrade_warnings = []
     new_data = copy.deepcopy(generate_placeholder(new_schema))
@@ -191,7 +195,8 @@ def _try_convert_object_to_object(
             new_property_value, property_upgrade_warnings = convert_to_schema(
                 data=property_value,
                 previous_schema=previous_schema['properties'][property_name],
-                new_schema=new_schema['properties'][property_name]
+                new_schema=new_schema['properties'][property_name],
+                filter_out_new_none_properties=filter_out_new_none_properties,
             )
             if new_property_value is not None:
                 new_data[property_name] = new_property_value
@@ -199,21 +204,27 @@ def _try_convert_object_to_object(
                 if upgrade_warning not in upgrade_warnings:
                     upgrade_warnings.append(upgrade_warning)
     for property_name in new_schema['properties']:
-        # check if any properties were explicitly not set
-        if property_name in new_data and property_name not in data and property_name not in new_schema.get('required', []) and property_name in previous_schema['properties']:
-            del new_data[property_name]
+        # property is new in data and not required, so could potentially be removed
+        if property_name in new_data and property_name not in data and property_name not in new_schema.get('required', []):
+            # a default may have been generated, even though the property had been explicitly not set before, so unset it
+            if property_name in previous_schema['properties']:
+                del new_data[property_name]
+            # the property is new, has no default and is not required, so unset it
+            elif filter_out_new_none_properties and new_data[property_name] is None and property_name not in previous_schema['properties']:
+                del new_data[property_name]
     return new_data, upgrade_warnings
 
 
 def _try_convert_array_to_array(
         data: typing.List[typing.Any],
         new_schema: typing.Dict[str, typing.Any],
-        previous_schema: typing.Dict[str, typing.Any]
+        previous_schema: typing.Dict[str, typing.Any],
+        filter_out_new_none_properties: bool
 ) -> typing.Optional[typing.Tuple[typing.List[typing.Any], typing.Sequence[str]]]:
     new_data = []
     upgrade_warnings = []
     for item in data:
-        new_item, item_upgrade_warnings = convert_to_schema(item, previous_schema['items'], new_schema['items'])
+        new_item, item_upgrade_warnings = convert_to_schema(item, previous_schema['items'], new_schema['items'], filter_out_new_none_properties=filter_out_new_none_properties)
         new_data.append(new_item)
         for upgrade_warning in item_upgrade_warnings:
             if upgrade_warning not in upgrade_warnings:

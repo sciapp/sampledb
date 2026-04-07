@@ -260,7 +260,8 @@ def test_status_codes(flask_server, user, driver):
             zip_bytes=b''
         ).id
         topic_id = sampledb.logic.topics.create_topic(
-            show_in_navbar=False,
+            show_in_action_navbar=False,
+            show_in_instrument_navbar=False,
             show_on_frontpage=False,
             name={'en': 'Test'},
             description={'en': 'Testing Topic'},
@@ -331,6 +332,7 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/objects/{object_id}/files/{file_id}': 200,
         f'api/v1/objects/{object_id}/locations/': 200,
         f'api/v1/objects/{object_id}/locations/{object_location_assignment_index}': 200,
+        f'api/v1/objects/{object_id}/permissions/': 200,
         f'api/v1/objects/{object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
         f'api/v1/objects/{object_id}/permissions/authenticated_users': 200,
         f'api/v1/objects/{object_id}/permissions/groups/': 200,
@@ -349,6 +351,7 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/objects/{other_object_id}/files/{file_id}': 404,
         f'api/v1/objects/{other_object_id}/locations/': 200,
         f'api/v1/objects/{other_object_id}/locations/{object_location_assignment_index}': 404,
+        f'api/v1/objects/{other_object_id}/permissions/': 200,
         f'api/v1/objects/{other_object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
         f'api/v1/objects/{other_object_id}/permissions/authenticated_users': 200,
         f'api/v1/objects/{other_object_id}/permissions/groups/': 200,
@@ -366,8 +369,12 @@ def test_status_codes(flask_server, user, driver):
         'api/v1/users/me': 200,
         'api/v1/groups/': 200,
         f'api/v1/groups/{group_id}': 200,
+        f'api/v1/groups/{group_id}/member_users/': 200,
+        f'api/v1/groups/{group_id}/member_users/{user_id}': 200,
         'api/v1/projects/': 200,
         f'api/v1/projects/{project_id}': 200,
+        f'api/v1/projects/{project_id}/member_users/': 200,
+        f'api/v1/projects/{project_id}/member_users/{user_id}': 200,
         'apple-touch-icon.png': 200,
         'dashboard/telemetry/get_is_telemetry_answered': 200,
         'eln_imports': 200,

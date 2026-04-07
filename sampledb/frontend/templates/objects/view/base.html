@@ -13,9 +13,6 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}"/>
 {% endblock %}
 
-{% set id_prefix_root = "object" %}
-{% set property_path = () %}
-
 {% block sidebar %}
   <nav>
     <ul>
@@ -74,7 +71,7 @@
   </h1>
   <h2 id="information">{{ _('Information') }}</h2>
   {% if not config['DISABLE_INSTRUMENTS'] %}
-  <div class="row" style="padding-right:0.75em">
+  <div class="row" style="padding-right:0.75em; margin-left: -20px">
     <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
     <div class="col-md-9">
       {% if instrument is not none %}
@@ -84,7 +81,7 @@
     </div>
   </div>
   {% endif %}
-  <div class="row" style="padding-right:0.75em">
+  <div class="row" style="padding-right:0.75em; margin-left: -20px">
     <label class="col-md-3" style="text-align: right">{{ _('Action') }}
       {% if action is not none %}
         <a href="{{ url_for('.objects', action_ids=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
@@ -98,8 +95,6 @@
     </div>
   </div>
   {% block includes %}
-      {% set indent_level = 0 %}
-      {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
           {% if previous_version_data_diff %}
             {% set diff = previous_version_data_diff %}
@@ -108,8 +103,25 @@
             {% set diff = none %}
             {% set previous_schema = none %}
           {% endif %}
+          {% set id_prefix_root = "object" %}
+          {% set property_path = () %}
+          {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           <div style="margin-left: -15px; margin-right:-15px">
+          {% if config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] and not diff and not previous_schema %}
+            {{ object_data_to_html(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                metadata_language=metadata_language,
+                data=data,
+                schema=schema,
+                id_prefix_root=id_prefix_root,
+                files=files,
+              ) | safe }}
+          {% else %}
+            {%- set indent_level = 0 %}
+            {%- set show_indent_border = False %}
             {% include "objects/view/any.html" %}
+          {% endif %}
           </div>
       {% endif %}
   {% endblock %}
@@ -277,6 +289,24 @@
       </form>
     </div>
     {% endif %}
+  {% if object.action_id in config["OBJECT_LINKS_BY_ACTION_ID"] or '*' in config["OBJECT_LINKS_BY_ACTION_ID"] %}
+    {% for links_config in merge_external_links(("OBJECT_LINKS_BY_ACTION_ID", "*"), ("OBJECT_LINKS_BY_ACTION_ID", object.action_id)) %}
+      <div class="form-group">
+        <div class="btn-group">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="linksDropdownMenuButton">
+            {% for link in links_config.links %}
+              <li>
+                <a href="{{ link.url | replace(links_config.id_placeholder, object.id) }}">{{ link.name | get_translated_text }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
   </div>
   {% if schema and ('workflow_view' in schema or 'workflow_views' in schema) %}
     {% set workflow_views = schema.get('workflow_views', []) %}
@@ -489,7 +519,7 @@
                 <div class="row" style="padding-right:0.75em">
                   <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
                   <div class="col-md-9">
-                    {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
+                    {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url=config["DOCUMENTATION_ROOT_URL"] + 'user_guide/objects.html#permissions') }}
                   </div>
                 </div>
               {% elif not elem.duplicate and elem.object.data is none or elem.object.schema is none %}
@@ -508,9 +538,22 @@
                 {% set data = elem.object.data %}
                 {% set schema = elem.object.schema %}
                 {% set files = elem.files %}
-                {% set indent_level = 0 %}
-                {% set show_indent_border = False %}
-                {% include "objects/view/any.html" %}
+                {% if config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] %}
+                  {{ object_data_to_html(
+                      object_id=elem.object.object_id,
+                      version_id=elem.object.version_id,
+                      metadata_language=metadata_language,
+                      data=data,
+                      schema=schema,
+                      id_prefix_root=id_prefix_root,
+                      workflow_display_mode=workflow_display_mode,
+                      files=files
+                    ) | safe }}
+                {% else %}
+                  {%- set indent_level = 0 %}
+                  {%- set show_indent_border = False %}
+                  {% include "objects/view/any.html" %}
+                {% endif %}
               {% endif %}
               </div>
             {% endif %}
@@ -1355,7 +1398,12 @@
             {% endif %}
               {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
-            {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) %}
+            {% set batch_ids = (object_log_entry.data['object_ids'] | tojson)[1:-1] %}
+            {% if batch_ids | length > 1000 %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <form method="post" action="%(batch_url)s" style="display: inline; margin: 0 -2px;" class="form-inline"><input type="hidden" name="ids" value="%(batch_ids)s"/><button type="submit" class="btn-link" style="padding: 0">batch</button></form>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects'), batch_ids=batch_ids) %}
+            {% else %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=batch_ids)) %}
+            {% endif %}
             {% set ns.object_log_entry_view_url = url_for('.object_version', object_id=object_id, version_id=0) %}
           {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
               {% set ns.object_log_entry_message = _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) %}

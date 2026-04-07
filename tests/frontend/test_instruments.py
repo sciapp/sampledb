@@ -6,6 +6,7 @@
 import requests
 import pytest
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
 
 import sampledb
 import sampledb.models
@@ -123,3 +124,90 @@ def test_create_instrument_log_entry(flask_server, user, instrument, object_id):
     else:
         assert False
 
+
+def test_external_links(flask_server, app, driver, user):
+    instrument1 = sampledb.logic.instruments.create_instrument(
+        users_can_create_log_entries=True
+    )
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument1.id,
+        name="Example Instrument 1",
+        description=""
+    )
+    instrument2 = sampledb.logic.instruments.create_instrument(
+        users_can_create_log_entries=True
+    )
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument1.id,
+        name="Example Instrument 1",
+        description=""
+    )
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+
+    sampledb.frontend.utils.merge_external_links.cache_clear()
+    flask_server.app.config['INSTRUMENT_LINKS_BY_INSTRUMENT_ID'] = {
+        '*': [
+            {
+                'links': [
+                    {
+                        'name': {'en': 'Example Link 1'},
+                        'url': 'http://example.org/link1'
+                    },
+                    {
+                        'name': {'en': 'Example Link 2'},
+                        'url': 'http://example.org/link2'
+                    }
+                ],
+                'label': {'en': 'Links'},
+                'icon': 'fa-external-link',
+                'id_placeholder': '<ID>'
+            }
+        ],
+        instrument1.id: [
+            {
+                'links': [
+                    {
+                        'name': {'en': 'Example Link 3'},
+                        'url': 'http://example.org/link3'
+                    }
+                ],
+                'label': {'en': 'Links'},
+                'icon': 'fa-external-link',
+                'id_placeholder': '<ID>'
+            }
+        ]
+    }
+
+    driver.get(flask_server.base_url + f'instruments/{instrument1.id}')
+    external_links = driver.find_elements(By.CSS_SELECTOR, 'ul[aria-labelledby="linksDropdownMenuButton"] li a')
+    assert {(external_link.get_attribute("textContent"), external_link.get_attribute('href')) for external_link in external_links} == {
+        (
+            'Example Link 1',
+            'http://example.org/link1'
+        ),
+        (
+            'Example Link 2',
+            'http://example.org/link2'
+        ),
+        (
+            'Example Link 3',
+            'http://example.org/link3'
+        ),
+    }
+
+    driver.get(flask_server.base_url + f'instruments/{instrument2.id}')
+    external_links = driver.find_elements(By.CSS_SELECTOR, 'ul[aria-labelledby="linksDropdownMenuButton"] li a')
+    assert {(external_link.get_attribute("textContent"), external_link.get_attribute('href')) for external_link in external_links} == {
+        (
+            'Example Link 1',
+            'http://example.org/link1'
+        ),
+        (
+            'Example Link 2',
+            'http://example.org/link2'
+        ),
+    }
+    sampledb.frontend.utils.merge_external_links.cache_clear()

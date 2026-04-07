@@ -16,7 +16,8 @@
     {% if current_user.is_admin %}
       <dl>
         <dt>{{ _('Show on Frontpage') }}</dt><dd>{% if topic.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown on the frontpage') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown on the frontpage') }}{% endif %}</dd>
-        <dt>{{ _('Show in Navbar') }}</dt><dd>{% if topic.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the navbar') }}{% endif %}</dd>
+        <dt>{{ _('Show in Actions Tab of Navbar') }}</dt><dd>{% if topic.show_in_action_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the actions tab of the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the actions tab of the navbar') }}{% endif %}</dd>
+        <dt>{{ _('Show in Instruments Tab of Navbar') }}</dt><dd>{% if topic.show_in_instrument_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the instruments tab of the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the instruments tab of the navbar') }}{% endif %}</dd>
       </dl>
     {% endif %}
       {% if not config['DISABLE_INSTRUMENTS'] %}
@@ -26,6 +27,22 @@
       <a href="{{ url_for('.locations', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Locations') }}</a>
     {% if current_user.is_admin and not current_user.is_readonly %}
       <a href="{{ url_for('.topic', topic_id=topic.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this topic.') }}">{{ _('Edit Topic') }}</a>
+    {% endif %}
+    {% if topic.id in config["TOPIC_LINKS_BY_TOPIC_ID"] or '*' in config["TOPIC_LINKS_BY_TOPIC_ID"] %}
+      {% for links_config in merge_external_links(("TOPIC_LINKS_BY_TOPIC_ID", "*"), ("TOPIC_LINKS_BY_TOPIC_ID", topic.id)) %}
+        <span class="btn-group" style="margin-bottom: -2px">
+          <button class="btn btn-default dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="linksDropdownMenuButton">
+            {% for link in links_config.links %}
+              <li>
+                <a href="{{ link.url | replace(links_config.id_placeholder, topic.id) }}">{{ link.name | get_translated_text }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </span>
+      {% endfor %}
     {% endif %}
 
     {% if topic_instruments %}

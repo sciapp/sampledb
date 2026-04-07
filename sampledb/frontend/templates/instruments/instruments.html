@@ -20,7 +20,7 @@
     {% endif %}
     </ul>
   {% endif %}
-  <p class="text-muted">{{ _('Instruments in %(service_name)s map real instruments to <a href="%(actions_url)s">actions</a> performed with them.', service_name=service_name, actions_url=url_for('.actions')) }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/instruments.html">{{ _('Read more.') }}</a></p>
+  <p class="text-muted">{{ _('Instruments in %(service_name)s map real instruments to <a href="%(actions_url)s">actions</a> performed with them.', service_name=service_name, actions_url=url_for('.actions')) }} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/instruments.html">{{ _('Read more.') }}</a></p>
 
   {% if current_user.is_admin and not current_user.is_readonly %}
     <a href="{{ url_for('.new_instrument', topic_ids=filter_topic_ids | join(',') or None) }}" class="btn btn-default">{{ _('Create Instrument') }}</a>
@@ -67,7 +67,19 @@
       </div>
     </div>
   {% endif %}
+  <form class="form-inline" style="display: inline">
+    <label for="input-filter-by-name" class="sr-only">{{ _('Filter by name') }}</label>
+    <div class="input-group">
+      <input type="text" class="form-control" placeholder="{{ _('Filter by name') }}" id="input-filter-by-name" />
+      <span class="input-group-btn">
+        <button class="btn btn-default" type="reset"><span class="sr-only">{{ _('Clear') }}</span><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+      </span>
+    </div>
+    <span id="filter-by-name-result-text" style="display: none" class="text-muted">{{ _('Showing NUM_RESULTS_PLACEHOLDER of %(num_instruments)s instruments due to filter for &quot;FILTER_PLACEHOLDER&quot;.', num_instruments=instruments | length) }}</span>
+  </form>
+
   {% for instrument in instruments %}
+    <div class="filter-by-name" data-filter-text="{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">
     <h2>
       <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
       {{ import_information_symbol(instrument) }}
@@ -101,6 +113,7 @@
       </div>
     {% endif %}
     {% include "instruments/instrument_scientists.html" %}
+    </div>
   {% endfor %}
 {% endblock %}
 
@@ -113,5 +126,6 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/filter-by-name.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}

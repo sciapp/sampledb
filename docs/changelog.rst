@@ -1,6 +1,37 @@
 Changelog
 =========
 
+Version 0.33
+------------
+
+Released on April 7th, 2026.
+
+- Implemented caching for object data rendered to html
+- Fixed validation of object_reference properties for federated actions or action types
+- Improved search query builder
+- Improved HTTP API for users and locations
+- Added support for default values to object reference schemas
+- Added configurable external link dropdowns for objects, actions, instruments, topics, locations, basic groups and project groups
+- Improved handling of new, non-required properties in automatic schema update
+- Added config value SHOW_DOWNTIME_WARNING for warning about occasional downtime on front page
+- Added config value and user setting for sorting referencable objects by name rather than by ID
+- Made sorting of objects by name or other text properties case-insensitive
+- Give GRANT permissions to the user creating an object even if also granting permissions to a group
+- Added name-based filtering to action and instrument lists
+- Added config value for MAX_FORM_MEMORY_SIZE
+- Split setting for showing topics in navbar for actions and instruments tabs
+- Added webhook type for changes to object permissions
+- Added previous versions to documentation
+- Added copy and move buttons to arrays
+- Fixed array tables
+- Fixed style variants
+- Fixed editing of language settings
+- Added OIDC session expiration and Back-Channel Logout
+- Added HTTP API endpoints for bulk object permission management
+- Added documentation for differential backups using borgmatic
+- Added HTTP API endpoints for managing basic group and project group memberships
+
+
 Version 0.32
 ------------
 

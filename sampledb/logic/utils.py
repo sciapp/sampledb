@@ -4,6 +4,7 @@
 """
 import datetime
 import functools
+import hashlib
 import re
 import typing
 import sys
@@ -336,8 +337,8 @@ def print_deprecation_warnings() -> None:
                 "Numeric tags are enabled, please evaluate if these are "
                 "necessary for your use case and set the configuration value "
                 "ENABLE_NUMERIC_TAGS to False to disable them. To learn more,"
-                "see: "
-                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#numeric-tags",
+                "see: " + flask.current_app.config["DOCUMENTATION_ROOT_URL"] +
+                "administrator_guide/deprecated_features.html#numeric-tags",
                 color=33
             ),
             file=sys.stderr,
@@ -473,3 +474,8 @@ def get_postgres_timezone_alias(timezone_name: str, reference_date: datetime.dat
     elif '-' in current_timezone_name:
         current_timezone_name = current_timezone_name.replace('-', '+')
     return current_timezone_name
+
+
+@functools.lru_cache(maxsize=None)
+def get_hash(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8'), usedforsecurity=False).hexdigest()

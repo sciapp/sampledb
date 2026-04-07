@@ -307,6 +307,30 @@ def test_generate_object_reference_object():
     placeholder_object = generate_placeholder(object_schema)
     assert placeholder_object is None
 
+    user = sampledb.logic.users.create_user(name="User", email="example@example.com", type=sampledb.models.users.UserType.OTHER)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
+        }
+    )
+    object = sampledb.logic.objects.create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+
+    object_schema['default'] = object.id
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'object_reference',
+        'object_id': object.id,
+    }
+
 
 def test_generate_tags():
     object_schema = {

@@ -127,9 +127,15 @@
         </label>
       </div>
       <div class="checkbox">
-        <label for="input-show_in_navbar" style="font-weight:400">
-          <input type="checkbox" id="input-show_in_navbar" name="{{ topic_form.show_in_navbar.name }}"
-                 {% if topic_form.show_in_navbar.data %}checked="checked"{% endif %}> {{ _('Show this topic in the navbar') }}
+        <label for="input-show_in_action_navbar" style="font-weight:400">
+          <input type="checkbox" id="input-show_in_action_navbar" name="{{ topic_form.show_in_action_navbar.name }}"
+                 {% if topic_form.show_in_action_navbar.data %}checked="checked"{% endif %}> {{ _('Show this topic in the actions tab of the navbar') }}
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-show_in_instrument_navbar" style="font-weight:400">
+          <input type="checkbox" id="input-show_in_instrument_navbar" name="{{ topic_form.show_in_instrument_navbar.name }}"
+                 {% if topic_form.show_in_instrument_navbar.data %}checked="checked"{% endif %}> {{ _('Show this topic in the instruments tab of the navbar') }}
         </label>
       </div>
     </div>

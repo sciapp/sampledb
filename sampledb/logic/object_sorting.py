@@ -75,19 +75,28 @@ def last_modification_date() -> typing.Callable[[typing.Any, typing.Any], typing
     return sorting_func
 
 
-def property_value(property_name: str) -> typing.Callable[[typing.Any, typing.Any], typing.Any]:
+def property_value(property_name: str, language_code: str = 'en') -> typing.Callable[[typing.Any, typing.Any], typing.Any]:
     """
     Create a sorting function to sort by an arbitrary property.
 
     :param property_name: the name of the property to sort by
+    :param language_code: the language code to primarily sort text properties by
     :return: the sorting function
     """
     def sorting_func(current_columns: typing.Any, original_columns: typing.Any) -> typing.Any:
         columns = current_columns
         return sqlalchemy.sql.expression.case(
             (
-                columns.data[property_name]['_type'].astext == 'text',
-                columns.data[property_name]['text'].astext
+                sqlalchemy.and_(columns.data[property_name]['_type'].astext == 'text', sqlalchemy.func.jsonb_typeof(columns.data[property_name]['text']) == 'string'),
+                sqlalchemy.sql.expression.func.lower(columns.data[property_name]['text'].astext)
+            ),
+            (
+                sqlalchemy.and_(columns.data[property_name]['_type'].astext == 'text', columns.data[property_name]['text'].has_key(language_code)),
+                sqlalchemy.sql.expression.func.lower(columns.data[property_name]['text'][language_code].astext)
+            ),
+            (
+                sqlalchemy.and_(columns.data[property_name]['_type'].astext == 'text', columns.data[property_name]['text'].has_key('en')),
+                sqlalchemy.sql.expression.func.lower(columns.data[property_name]['text']['en'].astext)
             ),
             (
                 columns.data[property_name]['_type'].astext == 'quantity',

@@ -3,6 +3,7 @@
 
 """
 import copy
+import http
 import itertools
 import json
 import typing
@@ -79,9 +80,15 @@ OBJECT_LIST_OPTION_PARAMETERS = (
 )
 
 
-@frontend.route('/objects/')
+@frontend.route('/objects/', methods=['GET', 'POST'])
 @flask_login.login_required
 def objects() -> FlaskResponseT:
+    if flask.request.method == 'POST':
+        response = save_object_list_defaults()
+        if response is not None:
+            return response
+        if 'ids' not in flask.request.form:
+            return flask.abort(http.HTTPStatus.BAD_REQUEST)
 
     user_settings = get_user_settings(user_id=flask_login.current_user.id)
     if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_OPTION_PARAMETERS):
@@ -95,9 +102,14 @@ def objects() -> FlaskResponseT:
         user_id=flask_login.current_user.id,
         include_hidden_actions=True
     )
-    all_action_types = logic.action_types.get_action_types(
-        filter_fed_defaults=True
+    all_action_types_including_fed_defaults = logic.action_types.get_action_types(
+        filter_fed_defaults=False
     )
+    all_action_types = [
+        action_type
+        for action_type in all_action_types_including_fed_defaults
+        if action_type.fed_id is None or action_type.fed_id < 0
+    ]
     all_actions = [
         action
         for action in all_actions_including_hidden
@@ -131,7 +143,7 @@ def objects() -> FlaskResponseT:
 
     name_only = True
     implicit_action_type = None
-    object_ids_str = flask.request.args.get('ids', '')
+    object_ids_str = flask.request.form.get('ids', flask.request.args.get('ids', ''))
     object_ids: typing.Optional[typing.Set[int]] = None
     if object_ids_str:
         try:
@@ -448,7 +460,7 @@ def objects() -> FlaskResponseT:
         elif sorting_property_name == '_last_modification_date':
             sorting_property = object_sorting.last_modification_date()
         else:
-            sorting_property = object_sorting.property_value(sorting_property_name)
+            sorting_property = object_sorting.property_value(sorting_property_name, language_code=logic.languages.get_user_language(flask_login.current_user).lang_code)
 
         sorting_function = sorting_order(sorting_property)
 
@@ -805,10 +817,19 @@ def objects() -> FlaskResponseT:
 
     filter_actions = all_actions
     if filter_action_type_ids:
+        fed_default_action_types = {
+            action_type.id: action_type.fed_id
+            for action_type in all_action_types_including_fed_defaults
+            if action_type.fed_id is not None and action_type.fed_id < 0
+        }
         filter_actions = [
             action
             for action in filter_actions
-            if action.type_id in filter_action_type_ids
+            if action.type_id in filter_action_type_ids or (
+                action.fed_id is not None and
+                action.type_id in fed_default_action_types and
+                fed_default_action_types[action.type_id] in filter_action_type_ids
+            )
         ]
     if filter_action_ids:
         filter_actions = [
@@ -829,8 +850,12 @@ def objects() -> FlaskResponseT:
                 if property_name not in search_paths:
                     search_paths[property_name] = copy.deepcopy(search_path_info)
                 else:
-                    search_paths[property_name]['types'].extend(search_path_info['types'])
-                    search_paths[property_name]['titles'].extend(search_path_info['titles'])
+                    for property_type in search_path_info['types']:
+                        if property_type not in search_paths[property_name]['types']:
+                            search_paths[property_name]['types'].append(property_type)
+                    for property_title in search_path_info['titles']:
+                        if property_title not in search_paths[property_name]['titles']:
+                            search_paths[property_name]['titles'].append(property_title)
 
     filter_location_infos = []
     if filter_location_ids:
@@ -1195,6 +1220,9 @@ def referencable_objects() -> FlaskResponseT:
         permissions=required_perm,
         action_ids=action_ids
     )
+    sort_referencable_objects = get_user_settings(flask_login.current_user.id)['SORT_REFERENCABLE_OBJECTS'] or flask.current_app.config['SORT_REFERENCABLE_OBJECTS']
+    if str(sort_referencable_objects).lower() == 'name':
+        referencable_objects.sort(key=lambda x: get_translated_text(x.name_json).lower())
 
     def dictify(x: ObjectInfo) -> typing.Dict[str, typing.Any]:
         name = get_translated_text(x.name_json) or '—'
@@ -1514,9 +1542,7 @@ def _parse_display_properties(
     return display_properties, display_property_titles
 
 
-@frontend.route('/objects/', methods=['POST'])
-@flask_login.login_required
-def save_object_list_defaults() -> FlaskResponseT:
+def save_object_list_defaults() -> typing.Optional[FlaskResponseT]:
     if 'save_default_filters' in flask.request.form:
         all_locations = get_locations_with_user_permissions(
             user_id=flask_login.current_user.id,
@@ -1637,7 +1663,7 @@ def save_object_list_defaults() -> FlaskResponseT:
             }
         )
         return flask.redirect(build_modified_url('.objects', blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
-    return flask.abort(400)
+    return None
 
 
 @frontend.route("/edit_locations", methods=["POST"])

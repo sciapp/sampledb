@@ -20,7 +20,7 @@
     {% endif %}
     </ul>
   {% endif %}
-  <p class="text-muted">{{ _('Locations allow users to track where an object can be found.')}} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/locations.html">{{ _('Read more.')}}</a></p>
+  <p class="text-muted">{{ _('Locations allow users to track where an object can be found.')}} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/locations.html">{{ _('Read more.')}}</a></p>
   <p>
     {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
       {% if filter_topic_ids %}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-10-02 15:42+0200\n"
+"POT-Creation-Date: 2025-12-15 08:20+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1700,8 +1700,8 @@ msgstr "Navigation aus-/einklappen"
 msgid "Help"
 msgstr "Hilfe"
 
-msgid "Search…"
-msgstr "Suche…"
+msgid "Search objects…"
+msgstr "Objekte suchen…"
 
 msgid "Search"
 msgstr "Suche"
@@ -2447,14 +2447,13 @@ msgstr ""
 "Um diese Authentifizierungsmethode zu entfernen müssen Sie die zugehörige"
 " föderierte Identität widerrufen."
 
+#, python-format
 msgid ""
-"API tokens are an authentication method for use with the <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/developer_guide/api.html\">HTTP API</a>."
+"API tokens are an authentication method for use with the <a "
+"href=\"%(documentation_root_url)sdeveloper_guide/api.html\">HTTP API</a>."
 msgstr ""
 "API Token sind eine Authentifizierung zur Verwendung mit der <a "
-"href=\"https://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/developer_guide/api.html\">HTTP API</a>."
+"href=\"%(documentation_root_url)sdeveloper_guide/api.html\">HTTP API</a>."
 
 msgid "Description"
 msgstr "Beschreibung"
@@ -2462,16 +2461,16 @@ msgstr "Beschreibung"
 msgid "View Log"
 msgstr "Log anzeigen"
 
+#, python-format
 msgid ""
 "API access tokens are short-lived tokens for the use by interactive "
-"applications or scripts to authenticate with the <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/developer_guide/api.html\">HTTP API</a>."
+"applications or scripts to authenticate with the <a "
+"href=\"%(documentation_root_url)sdeveloper_guide/api.html\">HTTP API</a>."
 msgstr ""
 "API Zugriffstoken sind kurzlebige Token zur Verwendung durch interaktive "
-"Anwendungen oder Skripte, um sich mit der <a href=\"https://scientific-"
-"it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html\">HTTP "
-"API</a> zu authentifizieren."
+"Anwendungen oder Skripte, um sich mit der <a "
+"href=\"%(documentation_root_url)sdeveloper_guide/api.html\">HTTP API</a> "
+"zu authentifizieren."
 
 msgid "Expiration Datetime"
 msgstr "Ablaufzeitpunkt"
@@ -2497,25 +2496,35 @@ msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
 msgid "Set up FIDO2 Passkey for Two-Factor Authentication"
 msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
 
+#, python-format
 msgid ""
-"Webhooks allow you to subscribe to the object log, as described in <a "
-"href=\"https://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/developer_guide/webhooks.html\">the "
+"Webhooks allow you to subscribe to the object log or to changes to object"
+" permissions, as described in <a "
+"href=\"%(documentation_root_url)sdeveloper_guide/webhooks.html\">the "
 "documentation</a>."
 msgstr ""
-"Webhooks ermöglichen das Objekt-Log zu abonnieren, wie in <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/developer_guide/webhooks.html\">der Dokumentation</a>"
-" beschrieben."
+"Webhooks ermöglichen das Objekt-Log oder Veränderungen der Objekt-"
+"Berechtigungen zu abonnieren, wie in <a "
+"href=\"%(documentation_root_url)sdeveloper_guide/webhooks.html\">der "
+"Dokumentation</a> beschrieben."
 
 msgid "You have not yet created any webhooks."
 msgstr "Sie haben bisher keine Webhooks erstellt."
+
+msgid "Type"
+msgstr "Typ"
 
 msgid "Address"
 msgstr "Adresse"
 
 msgid "Last Contact"
 msgstr "Letzter Kontakt"
+
+msgid "Object Log"
+msgstr "Objekt-Log"
+
+msgid "Object Permissions"
+msgstr "Objektberechtigungen"
 
 msgid "Remove"
 msgstr "Entfernen"
@@ -2676,6 +2685,19 @@ msgstr "Ja &mdash; Objekte in Workflow Ansichten einklappen"
 msgid "No &mdash; Expand objects in workflow views"
 msgstr "Nein &mdash; Objekte in Workflow Ansichten ausklappen"
 
+msgid "Sort referencable objects"
+msgstr "Referenzierbare Objekte sortieren"
+
+msgid "By ID &mdash; Sort referencable objects by their ID, from newest to oldest"
+msgstr ""
+"Nach ID &mdash; Sortiere referenzierbare Objekte nach ihrer ID, vom "
+"neusten zum ältesten Objekt"
+
+msgid "By Name &mdash; Sort referencable objects by their name, from A to Z"
+msgstr ""
+"Nach Name &mdash; Sortiere referenzierbare Objekte nach ihrem Namen, von "
+"A bis Z"
+
 msgid "Language"
 msgstr "Sprache"
 
@@ -2727,9 +2749,6 @@ msgstr "Schließen"
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
-msgid "Type"
-msgstr "Typ"
-
 #, python-format
 msgid ""
 "When signing in with a FIDO2 Passkey, %(service_name)s will "
@@ -2760,8 +2779,8 @@ msgstr "Neues API Token"
 
 msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
-"Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
-"zugreifen können."
+"Bitte sichern Sie es &mdash; Sie werden nicht erneut darauf zugreifen "
+"können."
 
 msgid "Target Address"
 msgstr "Zieladresse"
@@ -2772,14 +2791,14 @@ msgstr "Webhook erstellen"
 msgid "New Webhook Secret"
 msgstr "Neues Webhook Geheimnis"
 
+#, python-format
 msgid ""
-"See the <href=\"https://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/developer_guide/webhooks.html#validation\">documentation</a>"
+"See the <a "
+"href=\"%(documentation_root_url)sdeveloper_guide/webhooks.html#validation\">documentation</a>"
 " on how to use and validate messages using a secret."
 msgstr ""
-"Siehe dazu auch die <a href=href=\"https://scientific-it-systems.iffgit"
-".fz-"
-"juelich.de/SampleDB/developer_guide/webhooks.html#validation\">Dokumentation</a>"
+"Siehe dazu auch die <a "
+"href=href=\"h%(documentation_root_url)sdeveloper_guide/webhooks.html#validation\">Dokumentation</a>"
 " darüber, wie diese Geheimnisse zur Validierung von Nachrichten verwendet"
 " werden können."
 
@@ -2975,14 +2994,13 @@ msgstr ""
 msgid "Send Recovery Email"
 msgstr "Wiederherstellungs-E-Mail senden"
 
+#, python-format
 msgid ""
-"For information on the search function, see the <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/user_guide/search.html\">User Guide</a>."
+"For information on the search function, see the <a "
+"href=\"%(documentation_root_url)suser_guide/search.html\">User Guide</a>."
 msgstr ""
-"Informationen zur Suchfunktion finden Sie im <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/user_guide/search.html\">Benutzerhandbuch</a>."
+"Informationen zur Suchfunktion finden Sie im <a "
+"href=\"%(documentation_root_url)suser_guide/search.html\">Benutzerhandbuch</a>."
 
 msgid "Search..."
 msgstr "Suche..."
@@ -2992,6 +3010,12 @@ msgstr "Nur suchen nach"
 
 msgid "Created with"
 msgstr "Erstellt mit"
+
+msgid "All actions"
+msgstr "Alle Aktionen"
+
+msgid "All Actions"
+msgstr "Alle Aktionen"
 
 msgid "Search Query Builder"
 msgstr "Suchanfrage erstellen"
@@ -3670,16 +3694,14 @@ msgstr "Bitte geben Sie erlaubte Dateiendungen ein."
 #, python-format
 msgid ""
 "<strong>Warning:</strong> Custom Actions are an advanced feature that "
-"most users of %(service_name)s will not need. See the <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/user_guide/actions.html\">User Guide</a> for more "
-"information."
+"most users of %(service_name)s will not need. See the <a "
+"href=\"%(documentation_root_url)suser_guide/actions.html\">User Guide</a>"
+" for more information."
 msgstr ""
 "<strong>Achtung:</strong> Benutzerdefinierte Aktionen sind eine "
 "fortgeschrittene Funktion von %(service_name)s, welche die meisten Nutzer"
-" nicht benötigen. Mehr Informationen dazu finden Sie im <a href=\"https"
-"://scientific-it-systems.iffgit.fz-"
-"juelich.de/SampleDB/user_guide/actions.html\">Benutzerhandbuch</a>."
+" nicht benötigen. Mehr Informationen dazu finden Sie im <a "
+"href=\"%(documentation_root_url)suser_guide/actions.html\">Benutzerhandbuch</a>."
 
 msgid "Please enter a shorter action name (at most 100 characters)."
 msgstr "Bitte geben Sie einen kürzeren Aktionsnamen an (höchstens 100 Zeichen)."
@@ -3967,6 +3989,17 @@ msgstr "Nach Themen filtern"
 msgid "Clear"
 msgstr "Leeren"
 
+msgid "Filter by name"
+msgstr "Nach Name filtern"
+
+#, python-format
+msgid ""
+"Showing NUM_RESULTS_PLACEHOLDER of %(num_actions)s actions due to filter "
+"for &quot;FILTER_PLACEHOLDER&quot;."
+msgstr ""
+"Zeigt NUM_RESULTS_PLACEHOLDER von %(num_actions)s Aktionen wegen Filter "
+"nach &quot;FILTER_PLACEHOLDER&quot;."
+
 msgid "Updatable Objects"
 msgstr "Aktualisierbare Objekte"
 
@@ -4049,12 +4082,6 @@ msgstr ""
 
 msgid "Filter by Action"
 msgstr "Nach Aktion filtern"
-
-msgid "All actions"
-msgstr "Alle Aktionen"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
 
 msgid "Start"
 msgstr "Start"
@@ -4527,6 +4554,14 @@ msgstr ""
 "soll:"
 
 #, python-format
+msgid "View %(object_name)s"
+msgstr "%(object_name)s anzeigen"
+
+#, python-format
+msgid "Edit %(object_name)s"
+msgstr "%(object_name)s bearbeiten"
+
+#, python-format
 msgid ""
 "<a href=\"%(object_url)s\">Object #%(object_id)s</a> contains additional "
 "information for this instrument."
@@ -4819,6 +4854,14 @@ msgstr ""
 
 msgid "Create Instrument"
 msgstr "Instrument erstellen"
+
+#, python-format
+msgid ""
+"Showing NUM_RESULTS_PLACEHOLDER of %(num_instruments)s instruments due to"
+" filter for &quot;FILTER_PLACEHOLDER&quot;."
+msgstr ""
+"Zeigt NUM_RESULTS_PLACEHOLDER von %(num_instruments)s Instrumenten wegen "
+"Filter nach &quot;FILTER_PLACEHOLDER&quot;."
 
 #, python-format
 msgid "Language in %(lang_name)s"
@@ -5364,9 +5407,6 @@ msgstr "Export fehlgeschlagen"
 #, python-format
 msgid "The export failed with the following message: %(error_message)s"
 msgstr "Der Export ist mit folgender Meldung fehlgeschlagen: %(error_message)s"
-
-msgid "Object Permissions"
-msgstr "Objektberechtigungen"
 
 msgid "Not a valid ID. Expected a positive integer."
 msgstr "Keine gültige ID. Positive Ganzzahl erwartet."
@@ -5945,6 +5985,10 @@ msgid ""
 msgstr ""
 "CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
 " relative Zeitangabe in Sekunden und Wert"
+
+#, python-format
+msgid "Copy %(item_name)s"
+msgstr "%(item_name)s kopieren"
 
 #, python-format
 msgid "Remove %(item_name)s"
@@ -6565,6 +6609,20 @@ msgstr ""
 #, python-format
 msgid "%(user_ref)s created the object."
 msgstr "%(user_ref)s hat das Objekt erstellt."
+
+#, python-format
+msgid ""
+"%(user_ref)s created the object as part of a <form method=\"post\" "
+"action=\"%(batch_url)s\" style=\"display: inline; margin: 0 -2px;\" class"
+"=\"form-inline\"><input type=\"hidden\" name=\"ids\" "
+"value=\"%(batch_ids)s\"/><button type=\"submit\" class=\"btn-link\" "
+"style=\"padding: 0\">batch</button></form>."
+msgstr ""
+"%(user_ref)s hat das Objekt als Teil einer <form method=\"post\" "
+"action=\"%(batch_url)s\" style=\"display: inline; margin: 0 -2px;\" class"
+"=\"form-inline\"><input type=\"hidden\" name=\"ids\" "
+"value=\"%(batch_ids)s\"/><button type=\"submit\" class=\"btn-link\" "
+"style=\"padding: 0\">Charge</button></form> erstellt."
 
 #, python-format
 msgid ""
@@ -7443,11 +7501,25 @@ msgstr "Ja, dieses Thema auf Startseite anzeigen"
 msgid "No, this topic should not be shown on the frontpage"
 msgstr "Nein, dieses Thema nicht auf Startseite anzeigen"
 
-msgid "Yes, this topic should be shown in the navbar"
-msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
+msgid "Show in Actions Tab of Navbar"
+msgstr "Im Aktions-Tab der Navigationsleiste anzeigen"
 
-msgid "No, this topic should not be shown in the navbar"
-msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
+msgid "Yes, this topic should be shown in the actions tab of the navbar"
+msgstr "Ja, dieses Thema im Aktions-Tab der Navigationsleiste anzeigen"
+
+msgid "No, this topic should not be shown in the actions tab of the navbar"
+msgstr "Nein, dieses Thema nicht im Aktions-Tab der Navigationsleiste anzeigen"
+
+msgid "Show in Instruments Tab of Navbar"
+msgstr "In Instrumenten-Tab der Navigationsleiste anzeigen"
+
+msgid "Yes, this topic should be shown in the instruments tab of the navbar"
+msgstr "Ja, dieses Thema im Instrumenten-Tab der Navigationsleiste anzeigen"
+
+msgid "No, this topic should not be shown in the instruments tab of the navbar"
+msgstr ""
+"Nein, dieses Thema nicht im Instrumenten-Tab der Navigationsleiste "
+"anzeigen"
 
 msgid "View Instruments"
 msgstr "Instrumente anzeigen"
@@ -7471,8 +7543,11 @@ msgstr "wird in der Themenliste angezeigt"
 msgid "Show this topic on the frontpage"
 msgstr "Thema auf Startseite anzeigen"
 
-msgid "Show this topic in the navbar"
-msgstr "Aktionen dieses Themas in der Navigationsleiste anzeigen"
+msgid "Show this topic in the actions tab of the navbar"
+msgstr "Dieses Thema im Aktions-Tab der Navigationsleiste anzeigen"
+
+msgid "Show this topic in the instruments tab of the navbar"
+msgstr "Dieses Thema im Instrumenten-Tab der Navigationsleiste anzeigen"
 
 #, python-format
 msgid "Topics allow filtering information in %(service_name)s."
@@ -7616,6 +7691,11 @@ msgstr ""
 "Sie wurden nach %(idle_sign_out_minutes)s Minuten ohne Aktivität "
 "abgemeldet."
 
+msgid "You have been signed out due to inactivity or a remote sign out."
+msgstr ""
+"Sie wurden abgemeldet aufgrund von Inaktivität oder einer externen "
+"Abmeldung."
+
 msgid "Your user account has been deactivated. Please contact an administrator."
 msgstr ""
 "Ihr Nutzerkonto wurde deaktiviert. Bitte kontaktieren Sie einen "
@@ -7648,9 +7728,6 @@ msgstr ""
 
 msgid "OIDC is disabled."
 msgstr "OIDC ist deaktiviert."
-
-msgid "Login failed. Please contact an administrator."
-msgstr "Anmeldung fehlgeschlagen. Bitte kontaktieren Sie einen Administrator."
 
 msgid "Please enter a valid user name."
 msgstr "Bitte geben Sie einen gültigen Nutzernamen ein."
@@ -7936,10 +8013,6 @@ msgstr ""
 "Schlüssel gefunden"
 
 #, python-format
-msgid "Failed to import %(file_url)s as URL file"
-msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
-
-#, python-format
 msgid ""
 "Missing data or schema for version %(version_id)s of object "
 "%(eln_object_id)s"
@@ -7954,6 +8027,10 @@ msgid ""
 msgstr ""
 "Ungültige Daten oder Schema in Version %(version_id)s von Objekt "
 "%(eln_object_id)s (%(error)s)"
+
+#, python-format
+msgid "Failed to import %(file_url)s as URL file"
+msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
 
 msgid "The .eln file did not contain any valid flexible metadata for this object."
 msgstr ""

@@ -21,6 +21,7 @@ from .components import validate_address
 from .users import check_user_exists
 from .. import db
 from ..models import webhooks as whmodel
+from ..models import Permissions
 
 WEBHOOK_TIMEOUT = 10
 
@@ -174,13 +175,13 @@ def create_webhook(
     return Webhook.from_database(webhook)
 
 
-def get_object_log_webhooks_for_object(object_id: int) -> typing.List[Webhook]:
+def get_webhooks_for_object(object_id: int, webhook_type: whmodel.WebhookType, min_permissions: Permissions) -> typing.List[Webhook]:
     stmt = db.text("""
         SELECT DISTINCT user_id
         FROM (
             SELECT DISTINCT user_id
             FROM user_object_permissions_by_all
-            WHERE (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (requires_instruments IS FALSE OR :enable_instruments IS TRUE)
+            WHERE (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (requires_instruments IS FALSE OR :enable_instruments IS TRUE) AND (permissions_int >= :min_permissions_int)
             UNION
             SELECT id as user_id
             FROM users
@@ -188,10 +189,27 @@ def get_object_log_webhooks_for_object(object_id: int) -> typing.List[Webhook]:
             WHERE users.is_admin = TRUE AND settings.data ->> 'USE_ADMIN_PERMISSIONS' = 'true'
         ) as users_with_access_dupl
     """).columns(db.column('user_id')).subquery('users_with_access')
-    stmt = db.select(whmodel.Webhook).distinct().join(stmt, db.or_(stmt.c.user_id.is_(None), whmodel.Webhook.user_id == stmt.c.user_id)).order_by(whmodel.Webhook.id)
+    stmt = db.select(whmodel.Webhook).distinct().join(stmt, db.or_(stmt.c.user_id.is_(None), whmodel.Webhook.user_id == stmt.c.user_id)).where(whmodel.Webhook.type == webhook_type).order_by(whmodel.Webhook.id)
     webhooks = db.session.execute(stmt, {
         'object_id': object_id,
         'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
-        'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS']
+        'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS'],
+        'min_permissions_int': min_permissions.value,
     }).all()
     return [Webhook.from_database(row[0]) for row in webhooks]
+
+
+def get_object_log_webhooks_for_object(object_id: int) -> typing.List[Webhook]:
+    return get_webhooks_for_object(
+        object_id=object_id,
+        webhook_type=whmodel.WebhookType.OBJECT_LOG,
+        min_permissions=Permissions.READ,
+    )
+
+
+def get_object_permissions_webhooks_for_object(object_id: int) -> typing.List[Webhook]:
+    return get_webhooks_for_object(
+        object_id=object_id,
+        webhook_type=whmodel.WebhookType.OBJECT_PERMISSIONS,
+        min_permissions=Permissions.GRANT,
+    )
