@@ -8,8 +8,9 @@ a single OIDC provider using the
 :ref:`OIDC Configuration Environment Variables <oidc_configuration>`.
 
 The client must be statically registered, while the configuration and keys
-must be dynamically discoverable. The ``name``, ``email`` and
-``email_verified`` claims are required.
+must be dynamically discoverable. The configuration is cached until shutdown,
+the keys are cached for 10 hours. The ``name``, ``email`` and
+``email_verified`` claims are required, the latter must be ``true``.
 
 Only the Authorization Code Flow with ``client_secret_basic`` authentication
 is supported. Proof Key for Code Exchange (PKCE) is used if the OIDC provider
@@ -19,11 +20,13 @@ compatibility with some providers, the use of the parameter can be disabled
 using a configuration variable. If a provider supports neither PKCE with
 method ``S256``, nor ``nonce``, using it is not recommended.
 
-RP-Initiated Logout will be used if the provider indicates support. If
-configured, the session's lifetime will be bound to the that of the ID Token.
-In that case, Refresh Tokens are required and used to transparently refresh
-the ID Token after its expiration. Back-Channel Logouts will end the session
-if configured at the provider. Front-Channel Logout is not currently
+RP-Initiated Logout will be used if the provider indicates support. The
+session's lifetime will be bound to the that of the ID Token if configured. In
+that case, Refresh Tokens are required and used to transparently refresh the
+ID Token after its expiration. Back-Channel Logouts will end the session if
+configured at the provider. The ``sub`` claim is required. If a ``sid`` claim
+is present, only the matching session is expired; otherwise, all active OIDC
+sessions for the user are expired. Front-Channel Logout is not currently
 implemented.
 
 The following URLs can or must be configured at the OIDC provider:
