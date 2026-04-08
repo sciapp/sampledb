@@ -53,11 +53,15 @@ def init_app(app: flask.Flask) -> None:
     context.
     """
     client = OpenidClient.from_issuer_url(
-        app.config['OIDC_ISSUER'],
-        app.url_for('frontend.oidc_callback', _external=True),
-        app.config['OIDC_CLIENT_ID'],
-        app.config['OIDC_CLIENT_SECRET'],
-        app.config['OIDC_SCOPES'],
+        url=app.config['OIDC_ISSUER'],
+        authentication_redirect_uri=app.url_for(
+            'frontend.oidc_callback',
+            _external=True,
+        ),
+        client_id=app.config['OIDC_CLIENT_ID'],
+        client_secret=app.config['OIDC_CLIENT_SECRET'],
+        scope=app.config['OIDC_SCOPES'],
+        min_jwks_cache_duration=datetime.timedelta(hours=10),
     )
     app.extensions['sampledb.logic.oidc.client'] = client
     app.extensions['sampledb.logic.oidc.data'] = {}
