@@ -12,7 +12,7 @@ import flask
 
 from . import errors
 from .. import logic
-from ..models import notifications
+from ..models import notifications, UserType
 from ..models.notifications import NotificationType, NotificationMode
 from .background_tasks.send_mail import post_send_mail_task
 from .. import db
@@ -135,6 +135,9 @@ def _create_notification(type: NotificationType, user_id: int, data: typing.Dict
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
+    user = logic.users.get_user(user_id)
+    if user.type != UserType.PERSON or not user.is_active:
+        return
     notification_mode = get_notification_mode_for_type(type, user_id)
     if notification_mode == NotificationMode.WEBAPP:
         _store_notification(type, user_id, data)
