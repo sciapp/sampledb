@@ -660,9 +660,13 @@ def _send_user_references_notifications(object: Object, user_id: int) -> None:
     :param user_id: the user who caused the object update or creation
     """
 
+    excluded_user_ids = {user_id}
     for referenced_user_id, previous_referenced_user_id in find_user_references(object):
-        if referenced_user_id not in {user_id, previous_referenced_user_id}:
+        if previous_referenced_user_id is not None:
+            excluded_user_ids.add(previous_referenced_user_id)
+        if referenced_user_id not in excluded_user_ids:
             create_notification_for_being_referenced_by_object_metadata(referenced_user_id, object.object_id)
+            excluded_user_ids.add(referenced_user_id)
 
 
 def find_user_references(object: Object, find_previous_referenced_user_ids: bool = True) -> typing.List[typing.Tuple[int, typing.Optional[int]]]:
