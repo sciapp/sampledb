@@ -991,8 +991,13 @@ def instrument_log_file_attachment(instrument_id: int, log_entry_id: int, file_a
     if not instrument.users_can_view_log_entries and flask_login.current_user not in instrument.responsible_users:
         return flask.abort(403)
     try:
+        log_entry = get_instrument_log_entry(log_entry_id)
+        if log_entry.instrument_id != instrument_id:
+            raise InstrumentLogEntryDoesNotExistError()
         file_attachment = get_instrument_log_file_attachment(file_attachment_id)
-    except InstrumentLogFileAttachmentDoesNotExistError:
+        if file_attachment.log_entry_id != log_entry_id:
+            raise InstrumentLogFileAttachmentDoesNotExistError()
+    except (InstrumentLogFileAttachmentDoesNotExistError, InstrumentLogEntryDoesNotExistError):
         return flask.abort(404)
     return_preview = 'preview' in flask.request.args
     return_thumbnail = 'thumbnail' in flask.request.args
