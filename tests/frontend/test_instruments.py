@@ -211,3 +211,64 @@ def test_external_links(flask_server, app, driver, user):
         ),
     }
     sampledb.frontend.utils.merge_external_links.cache_clear()
+
+
+def test_instrument_log_file_attachment_must_match_log_entry(flask_server, user):
+    accessible_instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instruments.set_instrument_responsible_users(
+        instrument_id=accessible_instrument.id,
+        user_ids=[user.id]
+    )
+    accessible_log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+        instrument_id=accessible_instrument.id,
+        user_id=user.id,
+        content='Accessible log entry'
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
+        instrument_log_entry_id=accessible_log_entry.id,
+        file_name='accessible.txt',
+        content=b'accessible'
+    )
+
+    inaccessible_instrument = sampledb.logic.instruments.create_instrument(
+        users_can_create_log_entries=True
+    )
+    inaccessible_log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
+        instrument_id=inaccessible_instrument.id,
+        user_id=user.id,
+        content='Inaccessible log entry'
+    )
+    sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
+        instrument_log_entry_id=inaccessible_log_entry.id,
+        file_name='inaccessible.txt',
+        content=b'inaccessible'
+    )
+    inaccessible_attachment = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(
+        inaccessible_log_entry.id
+    )[0]
+
+    session = requests.session()
+    assert session.get(flask_server.base_url + f'users/{user.id}/autologin').status_code == 200
+
+    response = session.get(
+        flask_server.base_url
+        + f'instruments/{accessible_instrument.id}/log/{accessible_log_entry.id}/file_attachments/{inaccessible_attachment.id}'
+    )
+    assert response.status_code == 404
+
+
+def test_create_log_entry_buttons_visible_without_view_permissions(flask_server, user):
+    instrument = sampledb.logic.instruments.create_instrument(
+        users_can_create_log_entries=True,
+        users_can_view_log_entries=False,
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + f'users/{user.id}/autologin').status_code == 200
+
+    response = session.get(flask_server.base_url + f'instruments/{instrument.id}')
+    assert response.status_code == 200
+    document = BeautifulSoup(response.content, 'html.parser')
+    create_button = document.find('button', {'data-target': '#newLogEntryModal'})
+    mobile_button = document.find('button', {'data-target': '#mobileFileLinkModal'})
+    assert create_button is not None
+    assert mobile_button is not None
