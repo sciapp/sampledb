@@ -255,3 +255,20 @@ def test_instrument_log_file_attachment_must_match_log_entry(flask_server, user)
         + f'instruments/{accessible_instrument.id}/log/{accessible_log_entry.id}/file_attachments/{inaccessible_attachment.id}'
     )
     assert response.status_code == 404
+
+
+def test_create_log_entry_buttons_visible_without_view_permissions(flask_server, user):
+    instrument = sampledb.logic.instruments.create_instrument(
+        users_can_create_log_entries=True,
+        users_can_view_log_entries=False,
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + f'users/{user.id}/autologin').status_code == 200
+
+    response = session.get(flask_server.base_url + f'instruments/{instrument.id}')
+    assert response.status_code == 200
+    document = BeautifulSoup(response.content, 'html.parser')
+    create_button = document.find('button', {'data-target': '#newLogEntryModal'})
+    mobile_button = document.find('button', {'data-target': '#mobileFileLinkModal'})
+    assert create_button is not None
+    assert mobile_button is not None
