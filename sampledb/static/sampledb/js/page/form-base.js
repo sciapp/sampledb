@@ -27,7 +27,8 @@ import {
 } from '../sampledb-load-objects.js';
 
 import {
-  addActionFilterButton
+  addActionFilterButton,
+  setUpVersionPicker
 } from '../object_form/object-reference.js';
 
 import {
@@ -221,6 +222,7 @@ $(function () {
 
   $('div.objectpicker').each(function () {
     addActionFilterButton($(this));
+    setUpVersionPicker($(this));
   });
 });
 
@@ -1258,6 +1260,7 @@ function updateJSInteractiveFields () {
     if ($(this).closest('.error-parent').find('.objectpicker-filter-button').length === 0) {
       addActionFilterButton($(this).parents('.bootstrap-select'));
     }
+    setUpVersionPicker($(this).parents('.bootstrap-select'));
   });
 
   $('.choicepicker').each(function () {

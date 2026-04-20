@@ -329,8 +329,10 @@ def parse_object_reference_form_data(
         required: bool = False,
         previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
-    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
-    if keys != [id_prefix + '__oid']:
+    keys = {key for key in form_data.keys() if key.startswith(id_prefix + '__')}
+    required_keys = {id_prefix + '__oid'}
+    optional_keys = {id_prefix + '__vid'}
+    if not (required_keys.issubset(keys) and keys.issubset(required_keys.union(optional_keys))):
         raise ValueError('invalid object reference form data')
     object_id_str = form_data.get(id_prefix + '__oid', [''])[0]
     if not object_id_str:
@@ -349,6 +351,16 @@ def parse_object_reference_form_data(
             '_type': 'object_reference',
             'object_id': object_id
         }
+        if id_prefix + '__vid' in form_data:
+            version_id_str = form_data.get(id_prefix + '__vid', [''])[0]
+            if version_id_str:
+                try:
+                    version_id = int(version_id_str)
+                except ValueError:
+                    raise ValueError('version_id must be int')
+            else:
+                version_id = None
+            data['version_id'] = version_id
     schemas.validate(data, schema, strict=True)
     return data
 

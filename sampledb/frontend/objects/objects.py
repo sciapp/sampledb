@@ -1234,6 +1234,7 @@ def referencable_objects() -> FlaskResponseT:
             name += f' (#{x.object_id})'
         return {
             'id': x.object_id,
+            'version_id': x.version_id,
             'text': markupsafe.escape(name),
             'unescaped_text': name,
             'action_id': x.action_id,
