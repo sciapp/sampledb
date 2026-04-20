@@ -503,6 +503,13 @@
           </button>
         {% endif %}
       {% endif %}
+    {% elif not current_user.is_readonly and instrument.users_can_create_log_entries %}
+      <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+        <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
+      </button>
+      <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
+        <i class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone Upload as Log Entry') }}
+      </button>
     {% endif %}
     {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
 
