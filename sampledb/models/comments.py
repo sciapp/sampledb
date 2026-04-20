@@ -35,7 +35,9 @@ class Comment(Model):
     utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    component: Mapped[typing.Optional['Component']] = relationship('Component', foreign_keys=[component_id])
+    imported_from_component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    imported_from_component: Mapped[typing.Optional['Component']] = relationship('Component', foreign_keys=[imported_from_component_id])
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Comment"]]
@@ -47,7 +49,8 @@ class Comment(Model):
             content: str,
             utc_datetime: typing.Optional[datetime.datetime] = None,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            imported_from_component_id: typing.Optional[int] = None,
     ) -> None:
         super().__init__(
             object_id=object_id,
@@ -55,7 +58,8 @@ class Comment(Model):
             content=content,
             utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             fed_id=fed_id,
-            component_id=component_id
+            component_id=component_id,
+            imported_from_component_id=imported_from_component_id,
         )
 
     def __repr__(self) -> str:

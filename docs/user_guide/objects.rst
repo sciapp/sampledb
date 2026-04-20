@@ -148,6 +148,26 @@ Access permissions can be granted to users of other databases individually by us
 Permissions to access data, referenced users, action, comments, locations, and files can be set individually.
 This allows sharing an object without data to use it by reference or without user information to protect data privacy rights.
 
+.. note::
+    The policies are only set at the original database.
+    These policies will then be used for the whole exchange between the original database and the other database (e.g., turning off data exchange will result in the data created by the other database not being available at the original database).
+
+.. _solving_conflicts:
+
+Solving Conflicts
+`````````````````
+
+When an object is shared with other databases that support editing shared objects then it may occur that an object was edited while the other database was not reachable.
+If in this case another user edits the object differently on the other database it might happen that the changes cannot automatically be merged.
+In this case the conflict must be solved by a user with **Write** permissions.
+Therefore, the user can choose one of the following strategies:
+ - **Apply Local Version**: Uses the data of the local object version for a new version and discards all changes made on the other database.
+ - **Apply Imported Version**: Uses the data of the imported object version for a new version and discards all changes made on the local database.
+ - **Interactive solving**: Allows the user to manually merge the changes by editing the fields of the object.
+
+To solve a conflict, it is necessary that the data for all object versions that are involved be available where the conflict should be solved.
+This means that if the sharing of data has been turned off while a conflict is occurring, the conflict will not be solvable unless the data policy has been enabled.
+
 .. _default_permissions:
 
 Default Permissions

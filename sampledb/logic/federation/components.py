@@ -16,7 +16,7 @@ def _get_or_create_component_id(
     try:
         component = get_component_by_uuid(component_uuid)
     except errors.ComponentDoesNotExistError:
-        component = add_component(uuid=component_uuid, description='', name=None, address=None)
+        component = add_component(uuid=component_uuid, description='', name=None, address=None, is_hidden=True)
     return component.id
 
 
@@ -76,3 +76,16 @@ def parse_import_component_info(
         component: Component
 ) -> ComponentInfo:
     return import_component_info(parse_component_info(component_data, component), component)
+
+
+def create_components_from_data(data: typing.Dict[str, typing.Any] | list[typing.Any]) -> None:
+    if isinstance(data, dict):
+        type = data.get('_type')
+        if type is None:
+            for key in data:
+                create_components_from_data(data[key])
+        elif component_uuid := data.get('component_uuid'):
+            _get_or_create_component_id(component_uuid)
+    elif isinstance(data, list):
+        for item in data:
+            create_components_from_data(item)
