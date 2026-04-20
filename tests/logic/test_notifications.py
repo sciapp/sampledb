@@ -145,3 +145,43 @@ def test_create_announcement_notification(user):
         'message': 'This is a test message',
         'html': 'This is an html test message'
     }
+
+
+def test_notification_user_types():
+    regular_user = sampledb.logic.users.create_user(
+        name='Regular User',
+        email='regular_user@example.org',
+        type=sampledb.logic.users.UserType.PERSON,
+    )
+    inactive_user = sampledb.logic.users.create_user(
+        name='Inactive User',
+        email='inactive_user@example.org',
+        type=sampledb.logic.users.UserType.PERSON,
+    )
+    sampledb.logic.users.set_user_active(inactive_user.id, False)
+    other_user = sampledb.logic.users.create_user(
+        name='Other User',
+        email='other_user@example.org',
+        type=sampledb.logic.users.UserType.OTHER,
+    )
+    eln_import_user = sampledb.logic.users.create_user(
+        name='ELN Import User',
+        email='eln_import_user@example.org',
+        type=sampledb.logic.users.UserType.ELN_IMPORT_USER,
+    )
+    federation_user = sampledb.logic.users.create_user(
+        name='Federation User',
+        email='federation_user@example.org',
+        type=sampledb.logic.users.UserType.FEDERATION_USER,
+    )
+
+    for user in [regular_user, inactive_user, other_user, eln_import_user, federation_user]:
+        assert sampledb.logic.notifications.get_num_notifications(user.id) == 0
+
+    sampledb.logic.notifications.create_announcement_notification_for_all_users('This is a test message', 'This is an html test message')
+
+    for user in [regular_user]:
+        assert sampledb.logic.notifications.get_num_notifications(user.id) == 1
+
+    for user in [inactive_user, other_user, eln_import_user, federation_user]:
+        assert sampledb.logic.notifications.get_num_notifications(user.id) == 0
