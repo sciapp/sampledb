@@ -119,7 +119,7 @@ class Object:
     def imported_from_component(self) -> typing.Optional['Component']:
         if self.imported_from_component_id is not None and self._imported_from_component_cache[0] is None:
             from ..logic.components import get_component
-            self._version_component_cache[0] = get_component(self.imported_from_component_id)
+            self._imported_from_component_cache[0] = get_component(self.imported_from_component_id)
         return self._imported_from_component_cache[0]
 
     @property
@@ -1950,7 +1950,7 @@ class VersionedJSONSerializableObjectTables:
             )
         ).fetchall()
 
-        if object_data is None:
+        if not object_data:
             return None
         current_object = FederatedObject(*object_data[0])
 
