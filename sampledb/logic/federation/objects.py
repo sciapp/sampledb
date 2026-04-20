@@ -685,7 +685,7 @@ def _check_conflicting_version_exists(version: ObjectVersionData, import_context
             fed_version_id=version['fed_version_id'],
             version_component_id=version['version_component_id']
         )
-    except Exception:
+    except errors.FederatedObjectVersionDoesNotExistError:
         conflicting_object_version = None
 
     import_context['conflict_details'] = ConflictDetails(

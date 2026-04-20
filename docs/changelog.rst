@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.34
+------------
+
+Currently in development.
+
+- Added write access for shared objects
+
+
 Version 0.33.1
 --------------
 
@@ -10,6 +18,7 @@ Released on April 20th, 2026.
 - Fixed repeated sending of notifications to referenced users
 - Fixed showing the button for creating instrument log entries for users who cannot view instrument log entries
 - Fixed permission checks for instrument log entry attachments
+
 
 Version 0.33
 ------------
@@ -40,7 +49,6 @@ Released on April 7th, 2026.
 - Added HTTP API endpoints for bulk object permission management
 - Added documentation for differential backups using borgmatic
 - Added HTTP API endpoints for managing basic group and project group memberships
-- Added write access for shared objects
 
 
 Version 0.32
