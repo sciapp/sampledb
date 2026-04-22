@@ -165,7 +165,7 @@ def generate_ro_crate_metadata(
             "comment": [],
             "isBasedOn": [
                 {
-                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
+                    "@id": f"#./objects/{object_info['id']}/versions/{version_info['id']}/",
                 }
                 for version_info in object_info['versions']
             ],
@@ -226,7 +226,7 @@ def generate_ro_crate_metadata(
                 for property_value in property_values
             ]
             ro_crate_metadata["@graph"].append({
-                "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
+                "@id": f"#./objects/{object_info['id']}/versions/{version_info['id']}/",
                 "@type": "Dataset",
                 "name": f"{get_translated_text(version_info['data'].get('name', {}).get('text', {}), 'en')}" if version_info['data'] is not None else '',
                 "description": f"Object #{object_info['id']} version #{version_info['id']}",
@@ -255,7 +255,7 @@ def generate_ro_crate_metadata(
             for other_version_info in object_info['versions']:
                 if other_version_info['id'] < version_info['id']:
                     previous_version_refs.append({
-                        "@id": f"./objects/{object_info['id']}/versions/{other_version_info['id']}/"
+                        "@id": f"#./objects/{object_info['id']}/versions/{other_version_info['id']}/"
                     })
             if previous_version_refs:
                 ro_crate_metadata["@graph"][-1]['isBasedOn'] = previous_version_refs

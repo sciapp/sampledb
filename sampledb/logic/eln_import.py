@@ -754,16 +754,19 @@ def _parse_sampledb_object_version_node(
         fallback_data: typing.Dict[str, typing.Any],
         fallback_schema: typing.Dict[str, typing.Any],
 ) -> typing.Tuple[ParsedELNVersion, typing.List[str]]:
-    _eln_assert(any(version_node['@id'].startswith(object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_suffix in ('version/', 'versions/')), "SampleDB .eln file must only contain versions as Dataset parts of objects")
+    _eln_assert(any(version_node['@id'].startswith(version_prefix + object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_prefix, version_suffix in itertools.product(('', '#'), ('version/', 'versions/'))), "SampleDB .eln file must only contain versions as Dataset parts of objects")
     try:
         version_id = int(version_node['@id'].strip('/').rsplit('/', maxsplit=1)[1])
     except ValueError:
         raise errors.InvalidELNFileError("SampleDB .eln file must only contain versions as Dataset parts of objects")
     _eln_assert(isinstance(version_node.get('hasPart'), list), "SampleDB .eln file must contain data and schema for each version")
     _eln_assert(len(version_node['hasPart']) == 2, "SampleDB .eln file must contain data and schema for each version")
-    _eln_assert({'@id': version_node['@id'] + ('/' if not version_node['@id'].endswith('/') else '') + 'data.json'} in version_node['hasPart'], "SampleDB .eln file must contain data and schema for each version")
-    _eln_assert({'@id': version_node['@id'] + ('/' if not version_node['@id'].endswith('/') else '') + 'schema.json'} in version_node['hasPart'], "SampleDB .eln file must contain data and schema for each version")
-    data_file_name = version_node['@id'] + '/data.json'
+    version_file_prefix = version_node['@id'].lstrip('#')
+    if not version_file_prefix.endswith('/'):
+        version_file_prefix += '/'
+    _eln_assert({'@id': version_file_prefix + 'data.json'} in version_node['hasPart'], "SampleDB .eln file must contain data and schema for each version")
+    _eln_assert({'@id': version_file_prefix + 'schema.json'} in version_node['hasPart'], "SampleDB .eln file must contain data and schema for each version")
+    data_file_name = version_file_prefix + '/data.json'
     if data_file_name.startswith('./'):
         data_file_name = data_file_name[1:]
     elif not data_file_name.startswith('/'):
@@ -771,7 +774,7 @@ def _parse_sampledb_object_version_node(
     data_file_name = root_path_name + data_file_name
     data_file_name = os.path.normpath(data_file_name)
     _eln_assert(data_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
-    schema_file_name = version_node['@id'] + '/schema.json'
+    schema_file_name = version_file_prefix + '/schema.json'
     if schema_file_name.startswith('./'):
         schema_file_name = schema_file_name[1:]
     elif not schema_file_name.startswith('/'):
@@ -782,13 +785,13 @@ def _parse_sampledb_object_version_node(
     try:
         with zip_file.open(member_names[data_file_name]) as data_file:
             data_file_content = data_file.read()
-            _eln_assert(isinstance(graph_nodes_by_id[version_node['@id'] + 'data.json'].get('sha256'), str), "Invalid SHA256 hash for data.json")
-            _eln_assert(hashlib.sha256(data_file_content).hexdigest() == graph_nodes_by_id[version_node['@id'] + 'data.json']['sha256'], "Hash mismatch for data.json")
+            _eln_assert(isinstance(graph_nodes_by_id[version_file_prefix + 'data.json'].get('sha256'), str), "Invalid SHA256 hash for data.json")
+            _eln_assert(hashlib.sha256(data_file_content).hexdigest() == graph_nodes_by_id[version_file_prefix + 'data.json']['sha256'], "Hash mismatch for data.json")
             version_data = json.loads(data_file_content.decode('utf-8'))
         with zip_file.open(member_names[schema_file_name]) as schema_file:
             schema_file_content = schema_file.read()
-            _eln_assert(isinstance(graph_nodes_by_id[version_node['@id'] + 'schema.json'].get('sha256'), str), "Invalid SHA256 hash for schema.json")
-            _eln_assert(hashlib.sha256(schema_file_content).hexdigest() == graph_nodes_by_id[version_node['@id'] + 'schema.json']['sha256'], "Hash mismatch for schema.json")
+            _eln_assert(isinstance(graph_nodes_by_id[version_file_prefix + 'schema.json'].get('sha256'), str), "Invalid SHA256 hash for schema.json")
+            _eln_assert(hashlib.sha256(schema_file_content).hexdigest() == graph_nodes_by_id[version_file_prefix + 'schema.json']['sha256'], "Hash mismatch for schema.json")
             version_schema = json.loads(schema_file_content.decode('utf-8'))
     except errors.InvalidELNFileError:
         raise
