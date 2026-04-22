@@ -89,7 +89,7 @@ rich==14.3.3
 scipy==1.17.1
 setuptools==82.0.1
 shellingham==1.5.4
-simple_openid_connect==2.3.2
+simple_openid_connect==2.4.0
 simplejson==3.20.2
 six==1.17.0
 soupsieve==2.8.3

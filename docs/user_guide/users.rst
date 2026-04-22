@@ -8,7 +8,7 @@ Users
 Authentication
 --------------
 
-SampleDB offers three authentication methods:
+SampleDB offers the following authentication methods:
 
 1. LDAP Authentication
 ^^^^^^^^^^^^^^^^^^^^^^

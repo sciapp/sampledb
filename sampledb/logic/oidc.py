@@ -53,14 +53,17 @@ def init_app(app: flask.Flask) -> None:
     context.
     """
     client = OpenidClient.from_issuer_url(
-        app.config['OIDC_ISSUER'],
-        app.url_for('frontend.oidc_callback', _external=True),
-        app.config['OIDC_CLIENT_ID'],
-        app.config['OIDC_CLIENT_SECRET'],
-        app.config['OIDC_SCOPES'],
+        url=app.config['OIDC_ISSUER'],
+        authentication_redirect_uri=app.url_for(
+            'frontend.oidc_callback',
+            _external=True,
+        ),
+        client_id=app.config['OIDC_CLIENT_ID'],
+        client_secret=app.config['OIDC_CLIENT_SECRET'],
+        scope=app.config['OIDC_SCOPES'],
+        min_jwks_cache_duration=datetime.timedelta(hours=10),
     )
     app.extensions['sampledb.logic.oidc.client'] = client
-    app.extensions['sampledb.logic.oidc.data'] = {}
 
 
 def _get_client() -> OpenidClient:
@@ -70,7 +73,7 @@ def _get_client() -> OpenidClient:
     )
 
 
-class _Data(pydantic.BaseModel):
+class _AuthenticationData(pydantic.BaseModel):
     redirect_uri: str
     state: str
     nonce_value: str | None
@@ -92,9 +95,9 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
     Start an OIDC authentication attempt.
 
     The caller must redirect to the returned url and store the returned opaque
-    string token in the user session by setting it via a HttpOnly cookie. The
-    token must be given as an argument to `handle_authentication` and removed
-    from the user session.
+    string token in the user session by setting it via a tamper-proof HttpOnly
+    cookie. The token must be given as an argument to `handle_authentication`
+    and removed from the user session.
 
     :param redirect_uri: Where the user should be redirected to after the
         authentication has been finished.
@@ -127,7 +130,7 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
         code_challenge_method=code_challenge_method,
         code_challenge=code_challenge,
     )
-    data = _Data(
+    data = _AuthenticationData(
         redirect_uri=redirect_uri,
         state=state,
         nonce_value=nonce_value,
@@ -145,20 +148,19 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str]:
     `start_authentication`. The token must then be removed from the user
     session.
 
-    The function will either return the user, the ID token, and the next URL,
-    or raise an error. The ID token should be saved and passed to the logout
-    function. The next URL is the address the user tried to visit before being
+    The function will either return the user and the next URL, or raise an
+    error. The next URL is the address the user tried to visit before being
     asked to authenticate.
 
     :param url: The request url.
     :param token: The token returned by `start_authentication`.
-    :return: A tuple of the user, the ID token, and the next URL.
+    :return: A tuple of the user and the next URL.
     """
 
     current_url = furl(url)
-    data = _Data.model_validate_json(token)
+    data = _AuthenticationData.model_validate_json(token)
 
-    if current_url.args['state'] != data.state:
+    if current_url.args.get('state', '') != data.state:
         raise errors.TemporaryLoginAttemptError('Incorrect state value')
 
     # Make the timeout configurable if necessary.
@@ -265,6 +267,18 @@ def logout(login_session: authentication.LoginSession, post_logout_redirect_uri:
 
 
 def handle_backchannel_logout(logout_token: str) -> None:
+    """
+    Process a backchannel logout request from the OIDC Provider. Validates the
+    provided logout token, resolves the associated login sessions, and expires
+    them. If a session ID (`sid`) is present in the token, only the matching
+    session is expired; otherwise, all active OIDC sessions for the user are
+    expired.
+
+    :param logout_token: The logout token issued by the OP.
+    :raises NotImplementedError: If the logout token does not contain a `sub`
+        claim.
+    """
+
     client = _get_client()
 
     token = BackChannelLogoutToken.parse_jwt(
@@ -305,6 +319,18 @@ def handle_backchannel_logout(logout_token: str) -> None:
 
 
 def validate_login_session(login_session: authentication.LoginSession) -> bool:
+    """
+    Validate the given login session against the OIDC Provider. If session
+    validation is disabled via configuration, the session is considered valid
+    unconditionally. Otherwise, the stored ID token is verified, and if
+    expired, a token refresh is attempted using the stored refresh token. The
+    session data is updated in place if a refresh succeeds.
+
+    :param login_session: The login session to validate.
+    :return: ``True`` if the session is valid or was successfully refreshed,
+        ``False`` otherwise.
+    """
+
     if not flask.current_app.config['OIDC_USE_SESSION']:
         return True
 
@@ -402,7 +428,9 @@ def _validate_access_token(access_token: str) -> typing.Union[JwtAccessToken, To
             token_type_hint='access_token',
         )
         if isinstance(introspection_response, TokenIntrospectionSuccessResponse):
-            return introspection_response
+            if introspection_response.active:
+                return introspection_response
+            raise RuntimeError('Introspection Endpoint returned expired session')
         raise RuntimeError('Introspection Endpoint returned an error')
 
     raise RuntimeError('Not a JWT and not allowed to use introspection')
