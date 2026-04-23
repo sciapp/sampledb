@@ -97,7 +97,7 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
             ObjectLogEntryType.EDIT_OBJECT,
             ObjectLogEntryType.RESTORE_OBJECT_VERSION,
         }:
-            if entry.user_id not in creator_ids:
+            if entry.user_id is not None and entry.user_id not in creator_ids:
                 creator_ids.append(entry.user_id)
             if entry.type in {
                 ObjectLogEntryType.CREATE_OBJECT,
@@ -113,7 +113,7 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
             } and entry.data['version_id'] == version_id:
                 break
         else:
-            if entry.user_id not in contributor_ids:
+            if entry.user_id is not None and entry.user_id not in contributor_ids:
                 contributor_ids.append(entry.user_id)
 
     creators = [

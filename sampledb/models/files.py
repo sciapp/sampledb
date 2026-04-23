@@ -40,9 +40,11 @@ class File(Model):
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     uploader: Mapped[typing.Optional['User']] = relationship('User')
-    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    component: Mapped[typing.Optional['Component']] = relationship('Component', foreign_keys=[component_id])
     preview_image_binary_data: Mapped[typing.Optional[bytes]] = db.deferred(db.Column(db.LargeBinary, nullable=True))
     preview_image_mime_type: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    imported_from_component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    imported_from_component: Mapped[typing.Optional['Component']] = relationship('Component', foreign_keys=[imported_from_component_id])
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["File"]]
@@ -59,6 +61,7 @@ class File(Model):
             component_id: typing.Optional[int] = None,
             preview_image_binary_data: typing.Optional[bytes] = None,
             preview_image_mime_type: typing.Optional[str] = None,
+            imported_from_component_id: typing.Optional[int] = None,
     ) -> None:
         super().__init__(
             id=file_id,
@@ -71,6 +74,7 @@ class File(Model):
             component_id=component_id,
             preview_image_binary_data=preview_image_binary_data,
             preview_image_mime_type=preview_image_mime_type,
+            imported_from_component_id=imported_from_component_id,
         )
 
     def __repr__(self) -> str:

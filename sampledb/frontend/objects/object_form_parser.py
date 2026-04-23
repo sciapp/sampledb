@@ -32,7 +32,8 @@ class FormParserT(typing.Protocol):
             *,
             file_names_by_id: typing.Dict[int, str],
             required: bool = False,
-            previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+            previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+            component_id: typing.Optional[int] = None
     ) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
         ...
 
@@ -47,10 +48,11 @@ def form_data_parser(func: FormParserT) -> FormParserT:
             *,
             file_names_by_id: typing.Dict[int, str],
             required: bool = False,
-            previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+            previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+            component_id: typing.Optional[int] = None
     ) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
         try:
-            return func(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+            return func(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
         except ValueError as e:
             for name in form_data:
                 if name.startswith(id_prefix) and '__' not in name[len(id_prefix) + 1:]:
@@ -73,38 +75,39 @@ def parse_any_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     if schema.get('type') == 'object':
-        return parse_object_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_object_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'array':
-        return parse_array_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_array_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'text':
-        return parse_text_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_text_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'sample':
-        return parse_sample_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_sample_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'measurement':
-        return parse_measurement_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_measurement_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'object_reference':
-        return parse_object_reference_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_object_reference_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'datetime':
-        return parse_datetime_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_datetime_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'bool':
         return parse_boolean_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
     elif schema.get('type') == 'quantity':
-        return parse_quantity_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_quantity_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'tags':
-        return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'hazards':
         return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
     elif schema.get('type') == 'user':
-        return parse_user_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_user_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'plotly_chart':
-        return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'timeseries':
-        return parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     elif schema.get('type') == 'file':
-        return parse_file_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data)
+        return parse_file_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     raise ValueError('invalid schema')
 
 
@@ -117,7 +120,8 @@ def parse_text_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys == [id_prefix + '__text']:
@@ -168,7 +172,7 @@ def parse_text_form_data(
             return None
     if schema.get('markdown'):
         data['is_markdown'] = True
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -181,7 +185,8 @@ def parse_hazards_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if id_prefix + '__hasnohazards' not in keys:
@@ -225,7 +230,8 @@ def parse_tags_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__tags']:
@@ -244,7 +250,7 @@ def parse_tags_form_data(
         '_type': 'tags',
         'tags': tags
     }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -257,7 +263,8 @@ def parse_sample_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
@@ -279,7 +286,7 @@ def parse_sample_form_data(
             '_type': 'sample',
             'object_id': object_id
         }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -292,7 +299,8 @@ def parse_measurement_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
@@ -314,7 +322,7 @@ def parse_measurement_form_data(
             '_type': 'measurement',
             'object_id': object_id
         }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -327,7 +335,8 @@ def parse_object_reference_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
@@ -344,12 +353,16 @@ def parse_object_reference_form_data(
         raise ValueError('object_id must be int')
     if object_id == -1 and isinstance(previous_data, dict):
         data = previous_data
+    elif object_id == -2 and isinstance(previous_data, dict) and 'local' in previous_data:
+        data = previous_data['local']
+    elif object_id == -3 and isinstance(previous_data, dict) and 'imported' in previous_data:
+        data = previous_data['imported']
     else:
         data = {
             '_type': 'object_reference',
             'object_id': object_id
         }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -362,7 +375,8 @@ def parse_quantity_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
@@ -446,7 +460,7 @@ def parse_quantity_form_data(
             'dimensionality': dimensionality,
             'units': units
         }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -459,7 +473,8 @@ def parse_datetime_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
@@ -484,7 +499,7 @@ def parse_datetime_form_data(
         '_type': 'datetime',
         'utc_datetime': utc_datetime_str
     }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -497,7 +512,8 @@ def parse_boolean_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
@@ -521,7 +537,8 @@ def parse_array_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.List[typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if not keys:
@@ -548,10 +565,10 @@ def parse_array_form_data(
         for i in item_indices:
             item_id_prefix = f'{id_prefix}__{i}'
             previous_item_data = previous_data[i] if isinstance(previous_data, list) and i < len(previous_data) else None
-            items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id, previous_data=previous_item_data))
+            items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id, previous_data=previous_item_data, component_id=component_id))
     if not items and not required and schema.get('minItems', 0) > 0:
         return None
-    schemas.validate(items, schema, strict=True, file_names_by_id=file_names_by_id)
+    schemas.validate(items, schema, strict=True, file_names_by_id=file_names_by_id, component_id=component_id)
     return items
 
 
@@ -564,7 +581,8 @@ def parse_object_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     assert schema['type'] == 'object'
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
@@ -578,10 +596,10 @@ def parse_object_form_data(
             previous_property_data = previous_data[property_name]
         else:
             previous_property_data = None
-        property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required, file_names_by_id=file_names_by_id, previous_data=previous_property_data)
+        property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required, file_names_by_id=file_names_by_id, previous_data=previous_property_data, component_id=component_id)
         if property is not None:
             data[property_name] = property
-    schemas.validate(data, schema, strict=True, file_names_by_id=file_names_by_id)
+    schemas.validate(data, schema, strict=True, file_names_by_id=file_names_by_id, component_id=component_id)
     return data
 
 
@@ -594,7 +612,8 @@ def parse_user_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__uid']:
@@ -609,11 +628,18 @@ def parse_user_form_data(
         user_id = int(user_id_str)
     except ValueError:
         raise ValueError('user_id must be int')
-    data = {
-        '_type': 'user',
-        'user_id': user_id
-    }
-    schemas.validate(data, schema, strict=True)
+    if user_id == -1 and isinstance(previous_data, dict):
+        data = previous_data
+    elif user_id == -2 and isinstance(previous_data, dict) and 'local' in previous_data:
+        data = previous_data['local']
+    elif user_id == -3 and isinstance(previous_data, dict) and 'imported' in previous_data:
+        data = previous_data['imported']
+    else:
+        data = {
+            '_type': 'user',
+            'user_id': user_id
+        }
+    schemas.validate(data, schema, strict=True, component_id=component_id)
     return data
 
 
@@ -626,7 +652,8 @@ def parse_plotly_chart_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     plotly_chart_data_list = form_data.get(id_prefix + '__plotly', [])
     plotly_chart_data: typing.Optional[typing.Union[str, typing.Dict[str, typing.Any]]] = plotly_chart_data_list[0] if plotly_chart_data_list else None
@@ -636,7 +663,7 @@ def parse_plotly_chart_form_data(
         '_type': 'plotly_chart',
         'plotly': plotly_chart_data
     }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
 
     return data
 
@@ -650,7 +677,8 @@ def parse_timeseries_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if set(keys) != {id_prefix + '__data', id_prefix + '__units'}:
@@ -699,7 +727,7 @@ def parse_timeseries_form_data(
         'data': timeseries_data,
         'units': units
     }
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, component_id=component_id)
 
     return data
 
@@ -713,7 +741,8 @@ def parse_file_form_data(
         *,
         file_names_by_id: typing.Dict[int, str],
         required: bool = False,
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__file_id']:
@@ -738,7 +767,7 @@ def parse_file_form_data(
         '_type': 'file',
         'file_id': file_id
     }
-    schemas.validate(data, schema, strict=True, file_names_by_id=file_names_by_id)
+    schemas.validate(data, schema, strict=True, file_names_by_id=file_names_by_id, component_id=component_id)
     return data
 
 
@@ -747,9 +776,10 @@ def parse_form_data(
         schema: typing.Dict[str, typing.Any],
         *,
         file_names_by_id: typing.Dict[int, str],
-        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None
+        previous_data: typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]] = None,
+        component_id: typing.Optional[int] = None
 ) -> typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]], typing.Dict[str, str]]:
     id_prefix = 'object'
     errors: typing.Dict[str, str] = {}
-    data = parse_object_form_data(form_data, schema, id_prefix, errors, file_names_by_id=file_names_by_id, previous_data=previous_data)
+    data = parse_object_form_data(form_data, schema, id_prefix, errors, file_names_by_id=file_names_by_id, previous_data=previous_data, component_id=component_id)
     return data, errors

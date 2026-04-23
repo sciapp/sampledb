@@ -59,12 +59,11 @@ class SharedInstrumentData(typing.TypedDict):
 
 def parse_instrument(
         instrument_data: typing.Dict[str, typing.Any]
-) -> InstrumentData:
+) -> typing.Optional[InstrumentData]:
     fed_id = _get_id(instrument_data.get('instrument_id'))
     uuid = _get_uuid(instrument_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError(f'Invalid update for local instrument {fed_id}')
+        return None
     result = InstrumentData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -158,7 +157,9 @@ def parse_import_instrument(
         instrument_data: typing.Dict[str, typing.Any],
         component: Component
 ) -> Instrument:
-    return import_instrument(parse_instrument(instrument_data), component)
+    if parsed_instrument := parse_instrument(instrument_data):
+        return import_instrument(parsed_instrument, component)
+    return get_instrument(instrument_id=instrument_data['instrument_id'])
 
 
 def _get_or_create_instrument_id(

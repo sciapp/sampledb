@@ -1,13 +1,29 @@
 {% extends get_form_property_template(schema, container_style) %}
 
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+  {% set conflicting = 'imported' in data or 'local' in data %}
+  {% if conflicting %}
+    {% set imported_data = data.get('imported') %}
+    {% set local_data = data.get('local') %}
+    {% set data = data.get('local') %}
+  {% endif %}
+{% endif %}
+
 {% set input_languages = [] %}
 {% set disabled_language_codes = [] %}
 {% set disabled_language_names = [] %}
 {% set disabled_input_language_codes = [] %}
+{% set conflicting_languages = [] %}
 {% for language in languages %}
   {% if schema.get('languages') == 'all' or language.lang_code in schema.get('languages', ['en']) %}
     {% if language.enabled_for_input or (data and data.text and data.text.keys and language.lang_code in data.text.keys()) %}
       {% do input_languages.append(language) %}
+      {% if (local_data.text | get_translated_text(language.lang_code)) != (imported_data.text | get_translated_text(language.lang_code)) and ((language.lang_code in local_data.text or language.lang_code in imported_data.text)) %}
+        {% do conflicting_languages.append(language) %}
+      {% endif %}
     {% endif %}
     {% if not language.enabled_for_input %}
       {% do disabled_language_codes.append(language.lang_code) %}
@@ -20,6 +36,7 @@
 {% endfor %}
 
 {% set is_required = is_required and (schema.minLength or schema.choices) %}
+
 
 {% block property_label %}
   <div class="col-md-3" style="padding-right: 0">

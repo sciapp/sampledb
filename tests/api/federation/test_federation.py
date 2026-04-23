@@ -26,6 +26,16 @@ def user(flask_server):
 
 
 @pytest.fixture
+def fed_user(flask_server, component_token):
+    component, _ = component_token
+    user = models.User(name='Fed User', email="fed@example.com", type=models.UserType.FEDERATION_USER, component_id=component.id, fed_id=1)
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    assert user.id is not None
+    return user
+
+
+@pytest.fixture
 def action():
     action = actions.create_action(
         action_type_id=models.ActionType.SAMPLE_CREATION,
@@ -46,9 +56,63 @@ def action():
 
 
 @pytest.fixture
+def fed_action(component_token):
+    component, _ = component_token
+    action = actions.create_action(
+        action_type_id=None,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Sample Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        },
+        instrument_id=None,
+        component_id=component.id,
+        fed_id=1
+    )
+    return action
+
+
+@pytest.fixture
 def simple_object(user, action):
     data = {'name': {'_type': 'text', 'text': 'Object'}}
     return objects.create_object(user_id=user.id, action_id=action.id, data=data)
+
+
+@pytest.fixture
+def fed_object(fed_user, fed_action, component_token):
+    component, _ = component_token
+    data = {'name': {'_type': 'text', 'text': 'Federated Object'}}
+    o = objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=0,
+        component_id=component.id,
+        version_component_id=component.id,
+        action_id=fed_action.id,
+        schema=fed_action.schema,
+        data=data,
+        user_id=fed_user.id,
+        utc_datetime=datetime.datetime.now(),
+        imported_from_component_id=component.id,
+    )
+    assert o is not None
+    specification = models.ObjectImportSpecification(
+        object_id=o.id,
+        data=True,
+        files=True,
+        action=True,
+        users=True,
+        comments=True,
+        object_location_assignments=True
+    )
+    sampledb.db.session.add(specification)
+    sampledb.db.session.commit()
+    return o
 
 
 @pytest.fixture
@@ -358,3 +422,56 @@ def test_federation_metadata(flask_server, component_token):
     assert r.status_code == 200
     data = r.json()
     assert 'sp' in data and 'idp' in data and 'enabled' in data
+
+
+def test_language_resources(flask_server, component_token):
+    component, token = component_token
+    headers = {'Authorization': f'Bearer {token}'}
+    r = requests.get(f'{flask_server.base_url}federation/v1/shares/languages/', headers=headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert 'languages' in data
+    assert len(data['languages']) == 1
+    german_language = logic.languages.get_language_by_lang_code('de')
+    assert data['languages'][0] == {
+        "id": german_language.id,
+        "lang_code": german_language.lang_code,
+        "names": german_language.names,
+        "datetime_format_datetime": german_language.datetime_format_datetime,
+        "datetime_format_moment": german_language.datetime_format_moment,
+        "datetime_format_moment_output": german_language.datetime_format_moment_output,
+        "date_format_moment_output": german_language.date_format_moment_output,
+        "enabled_for_input": german_language.enabled_for_input,
+        "enabled_for_user_interface": german_language.enabled_for_user_interface,
+    }
+
+
+def test_object_resources(flask_server, component_token, simple_object, fed_object):
+    component, token = component_token
+    sampledb.logic.shares.add_object_share(object_id=simple_object.id, component_id=component.id, policy={"access": {"data": True, "files": True, "users": True, "action": True, "comments": True, "object_location_assignments": True}, "permissions": {"users": {"1": "write"}, "groups": {}, "projects": {}, "all_users": "none"}})
+    headers = {'Authorization': f'Bearer {token}'}
+    r = requests.get(f"{flask_server.base_url}federation/v1/shares/objects/", headers=headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert data['header']['bidirectional_editing']
+    assert data['header']['target_uuid'] == component.uuid
+    assert data['header']['db_uuid'] == sampledb.config.FEDERATION_UUID
+    assert len(data['objects']) == 2
+
+    # Local Object
+    assert data['objects'][0]['object_id'] == simple_object.id
+    assert data['objects'][0]['component_uuid'] == sampledb.config.FEDERATION_UUID
+    assert 'policy' in data['objects'][0]
+    assert len(data['objects'][0]['versions']) == 1
+    assert data['objects'][0]['versions'][0]['version_component_uuid'] == sampledb.config.FEDERATION_UUID
+    assert data['objects'][0]['versions'][0]['data'] == simple_object.data
+    assert data['objects'][0]['versions'][0]['schema'] == simple_object.schema
+
+    # Federated Object
+    assert data['objects'][1]['object_id'] == fed_object.fed_id
+    assert data['objects'][1]['component_uuid'] == component.uuid
+    assert 'policy' in data['objects'][1]
+    assert len(data['objects'][1]['versions']) == 1
+    assert data['objects'][1]['versions'][0]['version_component_uuid'] == component.uuid
+    assert data['objects'][1]['versions'][0]['data'] == fed_object.data
+    assert data['objects'][1]['versions'][0]['schema'] == fed_object.schema

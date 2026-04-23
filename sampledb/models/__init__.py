@@ -44,6 +44,7 @@ from .background_tasks import BackgroundTask, BackgroundTaskStatus
 from .comments import Comment
 from .components import Component
 from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
+from .conflicts import ObjectVersionConflict
 from .dataverse_export import DataverseExport, DataverseExportStatus
 from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
 from .download_service import DownloadServiceJobFile
@@ -66,7 +67,7 @@ from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
 from .minisign_keys import KeyPair
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
-from .objects import Objects, Object
+from .objects import Objects, Object, FederatedObject
 from .object_data_to_html_cache import ObjectDataToHTMLCacheEntry
 from .object_log import ObjectLogEntry, ObjectLogEntryType
 from .object_permissions import UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, AnonymousUserObjectPermissions
@@ -75,7 +76,7 @@ from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .scicat_export import SciCatExport
 from .settings import Settings
-from .shares import ObjectShare
+from .shares import ObjectShare, ObjectImportSpecification
 from .tags import Tag
 from .topics import Topic
 from .temporary_files import TemporaryFile
@@ -171,6 +172,7 @@ __all__ = [
     'NotificationModeForType',
     'Objects',
     'Object',
+    'FederatedObject',
     'ObjectLogEntry',
     'ObjectLogEntryType',
     'ObjectPublication',
@@ -210,8 +212,10 @@ __all__ = [
     'ComponentAuthentication',
     'OwnComponentAuthentication',
     'ComponentAuthenticationType',
+    'ObjectVersionConflict',
     'ObjectShare',
     'ObjectDataToHTMLCacheEntry',
+    'ObjectImportSpecification',
     'FedUserLogEntry',
     'FedUserLogEntryType',
     'FedObjectLogEntry',
