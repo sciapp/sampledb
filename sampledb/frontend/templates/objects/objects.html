@@ -5,6 +5,7 @@
 {% block stylesheets %}
   {{ super() }}
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
 {% endblock %}
 
 {% block template_values %}
@@ -25,6 +26,20 @@
     {% do set_template_value("translations.you_have_to_select_how_to_update", _('You have to select how you want to update the permissions.')) %}
     {% do set_template_value("translations.you_have_to_select_a_permission", _('You have to select a permission.')) %}
     {% do set_template_value("translations.you_have_selected_write_grant_permissions_for_special_group", _('You have selected write/grant permissions for a special group.')) %}
+  {% endif %}
+  {% if share_with_other_database %}
+    {% do set_template_value("component_users", component_users) %}
+    {% do set_template_value("policies", {}) %}
+    {% do set_template_value("translations.project_group", _('Project Group')) %}
+    {% do set_template_value("translations.project_groups", _('Project Groups')) %}
+    {% do set_template_value("translations.basic_group", _('Basic Group')) %}
+    {% do set_template_value("translations.basic_groups", _('Basic Groups')) %}
+    {% do set_template_value("translations.user", _('User')) %}
+    {% do set_template_value("translations.users", _('Users')) %}
+    {% do set_template_value("translations.not_a_valid_id", _('Not a valid ID. Expected a positive integer.')) %}
+    {% do set_template_value("translations.project_group_already_added", _('Project Group has already been added.')) %}
+    {% do set_template_value("translations.basic_group_already_added", _('Basic Group has already been added.')) %}
+    {% do set_template_value("translations.user_already_added", _('User has already been added.')) %}
   {% endif %}
   {% if generate_labels %}
     {% set page_sizes = {} %}
@@ -53,6 +68,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
@@ -70,6 +86,9 @@
     <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-generate-labels.js') }}" type="module"></script>
   {% elif edit_permissions %}
     <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-edit-permissions.js') }}" type="module"></script>
+  {% elif share_with_other_database %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/object-permissions.js') }}" type="module"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-share-with-other-database.js') }}" type="module"></script>
   {% endif %}
 {% endblock %}
 
@@ -282,132 +301,134 @@
     {% endif %}
   {% endif %}
 
-  <button type="button" class="btn btn-default" data-toggle="modal" data-target="#optionsModal" style="margin-bottom: 10px">
-    {{ _('Options') }}
-  </button>
+  {% if not edit_permissions and not share_with_other_database %}
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#optionsModal" style="margin-bottom: 10px">
+      {{ _('Options') }}
+    </button>
 
-  <div class="modal fade" id="optionsModal" tabindex="-1" role="dialog" aria-labelledby="optionsModalLabel">
-    <div class="modal-dialog" role="document">
-      <form method="get" class="form">
-        {% for key in request.args %}
-          {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info', 'other_databases_info', 'location_info'] %}
-            {% for value in request.args.getlist(key) %}
-              <input type="hidden" name="{{ key }}" value="{{ value }}" />
-            {% endfor %}
-          {% endif %}
-        {% endfor %}
-        <input type="hidden" name="object_list_options" value="" />
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="optionsModalLabel">{{ _('Options') }}</h4>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label class="control-label" for="select_display_properties">
-                {{ _('Show additional properties') }}
-              </label>
-              <select class="selectpicker form-control" multiple="multiple" name="display_properties" data-width="100%" id="select_display_properties" data-live-search="true" data-none-selected-text="{{ _('No additional properties') }}">
-                {% for property_name in search_paths | sort %}
-                  <option value="{{ property_name }}" {% if display_properties and property_name in display_properties %}selected="selected"{% endif %}>{{ property_name }} – {{ search_paths[property_name]['titles'] | join(', ') }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="control-label">
-                {{ _('Show creation information') }}
-              </label>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'date' in creation_info %}checked="checked"{% endif %} name="creation_info" value="date" /> {{ _('Show Date') }}
-                </label>
-              </div>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'user' in creation_info %}checked="checked"{% endif %} name="creation_info" value="user" /> {{ _('Show User') }}
-                </label>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="control-label">
-                {{ _('Show last edit information') }}
-              </label>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'date' in last_edit_info %}checked="checked"{% endif %} name="last_edit_info" value="date" /> {{ _('Show Date') }}
-                </label>
-              </div>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'user' in last_edit_info %}checked="checked"{% endif %} name="last_edit_info" value="user" /> {{ _('Show User') }}
-                </label>
-              </div>
-            </div>
-            {% if config['FEDERATION_UUID'] %}
-            <div class="form-group">
-              <label class="control-label">
-                {{ _('Show Other Database information') }}
-              </label>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if other_databases_info %}checked="checked"{% endif %} name="other_databases_info" value="other_databases_info" /> {{ _('Show Other Databases') }}
-                </label>
-              </div>
-            </div>
+    <div class="modal fade" id="optionsModal" tabindex="-1" role="dialog" aria-labelledby="optionsModalLabel">
+      <div class="modal-dialog" role="document">
+        <form method="get" class="form">
+          {% for key in request.args %}
+            {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info', 'other_databases_info', 'location_info'] %}
+              {% for value in request.args.getlist(key) %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}" />
+              {% endfor %}
             {% endif %}
-            <div class="form-group">
-              <label class="control-label">
-                {{ _('Show Action information') }}
-              </label>
-              {% if not config['DISABLE_INSTRUMENTS'] %}
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'instrument' in action_info %}checked="checked"{% endif %} name="action_info" value="instrument" /> {{ _('Show Instrument') }}
+          {% endfor %}
+          <input type="hidden" name="object_list_options" value="" />
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="optionsModalLabel">{{ _('Options') }}</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="control-label" for="select_display_properties">
+                  {{ _('Show additional properties') }}
                 </label>
+                <select class="selectpicker form-control" multiple="multiple" name="display_properties" data-width="100%" id="select_display_properties" data-live-search="true" data-none-selected-text="{{ _('No additional properties') }}">
+                  {% for property_name in search_paths | sort %}
+                    <option value="{{ property_name }}" {% if display_properties and property_name in display_properties %}selected="selected"{% endif %}>{{ property_name }} – {{ search_paths[property_name]['titles'] | join(', ') }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="control-label">
+                  {{ _('Show creation information') }}
+                </label>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'date' in creation_info %}checked="checked"{% endif %} name="creation_info" value="date" /> {{ _('Show Date') }}
+                  </label>
+                </div>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'user' in creation_info %}checked="checked"{% endif %} name="creation_info" value="user" /> {{ _('Show User') }}
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="control-label">
+                  {{ _('Show last edit information') }}
+                </label>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'date' in last_edit_info %}checked="checked"{% endif %} name="last_edit_info" value="date" /> {{ _('Show Date') }}
+                  </label>
+                </div>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'user' in last_edit_info %}checked="checked"{% endif %} name="last_edit_info" value="user" /> {{ _('Show User') }}
+                  </label>
+                </div>
+              </div>
+              {% if config['FEDERATION_UUID'] %}
+              <div class="form-group">
+                <label class="control-label">
+                  {{ _('Show Other Database information') }}
+                </label>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if other_databases_info %}checked="checked"{% endif %} name="other_databases_info" value="other_databases_info" /> {{ _('Show Other Databases') }}
+                  </label>
+                </div>
               </div>
               {% endif %}
-              <div>
-              <label style="font-weight: normal">
-                <input type="checkbox" {% if 'action' in action_info %}checked="checked"{% endif %} name="action_info" value="action" /> {{ _('Show Action') }}
-              </label>
+              <div class="form-group">
+                <label class="control-label">
+                  {{ _('Show Action information') }}
+                </label>
+                {% if not config['DISABLE_INSTRUMENTS'] %}
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'instrument' in action_info %}checked="checked"{% endif %} name="action_info" value="instrument" /> {{ _('Show Instrument') }}
+                  </label>
+                </div>
+                {% endif %}
+                <div>
+                <label style="font-weight: normal">
+                  <input type="checkbox" {% if 'action' in action_info %}checked="checked"{% endif %} name="action_info" value="action" /> {{ _('Show Action') }}
+                </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="control-label">
+                  {{ _('Show Location and Responsibility information') }}
+                </label>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'location' in location_info %}checked="checked"{% endif %} name="location_info" value="location" /> {{ _('Show Location') }}
+                  </label>
+                </div>
+                <div>
+                <label style="font-weight: normal">
+                  <input type="checkbox" {% if 'responsible_user' in location_info %}checked="checked"{% endif %} name="location_info" value="responsible_user" /> {{ _('Show Responsible User') }}
+                </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="control-label">
+                  {{ _('Show Topics') }}
+                </label>
+                <div>
+                  <label style="font-weight: normal">
+                    <input type="checkbox" {% if 'topics' in topic_info %}checked="checked"{% endif %} name="topic_info" value="topics" /> {{ _('Show Topics') }}
+                  </label>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label class="control-label">
-                {{ _('Show Location and Responsibility information') }}
-              </label>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'location' in location_info %}checked="checked"{% endif %} name="location_info" value="location" /> {{ _('Show Location') }}
-                </label>
-              </div>
-              <div>
-              <label style="font-weight: normal">
-                <input type="checkbox" {% if 'responsible_user' in location_info %}checked="checked"{% endif %} name="location_info" value="responsible_user" /> {{ _('Show Responsible User') }}
-              </label>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="control-label">
-                {{ _('Show Topics') }}
-              </label>
-              <div>
-                <label style="font-weight: normal">
-                  <input type="checkbox" {% if 'topics' in topic_info %}checked="checked"{% endif %} name="topic_info" value="topics" /> {{ _('Show Topics') }}
-                </label>
-              </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-default" name="save_default_options" formmethod="post">{{ _('Save') }}</button>
+              <button type="submit" class="btn btn-default" name="clear_default_options" formmethod="post">{{ _('Clear') }}</button>
+              <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+              <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-default" name="save_default_options" formmethod="post">{{ _('Save') }}</button>
-            <button type="submit" class="btn btn-default" name="clear_default_options" formmethod="post">{{ _('Clear') }}</button>
-            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
-            <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
-          </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  </div>
+  {% endif %}
 
 
   {% if show_filters %}
@@ -517,7 +538,7 @@
               <label class="control-label" for="filter_instrument_ids">
                 {{ _('Filter by Instrument') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on" data-hide-disabled="true">>
+              <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on" data-hide-disabled="true">
                 {% for topic in sorted_instrument_topics + [None] %}
                   {% if sorted_instrument_topics %}
                     <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Instruments') }}{% endif %}">
@@ -588,7 +609,7 @@
     {{ _('Search') }}
   </a>
 
-  {% if not edit_location and not create_from_objects and not generate_labels and not edit_permissions %}
+  {% if not edit_location and not create_from_objects and not generate_labels and not edit_permissions and not share_with_other_database %}
     <div class="btn-group" style="margin-bottom: 8px;">
       <button class="btn btn-default dropdown-toggle" type="button" id="multiselect-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{ _('Multiple Objects') }}&hellip; <span class="caret"></span>
@@ -597,6 +618,9 @@
         <li><a href="{{ build_modified_url(edit_location=True) }}" class="dropdown-item"> <i class="fa fa-map-marker" aria-hidden="true"></i> {{ _('Assign Location') }}</a></li>
         <li><a href="{{ build_modified_url(generate_labels=True) }}" class="dropdown-item"><i class="fa fa-tag" aria-hidden="true"></i> {{ _('Generate Labels') }}</a></li>
         <li><a href="{{ build_modified_url(edit_permissions=True) }}" class="dropdown-item"><i class="fa fa-lock" aria-hidden="true"></i> {{ _('Edit Permissions') }}</a></li>
+        {% if all_components %}
+          <li><a href="{{ build_modified_url(share_with_other_database=True) }}" class="dropdown-item"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Share with Other Database') }}</a></li>
+        {% endif %}
         {% if available_action_types|length > 0 %}
           <h6 class="dropdown-header"> {{ _('Use in Action') }} </h6>
           {% for action_type in available_action_types %}
@@ -606,7 +630,7 @@
       </ul>
     </div>
 
-  {% elif edit_location and not create_from_objects and not generate_labels and not edit_permissions %}
+  {% elif edit_location and not create_from_objects and not generate_labels and not edit_permissions and not share_with_other_database%}
   {% set allowed_language_ids = [] %}
   {% for language in all_languages %}
     {% if language.enabled_for_input %}
@@ -661,7 +685,7 @@
         </div>
     </div>
   </form>
-  {% elif create_from_objects and not edit_location and not edit_permissions %}
+  {% elif create_from_objects and not edit_location and not edit_permissions and not share_with_other_database %}
   <form id="multiselect-form" method="post" action="{{ url_for('.multiselect_action') }}">
     {{ use_in_action_form.csrf_token }}
     <input type="hidden" id="object-selection" name="{{ use_in_action_form.objects.name }}" value="" />
@@ -702,7 +726,7 @@
       {% endif %}
     </div>
   </form>
-  {% elif generate_labels and not create_from_objects and not edit_location and not edit_permissions %}
+  {% elif generate_labels and not create_from_objects and not edit_location and not edit_permissions and not share_with_other_database %}
     <form id="multiselect-form" method="get" action="{{ url_for('.multiselect_labels') }}">
       {{ generate_labels_form.csrf_token }}
       <input type="hidden" id="object-selection" name="{{ generate_labels_form.objects.name }}"/>
@@ -827,7 +851,7 @@
         </span>
       </div>
     </form>
-  {% elif not create_from_objects and not edit_location and not generate_labels and edit_permissions %}
+  {% elif not create_from_objects and not edit_location and not generate_labels and edit_permissions and not share_with_other_database %}
   <form id="multiselect-form" method="post" action="{{ url_for('.multiselect_permissions') }}" style="margin-bottom: 10px;">
     {{ edit_permissions_form.csrf_token }}
     <span class="text-muted">{{ _('Select objects for which you want to change the permissions.') }}</span>
@@ -910,11 +934,28 @@
       </span>
     </div>
   </form>
+  {% elif not create_from_objects and not edit_location and not generate_labels and not edit_permissions and share_with_other_database %}
+
+  <form id="multiselect-form" method="post" action="{{ url_for('.multiselect_share') }}" style="margin-bottom: 10px;">
+    {{ share_with_other_database_form.csrf_token }}
+    <p class="text-muted">{{ _('Select which objects you want to share with another database. Objects that have already been shared will have the selected access, users and groups shared in addition to any shared previously.') }}</p>
+    <input type="hidden" id="object-selection" name="{{ share_with_other_database_form.objects.name }}" value="" />
+    {% with add_component_policy_form = share_with_other_database_form, possible_new_components=all_components %}
+      {% include "objects/object_permissions_add_database.html" %}
+    {% endwith %}
+
+    <div class="text-right row">
+      <a href="{{ build_modified_url(blocked_parameters=['share_with_other_database']) }}" class="btn btn-default">{{ _('Cancel') }}</a>
+      <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _('You have to select at least one object.') }}">
+        <button type="submit" id="multiselect-submit" class="btn btn-success" disabled>{{ _('Share') }}</button>
+      </span>
+    </div>
+  </form>
   {% endif %}
 
   {% if objects %}
   </div>
-  {% if edit_permissions %}
+  {% if edit_permissions or share_with_other_database %}
     {% set creation_info = [] %}
     {% set last_edit_info = [] %}
   {% endif %}
@@ -923,7 +964,7 @@
   <table class="table" id="table-objects">
   <thead>
     <tr>
-      {% if edit_location or create_from_objects or generate_labels or edit_permissions %}
+      {% if edit_location or create_from_objects or generate_labels or edit_permissions or share_with_other_database %}
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>
           <input id="checkbox-select-overall" type="checkbox" value="state" />
         </th>
@@ -936,7 +977,7 @@
       {% if last_edit_info %}
         <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
       {% endif %}
-      {% if not edit_permissions %}
+      {% if not edit_permissions and not share_with_other_database %}
         {% if other_databases_info %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Other Databases') }}</th>
         {% endif %}
@@ -958,7 +999,7 @@
         {% for property_name in display_properties %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} {% if sorting_enabled %}<span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}{% endif %}</th>
         {% endfor %}
-    {% else %}
+    {% elif edit_permissions %}
       {% set read_permissions_description = _("Permission to view objects and their properties, files and comments.") %}
       {% set write_permissions_description = _("Permission to edit objects and their properties and add files and comments. Includes Read permissions.") %}
       {% set grant_permissions_description = _("Permission to grant permissions to other users. Includes Write permissions.") %}
@@ -966,6 +1007,8 @@
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+    {% elif share_with_other_database %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Already shared') }}</th>
     {% endif %}
       </tr>
       {% if creation_info or last_edit_info %}
@@ -988,7 +1031,7 @@
   <tbody>
   {% for object in objects %}
     <tr>
-      {% if edit_location or create_from_objects or generate_labels or edit_permissions %}
+      {% if edit_location or create_from_objects or generate_labels or edit_permissions or share_with_other_database %}
         {% if edit_location %}
           {% set disabled_checkbox_reason =  _('You need at least write permission to change the location of an object.')  %}
         {% elif create_from_objects %}
@@ -997,10 +1040,10 @@
           {% set disabled_checkbox_reason = _('Labels are disabled for the action type of this object.') %}
         {% elif edit_permissions %}
           {% set disabled_checkbox_reason =  _('You need grant permission to change the permissions for this object.')  %}
+        {% elif share_with_other_database %}
+          {% set disabled_checkbox_reason =  _('You need grant permission to share this object with another database.')  %}
         {% endif %}
-        <td><input type="checkbox" name="cb-{{object.object_id}}" id="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels or edit_permissions) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{{ disabled_checkbox_reason }}" {% endif %}/> </td>
-        {% if (edit_location or create_from_objects or generate_labels or edit_permissions) and object.object_id not in objects_allowed_to_select %}
-        {% endif %}
+        <td><input type="checkbox" name="cb-{{object.object_id}}" id="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels or edit_permissions or share_with_other_database) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{{ disabled_checkbox_reason }}" {% endif %}/> </td>
       {% endif %}
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>
@@ -1023,7 +1066,7 @@
         {{ user_reference(object.modified_by) }}
       </td>
       {% endif %}
-      {% if not edit_permissions %}
+      {% if not edit_permissions and not share_with_other_database %}
         {% if other_databases_info %}
           <td>
           {% set shares = get_shares_for_object(object.object_id) %}
@@ -1138,7 +1181,7 @@
             <td> &mdash; </td>
           {% endif %}
         {% endfor %}
-      {% else %}
+      {% elif edit_permissions %}
         {% if object["object_id"] in objects_allowed_to_select %}
           {% for available_permission in ['none', 'read', 'write', 'grant'] %}
             {% if available_permission == current_permissions_special_groups["signed-in-users"][object["object_id"]] %}
@@ -1153,6 +1196,36 @@
           <td class="permissions-table-data" class="permission-entry-disabled">&mdash;</td>
           <td class="permissions-table-data" class="permission-entry-disabled">&mdash;</td>
         {% endif %}
+      {% elif share_with_other_database %}
+        <td>
+        {% if object["object_id"] in objects_allowed_to_select %}
+          {% set existing_shares = existing_shares_by_object_id.get(object["object_id"], []) %}
+          {% if existing_shares %}
+            {% for share in existing_shares %}
+              <a href="{{ url_for(".object_permissions", object_id=object["object_id"], edit_component_id=share.component.id, _anchor="other-databases") }}"
+                 data-sampledb-object-id="{{ object["object_id"] }}"
+                 data-sampledb-component-id="{{ share.component.id }}"
+                 {% for key in ('data', 'action', 'users', 'files', 'comments', 'object_location_assignments',) %}
+                  data-sampledb-policy-access-{{ key }}="{{ (share.policy.get("access", {}).get(key, False) is true) | tojson }}"
+                 {% endfor %}
+              >
+                {{ share.component.get_name() }}
+                {% set num_users = share.policy.get("permissions", {}).get("users", {}) | length %}
+                {% set num_groups = share.policy.get("permissions", {}).get("groups", {}) | length %}
+                {% set num_projects = share.policy.get("permissions", {}).get("projects", {}) | length %}
+                {%- if num_users or num_groups or num_projects %}
+                  ({{ num_users }} {{ _('Users') }}{% if num_groups %}, {{ num_groups }} {{ _('Basic Groups') }}{% endif %}{% if num_projects %}, {{ num_projects }} {{ _('Project Groups') }}{% endif %})
+                {%- endif -%}
+              </a>
+              {%- if not loop.last %}, {% endif %}
+            {% endfor %}
+          {% else %}
+            <i class="fa fa-times fa-fw" aria-hidden="true"></i>
+          {% endif %}
+        {% else %}
+          <i class="fa fa-lock fa-fw text-muted" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{% if object['component_id'] is none and object['eln_object_id'] is none %}{{ _('You need grant permission to share this object with another database.') }}{% else %}{{ _('Sharing imported objects is not supported.') }}{% endif %}"></i>
+        {% endif %}
+        </td>
       {% endif %}
     </tr>
   {% endfor %}

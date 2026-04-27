@@ -4,13 +4,14 @@
 """
 import dataclasses
 import datetime
+import itertools
 import typing
 
 from .objects import get_object, check_object_exists
 from .components import check_component_exists, Component
 from .notifications import create_notification_for_a_failed_remote_object_import, create_notification_for_a_remote_object_import_with_notes
 from . import errors, fed_logs
-from ..models import Object
+from ..models import Object, Permissions
 from .. import db, models
 
 
@@ -204,3 +205,55 @@ def parse_object_share_import_status(
         utc_datetime=utc_datetime,
         object_id=object_id
     )
+
+
+def merge_policies(*policies: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+    return {
+        'access': {
+            key: any(policy.get('access', {}).get(key, False) for policy in policies)
+            for key in (
+                'data',
+                'action',
+                'users',
+                'files',
+                'comments',
+                'object_location_assignments',
+            )
+        },
+        'permissions': {
+            'users': {
+                user_id: max(
+                    Permissions.from_name(policy.get('permissions', {}).get('users', {}).get(user_id, 'none'))
+                    for policy in policies
+                ).name.lower()
+                for user_id in sorted(set(itertools.chain(*[
+                    iter(policy.get('permissions', {}).get('users', {}).keys())
+                    for policy in policies
+                ])))
+            },
+            'groups': {
+                group_id: max(
+                    Permissions.from_name(policy.get('permissions', {}).get('groups', {}).get(group_id, 'none'))
+                    for policy in policies
+                ).name.lower()
+                for group_id in sorted(set(itertools.chain(*[
+                    iter(policy.get('permissions', {}).get('groups', {}).keys())
+                    for policy in policies
+                ])))
+            },
+            'projects': {
+                project_id: max(
+                    Permissions.from_name(policy.get('permissions', {}).get('projects', {}).get(project_id, 'none'))
+                    for policy in policies
+                ).name.lower()
+                for project_id in sorted(set(itertools.chain(*[
+                    iter(policy.get('permissions', {}).get('projects', {}).keys())
+                    for policy in policies
+                ])))
+            },
+            'all_users': max(
+                Permissions.from_name(policy.get('permissions', {}).get('all_users', 'none'))
+                for policy in policies + ({'permissions': {'all_users': 'none'}},)
+            ).name.lower()
+        }
+    }

@@ -1,3 +1,4 @@
+import uuid
 from io import FileIO
 
 from bs4 import BeautifulSoup
@@ -827,3 +828,80 @@ def test_object_list_change_project_group_max_permission(object, flask_server, d
     with wait_for_page_load(driver):
         driver.find_element(By.ID, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.READ
+
+
+def test_object_list_share_with_other_database(object, flask_server, driver, user):
+    component = sampledb.logic.components.add_component(
+        uuid=str(uuid.uuid4()),
+        name='Example SampleDB',
+    )
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Share with Other Database")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['share_with_other_database'] == ['True']
+    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, 'add_share_user_text').send_keys('1')
+    driver.find_element(By.ID, 'add_component_policy_user_input_btn').click()
+    driver.find_element(By.ID, 'permissions_add_policy_user_1_write').click()
+    driver.find_element(By.ID, 'add_share_user_text').send_keys('2')
+    driver.find_element(By.ID, 'add_component_policy_user_input_btn').click()
+    driver.find_element(By.ID, 'permissions_add_policy_user_2_grant').click()
+    driver.find_element(By.ID, 'add_share_group_text').send_keys('3')
+    driver.find_element(By.ID, 'add_component_policy_group_input_btn').click()
+
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
+    shares = sampledb.logic.shares.get_shares_for_object(object.object_id)
+    assert len(shares) == 1
+    assert shares[0].component_id == component.id
+    assert shares[0].policy['permissions']['users'] == {
+        '1': 'write',
+        '2': 'grant'
+    }
+    assert shares[0].policy['permissions']['groups'] == {
+        '3': 'read'
+    }
+    assert shares[0].policy['permissions']['projects'] == {
+    }
+
+    driver.get(flask_server.base_url + 'objects/?share_with_other_database=True')
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    driver.find_element(By.ID, 'add_share_user_text').send_keys('1')
+    driver.find_element(By.ID, 'add_component_policy_user_input_btn').click()
+    driver.find_element(By.ID, 'permissions_add_policy_user_1_grant').click()
+    driver.find_element(By.ID, 'add_share_user_text').send_keys('2')
+    driver.find_element(By.ID, 'add_component_policy_user_input_btn').click()
+    driver.find_element(By.ID, 'permissions_add_policy_user_2_read').click()
+    driver.find_element(By.ID, 'add_share_group_text').send_keys('3')
+    driver.find_element(By.ID, 'add_component_policy_group_input_btn').click()
+    driver.find_element(By.ID, 'permissions_add_policy_group_3_write').click()
+    driver.find_element(By.ID, 'add_share_group_text').send_keys('4')
+    driver.find_element(By.ID, 'add_component_policy_group_input_btn').click()
+    driver.find_element(By.ID, 'add_share_project_text').send_keys('5')
+    driver.find_element(By.ID, 'add_component_policy_project_input_btn').click()
+
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
+    shares = sampledb.logic.shares.get_shares_for_object(object.object_id)
+    assert len(shares) == 1
+    assert shares[0].component_id == component.id
+    assert shares[0].policy['permissions']['users'] == {
+        '1': 'grant',
+        '2': 'grant'
+    }
+    assert shares[0].policy['permissions']['groups'] == {
+        '3': 'write',
+        '4': 'read'
+    }
+    assert shares[0].policy['permissions']['projects'] == {
+        '5': 'read'
+    }

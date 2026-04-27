@@ -1512,21 +1512,10 @@ msgstr ""
 msgid "Updated permissions successfully."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
-msgid "You already have permissions to access this object."
-msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
-
-msgid "Your request for permissions has been sent."
-msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
-
-msgid "Successfully copied object permissions."
-msgstr "Die Berechtigungen wurden erfolgreich kopiert."
-
-msgid ""
-"A problem occurred while changing the object permissions. Please try "
-"again."
+msgid "A problem occurred while sharing the object. Please try again."
 msgstr ""
-"Beim Ändern der Berechtigungen ist ein Problem aufgetreten. Bitte "
-"versuchen Sie es später erneut."
+"Beim Teilen des Objekts ist ein Problem aufgetreten. Bitte versuchen Sie "
+"es später erneut."
 
 #, python-format
 msgid "Unable to contact %(component_name)s. Missing database address."
@@ -1547,6 +1536,26 @@ msgid "Unable to contact %(component_name)s (%(component_address)s)."
 msgstr ""
 "Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
 "fehlgeschlagen."
+
+#, python-format
+msgid "Successfully shared objects with %(component_name)s."
+msgstr "Die Objekte wurden erfolgreich mit %(component_name)s geteilt."
+
+msgid "You already have permissions to access this object."
+msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
+
+msgid "Your request for permissions has been sent."
+msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
+
+msgid "Successfully copied object permissions."
+msgstr "Die Berechtigungen wurden erfolgreich kopiert."
+
+msgid ""
+"A problem occurred while changing the object permissions. Please try "
+"again."
+msgstr ""
+"Beim Ändern der Berechtigungen ist ein Problem aufgetreten. Bitte "
+"versuchen Sie es später erneut."
 
 msgid "Successfully updated object permissions."
 msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
@@ -5520,6 +5529,16 @@ msgstr ""
 "Sie können die aktuellen Berechtigungen ersetzen, indem Sie die "
 "Berechtigungen von einem anderen Objekt kopieren."
 
+msgid ""
+"Some of the objects were previously shared with less access. By granting "
+"this access to the database for these objects, users that already had "
+"permissions for the objects will also be able to access the new content."
+msgstr ""
+"Einige der Objekte wurden zuvor mit weniger Zugriff geteilt. Wenn diese "
+"Objekte mit diesem Zugriff mit der anderen Datenbank geteilt werden, "
+"können auch Nutzer, die bereits Berechtigungen für die Objekte hatten, "
+"auf die neuen Inhalte zugreifen."
+
 msgid "Versions"
 msgstr "Versionen"
 
@@ -5746,6 +5765,9 @@ msgstr "Ort zuweisen"
 msgid "Generate Labels"
 msgstr "Etiketten generieren"
 
+msgid "Share with Other Database"
+msgstr "Mit anderer Datenbank teilen"
+
 msgid "Use in Action"
 msgstr "In Aktion nutzen"
 
@@ -5834,11 +5856,23 @@ msgstr "Wählen Sie eine Berechtigung:"
 msgid "Save permissions"
 msgstr "Berechtigungen speichern"
 
+msgid ""
+"Select which objects you want to share with another database. Objects "
+"that have already been shared will have the selected access, users and "
+"groups shared in addition to any shared previously."
+msgstr ""
+"Wähle Objekte aus die mit einer anderen Datenbank geteilt werden sollen. "
+"Für bereits geteilte Objekte werden die ausgewählten Zugriffsrechte, "
+"Nutzer und Gruppen zu den zuvor gesetzten hinzugefügt."
+
 msgid "Created"
 msgstr "Erstellt"
 
 msgid "Last modified"
 msgstr "Zuletzt geändert"
+
+msgid "Already shared"
+msgstr "Bereits geteilt"
 
 msgid "You need at least write permission to change the location of an object."
 msgstr ""
@@ -5856,8 +5890,13 @@ msgstr "Etiketten sind für den Aktionstyp dieses Objekts deaktiviert."
 
 msgid "You need grant permission to change the permissions for this object."
 msgstr ""
-"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Sie benötigen Rechtevergabe-Berechtigungen, um die Berechtigungen dieses "
 "Objekts zu verändern."
+
+msgid "You need grant permission to share this object with another database."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen, um dieses Objekt mit einer "
+"anderen Datenbank zu teilen."
 
 #, python-format
 msgid "Shared by %(component_name)s"
@@ -5872,6 +5911,9 @@ msgstr "über"
 
 msgid "a different source"
 msgstr "eine andere Quelle"
+
+msgid "Sharing imported objects is not supported."
+msgstr "Das Teilen importierter Objekte wird nicht unterstützt."
 
 msgid "Pages"
 msgstr "Seiten"
