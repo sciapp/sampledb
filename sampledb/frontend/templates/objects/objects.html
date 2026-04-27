@@ -914,25 +914,29 @@
 
   {% if objects %}
   </div>
+  {% if edit_permissions %}
+    {% set creation_info = [] %}
+    {% set last_edit_info = [] %}
+  {% endif %}
 
   <div class="container" {% with user_settings = get_user_settings() %}{% if user_settings['FULL_WIDTH_OBJECTS_TABLE'] or (user_settings['FULL_WIDTH_OBJECTS_TABLE'] is none and config['FULL_WIDTH_OBJECTS_TABLE']) %}id="table-objects-container"{% endif %}{% endwith %}>
   <table class="table" id="table-objects">
   <thead>
     <tr>
       {% if edit_location or create_from_objects or generate_labels or edit_permissions %}
-        <th scope="col" rowspan="2">
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>
           <input id="checkbox-select-overall" type="checkbox" value="state" />
         </th>
       {% endif %}
       <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('ID') }} {% if sorting_enabled %}<span class="icons-sorting"><a href="{{ build_modified_url(sortby='_object_id', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_object_id' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_object_id', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_object_id' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
       <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Name') }} {% if sorting_enabled %}<span class="icons-sorting"><a href="{{ build_modified_url(sortby='name', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == 'name' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='name', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == 'name' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
+      {% if creation_info %}
+        <th scope="col" {% if 'user' in creation_info and 'date' in creation_info %}colspan="2"{% endif %}>{{ _('Created') }}</th>
+      {% endif %}
+      {% if last_edit_info %}
+        <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
+      {% endif %}
       {% if not edit_permissions %}
-        {% if creation_info %}
-          <th scope="col" {% if 'user' in creation_info and 'date' in creation_info %}colspan="2"{% endif %}>{{ _('Created') }}</th>
-        {% endif %}
-        {% if last_edit_info %}
-          <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
-        {% endif %}
         {% if other_databases_info %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Other Databases') }}</th>
         {% endif %}
@@ -954,6 +958,15 @@
         {% for property_name in display_properties %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} {% if sorting_enabled %}<span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}{% endif %}</th>
         {% endfor %}
+    {% else %}
+      {% set read_permissions_description = _("Permission to view objects and their properties, files and comments.") %}
+      {% set write_permissions_description = _("Permission to edit objects and their properties and add files and comments. Includes Read permissions.") %}
+      {% set grant_permissions_description = _("Permission to grant permissions to other users. Includes Write permissions.") %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head">{{ _('None') }}</th>
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %} class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+    {% endif %}
       </tr>
       {% if creation_info or last_edit_info %}
       <tr>
@@ -971,17 +984,6 @@
         {% endif %}
       </tr>
       {% endif %}
-    {% else %}
-      {% set read_permissions_description = _("Permission to view objects and their properties, files and comments.") %}
-      {% set write_permissions_description = _("Permission to edit objects and their properties and add files and comments. Includes Read permissions.") %}
-      {% set grant_permissions_description = _("Permission to grant permissions to other users. Includes Write permissions.") %}
-      <tr>
-        <th scope="col" class="permissions-table-head">{{ _('None') }}</th>
-        <th scope="col" class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-        <th scope="col" class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-        <th scope="col" class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-      </tr>
-    {% endif %}
   </thead>
   <tbody>
   {% for object in objects %}
@@ -1005,23 +1007,23 @@
         <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
         {{ import_information_symbol(wrap_object_ref(fed_id=object.fed_id, component_uuid=object.component.uuid, eln_import_id=object.eln_import_id, eln_object_id=object.eln_object_id)) }}
       </td>
+      {% if 'date' in creation_info %}
+      <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
+      {% endif %}
+      {% if 'user' in creation_info %}
+      <td>
+        {{ user_reference(object.created_by) }}
+      </td>
+      {% endif %}
+      {% if 'date' in last_edit_info %}
+      <td class="nowrap">{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
+      {% endif %}
+      {% if 'user' in last_edit_info %}
+      <td>
+        {{ user_reference(object.modified_by) }}
+      </td>
+      {% endif %}
       {% if not edit_permissions %}
-        {% if 'date' in creation_info %}
-        <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
-        {% endif %}
-        {% if 'user' in creation_info %}
-        <td>
-          {{ user_reference(object.created_by) }}
-        </td>
-        {% endif %}
-        {% if 'date' in last_edit_info %}
-        <td class="nowrap">{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
-        {% endif %}
-        {% if 'user' in last_edit_info %}
-        <td>
-          {{ user_reference(object.modified_by) }}
-        </td>
-        {% endif %}
         {% if other_databases_info %}
           <td>
           {% set shares = get_shares_for_object(object.object_id) %}
