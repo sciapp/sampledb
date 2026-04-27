@@ -1108,7 +1108,10 @@ This example shows how Markdown can be used for instrument Notes.
             object_id=measurement.id,
             component_id=component.id,
             policy={
-                'access': {},
+                'access': {
+                    'data': True,
+                    'users': False,
+                },
                 'permissions': {
                     'users': {1: 'read'},
                     'groups': {2: 'write'},

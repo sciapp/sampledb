@@ -111,6 +111,10 @@ class ObjectNewShareAccessForm(FlaskForm):
     object_location_assignments = BooleanField()
 
 
+class MultiObjectNewShareAccessForm(ObjectNewShareAccessForm):
+    objects = HiddenField(validators=[InputRequired()])
+
+
 class ObjectEditShareAccessForm(FlaskForm):
     component_id = IntegerField(validators=[InputRequired()])
 
