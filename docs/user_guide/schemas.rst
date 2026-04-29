@@ -1137,7 +1137,7 @@ This attribute is a boolean that controls whether this property should be export
 style
 ^^^^^
 
-This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the object reference should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. If the style is set to ``"include"`` and the reference is not part of a list or table, the information for the referenced object is included in the object page.
+This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the object reference should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. If the style is set to ``"include"`` and the reference is not part of a list or table, the information for the referenced object is included in the object page. If the style is ``"versioned"``, a version ID can be specified when filling out the field and the specific version will be linked or included.
 
 .. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
 

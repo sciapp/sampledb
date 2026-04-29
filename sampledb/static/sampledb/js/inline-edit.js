@@ -14,7 +14,8 @@ import {
 } from './conditional_wrapper.js';
 
 import {
-  addActionFilterButton
+  addActionFilterButton,
+  setUpVersionPicker
 } from './object_form/object-reference.js';
 
 window.mdeFields = [];
@@ -232,6 +233,7 @@ $(document).ready(function () {
 
   $('div.objectpicker').each(function () {
     addActionFilterButton($(this));
+    setUpVersionPicker($(this));
   });
 
   applySchemaConditions(document);

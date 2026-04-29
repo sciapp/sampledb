@@ -678,7 +678,8 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             fed_object_id=None,
             component_name=None,
             eln_object_id=None,
-            eln_import_id=None
+            eln_import_id=None,
+            version_id=0
         )
     ]
 
@@ -697,7 +698,8 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             fed_object_id=None,
             component_name=None,
             eln_object_id=None,
-            eln_import_id=None
+            eln_import_id=None,
+            version_id=0
         )
     ]
 
@@ -723,7 +725,8 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             fed_object_id=None,
             component_name=None,
             eln_object_id=None,
-            eln_import_id=None
+            eln_import_id=None,
+            version_id=0
         )
     ]
 
@@ -749,7 +752,8 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             fed_object_id=None,
             component_name=None,
             eln_object_id=None,
-            eln_import_id=None
+            eln_import_id=None,
+            version_id=0
         )
     ]
 

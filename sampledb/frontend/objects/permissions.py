@@ -42,8 +42,18 @@ def on_unauthorized(object_id: int) -> FlaskResponseT:
 
 
 @cache_per_request()
-def get_object_if_current_user_has_read_permissions(object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
-    return get_object_if_user_has_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ, object_id=object_id, component_uuid=component_uuid)
+def get_object_if_current_user_has_read_permissions(
+        object_id: int,
+        component_uuid: typing.Optional[str] = None,
+        version_id: typing.Optional[int] = None
+) -> typing.Optional[Object]:
+    return get_object_if_user_has_permissions(
+        user_id=flask_login.current_user.id,
+        permissions=Permissions.READ,
+        object_id=object_id,
+        component_uuid=component_uuid,
+        version_id=version_id
+    )
 
 
 @cache_per_request()

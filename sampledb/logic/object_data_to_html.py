@@ -18,12 +18,17 @@ from .utils import get_hash
 from .settings import get_user_setting
 
 
-def _get_object_if_current_user_has_read_permissions(object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
+def _get_object_if_current_user_has_read_permissions(
+        object_id: int,
+        component_uuid: typing.Optional[str] = None,
+        version_id: typing.Optional[int] = None
+) -> typing.Optional[Object]:
     return get_object_if_user_has_permissions(
         user_id=flask_login.current_user.id,
         permissions=Permissions.READ,
         object_id=object_id,
         component_uuid=component_uuid,
+        version_id=version_id
     )
 
 
@@ -69,7 +74,7 @@ def _set_object_data_to_html_cache_entry(
         show_object_title: typing.Optional[bool],
         workflow_display_mode: bool,
         html: str,
-        object_dependencies: typing.List[typing.Tuple[int, typing.Optional[str], typing.Optional[int]]],
+        object_dependencies: typing.List[typing.Tuple[int, typing.Optional[str], typing.Optional[int], typing.Optional[int]]],
         user_dependencies: typing.List[typing.Tuple[int, typing.Optional[int], typing.Optional[str]]],
         component_dependencies: typing.List[typing.Tuple[str, typing.Optional[int], typing.Optional[str], typing.Optional[str]]],
         file_dependencies: typing.List[typing.Tuple[int, int, typing.Optional[str], typing.Optional[bool], typing.Optional[str]]],
@@ -140,7 +145,7 @@ def object_data_to_html(
 
     if cache_entry is not None:
         cached_html: typing.Optional[str] = cache_entry.html
-        object_dependencies = typing.cast(typing.Set[typing.Tuple[int, typing.Optional[str], typing.Optional[int]]], {tuple(object_dependency) for object_dependency in cache_entry.object_dependencies})
+        object_dependencies = typing.cast(typing.Set[typing.Tuple[int, typing.Optional[str], typing.Optional[int], typing.Optional[int]]], {tuple(object_dependency) for object_dependency in cache_entry.object_dependencies})
         user_dependencies = typing.cast(typing.Set[typing.Tuple[int, typing.Optional[int], typing.Optional[str]]], {tuple(user_dependency) for user_dependency in cache_entry.user_dependencies})
         component_dependencies = typing.cast(typing.Set[typing.Tuple[str, typing.Optional[int], typing.Optional[str], typing.Optional[str]]], {tuple(component_dependency) for component_dependency in cache_entry.component_dependencies})
         file_dependencies = typing.cast(typing.Set[typing.Tuple[int, int, typing.Optional[str], typing.Optional[bool], typing.Optional[str]]], {tuple(file_dependency) for file_dependency in cache_entry.file_dependencies})
@@ -148,7 +153,7 @@ def object_data_to_html(
         if cached_html is not None and object_dependencies:
             local_object_ids = set()
             for object_dependency in object_dependencies:
-                referenced_object_id, component_uuid, _ = object_dependency
+                referenced_object_id, component_uuid, _, _ = object_dependency
                 if component_uuid is None:
                     local_object_ids.add(referenced_object_id)
             local_objects = get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ, object_ids=list(local_object_ids), name_only=True)
@@ -156,12 +161,12 @@ def object_data_to_html(
                 object.object_id: object
                 for object in local_objects
             }
-            for referenced_object_id, component_uuid, object_version_or_none in object_dependencies:
+            for referenced_object_id, component_uuid, requested_object_version_id_or_none, used_object_version_or_none in object_dependencies:
                 if component_uuid is None:
                     object_or_none = local_objects_by_id.get(referenced_object_id)
                 else:
-                    object_or_none = _get_object_if_current_user_has_read_permissions(object_id=referenced_object_id, component_uuid=component_uuid)
-                if object_version_or_none != (object_or_none.version_id if object_or_none is not None else None):
+                    object_or_none = _get_object_if_current_user_has_read_permissions(object_id=referenced_object_id, component_uuid=component_uuid, version_id=requested_object_version_id_or_none)
+                if used_object_version_or_none != (object_or_none.version_id if object_or_none is not None else None):
                     cached_html = None
                     break
         if cached_html is not None and user_dependencies:
@@ -246,8 +251,10 @@ def object_data_to_html(
                     user_dependencies.add((user_id, component_id, None))
             if 'object_id' in property_data:
                 referenced_object_id = property_data['object_id']
-                object_or_none = _get_object_if_current_user_has_read_permissions(object_id=referenced_object_id, component_uuid=component_uuid)
-                object_dependencies.add((referenced_object_id, component_uuid, object_or_none.version_id if object_or_none is not None else None))
+                requested_object_version_id_or_none = property_data.get('version_id', None)
+                object_or_none = _get_object_if_current_user_has_read_permissions(object_id=referenced_object_id, component_uuid=component_uuid, version_id=requested_object_version_id_or_none)
+                used_object_version_or_none = object_or_none.version_id if object_or_none is not None else None
+                object_dependencies.add((referenced_object_id, component_uuid, requested_object_version_id_or_none, used_object_version_or_none))
             if 'file_id' in property_data:
                 file_id = property_data['file_id']
                 try:

@@ -253,6 +253,7 @@ def set_initial_permissions(obj: Object, user_id: typing.Optional[int] = None) -
 @dataclasses.dataclass(frozen=True)
 class ObjectInfo:
     object_id: int
+    version_id: int
     name_json: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
     action_id: typing.Optional[int]
     max_permission: int
@@ -299,14 +300,14 @@ def get_object_info_with_permissions(
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
-            o.object_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name, o.eln_import_id, o.eln_object_id
+            o.object_id, o.version_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name, o.eln_import_id, o.eln_object_id
         FROM objects_current AS o
         LEFT JOIN components AS c ON c.id = o.component_id
         """)
     else:
         stmt = db.text("""
         SELECT
-            o.object_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name, o.eln_import_id, o.eln_object_id
+            o.object_id, o.version_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name, o.eln_import_id, o.eln_object_id
         FROM (
             SELECT
             object_id, MAX(permissions_int) AS max_permission
@@ -321,6 +322,7 @@ def get_object_info_with_permissions(
 
     stmt = stmt.columns(
         Objects._current_table.c.object_id,
+        Objects._current_table.c.version_id,
         sqlalchemy.sql.expression.column('name_json'),
         Objects._current_table.c.action_id,
         sqlalchemy.sql.expression.column('max_permission'),
@@ -362,6 +364,7 @@ def get_object_info_with_permissions(
     return [
         ObjectInfo(
             object_id=object_info.object_id,
+            version_id=object_info.version_id,
             name_json=object_info.name_json,
             action_id=object_info.action_id,
             max_permission=object_info.max_permission,
@@ -685,13 +688,19 @@ def copy_permissions(target_object_id: int, source_object_id: int) -> None:
     object_permissions.copy_permissions(source_resource_id=source_object_id, target_resource_id=target_object_id)
 
 
-def get_object_if_user_has_permissions(user_id: int, permissions: Permissions, object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
+def get_object_if_user_has_permissions(
+        user_id: int,
+        permissions: Permissions,
+        object_id: int,
+        component_uuid: typing.Optional[str] = None,
+        version_id: typing.Optional[int] = None,
+) -> typing.Optional[Object]:
     if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
         try:
             if permissions not in get_user_object_permissions(object_id, user_id):
                 return None
             else:
-                return objects.get_object(object_id)
+                return objects.get_object(object_id, version_id)
         except errors.ObjectDoesNotExistError:
             return None
     else:

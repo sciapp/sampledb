@@ -5,7 +5,7 @@
     {% endif %}
     {% if data.object_id not in included_referenced_object_ids %}
       {% do included_referenced_object_ids.append(data.object_id) %}
-      {% set referenced_object = get_object_if_current_user_has_read_permissions(data.object_id) %}
+      {% set referenced_object = get_object_if_current_user_has_read_permissions(data.object_id, none, data.get('version_id')) %}
       {% if referenced_object and referenced_object.data %}
         {% set object_id = referenced_object.object_id %}
         {% set id_prefix_root = "object_reference_" ~ (id_prefix | get_hash) ~ "_" ~ referenced_object.object_id %}
