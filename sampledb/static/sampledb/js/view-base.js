@@ -240,6 +240,18 @@ $(function () {
       const workflowView = $(this).attr('data-workflow_view');
       $('#workflowModal-' + workflowView).modal('show');
     });
+    $('.workflow-outdated-references-toggle').each(function () {
+      const toggle = $(this);
+      const initiallyChecked = toggle.attr('data-initially-checked') === 'true';
+      toggle.prop('checked', initiallyChecked);
+      if (typeof toggle.bootstrapToggle === 'function') {
+        toggle.bootstrapToggle(initiallyChecked ? 'on' : 'off');
+      }
+      $('.workflow-outdated-references-' + toggle.attr('data-workflow-id')).toggle(initiallyChecked);
+    }).on('change', function () {
+      const toggle = $(this);
+      $('.workflow-outdated-references-' + toggle.attr('data-workflow-id')).toggle(toggle.prop('checked'));
+    });
     if (window.getTemplateValue('files_enabled')) {
       const changeHandler = function () {
         const files = $('#input-file-upload').get(0).files;

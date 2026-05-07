@@ -30,6 +30,7 @@ DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "FULL_WIDTH_OBJECTS_TABLE": None,
     "WORKFLOW_VIEW_MODALS": None,
     "WORKFLOW_VIEW_COLLAPSED": None,
+    "WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES": None,
     "USE_ADMIN_PERMISSIONS": False,
     "SHOW_INVITATION_LOG": False,
     "SHOW_HIDDEN_USERS_AS_ADMIN": True,
@@ -140,7 +141,14 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
             return key in {'OBJECTS_PER_PAGE'}
         return isinstance(value, type(default_value))
     # custom data type verification can be included here
-    if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'FULL_WIDTH_OBJECTS_TABLE', 'WORKFLOW_VIEW_MODALS', 'WORKFLOW_VIEW_COLLAPSED'}:
+    if key in {
+        'SHOW_OBJECT_TITLE',
+        'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+        'FULL_WIDTH_OBJECTS_TABLE',
+        'WORKFLOW_VIEW_MODALS',
+        'WORKFLOW_VIEW_COLLAPSED',
+        'WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES',
+    }:
         return value is None or isinstance(value, bool)
     if key in {'SORT_REFERENCABLE_OBJECTS'}:
         return value is None or isinstance(value, str)

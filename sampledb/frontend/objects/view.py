@@ -202,6 +202,7 @@ def object(object_id: int) -> FlaskResponseT:
         "show_object_title": user_settings["SHOW_OBJECT_TITLE"],
         "workflow_view_modals": flask.current_app.config['WORKFLOW_VIEW_MODALS'] if user_settings['WORKFLOW_VIEW_MODALS'] is None else user_settings['WORKFLOW_VIEW_MODALS'],
         "workflow_view_collapsed": flask.current_app.config['WORKFLOW_VIEW_COLLAPSED'] if user_settings['WORKFLOW_VIEW_COLLAPSED'] is None else user_settings['WORKFLOW_VIEW_COLLAPSED'],
+        "workflow_view_show_outdated_references": flask.current_app.config['WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES'] if user_settings['WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES'] is None else user_settings['WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES'],
     })
 
     # QR code
