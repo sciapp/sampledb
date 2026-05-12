@@ -988,7 +988,7 @@
     <tr>
       {% if edit_location or create_from_objects or generate_labels or edit_permissions %}
         {% if edit_location %}
-          {% set disabled_checkbox_reason =  _('You need at least write permission to change the location of an object.')  %}
+          {% set disabled_checkbox_reason =  _('You need at least write permission to change the location of an object and location assignments need to be enabled for the action type of the object.')  %}
         {% elif create_from_objects %}
           {% set disabled_checkbox_reason = _('The object cannot be used in a %(action_type_name)s Action.', action_type_name=use_in_action_type.name|get_translated_text) %}
         {% elif generate_labels %}
