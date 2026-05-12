@@ -11,19 +11,20 @@ import typing
 import flask
 import flask_login
 import markupsafe
+import requests
 import werkzeug
 from flask_babel import _
 
 from .. import frontend
 from ... import logic
 from ... import models
-from ...logic import user_log, object_sorting
+from ...logic import user_log, object_sorting, background_tasks, errors
 from ...logic.instruments import get_instruments, get_instrument
 from ...logic.actions import get_action, Action
 from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import get_objects_with_permissions, get_object_info_with_permissions, ObjectInfo
-from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists, User
+from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists, User, get_users_for_component
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.groups import get_group
@@ -34,10 +35,11 @@ from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
-from ...logic.shares import get_shares_for_object
+from ...logic.federation.update import update_poke_component
+from ...logic.shares import add_object_share, update_object_share, get_share, ObjectShare, get_shares_for_object, merge_policies
 from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ...logic.utils import get_translated_text, relative_url_for
-from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
+from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm, MultiObjectNewShareAccessForm
 from .permissions import get_object_if_current_user_has_read_permissions
 from ..labels import PAGE_SIZES, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
 from ...models import Permissions
@@ -138,9 +140,13 @@ def objects() -> FlaskResponseT:
     edit_location = flask.request.args.get('edit_location', default=False, type=lambda k: k.lower() == 'true')
     create_from_objects = flask.request.args.get('create_from_objects', default=False, type=lambda k: k.lower() == 'true')
     edit_permissions = flask.request.args.get('edit_permissions', default=False, type=lambda k: k.lower() == 'true')
+    share_with_other_database = flask.request.args.get('share_with_other_database', default=False, type=lambda k: k.lower() == 'true')
     use_in_action_type_id = flask.request.args.get('use_in_action_type', default=None, type=int)
     generate_labels = flask.request.args.get('generate_labels', default=False, type=lambda k: k.lower() == 'true')
 
+    all_components = logic.components.get_components()
+    if share_with_other_database and not all_components:
+        share_with_other_database = False
     name_only = True
     implicit_action_type = None
     object_ids_str = flask.request.form.get('ids', flask.request.args.get('ids', ''))
@@ -195,7 +201,6 @@ def objects() -> FlaskResponseT:
         filter_project_permissions = None
         filter_origin_ids: typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]] = None
         all_publications = []
-        all_components = []
     else:
         pagination_enabled = True
         sorting_enabled = True
@@ -399,7 +404,6 @@ def objects() -> FlaskResponseT:
             name_only = False
 
         all_publications = logic.publications.get_publications_for_user(flask_login.current_user.id)
-        all_components = logic.components.get_components()
 
         if flask.request.args.get('limit', '') == 'all':
             pagination_limit = None
@@ -951,6 +955,8 @@ def objects() -> FlaskResponseT:
     use_in_action_form = None
     generate_labels_form = None
     edit_permissions_form = None
+    share_with_other_database_form = None
+    component_users = {}
     user_is_fed: typing.Dict[str, bool] = {}
     english = None
     all_languages = []
@@ -962,6 +968,7 @@ def objects() -> FlaskResponseT:
     current_permissions_normal_entities: typing.Dict[str, typing.Dict[int, typing.Dict[int, str]]] = {}
     groups_treepicker_info = None
     projects_treepicker_info = None
+    existing_shares_by_object_id: typing.Dict[int, typing.List[ObjectShare]] = {}
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
         all_choices, choices = get_locations_form_data(filter=lambda location: location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments))
@@ -1022,10 +1029,11 @@ def objects() -> FlaskResponseT:
         if flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
             current_permissions_special_groups['anonymous'] = {}
 
+        permissions_by_object_id = logic.object_permissions.get_user_permissions_for_multiple_objects(flask_login.current_user.id, [object['object_id'] for object in objects])
         for object in objects:
             object_id = object['object_id']
 
-            if logic.object_permissions.get_user_object_permissions(object_id, user_id=flask_login.current_user.id) < Permissions.GRANT:
+            if permissions_by_object_id.get(object_id, Permissions.NONE) < Permissions.GRANT:
                 continue
 
             objects_allowed_to_select.append(object_id)
@@ -1052,6 +1060,41 @@ def objects() -> FlaskResponseT:
 
         groups_treepicker_info = get_groups_form_data(basic_group_filter=lambda group: True)[1]
         projects_treepicker_info = get_groups_form_data(project_group_filter=lambda project: True)[1]
+
+    elif share_with_other_database:
+        share_with_other_database_form = MultiObjectNewShareAccessForm()
+        share_with_other_database_form.data.data = True
+        share_with_other_database_form.action.data = True
+        share_with_other_database_form.users.data = True
+        share_with_other_database_form.files.data = True
+        share_with_other_database_form.comments.data = True
+        share_with_other_database_form.object_location_assignments.data = True
+
+        component_users = {
+            component.id: {
+                user.fed_id: user.get_name(include_ref=True, use_local_identity=True)
+                for user in get_users_for_component(component.id, exclude_hidden=False)
+            }
+            for component in all_components
+        }
+
+        permissions_by_object_id = logic.object_permissions.get_user_permissions_for_multiple_objects(flask_login.current_user.id, [object['object_id'] for object in objects])
+        existing_shares_by_object_id = {}
+        for object in objects:
+            object_id = object['object_id']
+
+            if object['component_id'] is not None:
+                continue
+
+            if object['eln_object_id'] is not None:
+                continue
+
+            if permissions_by_object_id.get(object_id, Permissions.NONE) < Permissions.GRANT:
+                continue
+
+            objects_allowed_to_select.append(object_id)
+
+            existing_shares_by_object_id[object_id] = logic.shares.get_shares_for_object(object_id)
 
     else:
         create_from_objects = False
@@ -1176,6 +1219,10 @@ def objects() -> FlaskResponseT:
         VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
         edit_permissions=edit_permissions,
         edit_permissions_form=edit_permissions_form,
+        share_with_other_database=share_with_other_database,
+        share_with_other_database_form=share_with_other_database_form,
+        component_users=component_users,
+        existing_shares_by_object_id=existing_shares_by_object_id,
         current_permissions_special_groups=current_permissions_special_groups,
         current_permissions_normal_entities=current_permissions_normal_entities,
         groups_treepicker_info=groups_treepicker_info,
@@ -1850,3 +1897,90 @@ def multiselect_permissions() -> FlaskResponseT:
         flask.flash(_('Updated permissions successfully.'), 'success')
         return flask.redirect(flask.url_for('.objects', ids=edit_permissions_form.objects.data))
     return flask.redirect(flask.url_for('.objects'))
+
+
+@frontend.route("/multiselect_share", methods=["POST"])
+@flask_login.login_required
+def multiselect_share() -> FlaskResponseT:
+    share_with_other_database_form = MultiObjectNewShareAccessForm()
+    if not share_with_other_database_form.validate_on_submit():
+        flask.flash(_("A problem occurred while sharing the object. Please try again."), 'error')
+        return flask.redirect(flask.url_for('.objects', share_with_other_database=True))
+
+    object_ids = list(map(int, share_with_other_database_form.objects.data.split(',')))
+    permissions_by_object_id = logic.object_permissions.get_user_permissions_for_multiple_objects(user_id=flask_login.current_user.id, object_ids=object_ids)
+    for object_id in object_ids:
+        if permissions_by_object_id.get(object_id, Permissions.NONE) < Permissions.GRANT:
+            flask.abort(403)
+        object = get_object(object_id)
+        if object.component_id is not None:
+            flask.abort(403)
+        if object.eln_object_id is not None:
+            flask.abort(403)
+    component_id = share_with_other_database_form.component_id.data
+    component = get_component(component_id)
+    policy = {
+        'access': {
+            'data': share_with_other_database_form.data.data,
+            'action': share_with_other_database_form.action.data,
+            'users': share_with_other_database_form.users.data,
+            'files': share_with_other_database_form.files.data,
+            'comments': share_with_other_database_form.comments.data,
+            'object_location_assignments': share_with_other_database_form.object_location_assignments.data,
+        },
+        'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
+    }
+    allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+    policy_permissions_are_valid = False
+    for attr_name, value in flask.request.form.items():
+        if attr_name.startswith('permissions_add_policy_user_'):
+            user_id_str = attr_name[len('permissions_add_policy_user_'):]
+            try:
+                user_id = str(int(user_id_str))
+            except ValueError:
+                break
+            if value not in allowed_permissions:
+                break
+            policy['permissions']['users'][user_id] = value
+        if attr_name.startswith('permissions_add_policy_group_'):
+            basic_group_id_str = attr_name[len('permissions_add_policy_group_'):]
+            try:
+                basic_group_id = str(int(basic_group_id_str))
+            except ValueError:
+                break
+            if value not in allowed_permissions:
+                break
+            policy['permissions']['groups'][basic_group_id] = value
+        if attr_name.startswith('permissions_add_policy_project_'):
+            project_group_id_str = attr_name[len('permissions_add_policy_project_'):]
+            try:
+                project_group_id = str(int(project_group_id_str))
+            except ValueError:
+                break
+            if value not in allowed_permissions:
+                break
+            policy['permissions']['projects'][project_group_id] = value
+    else:
+        policy_permissions_are_valid = True
+    if not policy_permissions_are_valid:
+        flask.flash(_("A problem occurred while sharing the object. Please try again."), 'error')
+        return flask.redirect(flask.url_for('.objects', share_with_other_database=True))
+    for object_id in object_ids:
+        try:
+            add_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
+        except errors.ShareAlreadyExistsError:
+            share = get_share(object_id, component_id)
+            merged_policy = merge_policies(share.policy, policy)
+            update_object_share(object_id, component_id, merged_policy, user_id=flask_login.current_user.id)
+    try:
+        update_poke_component(component)
+    except logic.errors.MissingComponentAddressError:
+        flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
+    except logic.errors.NoAuthenticationMethodError:
+        flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+    except requests.ConnectionError:
+        flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+    for object_id in object_ids:
+        background_tasks.post_trigger_object_permissions_webhooks(object_id)
+    flask.flash(_("Successfully shared objects with %(component_name)s.", component_name=component.get_name()), 'success')
+    return flask.redirect(flask.url_for('.objects', ids=share_with_other_database_form.objects.data))
