@@ -1,0 +1,39 @@
+{% set workflow_reference_icon_referenced_current = workflow_reference_icon_elem.is_referenced and workflow_reference_icon_elem.is_current_referenced %}
+{% set workflow_reference_icon_referencing_current = workflow_reference_icon_elem.is_referencing and workflow_reference_icon_elem.is_current_referencing %}
+{% set workflow_reference_icon_referenced_outdated = workflow_reference_icon_elem.is_referenced and not workflow_reference_icon_elem.is_current_referenced %}
+{% set workflow_reference_icon_referencing_outdated = workflow_reference_icon_elem.is_referencing and not workflow_reference_icon_elem.is_current_referencing %}
+{% if workflow_reference_icon_referenced_current or workflow_reference_icon_referencing_current or workflow_reference_icon_referenced_outdated or workflow_reference_icon_referencing_outdated %}
+  {% set workflow_reference_icon_show_referenced = workflow_reference_icon_referenced_current or workflow_reference_icon_referenced_outdated %}
+  {% set workflow_reference_icon_show_referencing = workflow_reference_icon_referencing_current or workflow_reference_icon_referencing_outdated %}
+  {% set workflow_reference_icon_show_both_directions = workflow_reference_icon_show_referenced and workflow_reference_icon_show_referencing %}
+  {% set workflow_reference_icon_has_outdated_reference = workflow_reference_icon_referenced_outdated or workflow_reference_icon_referencing_outdated %}
+  {% if workflow_reference_icon_has_outdated_reference %}
+    {% set workflow_reference_icon_title = _('This reference is outdated, please check the current object information.') %}
+  {% elif workflow_reference_icon_referenced_current and workflow_reference_icon_referencing_current %}
+    {% set workflow_reference_icon_title = _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=wfpath_object.name | get_translated_text(default='-'), object_id=wfpath_object.id) %}
+  {% elif workflow_reference_icon_referenced_current %}
+    {% set workflow_reference_icon_title = _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=wfpath_object.name | get_translated_text(default='-'), object_id=wfpath_object.id) %}
+  {% else %}
+    {% set workflow_reference_icon_title = _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=wfpath_object.name | get_translated_text(default='-'), object_id=wfpath_object.id) %}
+  {% endif %}
+  <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="{% if workflow_reference_icon_referenced_current and workflow_reference_icon_referencing_current and not workflow_reference_icon_has_outdated_reference %}right{% else %}top{% endif %}" title="{{ workflow_reference_icon_title }}">
+    {% if workflow_reference_icon_referenced_current %}
+      <i class="fa fa-arrow-left fa-stack-1x"></i>
+    {% endif %}
+    {% if workflow_reference_icon_referencing_current %}
+      <i class="fa fa-arrow-right fa-stack-1x" {% if workflow_reference_icon_show_both_directions %}style="position: absolute; transform: translate(0.4em, 0em);"{% endif %}></i>
+    {% endif %}
+    {% if workflow_reference_icon_referenced_outdated %}
+      <i class="fa fa-arrow-left fa-stack-1x workflow-outdated-references workflow-outdated-references-{{ workflow_id }}" {% if not workflow_view_show_outdated_references %}style="display:none"{% endif %}></i>
+      <i class="fa fa-exclamation-triangle fa-stack-1x workflow-outdated-references workflow-outdated-references-{{ workflow_id }}" style="position: absolute; transform: translate({% if workflow_reference_icon_show_both_directions %}-0.25em{% else %}0.25em{% endif %}, -0.65em); font-size: 0.65em; color: orangered;{% if not workflow_view_show_outdated_references %} display:none;{% endif %}"></i>
+    {% endif %}
+    {% if workflow_reference_icon_referencing_outdated %}
+      {% if workflow_reference_icon_show_both_directions %}
+        <i class="fa fa-arrow-right fa-stack-1x workflow-outdated-references workflow-outdated-references-{{ workflow_id }}" style="position: absolute; transform: translate(0.4em, 0em);{% if not workflow_view_show_outdated_references %} display:none;{% endif %}"></i>
+      {% else %}
+        <i class="fa fa-arrow-right fa-stack-1x workflow-outdated-references workflow-outdated-references-{{ workflow_id }}" {% if not workflow_view_show_outdated_references %}style="display:none"{% endif %}></i>
+      {% endif %}
+      <i class="fa fa-exclamation-triangle fa-stack-1x workflow-outdated-references workflow-outdated-references-{{ workflow_id }}" style="position: absolute; transform: translate({% if workflow_reference_icon_show_both_directions %}0.8em{% else %}-0.3em{% endif %}, -0.65em); font-size: 0.65em; color: orangered;{% if not workflow_view_show_outdated_references %} display:none;{% endif %}"></i>
+    {% endif %}
+  </span>
+{% endif %}

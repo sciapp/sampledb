@@ -385,6 +385,8 @@ Miscellaneous
      - Use modals to display workflow views by default if set to True, else the workflow views are displayed directly on the objects page (default: False)
    * - SAMPLEDB_WORKFLOW_VIEW_COLLAPSED
      - Sets if objects in a workflow view should be collapsed or expanded. Set to True to collapse objects, False to expand object contents (default: False).
+   * - SAMPLEDB_WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES
+     - Sets if outdated references should be shown in workflow views by default. Users may override this setting in their preferences. (default: True).
    * - SAMPLEDB_EXTERNAL_LINKS
      - Sets external links, see :ref:`External Links <external_links>`.
    * - SAMPLEDB_SORT_REFERENCABLE_OBJECTS

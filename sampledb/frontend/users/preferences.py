@@ -647,6 +647,15 @@ def _handle_other_settings_forms(
             workflow_view_collapsed = None
         modified_settings['WORKFLOW_VIEW_COLLAPSED'] = workflow_view_collapsed
 
+        workflow_view_show_outdated_references_text = flask.request.form.get('input-workflow-view-show-outdated-references', 'default')
+        if workflow_view_show_outdated_references_text == 'yes':
+            workflow_view_show_outdated_references = True
+        elif workflow_view_show_outdated_references_text == 'no':
+            workflow_view_show_outdated_references = False
+        else:
+            workflow_view_show_outdated_references = None
+        modified_settings['WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES'] = workflow_view_show_outdated_references
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
