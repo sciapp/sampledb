@@ -548,19 +548,42 @@
       </label>
       <div class="radio col-md-8">
         <label>
-          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] is true %}checked="checked"{% endif %}>
           {{ _('Yes &mdash; Collapse objects in workflow views') }}
         </label>
       </div>
       <div class="radio col-md-8 col-md-offset-4">
         <label>
-          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-no" value="no" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-no" value="no" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] is false %}checked="checked"{% endif %}>
           {{ _('No &mdash; Expand objects in workflow views') }}
         </label>
       </div>
       <div class="radio col-md-8 col-md-offset-4">
         <label>
           <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-default" value="default" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-workflow-view-show-outdated-references-yes">
+        {{ _('Show outdated references in workflow views') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-workflow-view-show-outdated-references" id="input-workflow-view-show-outdated-references-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES"] is true %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Show outdated references in workflow views') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-show-outdated-references" id="input-workflow-view-show-outdated-references-no" value="no" {% if user_settings["WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Hide outdated references in workflow views') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-show-outdated-references" id="input-workflow-view-show-outdated-references-default" value="default" {% if user_settings["WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES"] is none %}checked="checked"{% endif %}>
           {{ _('Default &mdash; Use the site-wide default setting') }}
         </label>
       </div>
