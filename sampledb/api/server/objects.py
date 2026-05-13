@@ -1,32 +1,107 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
-
 import json
 import typing
+from dataclasses import dataclass
+from functools import cached_property
 
 import flask
+from pydantic import BaseModel, Field, Strict, ValidationInfo, model_validator
+from pydantic_core import PydanticCustomError
 
-from ..utils import Resource, ResponseData
-from ...utils import text_to_bool
-from ...api.server.authentication import multi_auth, object_permissions_required
-from ...logic.action_types import check_action_type_exists
-from ...logic.actions import get_action, check_action_exists
-from ...logic.action_permissions import get_user_action_permissions
-from ...logic.object_search import generate_filter_func, wrap_filter_func
-from ...logic.objects import get_object, update_object, create_object
-from ...logic.object_permissions import get_objects_with_permissions
-from ...logic.object_relationships import get_referencing_object_ids, get_related_object_ids
-from ...logic.schemas.data_diffs import apply_diff, calculate_diff
-from ...logic import errors, users
 from ... import models
+from ...api.server.authentication import (multi_auth,
+                                          object_permissions_required)
+from ...logic import errors, users
+from ...logic.action_permissions import get_user_action_permissions
+from ...logic.action_types import check_action_type_exists
+from ...logic.actions import Action, check_action_exists, get_action
+from ...logic.object_permissions import get_objects_with_permissions
+from ...logic.object_relationships import (get_referencing_object_ids,
+                                           get_related_object_ids)
+from ...logic.object_search import generate_filter_func, wrap_filter_func
+from ...logic.objects import create_object, get_object, update_object
+from ...logic.schemas.data_diffs import apply_diff, calculate_diff
 from ...models import Permissions
-
-from .users import user_to_json
+from ...utils import text_to_bool
+from ..utils import Resource, ResponseData
 from .actions import action_to_json
+from .users import user_to_json
+from .validation_utils import (ModelWithDefaultsFromValidationInfo,
+                               OptionalNotNone, ValidatingError,
+                               populate_missing_or_expect_from_validation_info,
+                               validate)
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+@dataclass(frozen=True, slots=True)
+class _ValidationContext:
+    object: models.Object
+
+
+class _ObjectVersion(ModelWithDefaultsFromValidationInfo):
+    object_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.object_id)]
+    fed_object_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_object_id)]
+    fed_version_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_version_id)]
+    component_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.component_id)]
+    version_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.version_id + 1)]
+    action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.action_id)]
+    action_schema: typing.Annotated[
+        OptionalNotNone[typing.Dict[str, typing.Any]],
+        Field(validation_alias="schema"),
+    ]
+    data: OptionalNotNone[typing.Dict[str, typing.Any]]
+    data_diff: OptionalNotNone[typing.Dict[str, typing.Any]]
+
+    @cached_property
+    def action(self) -> Action:
+        try:
+            return get_action(action_id=self.action_id)
+        except errors.ActionDoesNotExistError:
+            raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
+
+    @model_validator(mode="after")
+    def check_action_and_schema(self, info: ValidationInfo[_ValidationContext]) -> typing.Self:
+        if self.action_schema not in (None, info.context.object.schema, self.action.schema):
+            raise PydanticCustomError(
+                "unexpected",
+                f"Schema should be {json.dumps(info.context.object.schema, indent=4)} or {json.dumps(self.action.schema, indent=4)}",
+                {"expected": self.action.schema},
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_data_specified(self) -> typing.Self:
+        if (self.data, self.data_diff) == (None, None):
+            raise PydanticCustomError("missing", "At least one required: data, data_diff")
+        return self
+
+
+class _Object(BaseModel):
+    fed_object_id: None = None
+    fed_version_id: None = None
+    component_id: None = None
+    version_id: typing.Literal[0] = 0
+    action_id: typing.Annotated[int, Strict()]
+    action_schema: typing.Annotated[
+        OptionalNotNone[typing.Dict[str, typing.Any]],
+        Field(validation_alias="schema"),
+    ]
+    data: typing.Dict[str, typing.Any]
+
+    @cached_property
+    def action(self) -> Action:
+        try:
+            return get_action(action_id=self.action_id)
+        except errors.ActionDoesNotExistError:
+            raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
+
+    @model_validator(mode="after")
+    def check_action_and_schema(self) -> typing.Self:
+        if self.action_schema not in (None, self.action.schema):
+            raise PydanticCustomError(
+                "unexpected",
+                f"Schema should be {json.dumps(self.action.schema, indent=4)}",
+                {"expected": self.action.schema},
+            )
+        return self
 
 
 class ObjectVersion(Resource):
@@ -83,62 +158,19 @@ class ObjectVersions(Resource):
     @object_permissions_required(Permissions.WRITE)
     def post(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
-            return {
-                "message": "JSON object body required"
-            }, 400
-        for key in request_json:
-            if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data', 'data_diff'}:
-                return {
-                    "message": f"invalid key '{key}'"
-                }, 400
         object = get_object(object_id=object_id)
         if object.action_id is None:
             return {
                 "message": "editing this object is not supported"
             }, 400
-        action = get_action(action_id=object.action_id)
-        if 'object_id' in request_json:
-            if request_json['object_id'] != object.object_id:
-                return {
-                    "message": f"object_id must be {object.object_id}"
-                }, 400
-        if 'component_id' in request_json:
-            if request_json['component_id'] != object.component_id:
-                return {
-                    "message": f"component_id must be {object.component_id}"
-                }, 400
-        if 'fed_version_id' in request_json:
-            if request_json['fed_version_id'] != object.fed_version_id:
-                return {
-                    "message": f"fed_version_id must be {object.fed_version_id}"
-                }, 400
-        if 'fed_object_id' in request_json:
-            if request_json['fed_object_id'] != object.fed_object_id:
-                return {
-                    "message": f"fed_object_id must be {object.fed_object_id}"
-                }, 400
-        if 'version_id' in request_json:
-            if request_json['version_id'] != object.version_id + 1:
-                return {
-                    "message": f"version_id must be {object.version_id + 1}"
-                }, 400
-        if 'action_id' in request_json:
-            if request_json['action_id'] != object.action_id:
-                return {
-                    "message": f"action_id must be {object.action_id}"
-                }, 400
-        if 'schema' in request_json:
-            if request_json['schema'] != object.schema and request_json['schema'] != action.schema:
-                return {
-                    "message": f"schema must be either:\n{json.dumps(object.schema, indent=4)}\nor:\n{json.dumps(action.schema, indent=4)}"
-                }, 400
-            schema = request_json['schema']
-        else:
-            schema = object.schema
+        try:
+            request_data = validate(_ObjectVersion, request_json, context=_ValidationContext(object))
+        except ValidatingError as e:
+            return e.response
+        schema = object.schema if request_data.action_schema is None else request_data.action_schema
 
-        data = request_json.get('data')
-        data_diff = request_json.get('data_diff')
+        data = request_data.data
+        data_diff = request_data.data_diff
         try:
             if data_diff is not None:
                 if object.data is None or object.schema is None:
@@ -146,20 +178,12 @@ class ObjectVersions(Resource):
                         "message": "previous object version must contain data and schema"
                     }, 400
                 data_from_diff = apply_diff(object.data, data_diff, object.schema)
-            else:
-                data_from_diff = None
-            if data is not None and data_diff is not None:
-                if data_from_diff != data:
+                if data is None:
+                    data = data_from_diff
+                elif data_from_diff != data:
                     return {
                         "message": "data and data_diff are conflicting"
                     }, 400
-            if data is None:
-                if data_from_diff is None:
-                    return {
-                        "message": "data or data_diff must be set"
-                    }, 400
-                else:
-                    data = data_from_diff
 
             update_object(
                 object_id=object.id,
@@ -366,76 +390,21 @@ class Objects(Resource):
                 'message': 'user has been marked as read only'
             }, 400
         request_json = flask.request.get_json(force=True)
-        if not isinstance(request_json, dict):
+        try:
+            request_data = validate(_Object, request_json)
+        except ValidatingError as e:
+            return e.response
+        action = request_data.action
+        if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
             return {
-                "message": "JSON object body required"
+                "message": f"creating objects with action {request_data.action_id} is disabled"
             }, 400
-        for key in request_json:
-            if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data'}:
-                return {
-                    "message": f"invalid key '{key}'"
-                }, 400
-        if 'object_id' in request_json:
-            return {
-                "message": "object_id cannot be set"
-            }, 400
-        if 'fed_object_id' in request_json:
-            if request_json['fed_object_id'] is not None:
-                return {
-                    "message": "fed_object_id must be null"
-                }, 400
-        if 'fed_version_id' in request_json:
-            if request_json['fed_version_id'] is not None:
-                return {
-                    "message": "fed_version_id must be null"
-                }, 400
-        if 'component_id' in request_json:
-            if request_json['component_id'] is not None:
-                return {
-                    "message": "component_id must be null"
-                }, 400
-        if 'version_id' in request_json:
-            if request_json['version_id'] != 0:
-                return {
-                    "message": "version_id must be 0"
-                }, 400
-        if 'action_id' in request_json:
-            if not isinstance(request_json['action_id'], int):
-                return {
-                    "message": "action_id must be an integer"
-                }, 400
-            action_id = request_json['action_id']
-            try:
-                action = get_action(action_id=action_id)
-            except errors.ActionDoesNotExistError:
-                return {
-                    "message": f"action {action_id} does not exist"
-                }, 400
-            if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
-                return {
-                    "message": f"creating objects with action {action_id} is disabled"
-                }, 400
-        else:
-            return {
-                "message": "action_id must be set"
-            }, 400
-        if 'schema' in request_json:
-            if request_json['schema'] != action.schema:
-                return {
-                    "message": "schema must be:\n" + json.dumps(action.schema, indent=4)
-                }, 400
-        schema = action.schema
-        if 'data' not in request_json:
-            return {
-                "message": "data must be set"
-            }, 400
-        data = request_json['data']
         try:
             object = create_object(
-                action_id=action_id,
-                data=data,
+                action_id=request_data.action_id,
+                data=request_data.data,
                 user_id=flask.g.user.id,
-                schema=schema
+                schema=action.schema,
             )
         except errors.ValidationError as e:
             messages = e.message.splitlines()

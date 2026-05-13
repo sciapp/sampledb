@@ -1,15 +1,21 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
 import typing
 
 import flask
+from pydantic import BaseModel
 
-from .authentication import multi_auth
-from ..utils import Resource, ResponseData
-from ...logic import errors, projects, users
+from ...logic import errors, projects
 from ...models import Permissions
+from ..utils import Resource, ResponseData
+from .authentication import multi_auth
+from .validation_utils import UserId, ValidatingError, validate
+
+
+class _ProjectMemberUser(BaseModel):
+    permissions: typing.Literal["read", "write", "grant"]
+
+
+class _ProjectMemberUsers(_ProjectMemberUser):
+    user_id: UserId
 
 
 def project_to_json(project: projects.Project) -> typing.Dict[str, typing.Any]:
@@ -97,36 +103,22 @@ class ProjectMemberUsers(Resource):
             return {
                 "message": f"project {project_id} does not exist"
             }, 404
-
         request_json = flask.request.get_json(force=True)
-        user_id = request_json.get('user_id')
-        if type(user_id) is not int:
-            return {
-                "message": "user_id must be int"
-            }, 400
         try:
-            users.check_user_exists(user_id)
-        except errors.UserDoesNotExistError:
-            return {
-                "message": "user does not exist"
-            }, 400
+            request_data = validate(_ProjectMemberUsers, request_json)
+        except ValidatingError as err:
+            return err.response
+        user_id = request_data.user_id
         current_permissions = projects.get_user_project_permissions(project_id=project_id, user_id=user_id, include_groups=False)
         if current_permissions != Permissions.NONE:
             return {
                 "message": "user is already a member of this project"
             }, 400
-        permissions_str = request_json.get('permissions')
-        permissions_str_map = {
+        permissions = {
             'read': Permissions.READ,
             'write': Permissions.WRITE,
             'grant': Permissions.GRANT,
-        }
-        if permissions_str not in permissions_str_map:
-            return {
-                "message": 'permissions must be one of: "read", "write" or "grant"'
-            }, 400
-        else:
-            permissions = permissions_str_map[permissions_str]
+        }[request_data.permissions]
         projects.add_user_to_project(project_id, user_id, permissions=permissions)
         return flask.redirect(flask.url_for('.project_member_user', project_id=project_id, user_id=user_id), code=201)
 
@@ -175,18 +167,15 @@ class ProjectMemberUser(Resource):
                 "message": "user is not a member of this project"
             }, 404
         request_json = flask.request.get_json(force=True)
-        permissions_str = request_json.get('permissions')
-        permissions_str_map = {
+        try:
+            request_data = validate(_ProjectMemberUser, request_json)
+        except ValidatingError as err:
+            return err.response
+        permissions = {
             'read': Permissions.READ,
             'write': Permissions.WRITE,
             'grant': Permissions.GRANT,
-        }
-        if permissions_str not in permissions_str_map:
-            return {
-                "message": 'permissions must be one of: "read", "write" or "grant"'
-            }, 400
-        else:
-            permissions = permissions_str_map[permissions_str]
+        }[request_data.permissions]
         try:
             projects.update_user_project_permissions(project_id=project_id, user_id=user_id, permissions=permissions)
         except errors.NoMemberWithGrantPermissionsForProjectError:

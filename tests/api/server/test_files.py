@@ -1,8 +1,3 @@
-# coding: utf-8
-"""
-
-"""
-
 import base64
 import hashlib
 import io
@@ -72,7 +67,11 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "JSON object body required".format(0, object.object_id)
+        "message": "Input should be an object",
+        "error_details": {
+            "msg": "Input should be an object",
+            "input": [],
+        },
     }
 
     data = {
@@ -83,7 +82,36 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "object_id must be {}".format(object.object_id)
+        "message": f"Input should be {object.object_id} (object_id)",
+        "error_details": {
+            "database": {
+                "without_preview_image": {
+                    "object_id": {
+                        "msg": f"Input should be {object.object_id}",
+                        "input": object.id + 1,
+                    },
+                    "original_file_name": {"msg": "Field required"},
+                    "base64_content": {"msg": "Field required"},
+                    "url": {
+                        "msg": "Extra inputs are not permitted",
+                        "input": "https://iffsamples.fz-juelich.de",
+                    },
+                },
+                "with_preview_image": {
+                    "object_id": {
+                        "msg": f"Input should be {object.object_id}",
+                        "input": object.id + 1,
+                    },
+                    "original_file_name": {"msg": "Field required"},
+                    "base64_content": {"msg": "Field required"},
+                    "base64_preview_image": {"msg": "Field required"},
+                    "url": {
+                        "msg": "Extra inputs are not permitted",
+                        "input": "https://iffsamples.fz-juelich.de",
+                    },
+                },
+            },
+        },
     }
 
     data = {
@@ -91,7 +119,11 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "storage must be set"
+        "message": "Unable to extract tag using discriminator 'storage'",
+        "error_details": {
+            "msg": "Unable to extract tag using discriminator 'storage'",
+            "input": data,
+        },
     }
 
     data = {
@@ -100,7 +132,11 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "storage must be 'local_reference', 'database' or 'url'"
+        "message": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
+        "error_details": {
+            "msg": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
+            "input": data,
+        },
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)
@@ -133,7 +169,16 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "invalid key 'address'"
+        "message": "Field required (url)",
+        "error_details": {
+            "url": {
+                "url": {"msg": "Field required"},
+                "address": {
+                    "msg": "Extra inputs are not permitted",
+                    "input": "https://iffsamples.fz-juelich.de",
+                },
+            },
+        },
     }
 
     data = {
@@ -142,7 +187,8 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "url must be set for files with url storage"
+        "message": "Field required (url)",
+        "error_details": {"url": {"url": {"msg": "Field required"}}},
     }
 
     data = {
@@ -152,7 +198,15 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "url must be a valid url"
+        "message": "String should be a valid URL (url)",
+        "error_details": {
+            "url": {
+                "url": {
+                    "msg": "String should be a valid URL",
+                    "input": "test.txt",
+                },
+            },
+        },
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)
