@@ -17,17 +17,19 @@ window.checkSubmittableImpl = function (submitTooltip, submitButton) {
 };
 
 function checkSubmittable () {
-  const submitTooltip = $('#multiselect-submit-tooltip');
-  const submitButton = $('#multiselect-submit');
+  const submitTooltip = $('.multiselect-submit-tooltip');
+  const submitButton = $('.multiselect-submit');
   const hasInvalidIDs = selectedObjectIDs.some(id => !objectsAllowedToSelect.includes(id));
 
   if (selectedObjectIDs.length === 0) {
     submitTooltip.attr('data-original-title', window.getTemplateValue('translations.select_at_least_one_object')).tooltip('setContent').tooltip('enable');
     submitButton.prop('disabled', true);
+    submitButton.attr('disabled', 'disabled');
     return false;
   } else if (hasInvalidIDs) {
     submitTooltip.attr('data-original-title', window.getTemplateValue('translations.you_do_not_have_write_permissions')).tooltip('setContent').tooltip('enable');
     submitButton.prop('disabled', true);
+    submitButton.attr('disabled', 'disabled');
     return false;
   }
   if (!window.checkSubmittableImpl(submitTooltip, submitButton)) {
@@ -35,6 +37,7 @@ function checkSubmittable () {
   }
   submitTooltip.tooltip('disable');
   submitButton.prop('disabled', false);
+  submitButton.removeAttr('disabled');
   return true;
 }
 
@@ -93,5 +96,6 @@ $(function () {
 export {
   isObjectSelected,
   getSelectableObjectIDs,
-  checkSubmittable
+  checkSubmittable,
+  selectedObjectIDs
 };
