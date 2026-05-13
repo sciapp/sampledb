@@ -977,8 +977,12 @@ def objects() -> FlaskResponseT:
         english = get_language(Language.ENGLISH)
         all_languages = get_languages()
 
-        shown_object_ids = [object['object_id'] for object in objects]
-        objects_allowed_to_select = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
+        shown_object_ids_with_locations_enabled = [
+            object['object_id']
+            for object in objects
+            if object['action'] is not None and object['action'].type is not None and object['action'].type.enable_locations
+        ]
+        objects_allowed_to_select = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids_with_locations_enabled)]
     elif create_from_objects and use_in_action_type_id:
         use_in_action_form = UseInActionForm()
         use_in_action_type = logic.action_types.get_action_type(use_in_action_type_id)
@@ -1678,6 +1682,14 @@ def edit_multiple_locations() -> FlaskResponseT:
 
     for object_id in selected_object_ids:
         if logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id) < Permissions.WRITE:
+            return flask.abort(403)
+    action_ids_for_object_ids = logic.objects.get_action_ids_for_object_ids(selected_object_ids)
+    action_ids = set(action_ids_for_object_ids.values())
+    for action_id in action_ids:
+        if action_id is None:
+            return flask.abort(403)
+        action = logic.actions.get_action(action_id)
+        if action.type is None or not action.type.enable_locations:
             return flask.abort(403)
 
     location_form.location.choices = [('-1', '—')] + [
