@@ -331,9 +331,13 @@ def oidc_callback() -> FlaskResponseT:
         return flask.redirect(flask.url_for('.index'))
 
     try:
+        token = flask.session.pop('oidc_token', None)
+        if not token:
+            raise TemporaryLoginAttemptError()
+
         result = oidc.handle_authentication(
             flask.request.url,
-            flask.session.pop('oidc_token'),
+            token,
         )
     except TemporaryLoginAttemptError:
         return error('Login attempt failed. Please try again. If the error persists, please contact an administrator.')
