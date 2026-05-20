@@ -15,15 +15,15 @@
     {% else %}
       {% set component_uuid = none %}
     {% endif %}
-    {% with obj = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid) %}
+    {% with obj = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid, data.get('version_id')) %}
       {% if not (obj is none) %}
-        <a href="{{ url_for('frontend.object', object_id=obj.object_id, _external=True) }}">{{ obj.name | get_translated_text(metadata_language) or '—' }} (#{{ obj.object_id }})</a>
+        <a href="{% if data.get("version_id") is not none %}{{ url_for('frontend.object_version', object_id=obj.object_id, version_id=obj.version_id, _external=True) }}{% else %}{{ url_for('frontend.object', object_id=obj.object_id, _external=True) }}{% endif %}">{{ obj.name | get_translated_text(metadata_language) or '—' }} (#{{ obj.object_id }}{% if data.get("version_id") is not none %}, version #{{ data.version_id }}{% endif %})</a>
         {{ import_information_symbol(obj, text=true) }}
       {% elif component_uuid is not none %}
-        {{ _('Object') }} #{{ data.object_id }}
+        {{ _('Object') }} #{{ data.object_id }}{% if data.get("version_id") is not none %} (version #{{ data.version_id }}){% endif %}
         {{ import_information_symbol(FederationObjectRef(fed_id=data.object_id, component_uuid=component_uuid), text=true) }}
       {% else %}
-        <a href="{{ url_for('frontend.object', object_id=data.object_id, _external=True) }}">#{{ data.object_id }}</a>
+        <a href="{% if data.get("version_id") is not none %}{{ url_for('frontend.object_version', object_id=data.object_id, version_id=data.version_id, _external=True) }}{% else %}{{ url_for('frontend.object', object_id=data.object_id, _external=True) }}{% endif %}">#{{ data.object_id }}{% if data.get("version_id") is not none %} (version #{{ data.version_id }}){% endif %}</a>
       {% endif %}
     {% endwith %}
   {% endif %}

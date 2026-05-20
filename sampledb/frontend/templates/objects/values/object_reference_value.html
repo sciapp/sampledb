@@ -15,16 +15,16 @@
     {% else %}
       {% set component_uuid = none %}
     {% endif %}
-    {% with referenced_object = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid) %}
+    {% with referenced_object = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid, data.get('version_id')) %}
       {% if referenced_object is not none %}
-        <a href="{{ url_for('frontend.object', object_id=referenced_object.object_id) }}">{{ referenced_object.name | get_translated_text(metadata_language) or '—' }} (#{{ referenced_object.object_id }})</a>
+        <a href="{% if data.get("version_id") is not none %}{{ url_for('frontend.object_version', object_id=referenced_object.object_id, version_id=referenced_object.version_id) }}{% else %}{{ url_for('frontend.object', object_id=referenced_object.object_id) }}{% endif %}">{{ referenced_object.name | get_translated_text(metadata_language) or '—' }} (#{{ referenced_object.object_id }}{% if data.get("version_id") is not none %}, version #{{ data.version_id }}{% endif %})</a>
         {{ import_information_symbol(referenced_object) }}
       {% elif component_uuid is not none %}
         {% set object_ref = FederationObjectRef(fed_id=data.object_id, component_uuid=component_uuid) %}
-        #{{ data.object_id }} @ {{ object_ref.component.get_name() }}
+        #{{ data.object_id }}{% if data.get("version_id") is not none %} (version #{{ data.version_id }}){% endif %} @ {{ object_ref.component.get_name() }}
         {{ import_information_symbol(object_ref) }}
       {% else %}
-        <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
+        <a href="{% if data.get("version_id") is not none %}{{ url_for('frontend.object_version', object_id=data.object_id, version_id=data.version_id) }}{% else %}{{ url_for('frontend.object', object_id=data.object_id) }}{% endif %}">#{{ data.object_id }}{% if data.get("version_id") is not none %} (version #{{ data.version_id }}){% endif %}</a>
       {% endif %}
     {% endwith %}
   {% endif %}

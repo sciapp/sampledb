@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.34
+------------
+
+Currently in development.
+
+- Allow storing version IDs for object reference properties
+
+
 Version 0.33.1
 --------------
 
@@ -10,6 +18,7 @@ Released on April 20th, 2026.
 - Fixed repeated sending of notifications to referenced users
 - Fixed showing the button for creating instrument log entries for users who cannot view instrument log entries
 - Fixed permission checks for instrument log entry attachments
+
 
 Version 0.33
 ------------

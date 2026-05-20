@@ -27,7 +27,8 @@ import {
 } from '../sampledb-load-objects.js';
 
 import {
-  addActionFilterButton
+  addActionFilterButton,
+  setUpVersionPicker
 } from '../object_form/object-reference.js';
 
 import {
@@ -219,6 +220,9 @@ $(function () {
 
   setUpCalculations();
 
+  $('[name^="object__"][name$="__oid"]').each(function () {
+    setUpVersionPicker($(this));
+  });
   $('div.objectpicker').each(function () {
     addActionFilterButton($(this));
   });
@@ -1076,11 +1080,14 @@ function insertFormData () {
     } else if (field.data('markdown-textarea')) {
       field.text(value);
     }
+    if (key.endsWith('__vid') && field.val() === value) {
+      return;
+    }
     field.val(value);
     field.trigger('change');
   });
 
-  $('[type="checkbox"]').each(function () {
+  $('[type="checkbox"][name]').each(function () {
     const name = $(this).attr('name');
     $(this).prop('checked', Object.prototype.hasOwnProperty.call(formData, name));
     $(this).trigger('change');
@@ -1254,6 +1261,9 @@ function updateJSInteractiveFields () {
 
   updateObjectPickers();
 
+  $('[name^="object__"][name$="__oid"]').each(function () {
+    setUpVersionPicker($(this));
+  });
   $.each(objectpickers, function () {
     if ($(this).closest('.error-parent').find('.objectpicker-filter-button').length === 0) {
       addActionFilterButton($(this).parents('.bootstrap-select'));

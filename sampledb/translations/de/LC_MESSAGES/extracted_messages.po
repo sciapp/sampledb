@@ -5986,6 +5986,9 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 msgid "No object selected"
 msgstr "Kein Objekt ausgewählt"
 
+msgid "Specific Version"
+msgstr "Spezifische Version"
+
 msgid "The following languages have been disabled for input:"
 msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
 
