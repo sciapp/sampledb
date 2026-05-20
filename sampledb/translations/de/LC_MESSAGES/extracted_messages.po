@@ -5840,10 +5840,14 @@ msgstr "Erstellt"
 msgid "Last modified"
 msgstr "Zuletzt geändert"
 
-msgid "You need at least write permission to change the location of an object."
+msgid ""
+"You need at least write permission to change the location of an object "
+"and location assignments need to be enabled for the action type of the "
+"object."
 msgstr ""
 "Sie brauchen mindestens Schreib-Berechtigung um den Ort eines Objekts zu "
-"ändern."
+"ändern und Ortzuweisungen müssen für den Aktionstyp des Objekts aktiviert"
+" sein."
 
 #, python-format
 msgid "The object cannot be used in a %(action_type_name)s Action."
