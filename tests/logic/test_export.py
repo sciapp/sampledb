@@ -15,7 +15,8 @@ import minisign
 import pytest
 import rocrate_validator.models
 import rocrate_validator.services
-import rocrate_validator.utils
+import rocrate_validator.utils.paths
+import rocrate_validator.utils.uri
 from rocrate.rocrate import ROCrate
 
 import sampledb
@@ -344,17 +345,17 @@ def test_eln_export(user, app):
                 # which checks that conformsTo is set to RO-Crate 1.1,
                 # and as such fails for crates using version 1.2 instead.
                 result = rocrate_validator.services.validate(rocrate_validator.models.ValidationSettings(
-                    profiles_path=rocrate_validator.utils.get_profiles_path(),
+                    profiles_path=rocrate_validator.utils.paths.get_profiles_path(),
                     profile_identifier="ro-crate-1.1",
                     requirement_severity=severity.name,
-                    rocrate_uri=rocrate_validator.utils.URI(rocrate_dir),
+                    rocrate_uri=rocrate_validator.utils.uri.URI(rocrate_dir),
                 ))
                 result_dict = result.to_dict()
                 if result_dict['issues'] == []:
                     assert result_dict['passed']
                     assert result.passed(severity)
                 else:
-                    assert len(result_dict['issues']) == 2 and result_dict['issues'][0]['check']['identifier'] == 'ro-crate-1.1_5.3' and result_dict['issues'][1]['check']['identifier'] == 'ro-crate-1.1_13.1'
+                    assert len(result_dict['issues']) == 1 and result_dict['issues'][0]['check']['identifier'] == 'ro-crate-1.1_5.3'
 
 
 def test_eln_export_property_values(user, app):
@@ -549,7 +550,7 @@ def test_eln_export_property_values(user, app):
             f'./objects/{object_id}/properties/samples.0',
             f'./objects/{object_id}/properties/samples.1',
             f'./objects/{object_id}/properties/temperature',
-            f'./objects/{object_id}/versions/0/',
+            f'#./objects/{object_id}/versions/0/',
             f'./objects/{object_id}/versions/0/schema.json',
             f'./objects/{object_id}/versions/0/data.json',
             f'./objects/{object_id}/versions/0/properties/check',
@@ -560,7 +561,7 @@ def test_eln_export_property_values(user, app):
             f'./objects/{object_id}/versions/0/properties/samples.0',
             f'./objects/{object_id}/versions/0/properties/samples.1',
             f'./objects/{object_id}/versions/0/properties/temperature',
-            f'./objects/{object_id}/versions/1/',
+            f'#./objects/{object_id}/versions/1/',
             f'./objects/{object_id}/versions/1/schema.json',
             f'./objects/{object_id}/versions/1/data.json',
             f'./objects/{object_id}/versions/1/properties/check',
@@ -577,14 +578,14 @@ def test_eln_export_property_values(user, app):
             f'./objects/{object_id}/files/0/setup.cfg',
             f'./objects/{referenced_object_id1}/',
             f'./objects/{referenced_object_id1}/properties/name',
-            f'./objects/{referenced_object_id1}/versions/0/',
+            f'#./objects/{referenced_object_id1}/versions/0/',
             f'./objects/{referenced_object_id1}/versions/0/schema.json',
             f'./objects/{referenced_object_id1}/versions/0/data.json',
             f'./objects/{referenced_object_id1}/versions/0/properties/name',
             f'./objects/{referenced_object_id1}/files.json',
             f'./users/{user.id}',
         }
-        object_node = nodes_by_id[f'./objects/{object_id}/versions/1/']
+        object_node = nodes_by_id[f'#./objects/{object_id}/versions/1/']
         variables_measured = [
             property_value if 'propertyID' in property_value else nodes_by_id[property_value['@id']]
             for property_value in object_node['variableMeasured']
