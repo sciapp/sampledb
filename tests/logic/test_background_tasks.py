@@ -94,3 +94,32 @@ def test_background_tasks_result_exception(enable_background_tasks):
 
     assert task.status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.FAILED
     assert task.result is None
+
+
+def test_reset_claimed_background_tasks(app):
+    posted_task = sampledb.models.BackgroundTask(
+        type='test',
+        auto_delete=False,
+        data={},
+        status=sampledb.models.BackgroundTaskStatus.POSTED
+    )
+    claimed_task = sampledb.models.BackgroundTask(
+        type='test',
+        auto_delete=False,
+        data={},
+        status=sampledb.models.BackgroundTaskStatus.CLAIMED
+    )
+    done_task = sampledb.models.BackgroundTask(
+        type='test',
+        auto_delete=False,
+        data={},
+        status=sampledb.models.BackgroundTaskStatus.DONE
+    )
+    db.session.add_all([posted_task, claimed_task, done_task])
+    db.session.commit()
+
+    sampledb.logic.background_tasks.reset_claimed_background_tasks()
+
+    assert posted_task.status == sampledb.models.BackgroundTaskStatus.POSTED
+    assert claimed_task.status == sampledb.models.BackgroundTaskStatus.POSTED
+    assert done_task.status == sampledb.models.BackgroundTaskStatus.DONE
