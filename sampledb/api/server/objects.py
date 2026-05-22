@@ -19,7 +19,7 @@ from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
 from ...logic.object_relationships import get_referencing_object_ids, get_related_object_ids
 from ...logic.schemas.data_diffs import apply_diff, calculate_diff
-from ...logic import errors, users
+from ...logic import errors, user_log, users
 from ... import models
 from ...models import Permissions
 
@@ -247,6 +247,18 @@ class Objects(Resource):
                     'message': 'No matching action type exists.'
                 }, 400
 
+        object_ids: set[int] | None = None
+        related_user_id: typing.Optional[int] = None
+        related_user_id_str = flask.request.args.get('related_user_id', None)
+        if related_user_id_str is not None:
+            try:
+                related_user_id = int(related_user_id_str)
+            except ValueError:
+                return {
+                    'message': 'Unable to parse related_user_id'
+                }, 400
+            object_ids = user_log.get_user_related_object_ids(related_user_id)
+
         project_id = None
 
         limit: typing.Optional[int] = None
@@ -296,7 +308,8 @@ class Objects(Resource):
                 project_id=project_id,
                 limit=limit,
                 offset=offset,
-                name_only=name_only
+                name_only=name_only,
+                object_ids=list(object_ids) if object_ids is not None else None,
             )
         except Exception as e:
             search_notes.append(('error', f"Error during search: {e}", 0, 0))
