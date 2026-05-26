@@ -298,9 +298,17 @@ def reset_claimed_background_tasks() -> None:
     retrying tasks which had been claimed when the app last ran, but did not
     finish before it was stopped.
     """
-    claimed_tasks = BackgroundTask.query.filter_by(status=BackgroundTaskStatus.CLAIMED).all()
-    for task in claimed_tasks:
-        print(ansi_color(f"Resetting background task {task} to POSTED.", color=33), file=sys.stderr)
-        task.status = BackgroundTaskStatus.POSTED
-        db.session.add(task)
+    stmt = (
+        db.update(
+            BackgroundTask
+        ).where(
+            BackgroundTask.status == BackgroundTaskStatus.CLAIMED
+        ).values(
+            status=BackgroundTaskStatus.POSTED
+        )
+    )
+    with db.engine.begin() as connection:
+        updated_rowcount = connection.execute(stmt).rowcount
+    if updated_rowcount:
+        print(ansi_color(f"Reset {updated_rowcount} claimed background task(s) to POSTED.", color=33), file=sys.stderr)
     db.session.commit()
