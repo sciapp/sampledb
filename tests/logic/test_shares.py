@@ -8,7 +8,7 @@ import pytest
 from sampledb import models, db
 from sampledb import logic
 from sampledb.logic import errors
-from sampledb.logic.shares import add_object_share, update_object_share, get_share, get_object_if_shared, get_shares_for_object, get_shares_for_component, get_all_shares
+from sampledb.logic.shares import add_object_share, update_object_share, get_share, get_object_if_shared, get_shares_for_object, get_shares_for_component, get_all_shares, merge_policies
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
 UUID_2 = '1e59c517-bd11-4390-aeb4-971f20b06612'
@@ -262,3 +262,100 @@ def test_get_all_shares(objects, components):
     assert share2 in shares
     assert share3 in shares
     assert share4 in shares
+
+def test_merge_shares():
+    assert merge_policies() == {
+        'access': {
+            'data': False,
+            'action': False,
+            'users': False,
+            'files': False,
+            'comments': False,
+            'object_location_assignments': False
+        },
+        'permissions': {
+            'users': {},
+            'groups': {},
+            'projects': {},
+            'all_users': 'none'
+        }
+    }
+
+    assert merge_policies({
+        'access': {
+            'data': True,
+            'action': False,
+            'users': False,
+            'files': False,
+            'comments': False,
+            'object_location_assignments': False
+        },
+        'permissions': {
+            'users': {'1': 'read'},
+            'groups': {'2': 'write'},
+            'projects': {'3': 'grant'},
+            'all_users': 'read'
+        }
+    }) == {
+        'access': {
+            'data': True,
+            'action': False,
+            'users': False,
+            'files': False,
+            'comments': False,
+            'object_location_assignments': False
+        },
+        'permissions': {
+            'users': {'1': 'read'},
+            'groups': {'2': 'write'},
+            'projects': {'3': 'grant'},
+            'all_users': 'read'
+        }
+    }
+
+    assert merge_policies({
+        'access': {
+            'data': True,
+            'action': False,
+            'users': False,
+            'files': False,
+            'comments': False,
+            'object_location_assignments': False
+        },
+        'permissions': {
+            'users': {'1': 'read'},
+            'groups': {'2': 'write'},
+            'projects': {'3': 'grant'},
+            'all_users': 'read'
+        }
+    }, {
+        'access': {
+            'data': False,
+            'action': False,
+            'users': True,
+            'files': False,
+            'comments': False,
+            'object_location_assignments': False
+        },
+        'permissions': {
+            'users': {'1': 'write'},
+            'groups': {'2': 'write'},
+            'projects': {'3': 'read', '4': 'write'},
+            'all_users': 'write'
+        }
+    }) == {
+        'access': {
+            'data': True,
+            'action': False,
+            'users': True,
+            'files': False,
+            'comments': False,
+            'object_location_assignments': False
+        },
+        'permissions': {
+            'users': {'1': 'write'},
+            'groups': {'2': 'write'},
+            'projects': {'3': 'grant', '4': 'write'},
+            'all_users': 'write'
+        }
+    }
