@@ -55,7 +55,11 @@ def load_user(user_id: typing.Any) -> typing.Optional[User]:
             login_session = get_login_session(int(user_id[1:]))
             if login_session.type == AuthenticationType.OIDC and not oidc.validate_login_session(login_session):
                 flask.session.clear()
-                flask.flash(_('You have been signed out due to inactivity or a remote sign out.'), 'info')
+                if not oidc.is_oidc_only_auth_method():
+                    # If OIDC is set as the only used auth method, the login
+                    # page will be skipped and this message would likely be
+                    # shown after the user authenticates again.
+                    flask.flash(_('You have been signed out due to inactivity or a remote sign out.'), 'info')
                 return None
             user = get_user(login_session.user_id).with_login_session(login_session.id)
         else:
