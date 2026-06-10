@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get install -y gcc git
 
 # It's important to keep the same path in builder image and final image
-RUN useradd -ms /bin/bash sampledb
+RUN useradd -ms /bin/bash -g 0 sampledb
 USER sampledb
 WORKDIR /home/sampledb
 
@@ -45,23 +45,25 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
-RUN useradd -ms /bin/bash sampledb
+RUN useradd -ms /bin/bash -g 0 sampledb
 USER sampledb
 WORKDIR /home/sampledb
+RUN chmod 775 /home/sampledb
 
 # Python specific config
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Copy dependencies from builder image
-COPY --from=builder --chown=sampledb:sampledb /home/sampledb/venv /home/sampledb/venv
+COPY --from=builder --chown=sampledb:0 /home/sampledb/venv /home/sampledb/venv
 
 # Set up virtual environment
 ENV VIRTUAL_ENV=/home/sampledb/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Copy sampledb source code
-COPY --chown=sampledb:sampledb sampledb sampledb
+COPY --chown=sampledb:0 sampledb sampledb
+RUN chmod 775 /home/sampledb/sampledb/translations/de/LC_MESSAGES
 
 # By default, expect a normal postgres container to be linked
 ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5432/postgres"
