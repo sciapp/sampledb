@@ -248,7 +248,21 @@ class Objects(Resource):
                 }, 400
 
         object_ids: set[int] | None = None
-        related_user_id: typing.Optional[int] = None
+        object_ids_str_list = flask.request.args.getlist('object_ids')
+        if object_ids_str_list:
+            object_ids = set()
+            for object_ids_str in object_ids_str_list:
+                try:
+                    object_ids.update({
+                        int(object_id_str)
+                        for object_id_str in object_ids_str.split(',')
+                    })
+                except ValueError:
+                    return {
+                        'message': 'Unable to parse object_ids'
+                    }, 400
+
+        related_user_id: typing.Optional[int]
         related_user_id_str = flask.request.args.get('related_user_id', None)
         if related_user_id_str is not None:
             try:
@@ -257,7 +271,11 @@ class Objects(Resource):
                 return {
                     'message': 'Unable to parse related_user_id'
                 }, 400
-            object_ids = user_log.get_user_related_object_ids(related_user_id)
+            related_user_object_ids = user_log.get_user_related_object_ids(related_user_id)
+            if object_ids is None:
+                object_ids = related_user_object_ids
+            else:
+                object_ids = object_ids.intersection(related_user_object_ids)
 
         project_id = None
 

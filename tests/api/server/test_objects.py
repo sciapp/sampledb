@@ -1747,3 +1747,106 @@ def test_create_object_with_missing_required(flask_server, auth, user, action):
         'message': 'validation failed:\n - missing required property "name" (at name)',
         'error_paths': [['name']]
     }
+
+def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
+    objects = [
+        sampledb.logic.objects.create_object(
+            action_id=action.id,
+            data={
+                'name': {
+                    '_type': 'text',
+                    'text': f'Example {i}'
+                }
+            },
+            user_id=other_user.id
+        )
+        for i in range(10)
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    for object in objects[::2]:
+        sampledb.logic.object_permissions.set_user_object_permissions(
+            object_id=object.object_id,
+            user_id=user.id,
+            permissions=sampledb.logic.object_permissions.Permissions.READ
+        )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+        for object in [objects[-2], objects[0]]
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': [objects[0].object_id, objects[1].object_id, objects[-2].object_id, objects[-1].object_id]
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+        for object in [objects[-2], objects[0]]
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': [','.join(str(object.object_id) for object in objects[1:]), str(objects[0].object_id)],
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+        for object in reversed(objects[::2])
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}',
+        'q': 'name == "Example 0"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+        for object in [objects[0]]
+    ]
