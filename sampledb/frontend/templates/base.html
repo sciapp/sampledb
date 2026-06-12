@@ -365,6 +365,7 @@
   {% do set_template_value("translations.object_picker_no_results_text_template_no_query", _('No results')) %}
   {% do set_template_value("translations.object_picker_all_results_text_template_no_query", _('PLACEHOLDER2 results')) %}
   {% do set_template_value("translations.object_picker_some_results_text_template_no_query", _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button objectpicker-button-show-all">Show all</span>')) %}
+  {% do set_template_value("translations.object_picker_use_id_text_template", _('Object #PLACEHOLDER')) %}
   {% do set_template_value("translations.show_more", _('Show more')) %}
   {% do set_template_value("translations.show_less", _('Show less')) %}
   {% do set_template_value("translations.select_timeseries", _('Please select at least one timeseries.')) %}
@@ -386,6 +387,12 @@
   {% do set_template_value("current_utc_datetime", current_utc_datetime().isoformat(timespec='microseconds')) %}
   {% do set_template_value("typeahead_object_limit", config.get('TYPEAHEAD_OBJECT_LIMIT')) %}
   {% do set_template_value("application_root_path", url_for('frontend.index')) %}
+  {% set object_url_template_placeholder_id = 987654321 %}
+  {% do set_template_value(
+    "external_object_url_template",
+    url_for('frontend.object', object_id=object_url_template_placeholder_id, _external=True) |
+      replace(object_url_template_placeholder_id | string, 'PLACEHOLDER')
+  ) %}
 
   {% do set_template_value("current_user.is_authenticated", current_user.is_authenticated) %}
   {% if current_user.is_authenticated %}
