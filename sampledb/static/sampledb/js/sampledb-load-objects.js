@@ -3,6 +3,13 @@
 /* global Bloodhound */
 
 const objectpickerDatasets = {};
+const objectPickerTemplatePlaceholder = 'PLACEHOLDER';
+const manualObjectIDTextTemplate = window.getTemplateValue('translations.object_picker_use_id_text_template');
+const escapedManualObjectIDTextTemplate = manualObjectIDTextTemplate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const manualObjectIDTextRegex = new RegExp('^' + escapedManualObjectIDTextTemplate.replace(objectPickerTemplatePlaceholder, '0*([1-9][0-9]*)') + '$');
+const externalObjectURLTemplate = window.getTemplateValue('external_object_url_template');
+const escapedExternalObjectURLTemplate = externalObjectURLTemplate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const objectURLRegex = new RegExp('^' + escapedExternalObjectURLTemplate.replace(objectPickerTemplatePlaceholder, '0*([1-9][0-9]*)') + '$');
 
 /**
  * Converts IDs in various forms into an array of numbers.
@@ -30,6 +37,114 @@ function idsToArray (ids) {
     ids = [ids];
   }
   return ids;
+}
+
+/**
+ * Extracts an object ID from a plain number, #number or object URL.
+ * @param text user input
+ * @returns {?number} the parsed object ID or null
+ */
+function getObjectIDFromObjectPickerText (text) {
+  text = (text || '').trim();
+  let match = text.match(/^#?0*([1-9][0-9]*)$/);
+  if (match !== null) {
+    return Number.parseInt(match[1]);
+  }
+  match = text.match(manualObjectIDTextRegex);
+  if (match !== null) {
+    return Number.parseInt(match[1]);
+  }
+  match = text.match(objectURLRegex);
+  if (match !== null) {
+    return Number.parseInt(match[1]);
+  }
+  return null;
+}
+
+function escapeHTMLAttribute (text) {
+  return (text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function findSelectpickerMenuOption (menu, option) {
+  let menuOption = menu.find('li[data-original-index="' + option.index() + '"]').first();
+  if (menuOption.length === 0) {
+    const optionText = option.text().trim();
+    menuOption = menu.find('li').filter(function () {
+      return $(this).find('.text').text().trim() === optionText;
+    }).first();
+  }
+  return menuOption;
+}
+
+function objectHasID (object, objectID) {
+  return Number.parseInt(object.id) === objectID;
+}
+
+function getExternalObjectURLTokens (objectID) {
+  return [externalObjectURLTemplate.replace(objectPickerTemplatePlaceholder, objectID)];
+}
+
+function getSelectpickerObjectTokens (object) {
+  const tokens = [object.text, '#' + object.id, '' + object.id];
+  for (const tag of object.tags) {
+    tokens.push('#' + tag);
+  }
+  tokens.push.apply(tokens, getExternalObjectURLTokens(object.id));
+  return tokens.map(escapeHTMLAttribute).join(' ');
+}
+
+function updateSelectpickerManualObjectIDOption (selectpicker, query) {
+  const objectID = getObjectIDFromObjectPickerText(query);
+  const manualOption = selectpicker.find('option[data-sampledb-manual-object-id="true"]');
+  const removedManualOption = manualOption.length !== 0 && (objectID === null || manualOption.val() !== '' + objectID);
+  if (removedManualOption) {
+    manualOption.remove();
+  }
+  if (objectID === null) {
+    return removedManualOption;
+  }
+  const manualOptionTokens = '#' + objectID + ' ' + objectID + ' ' + escapeHTMLAttribute(query);
+  if (selectpicker.find('option[data-sampledb-manual-object-id="true"][value="' + objectID + '"]').length !== 0) {
+    const tokensChanged = manualOption.attr('data-tokens') !== manualOptionTokens;
+    manualOption.attr('data-tokens', manualOptionTokens);
+    return tokensChanged;
+  }
+  if (selectpicker.find('option:not([data-sampledb-manual-object-id="true"])[value="' + objectID + '"]:not(:disabled)').length !== 0) {
+    return removedManualOption;
+  }
+  selectpicker.append(
+    '<option value="' + objectID + '" data-sampledb-manual-object-id="true" data-icon="fa fa-hashtag" data-tokens="' + manualOptionTokens + '">' +
+    window.getTemplateValue('translations.object_picker_use_id_text_template').replace(objectPickerTemplatePlaceholder, objectID) +
+    '</option>'
+  );
+  return true;
+}
+
+function renderSelectpickerManualObjectIDResult (selectpicker, query) {
+  const objectID = getObjectIDFromObjectPickerText(query);
+  const bootstrapSelect = selectpicker.parents('.bootstrap-select').first();
+  const menu = bootstrapSelect.find('.dropdown-menu.inner').first();
+  const manualOption = selectpicker.find('option[data-sampledb-manual-object-id="true"]');
+  menu.find('.sampledb-object-id-search-icon').remove();
+  if (manualOption.length !== 0 && (objectID === null || manualOption.val() !== '' + objectID)) {
+    findSelectpickerMenuOption(menu, manualOption).remove();
+  }
+  if (objectID === null) {
+    return;
+  }
+  const existingOption = selectpicker.find('option:not([data-sampledb-manual-object-id="true"])[value="' + objectID + '"]:not(:disabled)');
+  if (existingOption.length !== 0) {
+    const existingMenuOption = findSelectpickerMenuOption(menu, existingOption);
+    if (existingMenuOption.length !== 0) {
+      existingMenuOption.find('.text').first().prepend('<i class="fa fa-hashtag fa-fw sampledb-object-id-search-icon"></i> ');
+      menu.find('.no-results').remove();
+      return;
+    }
+    return;
+  }
+  if (manualOption.length !== 0) {
+    menu.find('.no-results').remove();
+  }
 }
 
 $(function () {
@@ -113,14 +228,6 @@ function updateObjectPickers () {
       $x.find('option[value != ""][value != "-1"]').remove();
       $x.append(
         objectsToAdd.map(function (el) {
-          let dataTokens = '';
-          if (el.tags.length) {
-            dataTokens = 'data-tokens="';
-            for (const tag of el.tags) {
-              dataTokens += '#' + tag + ' ';
-            }
-            dataTokens += el.text + '"';
-          }
           let isFederationImported = ' ';
           if (el.is_fed) {
             isFederationImported = ' data-icon="fa fa-share-alt" ';
@@ -129,8 +236,23 @@ function updateObjectPickers () {
           if (el.is_eln_imported) {
             isELNImported = ' data-icon="fa fa-file-archive-o" ';
           }
-          return '<option' + isFederationImported + isELNImported + 'value="' + el.id + '" ' + dataTokens + ' data-action-id="' + el.action_id + '" data-version-id="' + el.version_id + '">' + el.text + '</option>';
+          return '<option' + isFederationImported + isELNImported + 'value="' + el.id + '" data-tokens="' + getSelectpickerObjectTokens(el) + '" data-action-id="' + el.action_id + '" data-version-id="' + el.version_id + '">' + el.text + '</option>';
         }).join(''));
+      $x.on('shown.bs.select', function () {
+        const bootstrapSelect = $x.parents('.bootstrap-select').first();
+        const searchInput = bootstrapSelect.find('.bs-searchbox input');
+        searchInput.off('input.sampledb-manual-object-id').on('input.sampledb-manual-object-id', function () {
+          const query = $(this).val();
+          window.setTimeout(function () {
+            if (updateSelectpickerManualObjectIDOption($x, query)) {
+              $x.selectpicker('refresh');
+              $x.parents('.bootstrap-select').first().find('.bs-searchbox input').val(query).trigger('input');
+              return;
+            }
+            renderSelectpickerManualObjectIDResult($x, query);
+          }, 0);
+        });
+      });
     } else {
       $x.typeahead('destroy');
       const bloodhound = new Bloodhound({
@@ -158,7 +280,31 @@ function updateObjectPickers () {
       });
       const source = function (q, sync) {
         const syncWrap = function (results) {
+          const objectID = getObjectIDFromObjectPickerText(q);
           $x.num_results = results.length;
+          $x.num_manual_results = 0;
+          if (objectID !== null) {
+            const objectIDResult = objectsToAdd.find(function (object) {
+              return objectHasID(object, objectID);
+            });
+            results = results.filter(function (object) {
+              return !objectHasID(object, objectID);
+            });
+            if (objectIDResult !== undefined) {
+              results.unshift(objectIDResult);
+            } else {
+              const manualObjectIDText = manualObjectIDTextTemplate.replace(objectPickerTemplatePlaceholder, objectID);
+              results.unshift({
+                text: manualObjectIDText,
+                unescaped_text: manualObjectIDText,
+                object_id: objectID,
+                is_fed: false,
+                is_eln_imported: false,
+                is_manual_object_id: true
+              });
+              $x.num_manual_results = 1;
+            }
+          }
           if ($x.data('sampledbDefaultSelected') === -1) {
             results.unshift({
               text: $x.data('sampledbCurrentValueText').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
@@ -196,6 +342,9 @@ function updateObjectPickers () {
             if (data.text === null) {
               return '<div>—</div>';
             }
+            if (data.is_manual_object_id) {
+              return '<div><i class="fa fa-hashtag fa-fw" style="margin-left: -1.43571429em; margin-right:0.15em;"></i>' + data.text + '</div>';
+            }
             if (data.is_fed) {
               return '<div><i class="fa fa-share-alt fa-fw" style="margin-left: -1.43571429em; margin-right:0.15em;"></i>' + data.text + '</div>';
             } else if (data.is_eln_imported) {
@@ -208,6 +357,7 @@ function updateObjectPickers () {
             const numResultsTotal = $x.num_results;
             let numResultsShown = context.suggestions.length;
             const query = $x.typeahead('val');
+            numResultsShown -= $x.num_manual_results || 0;
             if (!$x.prop('required')) {
               // the placeholder for not selecting an object does not count
               numResultsShown -= 1;
@@ -281,6 +431,16 @@ function updateObjectPickers () {
                 break;
               }
             }
+            if (!isValid) {
+              const selectedObjectID = field.data('sampledbSelectedManualObjectID');
+              if (typeof selectedObjectID !== 'undefined') {
+                const selectedObjectIDText = manualObjectIDTextTemplate.replace(objectPickerTemplatePlaceholder, selectedObjectID);
+                if (text === selectedObjectIDText) {
+                  objectID = selectedObjectID;
+                  isValid = true;
+                }
+              }
+            }
           }
         } else if (!field.prop('required')) {
           isValid = true;
@@ -301,6 +461,13 @@ function updateObjectPickers () {
         }
         objectHiddenInput.trigger('object_change.sampledb'); // event to trigger object conditions evaluation if registered
       };
+      $x.on('typeahead:selected', function (_event, suggestion) {
+        if (suggestion.is_manual_object_id) {
+          $x.data('sampledbSelectedManualObjectID', suggestion.object_id);
+        } else {
+          $x.removeData('sampledbSelectedManualObjectID');
+        }
+      });
       $x.on('typeahead:selected', changeHandler);
       $x.on('change', changeHandler);
     }
@@ -324,20 +491,28 @@ function updateObjectPickers () {
       $($x.data('sampledbEmptyHide')).hide();
     }
 
-    $x.selectpicker('refresh');
     const data = $x.data('sampledbDefaultSelected');
+    const defaultObjectID = getObjectIDFromObjectPickerText('#' + data);
+    if (isSelectpicker && defaultObjectID !== null) {
+      updateSelectpickerManualObjectIDOption($x, '#' + defaultObjectID);
+    }
+    $x.selectpicker('refresh');
     if (typeof (data) !== 'undefined' && data !== 'None') {
       if (isSelectpicker) {
-        $x.selectpicker('val', data);
+        $x.selectpicker('val', defaultObjectID !== null ? '' + defaultObjectID : data);
       } else {
         if (data === -1) {
           $x.typeahead('val', $x.data('sampledbCurrentValueText'));
         } else {
-          for (const object of objectsToAdd) {
-            if (object.id === data) {
-              $x.typeahead('val', object.unescaped_text);
-              break;
-            }
+          const defaultObject = objectsToAdd.find(function (object) {
+            return objectHasID(object, defaultObjectID);
+          });
+          if (defaultObject !== undefined) {
+            $x.typeahead('val', defaultObject.unescaped_text);
+            $x.removeData('sampledbSelectedManualObjectID');
+          } else if (defaultObjectID !== null) {
+            $x.data('sampledbSelectedManualObjectID', defaultObjectID);
+            $x.typeahead('val', manualObjectIDTextTemplate.replace(objectPickerTemplatePlaceholder, defaultObjectID));
           }
         }
       }

@@ -7,6 +7,7 @@ Version 0.34
 Currently in development.
 
 - Allow storing version IDs for object reference properties
+- Allow selecting object references by object ID or object link/url, not requiring READ permission
 
 
 Version 0.33.1
