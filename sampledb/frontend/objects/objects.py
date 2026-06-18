@@ -1280,7 +1280,7 @@ def referencable_objects() -> FlaskResponseT:
         if x.component_name is not None:
             name += f' (#{x.object_id}, #{x.fed_object_id} @ {x.component_name})'
         elif x.eln_import_id is not None:
-            name += f' (#{x.object_id}, {x.eln_object_id} @ {_(".eln file")}) #{x.eln_import_id}'
+            name += f' (#{x.object_id}, {x.eln_object_id} @ {_(".eln file")} #{x.eln_import_id})'
         else:
             name += f' (#{x.object_id})'
         return {
