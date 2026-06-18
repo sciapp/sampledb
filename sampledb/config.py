@@ -298,8 +298,8 @@ def parse_and_convert_external_links(
         if type(entry) is not dict:
             print(ansi_color(f'EXTERNAL_LINKS entries must be dicts, but got {entry!r} for entry #{entry_index}.\n', color=31))
             return False
-        if any(k not in {'label', 'icon', 'id_placeholder', 'applies_to_placeholder', 'links', 'applies_to'} for k in entry):
-            print(ansi_color(f'EXTERNAL_LINKS entries may only contain label, icon, id_placeholder, applies_to_placeholder, links and applies_to, but got {entry!r} for entry #{entry_index}.\n', color=31))
+        if any(k not in {'label', 'icon', 'id_placeholder', 'applies_to_placeholder', 'links', 'applies_to', 'multiple'} for k in entry):
+            print(ansi_color(f'EXTERNAL_LINKS entries may only contain label, icon, id_placeholder, applies_to_placeholder, links, applies_to, and multiple, but got {entry!r} for entry #{entry_index}.\n', color=31))
             return False
         if 'label' in entry:
             if type(entry['label']) is not str and type(entry['label']) is not dict:
@@ -363,6 +363,9 @@ def parse_and_convert_external_links(
             if not link_dict['name'] or (type(link_dict['name']) is dict and any(not v for v in link_dict['name'].values())):
                 print(ansi_color(f'EXTERNAL_LINKS link dict names must not be empty for entry #{entry_index}.\n', color=31))
                 return False
+        if type(entry.get('multiple', False)) is not bool:
+            print(ansi_color(f'EXTERNAL_LINKS multiple must be bool, but got {entry['multiple']!r} for entry #{entry_index}.\n', color=31))
+            return False
         if 'applies_to' not in entry:
             print(ansi_color(f'EXTERNAL_LINKS entries must contain applies_to for entry #{entry_index}.\n', color=31))
             return False

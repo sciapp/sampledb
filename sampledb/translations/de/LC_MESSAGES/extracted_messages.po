@@ -5778,8 +5778,11 @@ msgstr "In Aktion nutzen"
 msgid "Use in %(action_type_name)s"
 msgstr "In %(action_type_name)s nutzen"
 
+msgid "External Links"
+msgstr "Externe Links"
+
 msgid "Select objects for which you want to change the location."
-msgstr "Wähle Objekte aus bei denen Sie den Ort ändern wollen."
+msgstr "Wählen Sie Objekte aus, für die Sie den Ort ändern wollen."
 
 msgid "Responsible User"
 msgstr "Verantwortlicher Nutzer"
@@ -5798,7 +5801,7 @@ msgid "See other %(action_type_name)s Actions..."
 msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
 
 msgid "Select objects for which you want to generate labels."
-msgstr "Wähle Objekte aus für die Sie Etiketten generieren wollen."
+msgstr "Wählen Sie Objekte aus, für die Sie Etiketten generieren wollen."
 
 msgid "Select a Label Variant:"
 msgstr "Wählen Sie eine Etikettenvariante:"
@@ -5828,7 +5831,7 @@ msgid "Include QR Code"
 msgstr "QR Code einfügen"
 
 msgid "Select objects for which you want to change the permissions."
-msgstr "Wähle Sie Objekte aus bei denen Sie die Berechtigung ändern wollen."
+msgstr "Wählen Sie Objekte aus, bei denen Sie die Berechtigung ändern wollen."
 
 msgid "Select the target type:"
 msgstr "Wählen Sie den Zieltyp:"
@@ -5864,9 +5867,16 @@ msgid ""
 "that have already been shared will have the selected access, users and "
 "groups shared in addition to any shared previously."
 msgstr ""
-"Wähle Objekte aus die mit einer anderen Datenbank geteilt werden sollen. "
-"Für bereits geteilte Objekte werden die ausgewählten Zugriffsrechte, "
-"Nutzer und Gruppen zu den zuvor gesetzten hinzugefügt."
+"Wählen Sie Objekte aus, die mit einer anderen Datenbank geteilt werden "
+"sollen. Für bereits geteilte Objekte werden die ausgewählten "
+"Zugriffsrechte, Nutzer und Gruppen zu den zuvor gesetzten hinzugefügt."
+
+msgid ""
+"Select for which objects you want to visit an external link, then click "
+"the link to visit it."
+msgstr ""
+"Wählen Sie, für welche Objekte Sie einen externen Link besuchen möchten. "
+"Klicken Sie den Link dann an, um ihn zu besuchen."
 
 msgid "Created"
 msgstr "Erstellt"
@@ -5904,6 +5914,9 @@ msgid "You need grant permission to share this object with another database."
 msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen, um dieses Objekt mit einer "
 "anderen Datenbank zu teilen."
+
+msgid "No external links for this object."
+msgstr "Es gibt keine externen Links für dieses Objekt."
 
 #, python-format
 msgid "Shared by %(component_name)s"
@@ -6076,7 +6089,7 @@ msgid "New Object"
 msgstr "Neues Objekt"
 
 msgid "Select fields to insert reference"
-msgstr "Wähle die Felder für die Referenz aus"
+msgstr "Wählen Sie die Felder für die Referenz aus"
 
 msgid "Batch Information"
 msgstr "Chargeninformationen"

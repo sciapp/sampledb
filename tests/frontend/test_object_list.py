@@ -274,21 +274,21 @@ def test_object_list_generate_multiple_labels_mixed_formats(object, flask_server
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['generate_labels'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     quantity_field = driver.find_element(By.ID, 'input-mf-labels-per-object')
     quantity_field.clear()
     quantity_field.send_keys(-1)
     quantity_field.send_keys(Keys.TAB)
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     quantity_field.clear()
     quantity_field.send_keys(1)
     quantity_field.send_keys(Keys.TAB)
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     document = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -330,10 +330,10 @@ def test_object_list_generate_multiple_labels_fixed_widths(object, flask_server,
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['generate_labels'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.XPATH, "//select[@id='select-label-variant']/following-sibling::button").click()
     driver.find_element(By.XPATH, "//select[@id='select-label-variant']/following-sibling::div/div/ul/li/a/span[text()=' Fixed-width labels']/parent::a/parent::li").click()
@@ -345,34 +345,34 @@ def test_object_list_generate_multiple_labels_fixed_widths(object, flask_server,
     label_width_field.clear()
     label_width_field.send_keys(20)
     label_width_field.send_keys(Keys.TAB)
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     label_width_field.clear()
     label_width_field.send_keys(40)
     label_width_field.send_keys(Keys.TAB)
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     min_label_height_field = driver.find_element(By.ID, 'input-fw-label-min-height')
     min_label_height_field.clear()
     min_label_height_field.send_keys(-1)
     min_label_height_field.send_keys(Keys.TAB)
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     min_label_height_field.clear()
     min_label_height_field.send_keys(0)
     min_label_height_field.send_keys(Keys.TAB)
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     quantity_field = driver.find_element(By.ID, 'input-fw-labels-per-object')
     quantity_field.clear()
     quantity_field.send_keys(-1)
     quantity_field.send_keys(Keys.TAB)
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     quantity_field.clear()
     quantity_field.send_keys(5)
     quantity_field.send_keys(Keys.TAB)
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     document = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -416,10 +416,10 @@ def test_object_list_generate_multiple_labels_minimal_height(object, flask_serve
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['generate_labels'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.XPATH, "//select[@id='select-label-variant']/following-sibling::button").click()
     driver.find_element(By.XPATH, "//select[@id='select-label-variant']/following-sibling::div/div/ul/li/a/span[text()=' Minimal-height labels']/parent::a/parent::li").click()
@@ -431,23 +431,23 @@ def test_object_list_generate_multiple_labels_minimal_height(object, flask_serve
     min_label_width_field.clear()
     min_label_width_field.send_keys(-1)
     min_label_width_field.send_keys(Keys.TAB)
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     min_label_width_field.clear()
     min_label_width_field.send_keys(0)
     min_label_width_field.send_keys(Keys.TAB)
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     quantity_field = driver.find_element(By.ID, 'input-mh-labels-per-object')
     quantity_field.clear()
     quantity_field.send_keys(-1)
     quantity_field.send_keys(Keys.TAB)
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     quantity_field.clear()
     quantity_field.send_keys(5)
     quantity_field.send_keys(Keys.TAB)
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     document = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -490,10 +490,10 @@ def test_object_list_change_signed_in_min_permission(object, flask_server, drive
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['edit_permissions'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='read']").click()
 
@@ -505,7 +505,7 @@ def test_object_list_change_signed_in_min_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -532,7 +532,7 @@ def test_object_list_change_signed_in_max_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
 
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
 
@@ -547,10 +547,10 @@ def test_object_list_change_anonymous_min_permission(object, flask_server, drive
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['edit_permissions'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
     driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Anonymous Users']/parent::a/parent::li").click()
@@ -565,7 +565,7 @@ def test_object_list_change_anonymous_min_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -596,7 +596,7 @@ def test_object_list_change_anonymous_max_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
 
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
 
@@ -616,10 +616,10 @@ def test_object_list_change_user_min_permission(object, flask_server, driver, us
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['edit_permissions'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
     driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='User']/parent::a/parent::li").click()
@@ -634,9 +634,9 @@ def test_object_list_change_user_min_permission(object, flask_server, driver, us
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
-    assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
+    assert driver.find_element(By.CLASS_NAME, "multiselect-submit").is_enabled()
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.WRITE
 
 
@@ -674,9 +674,9 @@ def test_object_list_change_user_max_permission(object, flask_server, driver, us
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -692,7 +692,7 @@ def test_object_list_change_group_min_permission(object, flask_server, driver, u
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['edit_permissions'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, "checkbox-select-overall").click()
 
@@ -710,9 +710,9 @@ def test_object_list_change_group_min_permission(object, flask_server, driver, u
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.WRITE
 
 
@@ -749,9 +749,9 @@ def test_object_list_change_group_max_permission(object, flask_server, driver, u
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -767,7 +767,7 @@ def test_object_list_change_project_group_min_permission(object, flask_server, d
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['edit_permissions'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
 
@@ -785,9 +785,9 @@ def test_object_list_change_project_group_min_permission(object, flask_server, d
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
-    assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
+    assert driver.find_element(By.CLASS_NAME, "multiselect-submit").is_enabled()
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, "multiselect-submit").click()
+        driver.find_element(By.CLASS_NAME, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.WRITE
 
 
@@ -824,9 +824,9 @@ def test_object_list_change_project_group_max_permission(object, flask_server, d
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
+    assert driver.find_element(By.CLASS_NAME, "multiselect-submit").is_enabled()
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, "multiselect-submit").click()
+        driver.find_element(By.CLASS_NAME, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.READ
 
 
@@ -844,10 +844,10 @@ def test_object_list_share_with_other_database(object, flask_server, driver, use
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['share_with_other_database'] == ['True']
-    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'checkbox-select-overall').click()
-    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').is_enabled()
 
     driver.find_element(By.ID, 'add_share_user_text').send_keys('1')
     driver.find_element(By.ID, 'add_component_policy_user_input_btn').click()
@@ -859,7 +859,7 @@ def test_object_list_share_with_other_database(object, flask_server, driver, use
     driver.find_element(By.ID, 'add_component_policy_group_input_btn').click()
 
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     shares = sampledb.logic.shares.get_shares_for_object(object.object_id)
     assert len(shares) == 1
     assert shares[0].component_id == component.id
@@ -890,7 +890,7 @@ def test_object_list_share_with_other_database(object, flask_server, driver, use
     driver.find_element(By.ID, 'add_component_policy_project_input_btn').click()
 
     with wait_for_page_load(driver):
-        driver.find_element(By.ID, 'multiselect-submit').click()
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
     shares = sampledb.logic.shares.get_shares_for_object(object.object_id)
     assert len(shares) == 1
     assert shares[0].component_id == component.id
@@ -905,3 +905,63 @@ def test_object_list_share_with_other_database(object, flask_server, driver, use
     assert shares[0].policy['permissions']['projects'] == {
         '5': 'read'
     }
+
+def test_object_list_external_links(object, flask_server, driver, user):
+    flask_server.app.config["EXTERNAL_LINKS"] = [
+        {
+            "multiple": True,
+            "label": "Example Links",
+            "links": [
+                {
+                    "url": "https://example.org/<ID>/",
+                    "name": "Example Link"
+                }
+            ],
+            "applies_to": {
+                "objects_by_action_id": [
+                    "*"
+                ]
+            }
+        },
+        {
+            "multiple": True,
+            "label": "Other Links",
+            "links": [
+                {
+                    "url": "https://example.com",
+                    "name": "Other Link"
+                }
+            ],
+            "applies_to": {
+                "objects_by_action_id": [
+                    object.action_id
+                ]
+            }
+        }
+    ]
+    sampledb.config.parse_and_convert_external_links(flask_server.app.config)
+
+    other_object = sampledb.logic.objects.create_object(
+        action_id=object.action_id,
+        data = object.data,
+        user_id=user.id
+    )
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.XPATH, '//a[contains(text(), "Other Links")]')
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.XPATH, '//a[contains(text(), "Example Links")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['visit_external_link'] == ['0']
+    assert driver.find_element(By.CLASS_NAME, 'multiselect-submit').get_attribute("disabled")
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    with wait_for_page_load(driver):
+        assert not driver.find_element(By.CLASS_NAME, 'multiselect-submit').get_attribute("disabled")
+        driver.find_element(By.CLASS_NAME, 'multiselect-submit').click()
+
+    assert driver.current_url == f'https://example.org/{object.id},{other_object.id}/'

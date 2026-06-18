@@ -228,3 +228,9 @@ def test_parse_and_convert_external_links():
                 },
             ],
         }
+
+    config['EXTERNAL_LINKS'] = [{"links": [{"url": "http://example.com", "name": {"en": "Example Link"}}], "applies_to": {}, "multiple": True}]
+    assert sampledb.config.parse_and_convert_external_links(config)
+
+    config['EXTERNAL_LINKS'] = [{"links": [{"url": "http://example.com", "name": {"en": "Example Link"}}], "applies_to": {}, "multiple": "False"}]
+    assert not sampledb.config.parse_and_convert_external_links(config)

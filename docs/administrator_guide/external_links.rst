@@ -24,6 +24,7 @@ This configuration variable must be a JSON-encoded list containing one or more d
  * ``applies_to`` a dict mapping the following keys to lists containing integer IDs or the string ``"*"`` as a wildcard for all IDs: ``objects_by_action_id``, ``actions_by_action_id``, ``instruments_by_instrument_id``, ``topics_by_topic_id``, ``basic_groups_by_basic_group_id``, ``project_groups_by_project_group_id``. Each of these keys controls where the links should be shown, e.g. the ID list for ``objects_by_action_id`` set the links to be shown for objects with the given action IDs.
  * ``applies_to_placeholder`` the placeholder used for inserting the kind of entity the link is applied to in URLs, e.g. ``object`` for ``objects_by_action_id`` or ``topic`` for ``topics_by_topic_id``, (default: ``<A>``)
  * ``id_placeholder`` the placeholder used for inserting the current ID in URLs (default: ``<ID>``)
+ * ``multiple`` if set to ``true``, multiple IDs may be passed to the link, seperated by commas, e.g. ``2,3,4`` (currently only supported for objects, default: ``false``)
 
 As an example, the following would be a valid value for ``SAMPLEDB_EXTERNAL_LINKS``:
 

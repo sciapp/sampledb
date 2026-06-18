@@ -141,6 +141,19 @@ def objects() -> FlaskResponseT:
     create_from_objects = flask.request.args.get('create_from_objects', default=False, type=lambda k: k.lower() == 'true')
     edit_permissions = flask.request.args.get('edit_permissions', default=False, type=lambda k: k.lower() == 'true')
     share_with_other_database = flask.request.args.get('share_with_other_database', default=False, type=lambda k: k.lower() == 'true')
+    visit_external_link_index_str = flask.request.args.get('visit_external_link', '')
+    try:
+        visit_external_link_index = int(visit_external_link_index_str)
+    except ValueError:
+        visit_external_link_index = None
+    visit_external_link = visit_external_link_index is not None
+    selected_external_links = None
+    if visit_external_link:
+        all_external_links = flask.current_app.config['EXTERNAL_LINKS']
+        if visit_external_link_index is None or not all_external_links or not 0 <= visit_external_link_index < len(all_external_links):
+            visit_external_link = False
+        else:
+            selected_external_links = all_external_links[visit_external_link_index]
     use_in_action_type_id = flask.request.args.get('use_in_action_type', default=None, type=int)
     generate_labels = flask.request.args.get('generate_labels', default=False, type=lambda k: k.lower() == 'true')
 
@@ -1095,7 +1108,13 @@ def objects() -> FlaskResponseT:
             objects_allowed_to_select.append(object_id)
 
             existing_shares_by_object_id[object_id] = logic.shares.get_shares_for_object(object_id)
-
+    elif visit_external_link and selected_external_links:
+        allowed_action_ids = selected_external_links.get('applies_to', {}).get('objects_by_action_id', [])
+        objects_allowed_to_select = [
+            object['object_id']
+            for object in objects
+            if '*' in allowed_action_ids or (object['action'] is not None and object['action'].id in allowed_action_ids)
+        ]
     else:
         create_from_objects = False
         if logic.action_types.is_usable_in_action_types_table_empty():
@@ -1221,6 +1240,8 @@ def objects() -> FlaskResponseT:
         edit_permissions_form=edit_permissions_form,
         share_with_other_database=share_with_other_database,
         share_with_other_database_form=share_with_other_database_form,
+        visit_external_link=visit_external_link,
+        selected_external_links=selected_external_links,
         component_users=component_users,
         existing_shares_by_object_id=existing_shares_by_object_id,
         current_permissions_special_groups=current_permissions_special_groups,
