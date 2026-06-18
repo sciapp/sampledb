@@ -573,10 +573,6 @@ def objects() -> FlaskResponseT:
                 else:
                     object_ids = object_ids.intersection(object_ids_for_origin_ids)
 
-            if object_ids is not None:
-                pagination_enabled = False
-                pagination_limit = None
-                pagination_offset = None
             if object_ids is not None and not object_ids:
                 db_objects = []
                 num_objects_found = 0
