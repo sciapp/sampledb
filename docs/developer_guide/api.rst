@@ -1021,6 +1021,7 @@ Reading a list of all instruments
             {
                 "instrument_id": 1,
                 "name": "Example Instrument",
+                "short_description": "",
                 "description": "This is an example instrument",
                 "is_hidden": false,
                 "instrument_scientists": [1, 42],
@@ -1057,6 +1058,7 @@ Reading an instrument
         {
             "instrument_id": 1,
             "name": "Example Instrument",
+            "short_description": "",
             "description": "This is an example instrument",
             "is_hidden": false,
             "instrument_scientists": [1, 42],
@@ -1065,6 +1067,7 @@ Reading an instrument
 
     :>json number instrument_id: the instrument's ID
     :>json string name: the instruments's name
+    :>json string short_description: the instruments's short description
     :>json string description: the instruments's description
     :>json bool is_hidden: whether or not the instrument is hidden
     :>json list instrument_scientists: the instrument scientists' IDs

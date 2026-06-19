@@ -51,6 +51,7 @@ def test_get_instrument(flask_server, auth, user, location):
         language_id=sampledb.logic.languages.Language.ENGLISH,
         instrument_id=instrument.id,
         name="Example Instrument",
+        short_description='This is the short description',
         description="This is an example instrument"
     )
     r = requests.get(flask_server.base_url + 'api/v1/instruments/{}'.format(instrument.id), auth=auth)
@@ -58,6 +59,7 @@ def test_get_instrument(flask_server, auth, user, location):
     assert r.json() == {
         'instrument_id': instrument.id,
         'name': "Example Instrument",
+        'short_description': 'This is the short description',
         'description': "This is an example instrument",
         'is_hidden': False,
         'instrument_scientists': [],
@@ -71,6 +73,7 @@ def test_get_instrument(flask_server, auth, user, location):
     assert r.json() == {
         'instrument_id': instrument.id,
         'name': "Example Instrument",
+        'short_description': 'This is the short description',
         'description': "This is an example instrument",
         'is_hidden': False,
         'instrument_scientists': [user.id],
@@ -96,6 +99,7 @@ def test_get_instruments(flask_server, auth):
         {
             'instrument_id': instrument.id,
             'name': "Example Instrument",
+            'short_description': '',
             'description': "This is an example instrument",
             'is_hidden': False,
             'instrument_scientists': [],
