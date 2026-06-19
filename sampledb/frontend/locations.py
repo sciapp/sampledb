@@ -29,7 +29,7 @@ from ..logic.groups import get_group
 from ..logic.projects import get_project
 from ..logic.settings import get_user_settings, set_user_settings
 from ..logic.topics import get_topics, set_location_topics
-from .utils import check_current_user_is_not_readonly, get_location_name, get_groups_form_data, parse_filter_id_params, build_modified_url
+from .utils import check_current_user_is_not_readonly, get_location_name, get_locations_form_data, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 from ..models import Permissions, LocationLogEntryType
@@ -558,11 +558,11 @@ def _show_location_form(
                 invalid_location_ids.append(location_id)
 
     location_form = LocationForm()
-    location_form.parent_location.choices = [('-1', '-')] + [
-        (str(location_id), locations_map[location_id].name)
-        for location_id in locations_map
-        if location_id not in invalid_location_ids and locations_map[location_id].type.enable_sub_locations
-    ]
+    parent_location_all_choices, parent_location_choices = get_locations_form_data(
+        filter=lambda location: location.id not in invalid_location_ids and location.type.enable_sub_locations
+    )
+    location_form.parent_location.all_choices = parent_location_all_choices
+    location_form.parent_location.choices = parent_location_choices
     location_form.topics.choices = [
         (str(topic.id), topic)
         for topic in get_topics()
