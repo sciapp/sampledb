@@ -24,6 +24,8 @@ from ..permission_forms import handle_permission_forms, set_up_permissions_forms
 from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm, \
     AddWebhookForm, RemoveWebhookForm
 from ..utils import get_groups_form_data
+from ..objects.forms import ObjectNewShareAccessForm, ObjectEditShareAccessForm
+from ..objects.permissions import parse_policy
 
 from ... import logic
 from ...logic import user_log, errors
@@ -545,6 +547,97 @@ def _handle_default_permissions_forms(
     return None
 
 
+def _handle_default_share_forms(
+        template_kwargs: typing.Dict[str, typing.Any]
+) -> typing.Optional[FlaskResponseT]:
+    components = logic.components.get_components()
+    components_by_id = {
+        component.id: component
+        for component in components
+    }
+    default_shares = logic.shares.get_default_shares(creator_id=flask_login.current_user.id)
+    component_policies = {
+        share.component_id: share
+        for share in default_shares
+    }
+    policies = {
+        share.component_id: share.policy
+        for share in default_shares
+    }
+    possible_new_components = [
+        component
+        for component in components
+        if component.id not in component_policies.keys()
+    ]
+
+    add_component_policy_form = ObjectNewShareAccessForm()
+    edit_component_policy_form = ObjectEditShareAccessForm()
+
+    if 'add_component_policy' in flask.request.form and add_component_policy_form.validate_on_submit():
+        component_id = add_component_policy_form.component_id.data
+        component = components_by_id.get(component_id)
+        if component not in possible_new_components:
+            flask.flash(_("A problem occurred while adding default sharing with another database. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        policy = parse_policy(add_component_policy_form, 'permissions_add_policy_')
+        if policy is None:
+            flask.flash(_("A problem occurred while adding default sharing with another database. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        logic.shares.add_default_share(user_id=flask_login.current_user.id, component_id=component_id, policy=policy)
+        flask.flash(_("Successfully added default sharing with another database."), 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+    elif 'edit_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
+        component_id = edit_component_policy_form.component_id.data
+        if component_id not in component_policies:
+            flask.flash(_("A problem occurred while changing default sharing with another database. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        policy = parse_policy(edit_component_policy_form, 'permissions_edit_policy_')
+        if policy is None:
+            flask.flash(_("A problem occurred while changing default sharing with another database. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        logic.shares.update_default_share(user_id=flask_login.current_user.id, component_id=component_id, policy=policy)
+        flask.flash(_("Successfully updated default sharing with another database."), 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+    elif 'delete_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
+        component_id = edit_component_policy_form.component_id.data
+        if component_id not in component_policies:
+            flask.flash(_("A problem occurred while deleting default sharing with another database. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        logic.shares.delete_default_share(user_id=flask_login.current_user.id, component_id=component_id)
+        flask.flash(_("Successfully deleted default sharing with another database."), 'success')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+    else:
+        add_component_policy_form.data.data = True
+        add_component_policy_form.action.data = True
+        add_component_policy_form.users.data = True
+        add_component_policy_form.files.data = True
+        add_component_policy_form.comments.data = True
+        add_component_policy_form.object_location_assignments.data = True
+        edit_component_policy_form.data.data = True
+        edit_component_policy_form.action.data = True
+        edit_component_policy_form.users.data = True
+        edit_component_policy_form.files.data = True
+        edit_component_policy_form.comments.data = True
+        edit_component_policy_form.object_location_assignments.data = True
+
+    component_users = {
+        component.id: {
+            user.fed_id: user.get_name(include_ref=True, use_local_identity=True)
+            for user in logic.users.get_users_for_component(component.id, exclude_hidden=False)
+        }
+        for component in components
+    }
+    template_kwargs.update({
+        'federation_shares': component_policies,
+        'policies': policies,
+        'possible_new_components': possible_new_components,
+        'component_users': component_users,
+        'add_component_policy_form': add_component_policy_form,
+        'edit_component_policy_form': edit_component_policy_form,
+    })
+    return None
+
+
 def _handle_other_settings_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
@@ -700,6 +793,9 @@ def change_preferences() -> FlaskResponseT:
     if response is not None:
         return response
     response = _handle_default_permissions_forms(template_kwargs)
+    if response is not None:
+        return response
+    response = _handle_default_share_forms(template_kwargs)
     if response is not None:
         return response
     response = _handle_other_settings_forms(template_kwargs)

@@ -263,6 +263,8 @@ Federation
      - If set, users can authenticate using the login of an other database in the same federation. (default: False).
    * - SAMPLEDB_ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER
      - If set, users can create a new user as the local user for the federated identity when using federation login. (default: False).
+   * - SAMPLEDB_ENABLE_DEFAULT_SHARING
+     - If set, users may set up default other SampleDB instances to share future objects with (default: False).
 
 .. _monitoring_dashboard_configuration:
 

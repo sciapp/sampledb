@@ -152,6 +152,7 @@ def parse_configuration_values() -> None:
         'WORKFLOW_VIEW_SHOW_OUTDATED_REFERENCES',
         'ENABLE_ISOLATED_OBJECT_DATA_RENDERING',
         'ENABLE_OBJECT_DATA_HTML_CACHE',
+        'ENABLE_DEFAULT_SHARING',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -1003,6 +1004,7 @@ VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False
 ENABLE_FEDERATED_LOGIN = False
 ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER = False
+ENABLE_DEFAULT_SHARING = False
 
 ENABLE_WEBHOOKS_FOR_USERS = False
 WEBHOOKS_ALLOW_HTTP = False

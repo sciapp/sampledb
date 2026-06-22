@@ -7,7 +7,7 @@ import datetime
 import typing
 from .errors import ObjectDoesNotExistError
 from .users import get_user
-from .object_permissions import get_user_object_permissions
+from . import object_permissions
 from ..models import UserLogEntry, UserLogEntryType, ObjectLocationAssignment, Permissions
 from .. import db
 
@@ -23,7 +23,7 @@ def get_user_log_entries(user_id: int, as_user_id: typing.Optional[int] = None) 
         if 'object_id' in user_log_entry.data:
             object_id = user_log_entry.data['object_id']
             try:
-                if Permissions.READ in get_user_object_permissions(user_id=as_user_id, object_id=object_id):
+                if Permissions.READ in object_permissions.get_user_object_permissions(user_id=as_user_id, object_id=object_id):
                     visible_user_log_entries.append(user_log_entry)
             except ObjectDoesNotExistError:
                 pass
@@ -31,7 +31,7 @@ def get_user_log_entries(user_id: int, as_user_id: typing.Optional[int] = None) 
             object_ids = user_log_entry.data['object_ids']
             for object_id in object_ids:
                 try:
-                    if Permissions.READ in get_user_object_permissions(user_id=as_user_id, object_id=object_id):
+                    if Permissions.READ in object_permissions.get_user_object_permissions(user_id=as_user_id, object_id=object_id):
                         visible_user_log_entries.append(user_log_entry)
                         break
                 except ObjectDoesNotExistError:

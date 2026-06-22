@@ -3,6 +3,7 @@
 
 """
 import secrets
+import uuid
 
 import flask
 import requests
@@ -2064,3 +2065,189 @@ def test_edit_default_permissions_selenium(flask_server, driver, user):
         project_groups[2].id: sampledb.models.Permissions.WRITE,
         project_groups[3].id: sampledb.models.Permissions.GRANT,
     }
+
+
+def test_add_default_share_selenium(flask_server, app, driver, user):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component = sampledb.logic.components.add_component(address=None, uuid=str(uuid.uuid4()), name='Example component', description='')
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert not sampledb.logic.shares.get_default_shares(user.id)
+
+    add_default_share_form = driver.find_element(By.XPATH, '//h3[contains(text(), "Add database")]/following-sibling::form')
+    add_default_share_form.find_element(By.CSS_SELECTOR, 'input[name="users"] + .toggle-group > .toggle-on').click()
+    add_default_share_form.find_element(By.ID, 'add_share_user_text').send_keys('1234', Keys.TAB)
+    add_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="add_component_policy_user_input_btn"]').click()
+    with wait_for_page_load(driver):
+        add_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="add_component_policy"]').click()
+    assert len(sampledb.logic.shares.get_default_shares(user.id)) == 1
+    share = sampledb.logic.shares.get_default_shares(user.id)[0]
+    assert share.user_id == user.id
+    assert share.component_id == component.id
+    assert share.policy == {
+        'access': {
+            'action': True,
+            'comments': True,
+            'data': True,
+            'files': True,
+            'object_location_assignments': True,
+            'users': False,
+        },
+        'permissions': {
+            'all_users': 'none',
+            'groups': {},
+            'projects': {},
+            'users': {
+                '1234': 'read',
+            },
+        },
+   }
+
+
+def test_add_default_share_duplicate_selenium(flask_server, app, driver, user):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component = sampledb.logic.components.add_component(address=None, uuid=str(uuid.uuid4()), name='Example component', description='')
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert not sampledb.logic.shares.get_default_shares(user.id)
+
+    add_default_share_form = driver.find_element(By.XPATH, '//h3[contains(text(), "Add database")]/following-sibling::form')
+    add_default_share_form.find_element(By.CSS_SELECTOR, 'input[name="users"] + .toggle-group > .toggle-on').click()
+    add_default_share_form.find_element(By.ID, 'add_share_user_text').send_keys('1234', Keys.TAB)
+    add_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="add_component_policy_user_input_btn"]').click()
+    sampledb.logic.shares.add_default_share(
+        user_id=user.id,
+        component_id=component.id,
+        policy={
+            'access': {
+                'action': True,
+                'comments': True,
+                'data': True,
+                'files': True,
+                'object_location_assignments': True,
+                'users': False,
+            },
+            'permissions': {
+                'all_users': 'none',
+                'groups': {},
+                'projects': {},
+                'users': {},
+            },
+        }
+    )
+    with wait_for_page_load(driver):
+        add_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="add_component_policy"]').click()
+    driver.find_element(By.XPATH, '//div[contains(., "A problem occurred while adding default sharing with another database")]')
+    assert len(sampledb.logic.shares.get_default_shares(user.id)) == 1
+    share = sampledb.logic.shares.get_default_shares(user.id)[0]
+    assert share.user_id == user.id
+    assert share.component_id == component.id
+    assert share.policy == {
+        'access': {
+            'action': True,
+            'comments': True,
+            'data': True,
+            'files': True,
+            'object_location_assignments': True,
+            'users': False,
+        },
+        'permissions': {
+            'all_users': 'none',
+            'groups': {},
+            'projects': {},
+            'users': {},
+        },
+   }
+
+
+def test_edit_default_share_selenium(flask_server, app, driver, user):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component = sampledb.logic.components.add_component(address=None, uuid=str(uuid.uuid4()), name='Example component', description='')
+    sampledb.logic.shares.add_default_share(
+        user_id=user.id,
+        component_id=component.id,
+        policy={
+            'access': {
+                'action': True,
+                'comments': True,
+                'data': True,
+                'files': True,
+                'object_location_assignments': False,
+                'users': False,
+            },
+            'permissions': {
+                'all_users': 'none',
+                'groups': {},
+                'projects': {},
+                'users': {'1234': 'read'},
+            },
+        }
+    )
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert len(sampledb.logic.shares.get_default_shares(user.id)) == 1
+
+    edit_default_share_form = driver.find_element(By.XPATH, '//h2[contains(text(), "Other Databases")]/following-sibling::form')
+    edit_default_share_form.find_element(By.CSS_SELECTOR, 'input[name="users"] + .toggle-group > .toggle-off').click()
+    edit_default_share_form.find_element(By.CSS_SELECTOR, 'input[name="data"] + .toggle-group > .toggle-on').click()
+    edit_default_share_form.find_element(By.ID, 'edit_share_group_text').send_keys('5678', Keys.TAB)
+    edit_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="edit_share_group_input_btn"]').click()
+    with wait_for_page_load(driver):
+        edit_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="edit_component_policy"]').click()
+    assert len(sampledb.logic.shares.get_default_shares(user.id)) == 1
+    share = sampledb.logic.shares.get_default_shares(user.id)[0]
+    assert share.user_id == user.id
+    assert share.component_id == component.id
+    assert share.policy == {
+        'access': {
+            'action': True,
+            'comments': True,
+            'data': False,
+            'files': True,
+            'object_location_assignments': False,
+            'users': True,
+        },
+        'permissions': {
+            'all_users': 'none',
+            'groups': {
+                '5678': 'read'
+            },
+            'projects': {},
+            'users': {
+                '1234': 'read',
+            },
+        },
+   }
+
+
+def test_delete_default_share_selenium(flask_server, app, driver, user):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component = sampledb.logic.components.add_component(address=None, uuid=str(uuid.uuid4()), name='Example component', description='')
+    sampledb.logic.shares.add_default_share(
+        user_id=user.id,
+        component_id=component.id,
+        policy={
+            'access': {
+                'action': True,
+                'comments': True,
+                'data': True,
+                'files': True,
+                'object_location_assignments': False,
+                'users': False,
+            },
+            'permissions': {
+                'all_users': 'none',
+                'groups': {},
+                'projects': {},
+                'users': {'1234': 'read'},
+            },
+        }
+    )
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert len(sampledb.logic.shares.get_default_shares(user.id)) == 1
+
+    edit_default_share_form = driver.find_element(By.XPATH, '//h2[contains(text(), "Other Databases")]/following-sibling::form')
+    with wait_for_page_load(driver):
+        edit_default_share_form.find_element(By.CSS_SELECTOR, 'button[name="delete_component_policy"]').click()
+    assert not sampledb.logic.shares.get_default_shares(user.id)

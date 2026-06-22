@@ -359,3 +359,163 @@ def test_merge_shares():
             'all_users': 'write'
         }
     }
+
+def test_apply_default_shares(app, user, action, components):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+
+    component1, component2 = components
+    assert not logic.shares.get_default_shares(user.id)
+    with app.test_request_context():
+        object = logic.objects.create_object(user_id=user.id, action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name'
+            }
+        })
+    assert not logic.shares.get_shares_for_object(object.object_id)
+
+    logic.shares.add_default_share(user.id, component1.id, POLICY)
+    assert len(logic.shares.get_default_shares(user.id)) == 1
+
+    with app.test_request_context():
+        object = logic.objects.create_object(user_id=user.id, action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name'
+            }
+        })
+    shares = logic.shares.get_shares_for_object(object.object_id)
+    assert len(shares) == 1
+    assert shares[0].object_id == object.object_id
+    assert shares[0].user_id == user.id
+    assert shares[0].component_id == component1.id
+    assert shares[0].policy == POLICY
+
+    other_policy = deepcopy(POLICY)
+    other_policy['access']['data'] = False
+    logic.shares.add_default_share(user.id, component2.id, other_policy)
+    assert len(logic.shares.get_default_shares(user.id)) == 2
+
+    with app.test_request_context():
+        object = logic.objects.create_object(user_id=user.id, action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name'
+            }
+        })
+    shares = logic.shares.get_shares_for_object(object.object_id)
+    assert len(shares) == 2
+    assert shares[0].object_id == object.object_id
+    assert shares[0].user_id == user.id
+    assert shares[0].component_id == component1.id
+    assert shares[0].policy == POLICY
+    assert shares[1].object_id == object.object_id
+    assert shares[1].user_id == user.id
+    assert shares[1].component_id == component2.id
+    assert shares[1].policy == other_policy
+
+    logic.shares.update_default_share(user.id, component1.id, other_policy)
+    assert len(logic.shares.get_default_shares(user.id)) == 2
+
+    with app.test_request_context():
+        object = logic.objects.create_object(user_id=user.id, action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name'
+            }
+        })
+    shares = logic.shares.get_shares_for_object(object.object_id)
+    assert len(shares) == 2
+    assert shares[0].object_id == object.object_id
+    assert shares[0].user_id == user.id
+    assert shares[0].component_id == component1.id
+    assert shares[0].policy == other_policy
+    assert shares[1].object_id == object.object_id
+    assert shares[1].user_id == user.id
+    assert shares[1].component_id == component2.id
+    assert shares[1].policy == other_policy
+
+    app.config['ENABLE_DEFAULT_SHARING'] = False
+    assert len(logic.shares.get_default_shares(user.id)) == 0
+
+    with app.test_request_context():
+        object = logic.objects.create_object(user_id=user.id, action_id=action.id, data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name'
+            }
+        })
+    assert not logic.shares.get_shares_for_object(object.object_id)
+
+
+def test_add_default_share(app, user, components):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component1, component2 = components
+    assert not logic.shares.get_default_shares(user.id)
+    created_share_for_component_1 = logic.shares.add_default_share(user.id, component1.id, POLICY)
+    assert len(logic.shares.get_default_shares(user.id)) == 1
+    share = logic.shares.get_default_shares(user.id)[0]
+    assert share == created_share_for_component_1
+    assert share.user_id == user.id
+    assert share.component_id == component1.id
+    assert share.policy == POLICY
+
+    other_policy = deepcopy(POLICY)
+    other_policy['access']['data'] = False
+    created_share_for_component_2 = logic.shares.add_default_share(user.id, component2.id, other_policy)
+    assert len(logic.shares.get_default_shares(user.id)) == 2
+    share1, share2 = logic.shares.get_default_shares(user.id)
+    assert share1 == created_share_for_component_1
+    assert share2 == created_share_for_component_2
+
+    with pytest.raises(logic.errors.ShareAlreadyExistsError):
+        logic.shares.add_default_share(user.id, component2.id, POLICY)
+    assert len(logic.shares.get_default_shares(user.id)) == 2
+    share1, share2 = logic.shares.get_default_shares(user.id)
+    assert share1 == created_share_for_component_1
+    assert share2 == created_share_for_component_2
+
+
+def test_update_default_share(app, user, components):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component1, component2 = components
+    assert not logic.shares.get_default_shares(user.id)
+    created_share_for_component_1 = logic.shares.add_default_share(user.id, component1.id, POLICY)
+    assert len(logic.shares.get_default_shares(user.id)) == 1
+    share = logic.shares.get_default_shares(user.id)[0]
+    assert share == created_share_for_component_1
+    assert share.user_id == user.id
+    assert share.component_id == component1.id
+    assert share.policy == POLICY
+
+    other_policy = deepcopy(POLICY)
+    other_policy['access']['data'] = False
+    updated_share_for_component_1 = logic.shares.update_default_share(user.id, component1.id, other_policy)
+    assert len(logic.shares.get_default_shares(user.id)) == 1
+    share = logic.shares.get_default_shares(user.id)[0]
+    assert share == updated_share_for_component_1
+    assert share.user_id == user.id
+    assert share.component_id == component1.id
+    assert share.policy == other_policy
+
+    with pytest.raises(logic.errors.ShareDoesNotExistError):
+        logic.shares.update_default_share(user.id, component2.id, POLICY)
+    assert len(logic.shares.get_default_shares(user.id)) == 1
+    share = logic.shares.get_default_shares(user.id)[0]
+    assert share == updated_share_for_component_1
+
+
+def test_delete_default_share(app, user, components):
+    app.config['ENABLE_DEFAULT_SHARING'] = True
+    component1, component2 = components
+    assert not logic.shares.get_default_shares(user.id)
+    created_share_for_component_1 = logic.shares.add_default_share(user.id, component1.id, POLICY)
+    assert len(logic.shares.get_default_shares(user.id)) == 1
+    share = logic.shares.get_default_shares(user.id)[0]
+    assert share == created_share_for_component_1
+    assert share.user_id == user.id
+    assert share.component_id == component1.id
+    assert share.policy == POLICY
+
+    logic.shares.delete_default_share(user.id, component1.id)
+    assert not logic.shares.get_default_shares(user.id)

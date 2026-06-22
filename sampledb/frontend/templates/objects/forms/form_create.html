@@ -75,11 +75,19 @@
     {% include "objects/forms/form_any.html" %}
     <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ _('Initial Permissions') }}</strong>
     <div class="form-group clearfix" style="padding:0 0.75em">
-      <div class="col-md-9 col-md-offset-3" style="padding-top: 12px">
+      <div class="{% if has_default_shares %}col-md-4{% else %}col-md-9{% endif %} col-md-offset-3" style="padding-top: 12px">
         <label style="font-weight: 400">
           <input type="radio" name="permissions_method" value="default_permissions" {% if request.form.get('permissions_method') == 'default_permissions' or 'action_submit' not in request.form %}checked="checked"{% endif %} /> {{ _('Use default permissions') }}
         </label>
       </div>
+      {% if has_default_shares %}
+        <div class="col-md-5 clearfix text-right" style="padding-top: 12px">
+          <label style="font-weight: 400">
+            <input type="checkbox" name="use_default_shares" value="1" {% if request.form.get('use_default_shares', '1') == '1' %}checked="checked"{% endif %}>
+            {{ _('Use default sharing with other databases') }}
+          </label>
+        </div>
+      {% endif %}
       {% if user_groups %}
       <div class="col-md-4 col-md-offset-3" style="padding-top: 12px">
         <label style="font-weight: 400">

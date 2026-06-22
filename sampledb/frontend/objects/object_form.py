@@ -11,6 +11,7 @@ import datetime
 import flask
 import flask_login
 import itsdangerous
+import requests
 from flask_babel import _
 
 from ... import logic
@@ -30,6 +31,20 @@ from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
 from ...models import Permissions, Object
 from ...utils import FlaskResponseT
+
+
+def _default_share_error_handler(
+        component: logic.components.Component,
+        exception: Exception,
+) -> None:
+    if isinstance(exception, logic.errors.MissingComponentAddressError):
+        flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
+    elif isinstance(exception, logic.errors.NoAuthenticationMethodError):
+        flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+    elif isinstance(exception, requests.ConnectionError):
+        flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+    else:
+        raise exception
 
 
 def show_object_form(
@@ -163,6 +178,7 @@ def show_object_form(
             'may_create_log_entry': may_create_log_entry,
             'create_log_entry_default': create_log_entry_default,
             'instrument_log_categories': instrument_log_categories,
+            'has_default_shares': len(logic.shares.get_default_shares(flask_login.current_user.id)) != 0,
         })
 
     template_arguments.update({
@@ -224,6 +240,7 @@ def show_object_form(
             if object is None:
                 copy_permissions_object_id, permissions_for_group_id, permissions_for_project_id = _parse_permissions_ids(form_data)
                 read_permissions_to_all_users = form_data.get('all_users_read_permissions') == '1'
+                use_default_shares = form_data.get('use_default_shares') == '1'
                 permanent_file_names_by_id = {}
                 permanent_file_map = {}
                 for ind, file_id in enumerate(referenced_temporary_file_ids):
@@ -240,7 +257,9 @@ def show_object_form(
                         permissions_for_project_id=permissions_for_project_id,
                         permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
                         data_validator_arguments={'file_names_by_id': permanent_file_names_by_id},
-                        validate_data=False     # validated on data_sequence creation
+                        validate_data=False,  # validated on data_sequence creation
+                        use_default_shares=use_default_shares,
+                        default_share_error_handler=_default_share_error_handler,
                     )
                 else:
                     objects = [create_object(
@@ -253,7 +272,9 @@ def show_object_form(
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,
                         permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
-                        data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
+                        data_validator_arguments={'file_names_by_id': permanent_file_names_by_id},
+                        use_default_shares=use_default_shares,
+                        default_share_error_handler=_default_share_error_handler,
                     )]
                 object_ids = [object.id for object in objects]
                 if action.instrument_id and not flask.current_app.config['DISABLE_INSTRUMENTS'] and may_create_log_entry:

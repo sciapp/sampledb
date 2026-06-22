@@ -10,10 +10,12 @@ import sqlalchemy
 from sqlalchemy.dialects import postgresql
 
 from .. import db
+from .. import logic
 from . import errors
 from . import actions
 from . import action_types
 from . import components
+from . import shares
 from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
 from . import instruments
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
@@ -231,7 +233,12 @@ def get_user_object_permissions(
     )
 
 
-def set_initial_permissions(obj: Object, user_id: typing.Optional[int] = None) -> None:
+def set_initial_permissions(
+        obj: Object,
+        user_id: typing.Optional[int] = None,
+        use_default_shares: bool = True,
+        default_share_error_handler: typing.Optional[typing.Callable[[components.Component, Exception], None]] = None,
+) -> None:
     if user_id is None:
         user_id = obj.user_id
     if user_id is None:
@@ -248,6 +255,20 @@ def set_initial_permissions(obj: Object, user_id: typing.Optional[int] = None) -
         set_project_object_permissions(object_id=obj.object_id, project_id=project_id, permissions=permissions)
     permissions_for_all_users = get_default_permissions_for_all_users(creator_id=user_id)
     set_object_permissions_for_all_users(object_id=obj.object_id, permissions=permissions_for_all_users)
+    if use_default_shares and obj.eln_object_id is None and obj.component_id is None:
+        default_shares = shares.get_default_shares(creator_id=user_id)
+        for default_share in default_shares:
+            shares.add_object_share(
+                object_id=obj.object_id,
+                component_id=default_share.component_id,
+                policy=default_share.policy,
+                user_id=default_share.user_id,
+            )
+            try:
+                logic.federation.update.update_poke_component(default_share.component)
+            except Exception as e:
+                if default_share_error_handler is not None:
+                    default_share_error_handler(default_share.component, e)
 
 
 @dataclasses.dataclass(frozen=True)

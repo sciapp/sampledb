@@ -20,7 +20,7 @@ import sqlalchemy
 
 from .components import get_component_by_uuid
 from ..models import Objects, Object, Action, ActionType, Permissions
-from . import object_log, user_log, object_permissions, background_tasks, errors, users, actions, tags
+from . import object_log, user_log, object_permissions, background_tasks, errors, users, actions, tags, components
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
 from .utils import cache
@@ -39,7 +39,9 @@ def create_object(
         permissions_for_project_id: typing.Optional[int] = None,
         permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
-        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        use_default_shares: bool = True,
+        default_share_error_handler: typing.Optional[typing.Callable[[components.Component, Exception], None]] = None,
 ) -> Object:
     """
     Creates an object using the given action and its schema. This function
@@ -62,6 +64,9 @@ def create_object(
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
+    :param use_default_shares: whether default shares should be used for
+        initial permissions
+    :param default_share_error_handler: error handler for default shares
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -97,7 +102,11 @@ def create_object(
         object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
         object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
     else:
-        object_permissions.set_initial_permissions(object)
+        object_permissions.set_initial_permissions(
+            object,
+            use_default_shares=use_default_shares,
+            default_share_error_handler=default_share_error_handler
+        )
     if permissions_for_all_users is not None:
         object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
@@ -208,7 +217,9 @@ def create_object_batch(
         permissions_for_project_id: typing.Optional[int] = None,
         permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
-        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        use_default_shares: bool = True,
+        default_share_error_handler: typing.Optional[typing.Callable[[components.Component, Exception], None]] = None,
 ) -> typing.Sequence[Object]:
     """
     Creates a batch of objects using the given action and its schema. This
@@ -231,6 +242,9 @@ def create_object_batch(
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
+    :param use_default_shares: whether default shares should be used for
+        initial permissions
+    :param default_share_error_handler: error handler for default shares
     :return: the created objects
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -274,7 +288,11 @@ def create_object_batch(
                     object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
                     object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
                 else:
-                    object_permissions.set_initial_permissions(object)
+                    object_permissions.set_initial_permissions(
+                        object,
+                        use_default_shares=use_default_shares,
+                        default_share_error_handler=default_share_error_handler
+                    )
                 if permissions_for_all_users is not None:
                     object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
                 object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)

@@ -89,4 +89,8 @@ $(function () {
   if (window.getTemplateValue('show_selecting_modal')) {
     $('#selectionModal').modal('show');
   }
+  $('input[name="permissions_method"]').on('change', function () {
+    const permissionsMethod = $('input[name="permissions_method"]:checked').val();
+    $('input[name="use_default_shares"]').prop('disabled', permissionsMethod !== 'default_permissions').parent().toggleClass('text-muted', permissionsMethod !== 'default_permissions');
+  }).trigger('change');
 });

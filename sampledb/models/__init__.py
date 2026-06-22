@@ -75,7 +75,7 @@ from .permissions import Permissions
 from .projects import Project, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
 from .scicat_export import SciCatExport
 from .settings import Settings
-from .shares import ObjectShare
+from .shares import DefaultShare, ObjectShare
 from .tags import Tag
 from .topics import Topic
 from .temporary_files import TemporaryFile
@@ -210,6 +210,7 @@ __all__ = [
     'ComponentAuthentication',
     'OwnComponentAuthentication',
     'ComponentAuthenticationType',
+    'DefaultShare',
     'ObjectShare',
     'ObjectDataToHTMLCacheEntry',
     'FedUserLogEntry',
