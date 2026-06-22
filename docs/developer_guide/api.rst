@@ -1021,10 +1021,13 @@ Reading a list of all instruments
             {
                 "instrument_id": 1,
                 "name": "Example Instrument",
+                "short_description": "",
                 "description": "This is an example instrument",
                 "is_hidden": false,
                 "instrument_scientists": [1, 42],
-                "location_id": null
+                "location_id": null,
+                "fed_id": null,
+                "component_id": null
             }
         ]
 
@@ -1057,18 +1060,24 @@ Reading an instrument
         {
             "instrument_id": 1,
             "name": "Example Instrument",
+            "short_description": "",
             "description": "This is an example instrument",
             "is_hidden": false,
             "instrument_scientists": [1, 42],
-            "location_id": 1
+            "location_id": 1,
+            "fed_id": null,
+            "component_id": null
         }
 
     :>json number instrument_id: the instrument's ID
     :>json string name: the instruments's name
+    :>json string short_description: the instruments's short description
     :>json string description: the instruments's description
     :>json bool is_hidden: whether or not the instrument is hidden
     :>json list instrument_scientists: the instrument scientists' IDs
     :>json number location_id: the instrument location's ID
+    :>jaon number fed_id: The instrument ID on the partner component if federated, else `null`
+    :>jaon number component_id: The partner component's ID if federated, else `null`
     :statuscode 200: no error
     :statuscode 404: the instrument does not exist
 
