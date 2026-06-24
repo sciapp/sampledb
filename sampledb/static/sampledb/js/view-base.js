@@ -334,7 +334,8 @@ $(function () {
     }
   }
   if (window.getTemplateValue('has_related_objects_tree')) {
-    $('input[name^=data_export_object_]').prop('checked', false);
+    $('input[name^="data_export_object_"]').prop('checked', false);
+    $('input[name^="data_select_object_"]').prop('checked', false);
     $('input.data_export_object').prop('checked', false);
     $(`input.data_export_object_${window.getTemplateValue('object_id')}`).prop('checked', true);
   }
@@ -359,7 +360,7 @@ $(function () {
     const pdfExportLanguage = $('#pdf–export-sections select[name="language"]').selectpicker('val');
     const objectIDsToExport = [];
     if (window.getTemplateValue('has_related_objects_tree')) {
-      $('input[name^=data_export_object_]').each(function () {
+      $('input[name^="data_export_object_"]').each(function () {
         if ($(this).prop('checked')) {
           objectIDsToExport.push(parseInt($(this).attr('data-object-id'), 10));
         }
@@ -383,12 +384,67 @@ $(function () {
   $('#pdf–export-sections select[name="language"]').on('change', function () {
     updateDataExportLink();
   });
-  $('input[name^=data_export_object_]').on('change', function () {
-    $('input.' + this.name + ':not([name=' + this.name + '])').prop('checked', $(this).prop('checked'));
+  function onDataExportToggleChange (cb) {
+    $('input.data_export_object_' + $(cb).data('objectId') + ':not([name=' + cb.name + '])').prop('checked', $(cb).prop('checked'));
     updateDataExportLink();
+  }
+  function onDataSelectToggleChange (cb) {
+    $('input.data_select_object_' + $(cb).data('objectId') + ':not([name=' + cb.name + '])').prop('checked', $(cb).prop('checked'));
+    const selectedObjectIDs = [];
+    if (window.getTemplateValue('has_related_objects_tree')) {
+      $('input[name^="data_select_object_"]').each(function () {
+        if ($(this).prop('checked')) {
+          selectedObjectIDs.push(parseInt($(this).attr('data-object-id'), 10));
+        }
+      });
+    } else {
+      selectedObjectIDs.push(window.getTemplateValue('object_id'));
+    }
+    if (selectedObjectIDs.length > 0) {
+      const idString = '&ids=' + selectedObjectIDs.join(',');
+      $('.multiple-objects-link').each(function () {
+        $(this).attr('href', $(this).data('base-url') + idString);
+        $(this).toggleClass('disabled', false);
+      });
+      $('#multiselect-dropdown').toggleClass('disabled', false);
+    } else {
+      $('.multiple-objects-link').each(function () {
+        $(this).attr('href', '#');
+        $(this).toggleClass('disabled', true);
+      });
+      $('#multiselect-dropdown').toggleClass('disabled', true);
+    }
+  }
+  $('#multiselect-toggle').on('change', function () {
+    if ($(this).prop('checked')) {
+      window.setTimeout(function () {
+        $('#multiselect-toggle').bootstrapToggle('destroy').hide().closest('.checkbox').remove();
+      }, 300);
+    }
+  }).prop('checked', false).bootstrapToggle('off');
+  function toggleAllSelectButtons (state) {
+    const container = $('#related-objects-container');
+    let collapsedTreeToggles = container.find('input.related-objects-tree-toggle:not(:checked)');
+    while (collapsedTreeToggles.length > 0) {
+      collapsedTreeToggles.each(function () {
+        $(this).prop('checked', true);
+        $(this).trigger('change');
+      });
+      collapsedTreeToggles = container.find('input.related-objects-tree-toggle:not(:checked)');
+    }
+    container.find('input.data_export_object').prop('checked', state);
+    onDataSelectToggleChange($('input[name^="data_select_object_"]').first());
+  }
+  $('#multiselect-select-all-button').on('click', function () {
+    toggleAllSelectButtons(true);
   });
+  $('#multiselect-deselect-all-button').on('click', function () {
+    toggleAllSelectButtons(false);
+  });
+  $('input[name^="data_export_object_"]').on('change', function () { return onDataExportToggleChange(this); });
+  $('input[name^="data_select_object_"]').on('change', function () { return onDataSelectToggleChange(this); });
+  const exportModal = $('#dataExportModal');
   $('#button-related-objects-select-all').on('click', function () {
-    const exportModal = $('#dataExportModal');
     for (let toggles = exportModal.find('.related-objects-tree-toggle:not(:checked)'); toggles.length > 0; toggles = exportModal.find('.related-objects-tree-toggle:not(:checked)')) {
       toggles.prop('checked', true);
       toggles.trigger('change');
@@ -397,7 +453,7 @@ $(function () {
     updateDataExportLink();
   });
   $('#button-related-objects-deselect-all').on('click', function () {
-    $('input.data_export_object').prop('checked', false);
+    exportModal.find('input.data_export_object').prop('checked', false);
     updateDataExportLink();
   });
   $('#select-export-format').on('change', function () {
@@ -507,21 +563,33 @@ $(function () {
         if (relationshipElement !== null) {
           result.append(relationshipElement);
         }
-        if (inExportDataModal && objectEntry.objectId) {
-          const exportToggleTitle = window.getTemplateValue('translations.include_object_in_export').replace('OBJECT_ID_PLACEHOLDER', objectEntry.objectId);
-          const exportToggle = $(`<span class="data_export_object_wrapper"><input type="checkbox" title="${exportToggleTitle}" class="data_export_object data_export_object_${objectEntry.objectId}" /><label for="data_export_object_${objectEntry.objectId}" class="fa fa-fw"><span class="sr-only">${exportToggleTitle}</span></label></span>`);
-          const exportToggleInput = exportToggle.find('input');
+        if (objectEntry.objectId) {
+          let selectionToggleTitle = '';
+          let selectionToggleInputPrefix = '';
+          if (inExportDataModal) {
+            selectionToggleTitle = window.getTemplateValue('translations.include_object_in_export').replace('OBJECT_ID_PLACEHOLDER', objectEntry.objectId);
+            selectionToggleInputPrefix = 'data_export_object';
+          } else {
+            selectionToggleTitle = window.getTemplateValue('translations.include_object_in_selection').replace('OBJECT_ID_PLACEHOLDER', objectEntry.objectId);
+            selectionToggleInputPrefix = 'data_select_object';
+          }
+          const selectionToggle = $(`<span class="data_export_object_wrapper"><input type="checkbox" title="${selectionToggleTitle}" class="data_export_object ${selectionToggleInputPrefix}_${objectEntry.objectId}" /><label for="${selectionToggleInputPrefix}_${objectEntry.objectId}" class="fa fa-fw"><span class="sr-only">${selectionToggleTitle}</span></label></span>`);
+          const selectionToggleInput = selectionToggle.find('input');
 
           if (isFirstInstanceOfObject) {
-            exportToggleInput.attr('name', `data_export_object_${objectEntry.objectId}`);
-            exportToggleInput.attr('id', `data_export_object_${objectEntry.objectId}`);
-            exportToggleInput.attr('data-object-id', objectEntry.objectId);
-            exportToggleInput.on('change', updateDataExportLink);
+            selectionToggleInput.attr('name', `${selectionToggleInputPrefix}_${objectEntry.objectId}`);
+            selectionToggleInput.attr('id', `${selectionToggleInputPrefix}_${objectEntry.objectId}`);
+            selectionToggleInput.attr('data-object-id', objectEntry.objectId);
+            if (inExportDataModal) {
+              selectionToggleInput.on('change', function () { return onDataExportToggleChange(this); });
+            } else {
+              selectionToggleInput.on('change', function () { return onDataSelectToggleChange(this); });
+            }
           } else {
-            exportToggleInput.prop('disabled', true);
+            selectionToggleInput.prop('disabled', true);
           }
           result.append(' ');
-          result.append(exportToggle);
+          result.append(selectionToggle);
         }
         result.append(objectEntry.span.clone());
         result.find('[data-toggle="tooltip"]').tooltip();
@@ -532,6 +600,7 @@ $(function () {
       $(`#related_object_toggle_false_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
       $(`#related_object_toggle_true_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
       $(`#data_export_object_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
+      $(`#data_select_object_${rootObjectEntry.objectId}`).prop('checked', true).trigger('change');
     });
   }
 });

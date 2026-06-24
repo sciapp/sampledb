@@ -1653,7 +1653,45 @@
   {% if not is_archived and action is not none and action.type.enable_related_objects %}
     <h2 id="related_objects">{{ _('Related Objects') }}</h2>
 
-    <div class="related-objects">
+
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" id="multiselect-toggle" data-onstyle="default" data-toggle="toggle" data-width="153" data-on="{{ _('Multiple Objects') }}&hellip;" data-off="{{ _('Multiple Objects') }}&hellip;" style="display: none">
+        <span class="sr-only">{{ _('Multiple Objects') }}</span>
+      </label>
+    </div>
+
+    <div id="multiselect-button-container">
+      {% set multiselect_external_links = [] %}
+      {% for external_links in config["EXTERNAL_LINKS"] %}
+        {% if external_links.get('multiple') and 'objects_by_action_id' in external_links.get('applies_to', {})  %}
+          {% do multiselect_external_links.append((loop.index0, external_links)) %}
+        {% endif %}
+      {% endfor %}
+      <div class="btn-group">
+        <button class="btn btn-default dropdown-toggle" type="button" id="multiselect-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ _('Multiple Objects') }}&hellip; <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="multiselect-dropdown">
+          <li><a href="{{ url_for('.objects', edit_location=True, ids=object_id) }}" data-base-url="{{ url_for('.objects', edit_location=True) }}" class="dropdown-item multiple-objects-link"> <i class="fa fa-fw fa-map-marker" aria-hidden="true"></i> {{ _('Assign Location') }}</a></li>
+          <li><a href="{{ url_for('.objects', generate_labels=True, ids=object_id) }}" data-base-url="{{ url_for('.objects', generate_labels=True) }}" class="dropdown-item multiple-objects-link"><i class="fa fa-fw fa-tag" aria-hidden="true"></i> {{ _('Generate Labels') }}</a></li>
+          <li><a href="{{ url_for('.objects', edit_permissions=True, ids=object_id) }}" data-base-url="{{ url_for('.objects', edit_permissions=True) }}" class="dropdown-item multiple-objects-link"><i class="fa fa-fw fa-lock" aria-hidden="true"></i> {{ _('Edit Permissions') }}</a></li>
+          {% if all_components %}
+            <li><a href="{{ url_for('.objects', share_with_other_database=True, ids=object_id) }}" data-base-url="{{ url_for('.objects', share_with_other_database=True) }}" class="dropdown-item multiple-objects-link"><i class="fa fa-fw fa-share-alt" aria-hidden="true"></i> {{ _('Share with Other Database') }}</a></li>
+          {% endif %}
+          {% if multiselect_external_links %}
+            <h6 class="dropdown-header"> {{ _('External Links') }} </h6>
+            {% for index, external_links in multiselect_external_links %}
+              <li><a href="{{ url_for('.objects', visit_external_link=index, ids=object_id) }}" data-base-url="{{ url_for('.objects', visit_external_link=index) }}" class="dropdown-item multiple-objects-link"><i class="fa fa-fw {{ external_links.icon }}" aria-hidden="true"></i> {{ external_links.label | get_translated_text }}</a></li>
+            {% endfor %}
+          {% endif %}
+        </ul>
+      </div>
+      <button type="button" class="btn btn-default" id="multiselect-select-all-button">{{ _('Select All') }}</button>
+      <button type="button" class="btn btn-default" id="multiselect-deselect-all-button">{{ _('Deselect All') }}</button>
+    </div>
+
+    <div class="related-objects" id="related-objects-container">
       <i class="fa fa-spinner fa-pulse fa-2x fa-fw" data-toggle="tooltip" title="{{ _('Loading related objects...') }}" data-placement="right"></i>
     </div>
   {% endif %}
@@ -1871,6 +1909,7 @@
   {% do set_template_value("translations.referenced_relationship_text", _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name='OBJECT_NAME_PLACEHOLDER', object_id='OBJECT_ID_PLACEHOLDER')) %}
   {% do set_template_value("translations.referencing_relationship_text", _('References %(object_name)s (#%(object_id)s) in its metadata', object_name='OBJECT_NAME_PLACEHOLDER', object_id='OBJECT_ID_PLACEHOLDER')) %}
   {% do set_template_value("translations.include_object_in_export", _('Include #%(object_id)s in Export', object_id='OBJECT_ID_PLACEHOLDER')) %}
+  {% do set_template_value("translations.include_object_in_selection", _('Include #%(object_id)s in selection', object_id='OBJECT_ID_PLACEHOLDER')) %}
   {% do set_template_value("translations.failed_to_load_related_objects", _('Failed to load related objects.')) %}
 
   {{ super() }}

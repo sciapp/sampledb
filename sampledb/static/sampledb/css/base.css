@@ -608,6 +608,23 @@ th:hover .search-helper {
     cursor: initial;
 }
 
+.multiple-objects-link.disabled {
+    pointer-events: none;
+    cursor: default;
+    color: #777;
+}
+#related_objects + .checkbox + #multiselect-button-container,
+#related_objects + .checkbox + #multiselect-button-container + #related-objects-container .data_export_object_wrapper {
+    display:none;
+}
+#multiselect-button-container {
+    margin-bottom: 8px;
+}
+#multiselect-button-container > button {
+    margin-bottom: 2px;
+    min-width: 153px;
+}
+
 .nav-search-link {
     display:none;
 }

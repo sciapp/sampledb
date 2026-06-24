@@ -169,6 +169,7 @@ def objects() -> FlaskResponseT:
     implicit_action_type = None
     object_ids_str = flask.request.form.get('ids', flask.request.args.get('ids', ''))
     object_ids: typing.Optional[typing.Set[int]] = None
+    selected_object_ids: typing.List[int] = []
     if object_ids_str:
         try:
             object_ids = {
@@ -184,6 +185,7 @@ def objects() -> FlaskResponseT:
                 object_ids=list(object_ids or set())
             )
             db_objects.sort(key=lambda db_object: db_object.object_id)
+        selected_object_ids = list(object_ids or [])
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
@@ -1144,6 +1146,12 @@ def objects() -> FlaskResponseT:
                             available_action_types.append(action_type)
                     tried_object_action_types.add(object_action.type_id)
 
+    selected_object_ids = [
+        object_id
+        for object_id in selected_object_ids
+        if object_id in objects_allowed_to_select
+    ]
+
     sorted_action_topics = []
     sorted_instrument_topics = []
     user_favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
@@ -1254,6 +1262,7 @@ def objects() -> FlaskResponseT:
         all_languages=all_languages,
         create_from_objects=create_from_objects,
         objects_allowed_to_select=objects_allowed_to_select,
+        selected_object_ids=selected_object_ids,
         available_action_types=available_action_types,
         use_in_action_type=use_in_action_type,
         favorite_actions=favorite_actions,
