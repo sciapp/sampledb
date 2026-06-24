@@ -38,10 +38,10 @@ from ..logic.objects import get_object
 from ..logic.object_permissions import get_object_info_with_permissions, get_user_object_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from ..logic.shares import get_shares_for_object
-from ..logic.locations import get_location, get_object_location_assignment
+from ..logic.locations import get_location, get_locations_tree, get_descendent_location_ids, get_object_location_assignment
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data, parse_filter_id_params, build_modified_url
-from ..utils import FlaskResponseT
+from ..utils import FlaskResponseT, text_to_bool
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.topics import set_instrument_topics, get_topics, get_topic
@@ -54,7 +54,10 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 INSTRUMENT_LIST_FILTER_PARAMETERS = (
     'instrument_list_filters',
-    'topic_ids'
+    'topic_ids',
+    'location_ids',
+    'location',
+    'include_sub_locations'
 )
 
 
@@ -112,12 +115,15 @@ class ObjectLinkForm(FlaskForm):
 
 def _parse_instrument_list_filters(
         params: werkzeug.datastructures.MultiDict[str, str],
-        valid_topic_ids: typing.List[int]
+        valid_topic_ids: typing.List[int],
+        valid_location_ids: typing.List[int]
 ) -> typing.Tuple[
     bool,
     typing.Optional[typing.List[int]],
+    typing.Optional[typing.List[int]],
+    bool,
 ]:
-    FALLBACK_RESULT = False, None
+    FALLBACK_RESULT = False, None, None, True
     success, filter_topic_ids = parse_filter_id_params(
         params=params,
         param_aliases=['topic_ids'],
@@ -130,10 +136,43 @@ def _parse_instrument_list_filters(
     if not success:
         return FALLBACK_RESULT
 
+    success, filter_location_ids = parse_filter_id_params(
+        params=params,
+        param_aliases=['location_ids', 'location'],
+        valid_ids=valid_location_ids,
+        id_map={},
+        multi_params_error=_('Only one of location_ids and location may be set.'),
+        parse_error=_('Unable to parse location IDs.'),
+        invalid_id_error=_('Invalid location ID.')
+    )
+    if not success:
+        return FALLBACK_RESULT
+
+    include_sub_locations_values = params.getlist('include_sub_locations')
+    include_sub_locations = text_to_bool(include_sub_locations_values[-1]) if include_sub_locations_values else True
+
     return (
         True,
         filter_topic_ids,
+        filter_location_ids,
+        include_sub_locations,
     )
+
+
+def _get_location_ids_including_descendents(location_ids: typing.Iterable[int]) -> typing.Set[int]:
+    location_ids = set(location_ids)
+    effective_location_ids = set(location_ids)
+    if not location_ids:
+        return effective_location_ids
+    _locations_map, locations_tree = get_locations_tree()
+    location_ids_and_subtrees = list(locations_tree.items())
+    while location_ids_and_subtrees:
+        location_id, subtree = location_ids_and_subtrees.pop(0)
+        if location_id in location_ids:
+            effective_location_ids.update(get_descendent_location_ids(subtree))
+        else:
+            location_ids_and_subtrees.extend(subtree.items())
+    return effective_location_ids
 
 
 @frontend.route('/instruments/')
@@ -152,28 +191,70 @@ def instruments() -> FlaskResponseT:
 
     topics = get_topics()
     valid_topic_ids = [topic.id for topic in topics]
+    location_filter_all_choices, location_filter_choices = get_locations_form_data(
+        filter=lambda location: True
+    )
+    valid_location_ids = [
+        int(location_id)
+        for location_id, _location_name in location_filter_choices
+        if location_id != '-1'
+    ]
+
+    instrument_list_filter_settings = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_INSTRUMENT_LIST_FILTERS']
+    filter_topic_ids = instrument_list_filter_settings.get('filter_topic_ids', [])
+    filter_location_ids = instrument_list_filter_settings.get('filter_location_ids', [])
+    if filter_location_ids is not None:
+        # remove location IDs which may have become invalid
+        filter_location_ids = [
+            location_id
+            for location_id in filter_location_ids
+            if location_id in valid_location_ids
+        ]
+    include_sub_locations = instrument_list_filter_settings.get('include_sub_locations', True)
 
     if 'instrument_list_filters' in flask.request.args or any(any(flask.request.args.getlist(param)) for param in INSTRUMENT_LIST_FILTER_PARAMETERS):
         (
             success,
-            filter_topic_ids,
+            args_filter_topic_ids,
+            args_filter_location_ids,
+            args_include_sub_locations,
         ) = _parse_instrument_list_filters(
             params=flask.request.args,
-            valid_topic_ids=valid_topic_ids
+            valid_topic_ids=valid_topic_ids,
+            valid_location_ids=valid_location_ids
         )
         if not success:
             return flask.abort(400)
-    else:
-        filter_topic_ids = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_INSTRUMENT_LIST_FILTERS'].get('filter_topic_ids', [])
+        passed_filter_params = {
+            param
+            for param in INSTRUMENT_LIST_FILTER_PARAMETERS
+            if param in flask.request.args.keys()
+        }
+        if {'instrument_list_filters', 'topic_ids'} & passed_filter_params:
+            filter_topic_ids = args_filter_topic_ids
+        if {'instrument_list_filters', 'location_ids', 'location'} & passed_filter_params:
+            filter_location_ids = args_filter_location_ids
+        if {'instrument_list_filters', 'include_sub_locations'} & passed_filter_params:
+            include_sub_locations = args_include_sub_locations
 
     if filter_topic_ids is None or flask.current_app.config['DISABLE_TOPICS']:
         filter_topic_ids = []
+    if filter_location_ids is None:
+        filter_location_ids = []
 
     if filter_topic_ids:
         instruments = [
             instrument
             for instrument in instruments
             if any(topic in [topic.id for topic in instrument.topics] for topic in filter_topic_ids)
+        ]
+
+    effective_filter_location_ids = _get_location_ids_including_descendents(filter_location_ids) if include_sub_locations else set(filter_location_ids)
+    if effective_filter_location_ids:
+        instruments = [
+            instrument
+            for instrument in instruments
+            if instrument.location_id in effective_filter_location_ids
         ]
 
     filter_topic_infos = []
@@ -183,6 +264,16 @@ def instruments() -> FlaskResponseT:
             filter_topic_infos.append({
                 'name': get_translated_text(topic.name, default=_('Unnamed Topic')),
                 'url': flask.url_for('.topic', topic_id=topic_id)
+            })
+
+    filter_location_infos = []
+    if filter_location_ids:
+        for location_id in filter_location_ids:
+            location = get_location(location_id)
+            filter_location_infos.append({
+                'name': get_translated_text(location.name, default=_('Unnamed Location')),
+                'url': flask.url_for('.location', location_id=location_id),
+                'location': location,
             })
 
     # Sort by: favorite / not favorite, instrument name
@@ -201,6 +292,10 @@ def instruments() -> FlaskResponseT:
         topics=topics,
         filter_topic_infos=filter_topic_infos,
         filter_topic_ids=filter_topic_ids,
+        filter_location_infos=filter_location_infos,
+        filter_location_ids=filter_location_ids,
+        include_sub_locations=include_sub_locations,
+        location_filter_all_choices=location_filter_all_choices,
     )
 
 
@@ -210,9 +305,18 @@ def save_instrument_list_defaults() -> FlaskResponseT:
     if 'save_default_instrument_filters' in flask.request.form:
         topics = get_topics()
         valid_topic_ids = [topic.id for topic in topics]
-        success, filter_topic_ids = _parse_instrument_list_filters(
+        _location_filter_all_choices, location_filter_choices = get_locations_form_data(
+            filter=lambda location: True
+        )
+        valid_location_ids = [
+            int(location_id)
+            for location_id, _location_name in location_filter_choices
+            if location_id != '-1'
+        ]
+        success, filter_topic_ids, filter_location_ids, include_sub_locations = _parse_instrument_list_filters(
             params=flask.request.form,
-            valid_topic_ids=valid_topic_ids
+            valid_topic_ids=valid_topic_ids,
+            valid_location_ids=valid_location_ids
         )
         if not success:
             return flask.abort(400)
@@ -221,6 +325,8 @@ def save_instrument_list_defaults() -> FlaskResponseT:
             data={
                 'DEFAULT_INSTRUMENT_LIST_FILTERS': {
                     'filter_topic_ids': filter_topic_ids,
+                    'filter_location_ids': filter_location_ids,
+                    'include_sub_locations': include_sub_locations,
                 }
             }
         )

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-07-02 14:57+0200\n"
+"POT-Creation-Date: 2026-07-15 16:25+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -495,6 +495,18 @@ msgstr "Die Infoseite wurde erfolgreich erstellt."
 
 msgid "The info page has been updated successfully."
 msgstr "Die Infoseite wurde erfolgreich aktualisiert."
+
+msgid "Only one of location_ids and location may be set."
+msgstr "location_ids und location dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse location IDs."
+msgstr "Orts-IDs konnten nicht geparst werden."
+
+msgid "Invalid location ID."
+msgstr "Ungültige Orts-ID."
+
+msgid "Unnamed Location"
+msgstr "Unbenannter Ort"
 
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
@@ -1157,9 +1169,6 @@ msgstr "Unbekannter Ort"
 msgid "Location"
 msgstr "Ort"
 
-msgid "Unnamed Location"
-msgstr "Unbenannter Ort"
-
 msgid "Basic Group"
 msgstr "Einfache Gruppe"
 
@@ -1439,15 +1448,6 @@ msgstr "Unbenannte Aktion"
 
 msgid ".eln file"
 msgstr ".eln-Datei"
-
-msgid "Only one of location_ids and location may be set."
-msgstr "location_ids und location dürfen nicht beide gesetzt sein."
-
-msgid "Unable to parse location IDs."
-msgstr "Orts-IDs konnten nicht geparst werden."
-
-msgid "Invalid location ID."
-msgstr "Ungültige Orts-ID."
 
 msgid "Only one of action_ids and action may be set."
 msgstr "action_ids und action dürfen nicht beide gesetzt sein."
@@ -4908,6 +4908,18 @@ msgstr "Zeige die Informationen des verknüpften Objekts"
 msgid "Instrument Scientists:"
 msgstr "Instrumentverantwortliche:"
 
+msgid "at location (including sub-locations):"
+msgstr "am Ort (inkl. Unter-Orte):"
+
+msgid "at location:"
+msgstr "am Ort:"
+
+msgid "at locations (including sub-locations):"
+msgstr "an den Orten (inkl. Unter-Orte):"
+
+msgid "at locations:"
+msgstr "an den Orten:"
+
 #, python-format
 msgid ""
 "Instruments in %(service_name)s map real instruments to <a "
@@ -4919,6 +4931,15 @@ msgstr ""
 
 msgid "Create Instrument"
 msgstr "Instrument erstellen"
+
+msgid "Filter by Locations"
+msgstr "Nach Orten filtern"
+
+msgid "All locations"
+msgstr "Alle Orte"
+
+msgid "Include sub-locations"
+msgstr "Unter-Orte mit einbeziehen"
 
 #, python-format
 msgid ""
@@ -5775,9 +5796,6 @@ msgstr "Alle Instrumente"
 
 msgid "Filter by Location"
 msgstr "Nach Ort filtern"
-
-msgid "All locations"
-msgstr "Alle Orte"
 
 msgid "Filter by Publication"
 msgstr "Nach Publikation filtern"
