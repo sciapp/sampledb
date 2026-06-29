@@ -412,7 +412,7 @@ def _handle_webhook_forms(
                 flask.flash(_('Successfully removed the webhook.'), 'success')
             except Exception:
                 flask.flash(_('Failed to remove the webhook.'), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='webhooks'))
 
     if 'add_webhook' in flask.request.form:
         if not may_use_webhooks:
@@ -474,7 +474,7 @@ def _handle_notification_forms(
                         set_notification_mode_for_type(notification_type, flask_login.current_user.id, notification_mode)
                         break
         flask.flash(_("Successfully updated your notification settings."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='notification_settings'))
     return None
 
 
@@ -541,7 +541,7 @@ def _handle_default_permissions_forms(
         default_permissions_form
     ):
         flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='default_permissions'))
     return None
 
 
@@ -667,7 +667,7 @@ def _handle_other_settings_forms(
         flask_login.current_user.clear_caches()
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_settings'))
 
     if 'delete_dataverse_api_token' in flask.request.form:
         set_user_settings(flask_login.current_user.id, {
