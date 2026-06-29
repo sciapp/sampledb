@@ -112,11 +112,15 @@ def objects() -> FlaskResponseT:
         for action_type in all_action_types_including_fed_defaults
         if action_type.fed_id is None or action_type.fed_id < 0
     ]
-    all_actions = [
-        action
-        for action in all_actions_including_hidden
-        if not action.is_hidden
-    ]
+    all_actions = logic.actions.sort_actions_for_user(
+        actions=[
+            action
+            for action in all_actions_including_hidden
+            if not action.is_hidden
+        ],
+        user_id=flask_login.current_user.id,
+        sort_by_favorite=False
+    )
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
         actions=all_actions,
         action_types=all_action_types,
@@ -1137,6 +1141,23 @@ def objects() -> FlaskResponseT:
 
     sorted_action_topics = []
     sorted_instrument_topics = []
+    user_favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+    user_favorite_instrument_ids = logic.favorites.get_user_favorite_instrument_ids(flask_login.current_user.id)
+    favorite_filter_actions = [
+        action
+        for action in all_actions
+        if action.id in user_favorite_action_ids
+    ]
+    all_instruments = sorted(all_instruments, key=lambda instrument: (
+        0 if instrument.fed_id is None else 1,
+        get_translated_text(instrument.name).lower(),
+        instrument.id
+    ))
+    favorite_filter_instruments = [
+        instrument
+        for instrument in all_instruments
+        if instrument.id in user_favorite_instrument_ids
+    ]
     if not flask.current_app.config['DISABLE_TOPICS']:
         sorted_topics = logic.topics.get_topics()
         for topic in sorted_topics:
@@ -1250,6 +1271,10 @@ def objects() -> FlaskResponseT:
         projects_treepicker_info=projects_treepicker_info,
         sorted_action_topics=sorted_action_topics,
         sorted_instrument_topics=sorted_instrument_topics,
+        user_favorite_action_ids=user_favorite_action_ids,
+        user_favorite_instrument_ids=user_favorite_instrument_ids,
+        favorite_filter_actions=favorite_filter_actions,
+        favorite_filter_instruments=favorite_filter_instruments,
     )
 
 
