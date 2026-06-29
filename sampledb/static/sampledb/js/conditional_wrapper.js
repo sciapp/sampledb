@@ -82,7 +82,7 @@ function conditionalWrapper (conditionsElement, idPrefix, schemaConditions) {
         } else {
           disabledByConditionList = disabledByConditionList.filter(function (item) { return item !== idPrefix; });
         }
-        $(this).attr('data-sampledb-disabled-by-conditions', disabledByConditionList).data('sampledb-disabled-by-conditions', disabledByConditionList);
+        $(this).attr('data-sampledb-disabled-by-conditions', JSON.stringify(disabledByConditionList)).data('sampledb-disabled-by-conditions', disabledByConditionList);
         const disabledByConditionsAfter = disabledByConditionList.length > 0;
         if (disabledByConditionsBefore === disabledByConditionsAfter) {
           return;
