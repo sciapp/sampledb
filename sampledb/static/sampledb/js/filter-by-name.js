@@ -23,6 +23,9 @@ $(function () {
   input.on('input change', function () {
     filterByName(input.val());
   });
+  input.closest('form').on('submit', function (event) {
+    event.preventDefault();
+  });
   input.closest('form').on('reset', function () {
     filterByName('');
   });
