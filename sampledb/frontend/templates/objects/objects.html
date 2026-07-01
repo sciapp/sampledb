@@ -517,13 +517,28 @@
                 {{ _('Filter by Action') }}
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">
+                {% if favorite_filter_actions %}
+                  {% if sorted_action_topics %}
+                  <optgroup label="{{ _('Favorites') }}">
+                  {% endif %}
+                    {% for action in favorite_filter_actions %}
+                      <option data-icon="fa fa-star" value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %} data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
+                        {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
+                        {% if action.user %}{{ action.user.get_name() }} / {% endif %}
+                        {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
+                      </option>
+                    {% endfor %}
+                  {% if sorted_action_topics %}
+                  </optgroup>
+                  {% endif %}
+                {% endif %}
                 {% for topic in sorted_action_topics + [None] %}
                   {% if sorted_action_topics %}
                     <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Actions') }}{% endif %}">
                   {% endif %}
                   {% for action in all_actions %}
-                    {% if topic is none or topic in action.topics %}
-                      <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %} data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
+                    {% if (topic is none or topic in action.topics) and (sorted_action_topics or action.id not in user_favorite_action_ids) %}
+                      <option {% if action.id in user_favorite_action_ids %}data-icon="fa fa-star"{% elif action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %} data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
                         {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
                         {% if action.user %}{{ action.user.get_name() }} / {% endif %}
                         {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
@@ -541,13 +556,26 @@
                 {{ _('Filter by Instrument') }}
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on" data-hide-disabled="true">
+                {% if favorite_filter_instruments %}
+                  {% if sorted_instrument_topics %}
+                  <optgroup label="{{ _('Favorites') }}">
+                  {% endif %}
+                    {% for instrument in favorite_filter_instruments %}
+                      <option data-icon="fa fa-star" value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %} data-source="{% if instrument.component_id is none %}local{% else %}component_{{ instrument.component_id }}{% endif %}">
+                        {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}  (#{{ instrument.id }})
+                      </option>
+                    {% endfor %}
+                  {% if sorted_instrument_topics %}
+                  </optgroup>
+                  {% endif %}
+                {% endif %}
                 {% for topic in sorted_instrument_topics + [None] %}
                   {% if sorted_instrument_topics %}
                     <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Instruments') }}{% endif %}">
                   {% endif %}
                   {% for instrument in all_instruments %}
-                    {% if topic is none or topic in instrument.topics %}
-                      <option {% if instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %} data-source="{% if instrument.component_id is none %}local{% else %}component_{{ instrument.component_id }}{% endif %}">
+                    {% if (topic is none or topic in instrument.topics) and (sorted_instrument_topics or instrument.id not in user_favorite_instrument_ids) %}
+                      <option {% if instrument.id in user_favorite_instrument_ids %}data-icon="fa fa-star"{% elif instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %} data-source="{% if instrument.component_id is none %}local{% else %}component_{{ instrument.component_id }}{% endif %}">
                         {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}  (#{{ instrument.id }})
                       </option>
                     {% endif %}
@@ -562,11 +590,7 @@
               <label class="control-label" for="filter_location_ids">
                 {{ _('Filter by Location') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="location_ids" id="filter_location_ids" data-width="100%" data-none-selected-text="{{ _('All locations') }}" data-live-search="on">
-                {% for location in all_locations %}
-                  <option {% if location.component is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ location.id }}" {% if filter_location_ids and location.id in filter_location_ids %}selected="selected"{% endif %}>{{ location.name | get_translated_text }}</option>
-                {% endfor %}
-              </select>
+              {{ treepicker_select(all_location_filter_choices, 'location_ids', 'filter_location_ids', selected_values=filter_location_ids, multiple=true, data_width='100%', none_selected_text=_('All locations'), skip_empty=true) }}
             </div>
             <div class="form-group">
               <label class="control-label" for="filter_doi">
@@ -657,13 +681,7 @@
     <div class="modal-body">
         <div class="form-group">
             <label for="object-location" class="control-label">{{ _('Location') }}</label>
-            <select class="treepicker selectpicker form-control" id="object-location" name="{{ location_form.location.name }}" data-live-search="true" >
-              {% for location_info in location_form.location.all_choices %}
-                  <option {% if location_info.is_fed %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_info.id }}" {% if location_form.location.data == (location_info.id_string) %}selected="selected"{% endif %} {% if location_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if location_info.has_subtree %}option-group-{{ location_info.id }}-header{% endif %} closed {% for id in location_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (location_info.id_path | length - 1) }}em'>{% if location_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ location_info.name_prefix }}</span>{{ location_info.name }}</span>">
-                      {{ location_info.full_name }}
-                  </option>
-              {% endfor %}
-            </select>
+            {{ treepicker_select(location_form.location.all_choices, location_form.location.name, 'object-location', selected_values=[location_form.location.data]) }}
         </div>
         <div class="form-group">
             <label for="object-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
@@ -882,13 +900,7 @@
           </div>
           <div class="form-group col-sm-6" id="edit-permissions-groups-container" hidden="hidden">
             <label for="edit-permissions-groups" class="control-label">{{ _('Select a Group:') }}</label>
-            <select id="edit-permissions-groups" class="treepicker selectpicker form-control" name="{{ edit_permissions_form.groups.name }}" data-live-search="true" disabled="disabled">
-            {% for group_info in groups_treepicker_info %}
-              <option value="{{ group_info.id }}" {% if group_info.is_disabled %} disabled="disabled" {% endif %} data-content="<span class='{% if group_info.has_subtree %}option-group-{{group_info.id}}-header {% endif %} closed {% for id in group_info.id_path[:-1] %} option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left: {{1.5 * (group_info.id_path | length - 1)}}em'>{% if group_info.has_subtree %} <span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'> {{ group_info.name_prefix }}</span>{{ group_info.name }}</span>">
-                {{ group_info.full_name }}
-              </option>
-            {% endfor %}
-            </select>
+            {{ treepicker_select(groups_treepicker_info, edit_permissions_form.groups.name, 'edit-permissions-groups', disabled=true) }}
           </div>
           <div class="form-group col-sm-6" id="edit-permissions-users-container" hidden="hidden">
             <label for="edit-permissions-users" class="control-label">{{ _('Select an User:') }}</label>
@@ -900,13 +912,7 @@
           </div>
           <div class="form-group col-sm-6" id="edit-permissions-project-groups-container" hidden="hidden">
             <label for="edit-permissions-project-groups" class="control-label">{{ _('Select a Project Group:') }}</label>
-            <select id="edit-permissions-project-groups" class="treepicker selectpicker form-control" name="{{ edit_permissions_form.project_groups.name }}" data-live-search="true" disabled="disabled">
-              {% for project_info in projects_treepicker_info %}
-                <option value="{{ project_info.id }}" {% if project_info.is_disabled %} disabled="disabled" {% endif %} data-content="<span class='{% if project_info.has_subtree %} option-group-{{ project_info.id }}-header{% endif %} closed {% for id in project_info.id_path[:-1] %} option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left: {{1.5 * (project_info.id_path | length - 1) }}em'>{% if project_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'> {{ project_info.name_prefix }}</span>{{ project_info.name }}</span>">
-                  {{ project_info.full_name }}
-                </option>
-              {% endfor %}
-            </select>
+            {{ treepicker_select(projects_treepicker_info, edit_permissions_form.project_groups.name, 'edit-permissions-project-groups', disabled=true) }}
           </div>
         </div>
         <div class="form-group">

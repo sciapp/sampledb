@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-06-12 15:33+0200\n"
+"POT-Creation-Date: 2026-06-30 14:56+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5732,6 +5732,9 @@ msgstr "Nach Aktionstyp filtern"
 msgid "All action types"
 msgstr "Alle Aktionstypen"
 
+msgid "Favorites"
+msgstr "Favoriten"
+
 msgid "Filter by Instrument"
 msgstr "Nach Instrument filtern"
 
@@ -5792,9 +5795,6 @@ msgid "Select objects that can be used in %(action_type_name)s Actions."
 msgstr ""
 "Wählen Sie Objekte aus, die in einer %(action_type_name)s-Aktion genutzt "
 "werden können."
-
-msgid "Favorites"
-msgstr "Favoriten"
 
 #, python-format
 msgid "See other %(action_type_name)s Actions..."

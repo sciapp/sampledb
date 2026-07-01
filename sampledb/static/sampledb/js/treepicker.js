@@ -13,8 +13,8 @@ $(function () {
     option.closest('li').show();
   }
 
-  function collapseExpandMenu (event) {
-    const option = $(event.currentTarget).parent();
+  function collapseExpandMenu (event, collapsibleMenuElement) {
+    const option = $(collapsibleMenuElement || event.currentTarget).parent();
     const ul = option.closest('ul');
     const classes = option.attr('class').split(/\s+/);
     let optionGroupID = null;
@@ -39,6 +39,9 @@ $(function () {
     });
     ul.find('.active').removeClass('active');
     event.stopPropagation();
+    if (event.stopImmediatePropagation) {
+      event.stopImmediatePropagation();
+    }
     event.preventDefault();
     const treepicker = ul.closest('.treepicker.bootstrap-select');
     if (window.treepicker_change && window.treepicker_change.time >= Date.now() - 10 && window.treepicker_change.target === treepicker[0]) {
@@ -83,7 +86,15 @@ $(function () {
     });
   }
 
-  $(document).on('click', '.treepicker.bootstrap-select .selectpicker-collapsible-menu', collapseExpandMenu);
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest) {
+      return;
+    }
+    const collapsibleMenuElement = event.target.closest('.treepicker.bootstrap-select .selectpicker-collapsible-menu');
+    if (collapsibleMenuElement) {
+      collapseExpandMenu(event, collapsibleMenuElement);
+    }
+  }, true);
   $(document).on('mouseup', '.treepicker.bootstrap-select .disabled .selectpicker-collapsible-menu', collapseExpandMenu);
   $(document).on('show.bs.select', function () {
     $(this).find('.treepicker.bootstrap-select').each(function (_, element) {

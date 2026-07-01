@@ -76,3 +76,18 @@
     {{ _eln_import_information_symbol(object, text=text, nolink=nolink) }}
   {% endif %}
 {% endmacro %}
+
+{% macro treepicker_select(items, name, id, selected_values=(), multiple=false, disabled=false, data_width=none, none_selected_text=none, skip_empty=false) %}
+  {% set selected_values = selected_values or () %}
+  <select class="treepicker selectpicker form-control" id="{{ id }}" name="{{ name }}" data-live-search="true"{% if data_width is not none %} data-width="{{ data_width }}"{% endif %}{% if none_selected_text is not none %} data-none-selected-text="{{ none_selected_text }}"{% endif %}{% if multiple %} multiple="multiple"{% endif %}{% if disabled %} disabled="disabled"{% endif %}>
+    {% for item in items %}
+      {% if not skip_empty or item.id != -1 %}
+        {% set item_id_string = item.id_string if item.id_string is defined else item.id | string %}
+        {% set selected = item.id in selected_values or item_id_string in selected_values %}
+        <option {% if item.is_fed is defined and item.is_fed %}data-icon="fa fa-share-alt"{% endif %} value="{{ item.id }}" {% if selected %}selected="selected"{% endif %} {% if item.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if item.has_subtree %}option-group-{{ item.id }}-header{% endif %} closed {% for id in item.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (item.id_path | length - 1) }}em'>{% if item.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ item.name_prefix }}</span>{{ item.name }}</span>">
+          {{ item.full_name }}
+        </option>
+      {% endif %}
+    {% endfor %}
+  </select>
+{% endmacro %}

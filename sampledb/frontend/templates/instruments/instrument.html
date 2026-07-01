@@ -213,8 +213,10 @@
     </p>
     {% if is_instrument_responsible_user or instrument.users_can_view_log_entries %}
       {% if instrument_log_entries %}
+        {% set show_instrument_log_entry_buttons = not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
+        {% set bottom_buttons_log_entries_threshold = 6 %}
         <div style="margin-bottom: 10px;">
-          {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
+          {% if show_instrument_log_entry_buttons %}
             <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
               <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
             </button>
@@ -413,6 +415,7 @@
           </div>
           </div>
         {% endfor %}
+        </div>
         {% if editable_log_entries %}
           <div class="modal fade" id="editLogEntryModal" tabindex="-1" role="dialog" aria-labelledby="editLogEntryModalLabel">
             <div class="modal-dialog" role="document">
@@ -492,6 +495,16 @@
         {% endif %}
         <div id="instrument-log-tree">
         </div>
+        {% if show_instrument_log_entry_buttons and instrument_log_entries | length >= bottom_buttons_log_entries_threshold %}
+          <div style="margin-top: 10px;">
+            <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+              <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
+              <i class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone Upload as Log Entry') }}
+            </button>
+          </div>
+        {% endif %}
       {% else %}
         <p class="text-muted">{{ _('There are no log entries for this instrument.') }}</p>
         {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
