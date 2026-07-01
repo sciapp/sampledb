@@ -685,13 +685,7 @@
     <div class="modal-body">
         <div class="form-group">
             <label for="object-location" class="control-label">{{ _('Location') }}</label>
-            <select class="treepicker selectpicker form-control" id="object-location" name="{{ location_form.location.name }}" data-live-search="true" >
-              {% for location_info in location_form.location.all_choices %}
-                  <option {% if location_info.is_fed %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_info.id }}" {% if location_form.location.data == (location_info.id_string) %}selected="selected"{% endif %} {% if location_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if location_info.has_subtree %}option-group-{{ location_info.id }}-header{% endif %} closed {% for id in location_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (location_info.id_path | length - 1) }}em'>{% if location_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ location_info.name_prefix }}</span>{{ location_info.name }}</span>">
-                      {{ location_info.full_name }}
-                  </option>
-              {% endfor %}
-            </select>
+            {{ treepicker_select(location_form.location.all_choices, location_form.location.name, 'object-location', selected_values=[location_form.location.data]) }}
         </div>
         <div class="form-group">
             <label for="object-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
@@ -910,13 +904,7 @@
           </div>
           <div class="form-group col-sm-6" id="edit-permissions-groups-container" hidden="hidden">
             <label for="edit-permissions-groups" class="control-label">{{ _('Select a Group:') }}</label>
-            <select id="edit-permissions-groups" class="treepicker selectpicker form-control" name="{{ edit_permissions_form.groups.name }}" data-live-search="true" disabled="disabled">
-            {% for group_info in groups_treepicker_info %}
-              <option value="{{ group_info.id }}" {% if group_info.is_disabled %} disabled="disabled" {% endif %} data-content="<span class='{% if group_info.has_subtree %}option-group-{{group_info.id}}-header {% endif %} closed {% for id in group_info.id_path[:-1] %} option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left: {{1.5 * (group_info.id_path | length - 1)}}em'>{% if group_info.has_subtree %} <span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'> {{ group_info.name_prefix }}</span>{{ group_info.name }}</span>">
-                {{ group_info.full_name }}
-              </option>
-            {% endfor %}
-            </select>
+            {{ treepicker_select(groups_treepicker_info, edit_permissions_form.groups.name, 'edit-permissions-groups', disabled=true) }}
           </div>
           <div class="form-group col-sm-6" id="edit-permissions-users-container" hidden="hidden">
             <label for="edit-permissions-users" class="control-label">{{ _('Select an User:') }}</label>
@@ -928,13 +916,7 @@
           </div>
           <div class="form-group col-sm-6" id="edit-permissions-project-groups-container" hidden="hidden">
             <label for="edit-permissions-project-groups" class="control-label">{{ _('Select a Project Group:') }}</label>
-            <select id="edit-permissions-project-groups" class="treepicker selectpicker form-control" name="{{ edit_permissions_form.project_groups.name }}" data-live-search="true" disabled="disabled">
-              {% for project_info in projects_treepicker_info %}
-                <option value="{{ project_info.id }}" {% if project_info.is_disabled %} disabled="disabled" {% endif %} data-content="<span class='{% if project_info.has_subtree %} option-group-{{ project_info.id }}-header{% endif %} closed {% for id in project_info.id_path[:-1] %} option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left: {{1.5 * (project_info.id_path | length - 1) }}em'>{% if project_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'> {{ project_info.name_prefix }}</span>{{ project_info.name }}</span>">
-                  {{ project_info.full_name }}
-                </option>
-              {% endfor %}
-            </select>
+            {{ treepicker_select(projects_treepicker_info, edit_permissions_form.project_groups.name, 'edit-permissions-project-groups', disabled=true) }}
           </div>
         </div>
         <div class="form-group">
