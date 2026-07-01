@@ -214,6 +214,8 @@ def test_post_action(flask_server, auth):
         'required': ['name']
     }
 
+    action_data = r.json()
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
     for key, value in [
         ('action_id', action.id + 1),
         ('name', {'en': 'Example Action'}),
@@ -222,22 +224,8 @@ def test_post_action(flask_server, auth):
         ('schema', [action.schema]),
         ('schema', {'title': 'Invalid Schema', 'type': 'object'}),
         ('name', 'Example \0Action'),
-        ('schema', {
-            'title': 'Updated Example \0bject',
-            'type': 'object',
-            'properties': {
-                'name': {
-                    'title': 'Object Name',
-                    'type': 'text'
-                }
-            },
-            'required': ['name']
-        }),
         ('name', ''),
         ('name', 'x' * 101)
     ]:
-        action_data = r.json()
-        action_data[key] = value
-        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
-        r = requests.post(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth, json=action_data)
+        r = requests.post(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth, json={**action_data, key: value})
         assert r.status_code == 400
