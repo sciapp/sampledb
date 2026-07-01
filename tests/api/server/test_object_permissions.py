@@ -432,6 +432,10 @@ def test_set_all_user_object_permissions(flask_server, auth, object_id):
     assert r.json() == "none"
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json="write", auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {"message": 'expected "none" or "read"'}
+
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
@@ -473,6 +477,10 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     assert r.status_code == 200
     assert r.json() == "none"
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json="write", auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {"message": 'expected "none" or "read"'}
 
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
@@ -601,6 +609,14 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
     assert r.status_code == 200
     assert r.json()["authenticated_users"] == 'none'
     assert r.json()["anonymous_users"] == 'none'
+
+    request_json = {
+        'authenticated_users': 'write',
+        'anonymous_users': 'grant',
+    }
+    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {"message": 'expected "none" or "read"'}
 
     r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id+1), json=request_json, auth=auth)
     assert r.status_code == 404
