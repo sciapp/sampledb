@@ -37,7 +37,8 @@ from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.federation.update import update_poke_component
 from ...logic.shares import add_object_share, update_object_share, get_share, ObjectShare, get_shares_for_object, merge_policies
-from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, parse_filter_id_params, build_modified_url
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, \
+    parse_filter_id_params, build_modified_url, LocationFormInformation
 from ...logic.utils import get_translated_text, relative_url_for
 from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm, MultiObjectNewShareAccessForm
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -204,6 +205,7 @@ def objects() -> FlaskResponseT:
         all_action_types = []
         filter_action_type_ids: typing.Optional[typing.List[int]] = []
         all_locations = []
+        all_location_filter_choices: typing.Sequence[LocationFormInformation] = []
         filter_location_ids: typing.Optional[typing.List[int]] = []
         filter_related_user_ids = None
         all_users = []
@@ -224,6 +226,9 @@ def objects() -> FlaskResponseT:
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+        all_location_filter_choices, _location_filter_choices = get_locations_form_data(
+            filter=lambda location: True
+        )
 
         valid_location_ids = [
             location.id
@@ -1220,6 +1225,7 @@ def objects() -> FlaskResponseT:
         all_action_types=all_action_types,
         filter_action_type_ids=filter_action_type_ids,
         all_locations=all_locations,
+        all_location_filter_choices=all_location_filter_choices,
         filter_location_ids=filter_location_ids,
         all_users=all_users,
         filter_related_user_ids=filter_related_user_ids,

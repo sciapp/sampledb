@@ -590,11 +590,7 @@
               <label class="control-label" for="filter_location_ids">
                 {{ _('Filter by Location') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="location_ids" id="filter_location_ids" data-width="100%" data-none-selected-text="{{ _('All locations') }}" data-live-search="on">
-                {% for location in all_locations %}
-                  <option {% if location.component is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ location.id }}" {% if filter_location_ids and location.id in filter_location_ids %}selected="selected"{% endif %}>{{ location.name | get_translated_text }}</option>
-                {% endfor %}
-              </select>
+              {{ treepicker_select(all_location_filter_choices, 'location_ids', 'filter_location_ids', selected_values=filter_location_ids, multiple=true, data_width='100%', none_selected_text=_('All locations'), skip_empty=true) }}
             </div>
             <div class="form-group">
               <label class="control-label" for="filter_doi">
