@@ -8,7 +8,7 @@ from ...utils import FlaskResponseT
 
 
 def is_api_error() -> bool:
-    return flask.request.blueprint == 'api' or flask.request.blueprint is None and flask.request.path.startswith('/api/')
+    return flask.request.blueprint in ('api_v1', 'api_v2') or flask.request.blueprint is None and flask.request.path.startswith('/api/')
 
 
 def handle_api_error(error: typing.Any) -> FlaskResponseT:
