@@ -18,7 +18,7 @@ def group_to_json(group: groups.Group) -> typing.Dict[str, typing.Any]:
         'description': group.description,
         'member_users': [{
             'user_id': user_id,
-            'href': flask.url_for('api.user', user_id=user_id, _external=True),
+            'href': flask.url_for('.user', user_id=user_id, _external=True),
         } for user_id in sorted(groups.get_group_member_ids(group_id=group.id))]
     }
 
@@ -59,7 +59,7 @@ class GroupMemberUsers(Resource):
             }, 404
         return [{
             'user_id': user_id,
-            'href': flask.url_for('api.user', user_id=user_id, _external=True),
+            'href': flask.url_for('.user', user_id=user_id, _external=True),
         } for user_id in sorted(group_member_ids)]
 
     @multi_auth.login_required
@@ -118,7 +118,7 @@ class GroupMemberUser(Resource):
             }, 404
         return {
             'user_id': user_id,
-            'href': flask.url_for('api.user', user_id=user_id, _external=True),
+            'href': flask.url_for('.user', user_id=user_id, _external=True),
         }
 
     @multi_auth.login_required
