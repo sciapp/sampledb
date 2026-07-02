@@ -262,7 +262,7 @@ class InstrumentLogEntries(Resource):
 
         return None, 201, {
             'Location': flask.url_for(
-                'api.instrument_log_entry',
+                '.instrument_log_entry',
                 instrument_id=instrument_id,
                 log_entry_id=log_entry.id,
                 _external=True
@@ -540,7 +540,7 @@ class InstrumentLogEntryVersions(Resource):
 
         return None, 201, {
             'Location': flask.url_for(
-                'api.instrument_log_entry_version',
+                '.instrument_log_entry_version',
                 instrument_id=instrument_id,
                 log_entry_id=log_entry.id,
                 log_entry_version_id=log_entry.versions[-1].version_id,
