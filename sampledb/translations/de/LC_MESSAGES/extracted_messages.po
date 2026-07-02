@@ -7035,6 +7035,12 @@ msgstr ""
 "Diese .eln-Datei wurde von <a href=\"%(signed_by)s\">%(signed_by)s</a> "
 "signiert."
 
+msgid "Select All"
+msgstr "Alle auswählen"
+
+msgid "Deselect All"
+msgstr "Alle abwählen"
+
 msgid "Loading related objects..."
 msgstr "Zugehörige Objekte werden geladen..."
 
@@ -7057,12 +7063,6 @@ msgstr "PDF Export Abschnitte"
 
 msgid "PDF Export Language"
 msgstr "PDF Export Sprache"
-
-msgid "Select All"
-msgstr "Alle auswählen"
-
-msgid "Deselect All"
-msgstr "Alle abwählen"
 
 msgid "Please select one responsible user or one location"
 msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
@@ -7091,6 +7091,10 @@ msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 #, python-format
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
+
+#, python-format
+msgid "Include #%(object_id)s in selection"
+msgstr "#%(object_id)s in Auswahl aufnehmen"
 
 msgid "Failed to load related objects."
 msgstr "Die zugehörigen Objekte konnten nicht geladen werden."

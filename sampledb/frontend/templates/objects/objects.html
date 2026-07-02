@@ -10,6 +10,7 @@
 
 {% block template_values %}
   {% do set_template_value("objects_allowed_to_select", objects_allowed_to_select) %}
+  {% do set_template_value("selected_object_ids", selected_object_ids) %}
   {% do set_template_value("translations.select_at_least_one_object", _('You have to select at least one object.')) %}
   {% do set_template_value("translations.you_do_not_have_write_permissions", _('You do not have write permissions for at least one object.')) %}
   {% if edit_location %}
@@ -1071,7 +1072,7 @@
         {% elif visit_external_link %}
           {% set disabled_checkbox_reason =  _('No external links for this object.')  %}
         {% endif %}
-        <td><input type="checkbox" name="cb-{{object.object_id}}" id="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels or edit_permissions or share_with_other_database or visit_external_link) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{{ disabled_checkbox_reason }}" {% endif %}/> </td>
+        <td><input type="checkbox" name="cb-{{object.object_id}}" id="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels or edit_permissions or share_with_other_database or visit_external_link) %}{% if object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{{ disabled_checkbox_reason }}" {% elif object.object_id in selected_object_ids %}checked="checked"{% endif %}{% endif %}/> </td>
       {% endif %}
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>

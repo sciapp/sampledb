@@ -1,7 +1,7 @@
 'use strict';
 /* eslint-env jquery */
 
-const selectedObjectIDs = [];
+const selectedObjectIDs = window.getTemplateValue('selected_object_ids');
 const objectsAllowedToSelect = window.getTemplateValue('objects_allowed_to_select');
 
 function isObjectSelected (objectID) {
@@ -55,7 +55,10 @@ $(function () {
 
   checkSubmittable();
 
-  $('.checkbox-select-child').prop('checked', false);
+  $('.checkbox-select-child').each(function () {
+    const checkboxObjectId = Number($(this).val());
+    $(this).prop('checked', objectsAllowedToSelect.includes(checkboxObjectId) && selectedObjectIDs.includes(checkboxObjectId));
+  });
 
   $('#checkbox-select-overall').prop('checked', false);
   $('#checkbox-select-overall').prop('indeterminate', false);
@@ -64,6 +67,14 @@ $(function () {
 
   const checkboxSelectOverall = $('#checkbox-select-overall');
   const checkboxSelectChilds = $('.checkbox-select-child');
+
+  function updateSelectOverall () {
+    const someAvailableSelected = objectsAllowedToSelect.some(id => selectedObjectIDs.includes(id));
+    const allAvailableSelected = someAvailableSelected && objectsAllowedToSelect.every(id => selectedObjectIDs.includes(id));
+    checkboxSelectOverall.prop('checked', allAvailableSelected);
+    checkboxSelectOverall.prop('indeterminate', someAvailableSelected && !allAvailableSelected);
+  }
+  updateSelectOverall();
 
   function handleObjectSelection (cb) {
     const handledObjectID = Number(cb.value);
@@ -74,10 +85,7 @@ $(function () {
       selectedObjectIDs.push(handledObjectID);
     }
 
-    const someAvailableSelected = objectsAllowedToSelect.some(id => selectedObjectIDs.includes(id));
-    const allAvailableSelected = someAvailableSelected && objectsAllowedToSelect.every(id => selectedObjectIDs.includes(id));
-    checkboxSelectOverall.prop('checked', allAvailableSelected);
-    checkboxSelectOverall.prop('indeterminate', someAvailableSelected && !allAvailableSelected);
+    updateSelectOverall();
     checkSubmittable();
   }
 

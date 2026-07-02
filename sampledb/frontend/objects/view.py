@@ -147,7 +147,8 @@ def object(object_id: int) -> FlaskResponseT:
         "all_languages": all_languages,
         "SUPPORTED_LOCALES": logic.locale.SUPPORTED_LOCALES,
         "ENGLISH": english,
-        "eln_import_url": logic.eln_import.get_eln_import_object_url(object_id)
+        "eln_import_url": logic.eln_import.get_eln_import_object_url(object_id),
+        "all_components": logic.components.get_components(),
     })
 
     actions_by_id = {}
