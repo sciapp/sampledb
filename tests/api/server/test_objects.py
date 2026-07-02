@@ -844,7 +844,7 @@ def test_get_objects_with_limit_and_offset(flask_server, auth, user, action):
         for i in reversed(range(10))
     ]
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"limit": 1e20, "offset": 1e20}, auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', params={"limit": "unparsable", "offset": int(1e20)}, auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert [
         object["data"]["name"]["text"]
