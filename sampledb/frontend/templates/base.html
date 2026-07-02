@@ -276,6 +276,11 @@
     {% include "custom/alerts.html" %}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
+            {% if '#' in category %}
+              {% set category, anchor = category.split('#', 1) %}
+            {% else %}
+              {% set anchor = '' %}
+            {% endif %}
             {% if category == "error" %}
                 {% set alert_class="alert-danger" %}
             {% elif category == "error-url" %}
@@ -289,6 +294,9 @@
                 {% set alert_class="alert-info" %}
             {% endif %}
             <div class="alert {{ alert_class }} alert-dismissible" role="alert">
+              {% if anchor %}
+                <a href="#{{ anchor }}"><i class="fa fa-fw fa-arrow-down"></i></a>
+              {% endif %}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span>
                 </button>
               {% if message == 'Please log in to access this page.' %}

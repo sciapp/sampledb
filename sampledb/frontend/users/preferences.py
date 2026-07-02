@@ -105,7 +105,7 @@ def _handle_account_information_forms(
                     name=str(change_user_form.name.data)
                 )
                 user_log.edit_user_preferences(user_id=flask_login.current_user.id)
-                flask.flash(_("Successfully updated your user name."), 'success')
+                flask.flash(_("Successfully updated your user name."), 'success#account_information')
             if change_user_form.email.data != flask_login.current_user.email:
                 # send confirm link
                 mail_send_status = send_email_confirmation_email(
@@ -114,9 +114,9 @@ def _handle_account_information_forms(
                     salt='edit_profile'
                 )[0]
                 if mail_send_status == BackgroundTaskStatus.FAILED:
-                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error#account_information')
                 else:
-                    flask.flash(_("Please see your email to confirm this change."), 'success')
+                    flask.flash(_("Please see your email to confirm this change."), 'success#account_information')
             if change_user_form.orcid.data != flask_login.current_user.orcid or change_user_form.affiliation.data != flask_login.current_user.affiliation or change_user_form.role.data != flask_login.current_user.role:
                 if change_user_form.orcid.data and change_user_form.orcid.data.strip():
                     orcid = change_user_form.orcid.data.strip()
@@ -149,7 +149,7 @@ def _handle_account_information_forms(
                         extra_fields=extra_fields
                     )
                     user_log.edit_user_preferences(user_id=flask_login.current_user.id)
-                    flask.flash(_("Successfully updated your user information."), 'success')
+                    flask.flash(_("Successfully updated your user information."), 'success#account_information')
 
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     return None
@@ -218,11 +218,11 @@ def _handle_authentication_methods_forms(
             if not password_was_changed:
                 flask.flash(_("Failed to change password."), 'error')
                 return None
-            flask.flash(_("Successfully updated your password."), 'success')
+            flask.flash(_("Successfully updated your password."), 'success#authentication_methods')
             user_log.edit_user_preferences(user_id=flask_login.current_user.id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
         else:
-            flask.flash(_("Failed to change password."), 'error')
+            flask.flash(_("Failed to change password."), 'error#authentication_methods')
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
         authentication_method_id = authentication_method_form.id.data
         if authentication_method_form.validate_on_submit():
@@ -235,7 +235,7 @@ def _handle_authentication_methods_forms(
                 )
                 return None
             else:
-                flask.flash(_("Successfully removed the authentication method."), 'success')
+                flask.flash(_("Successfully removed the authentication method."), 'success#authentication_methods')
                 user_log.edit_user_preferences(user_id=flask_login.current_user.id)
                 return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
@@ -272,16 +272,16 @@ def _handle_authentication_methods_forms(
                     del flask.session["webauthn_enroll_state"]
                 else:
                     add_authentication_method(flask_login.current_user.id, authentication_form.login.data, authentication_form.password.data, authentication_method)
-                flask.flash(_("Successfully added the authentication method."), 'success')
+                flask.flash(_("Successfully added the authentication method."), 'success#authentication_methods')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             except Exception as e:
-                flask.flash(_("Failed to add an authentication method."), 'error')
+                flask.flash(_("Failed to add an authentication method."), 'error#authentication_methods')
                 template_kwargs.update(
                     error_add=str(e)
                 )
                 return None
         else:
-            flask.flash(_("Failed to add an authentication method."), 'error')
+            flask.flash(_("Failed to add an authentication method."), 'error#authentication_methods')
     return None
 
 
@@ -332,10 +332,10 @@ def _handle_two_factor_authentication_forms(
         if method is not None:
             if manage_two_factor_authentication_method_form.action.data == 'delete':
                 if method.active:
-                    flask.flash(_('You cannot delete an active two-factor authentication method.'), 'error')
+                    flask.flash(_('You cannot delete an active two-factor authentication method.'), 'error#2fa')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
                 delete_two_factor_authentication_method(method_id)
-                flask.flash(_('The two-factor authentication method has been deleted.'), 'success')
+                flask.flash(_('The two-factor authentication method has been deleted.'), 'success#2fa')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'enable':
                 flask.session['confirm_data'] = {
@@ -350,7 +350,7 @@ def _handle_two_factor_authentication_forms(
                 else:
                     del flask.session['confirm_data']
                     activate_two_factor_authentication_method(method_id)
-                    flask.flash(_('The two-factor authentication method has been enabled.'), 'success')
+                    flask.flash(_('The two-factor authentication method has been enabled.'), 'success#2fa')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'disable':
                 flask.session['confirm_data'] = {
@@ -373,7 +373,7 @@ def _handle_two_factor_authentication_forms(
                             return flask.redirect(flask.url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=two_factor_authentication_method.id))
                     del flask.session['confirm_data']
                     deactivate_two_factor_authentication_method(method_id)
-                    flask.flash(_('The two-factor authentication method has been disabled.'), 'success')
+                    flask.flash(_('The two-factor authentication method has been disabled.'), 'success#2fa')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
                 return flask.render_template(
                     'two_factor_authentication/pick.html',
@@ -411,10 +411,10 @@ def _handle_webhook_forms(
             try:
                 webhook_id = remove_webhook_form.id.data
                 remove_webhook(webhook_id)
-                flask.flash(_('Successfully removed the webhook.'), 'success')
+                flask.flash(_('Successfully removed the webhook.'), 'success#webhooks')
             except Exception:
-                flask.flash(_('Failed to remove the webhook.'), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='webhooks'))
+                flask.flash(_('Failed to remove the webhook.'), 'error#webhooks')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
 
     if 'add_webhook' in flask.request.form:
         if not may_use_webhooks:
@@ -442,7 +442,7 @@ def _handle_webhook_forms(
             except Exception:
                 add_webhook_form.name.errors.append(_('Failed to create webhook'))
             else:
-                flask.flash(_('The webhook has been added successfully'), 'success')
+                flask.flash(_('The webhook has been added successfully'), 'success#webhooks')
                 template_kwargs.update(
                     webhooks=get_webhooks(user_id=flask_login.current_user.id),
                     webhook_secret=new_webhook.secret,
@@ -475,8 +475,8 @@ def _handle_notification_forms(
                     if notification_mode_text == notification_mode.name.lower():
                         set_notification_mode_for_type(notification_type, flask_login.current_user.id, notification_mode)
                         break
-        flask.flash(_("Successfully updated your notification settings."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='notification_settings'))
+        flask.flash(_("Successfully updated your notification settings."), 'success#notification_settings')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return None
 
 
@@ -542,8 +542,8 @@ def _handle_default_permissions_forms(
         add_project_permissions_form,
         default_permissions_form
     ):
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='default_permissions'))
+        flask.flash(_("Successfully updated default permissions."), 'success#default_permissions')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return None
 
 
@@ -577,35 +577,35 @@ def _handle_default_share_forms(
         component_id = add_component_policy_form.component_id.data
         component = components_by_id.get(component_id)
         if component not in possible_new_components:
-            flask.flash(_("A problem occurred while adding default sharing with another database. Please try again."), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+            flask.flash(_("A problem occurred while adding default sharing with another database. Please try again."), 'error#other_databases')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
         policy = parse_policy(add_component_policy_form, 'permissions_add_policy_')
         if policy is None:
-            flask.flash(_("A problem occurred while adding default sharing with another database. Please try again."), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+            flask.flash(_("A problem occurred while adding default sharing with another database. Please try again."), 'error#other_databases')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
         logic.shares.add_default_share(user_id=flask_login.current_user.id, component_id=component_id, policy=policy)
-        flask.flash(_("Successfully added default sharing with another database."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        flask.flash(_("Successfully added default sharing with another database."), 'success#other_databases')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     elif 'edit_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
         component_id = edit_component_policy_form.component_id.data
         if component_id not in component_policies:
-            flask.flash(_("A problem occurred while changing default sharing with another database. Please try again."), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+            flask.flash(_("A problem occurred while changing default sharing with another database. Please try again."), 'error#other_databases')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
         policy = parse_policy(edit_component_policy_form, 'permissions_edit_policy_')
         if policy is None:
-            flask.flash(_("A problem occurred while changing default sharing with another database. Please try again."), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+            flask.flash(_("A problem occurred while changing default sharing with another database. Please try again."), 'error#other_databases')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
         logic.shares.update_default_share(user_id=flask_login.current_user.id, component_id=component_id, policy=policy)
-        flask.flash(_("Successfully updated default sharing with another database."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        flask.flash(_("Successfully updated default sharing with another database."), 'success#other_databases')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     elif 'delete_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
         component_id = edit_component_policy_form.component_id.data
         if component_id not in component_policies:
-            flask.flash(_("A problem occurred while deleting default sharing with another database. Please try again."), 'error')
-            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+            flask.flash(_("A problem occurred while deleting default sharing with another database. Please try again."), 'error#other_databases')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
         logic.shares.delete_default_share(user_id=flask_login.current_user.id, component_id=component_id)
-        flask.flash(_("Successfully deleted default sharing with another database."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_databases'))
+        flask.flash(_("Successfully deleted default sharing with another database."), 'success#other_databases')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     else:
         add_component_policy_form.data.data = True
         add_component_policy_form.action.data = True
@@ -759,14 +759,14 @@ def _handle_other_settings_forms(
         set_user_settings(flask_login.current_user.id, modified_settings)
         flask_login.current_user.clear_caches()
         refresh()
-        flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id, _anchor='other_settings'))
+        flask.flash(lazy_gettext("Successfully updated your settings."), 'success#other_settings')
+        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
 
     if 'delete_dataverse_api_token' in flask.request.form:
         set_user_settings(flask_login.current_user.id, {
             'DATAVERSE_API_TOKEN': ''
         })
-        flask.flash(_('Successfully deleted your stored Dataverse API Token.'), 'success')
+        flask.flash(_('Successfully deleted your stored Dataverse API Token.'), 'success#other_settings')
         return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     return None
 
