@@ -11,7 +11,6 @@ import datetime
 import flask
 import flask_login
 import itsdangerous
-import requests
 from flask_babel import _
 
 from ... import logic
@@ -41,7 +40,7 @@ def _default_share_error_handler(
         flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
     elif isinstance(exception, logic.errors.NoAuthenticationMethodError):
         flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
-    elif isinstance(exception, requests.ConnectionError):
+    elif isinstance(exception, Exception):
         flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
     else:
         raise exception

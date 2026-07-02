@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-07-01 16:07+0200\n"
+"POT-Creation-Date: 2026-07-02 14:57+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1175,6 +1175,26 @@ msgstr "Unbenannte Kategorie"
 msgid "Unnamed Project Group"
 msgstr "Unbenannte Projektgruppe"
 
+#, python-format
+msgid "Unable to contact %(component_name)s. Missing database address."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s ist fehlgeschlagen. Die "
+"Datenbankadresse fehlt."
+
+#, python-format
+msgid ""
+"No valid authentication method configured for %(component_name)s "
+"(%(component_address)s)."
+msgstr ""
+"Es besteht keine gültige Authentifikationsmethode für %(component_name)s "
+"(%(component_address)s)."
+
+#, python-format
+msgid "Unable to contact %(component_name)s (%(component_address)s)."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
+"fehlgeschlagen."
+
 msgid "Invalid action ID."
 msgstr "Ungültige Aktions-ID."
 
@@ -1273,26 +1293,6 @@ msgstr "Nutzer"
 
 msgid "Anonymous Users"
 msgstr "Anonyme Nutzer"
-
-#, python-format
-msgid "Unable to contact %(component_name)s. Missing database address."
-msgstr ""
-"Der Verbindungsaufbau zu %(component_name)s ist fehlgeschlagen. Die "
-"Datenbankadresse fehlt."
-
-#, python-format
-msgid ""
-"No valid authentication method configured for %(component_name)s "
-"(%(component_address)s)."
-msgstr ""
-"Es besteht keine gültige Authentifikationsmethode für %(component_name)s "
-"(%(component_address)s)."
-
-#, python-format
-msgid "Unable to contact %(component_name)s (%(component_address)s)."
-msgstr ""
-"Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
-"fehlgeschlagen."
 
 msgid "Creating objects with this action has been disabled."
 msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."

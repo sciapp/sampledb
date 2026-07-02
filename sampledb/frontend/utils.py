@@ -68,6 +68,7 @@ from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
 from ..logic.files import File, get_file as get_file_logic
+from ..logic.federation.update import update_poke_component
 from ..logic.object_data_to_html import object_data_to_html
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
@@ -1978,3 +1979,14 @@ def convert_schema_action_type_ids_to_local_action_type_ids(
                     except errors.ActionTypeDoesNotExistError:
                         pass
     return list(local_action_type_ids)
+
+
+def update_poke_component_with_error_handling(component: Component) -> None:
+    try:
+        update_poke_component(component)
+    except errors.MissingComponentAddressError:
+        flask.flash(flask_babel.gettext('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
+    except errors.NoAuthenticationMethodError:
+        flask.flash(flask_babel.gettext('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+    except Exception:
+        flask.flash(flask_babel.gettext('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
