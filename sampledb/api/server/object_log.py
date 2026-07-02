@@ -6,7 +6,7 @@ RESTful API for SampleDB
 import flask
 
 from ..utils import Resource, ResponseData
-from ...api.server.authentication import multi_auth
+from .authentication import multi_auth
 from ...logic.object_log import get_object_log_entries_by_user, object_log_entry_to_json
 
 
