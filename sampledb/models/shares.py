@@ -51,3 +51,31 @@ class ObjectShare(Model):
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(object_id={self.object_id}, component_id={self.component_id}, policy={self.policy}, utc_datetime={self.utc_datetime})>'
+
+
+class DefaultShare(Model):
+    __tablename__ = 'default_shares'
+
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Component.id), nullable=False, primary_key=True)
+    policy: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
+    component: Mapped[Component] = relationship('Component')
+    user: Mapped['User'] = relationship('User')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["DefaultShare"]]
+
+    def __init__(
+            self,
+            user_id: int,
+            component_id: int,
+            policy: typing.Dict[str, typing.Any],
+    ) -> None:
+        super().__init__(
+            user_id=user_id,
+            component_id=component_id,
+            policy=policy,
+        )
+
+    def __repr__(self) -> str:
+        return f'<{type(self).__name__}(user_id={self.user_id}, component_id={self.component_id}, policy={self.policy})>'

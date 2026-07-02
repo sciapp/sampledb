@@ -7,6 +7,8 @@ import datetime
 import itertools
 import typing
 
+import flask
+
 from .objects import get_object, check_object_exists
 from .components import check_component_exists, Component
 from .notifications import create_notification_for_a_failed_remote_object_import, create_notification_for_a_remote_object_import_with_notes
@@ -38,6 +40,26 @@ class ObjectShare:
             component=Component.from_database(object_share.component),
             user_id=object_share.user_id,
             import_status=object_share.import_status
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class DefaultShare:
+    """
+    This class provides an immutable wrapper around models.shares.DefaultShare.
+    """
+    user_id: int
+    component_id: int
+    policy: typing.Dict[str, typing.Any]
+    component: Component
+
+    @classmethod
+    def from_database(cls, default_share: models.DefaultShare) -> 'DefaultShare':
+        return DefaultShare(
+            user_id=default_share.user_id,
+            component_id=default_share.component_id,
+            policy=default_share.policy,
+            component=Component.from_database(default_share.component),
         )
 
 
@@ -257,3 +279,59 @@ def merge_policies(*policies: typing.Dict[str, typing.Any]) -> typing.Dict[str, 
             ).name.lower()
         }
     }
+
+
+def get_default_shares(creator_id: int) -> typing.List[DefaultShare]:
+    """
+    Returns a list of all default shares for a given user.
+
+    :param creator_id: the Id of an existing user
+    :return: the list of shares
+    """
+    if not flask.current_app.config.get('ENABLE_DEFAULT_SHARING'):
+        return []
+    return [
+        DefaultShare.from_database(default_share)
+        for default_share in models.DefaultShare.query.filter_by(user_id=creator_id).all()
+    ]
+
+
+def add_default_share(
+        user_id: int,
+        component_id: int,
+        policy: typing.Dict[str, typing.Any],
+) -> DefaultShare:
+    check_component_exists(component_id)
+    share = models.DefaultShare.query.filter_by(user_id=user_id, component_id=component_id).first()
+    if share is not None:
+        raise errors.ShareAlreadyExistsError()
+    share = models.DefaultShare(user_id=user_id, component_id=component_id, policy=policy)
+    db.session.add(share)
+    db.session.commit()
+    return DefaultShare.from_database(share)
+
+
+def update_default_share(
+        user_id: int,
+        component_id: int,
+        policy: typing.Dict[str, typing.Any],
+) -> DefaultShare:
+    share = models.DefaultShare.query.filter_by(user_id=user_id, component_id=component_id).first()
+    if share is None:
+        raise errors.ShareDoesNotExistError()
+    if share.policy != policy:
+        share.policy = policy
+        db.session.add(share)
+        db.session.commit()
+    return DefaultShare.from_database(share)
+
+
+def delete_default_share(
+        user_id: int,
+        component_id: int,
+) -> None:
+    share = models.DefaultShare.query.filter_by(user_id=user_id, component_id=component_id).first()
+    if share is None:
+        raise errors.ShareDoesNotExistError()
+    db.session.delete(share)
+    db.session.commit()

@@ -6,13 +6,13 @@ import typing
 import datetime
 
 from sampledb import db, models
-from .actions import check_action_exists
+from . import actions
 from .action_types import check_action_type_exists
 from .comments import get_comment
 from .components import check_component_exists
 from .files import get_file
-from .instruments import check_instrument_exists
-from .locations import check_location_exists, get_object_location_assignment, get_location_type
+from . import instruments
+from . import locations
 from .objects import check_object_exists
 from .users import check_user_exists
 from ..models import fed_logs
@@ -149,7 +149,7 @@ def _store_new_fed_location_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    check_location_exists(location_id)
+    locations.check_location_exists(location_id)
     check_component_exists(component_id)
     log_entry = fed_logs.FedLocationLogEntry(
         type=type,
@@ -195,7 +195,7 @@ def _store_new_fed_location_type_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_location_type(location_type_id)
+    locations.get_location_type(location_type_id)
     check_component_exists(component_id)
     log_entry = fed_logs.FedLocationTypeLogEntry(
         type=type,
@@ -241,7 +241,7 @@ def _store_new_fed_action_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    check_action_exists(action_id)
+    actions.check_action_exists(action_id)
     check_component_exists(component_id)
     log_entry = fed_logs.FedActionLogEntry(
         type=type,
@@ -337,7 +337,7 @@ def _store_new_fed_instrument_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    check_instrument_exists(instrument_id)
+    instruments.check_instrument_exists(instrument_id)
     check_component_exists(component_id)
     log_entry = fed_logs.FedInstrumentLogEntry(
         type=type,
@@ -461,7 +461,7 @@ def _store_new_fed_object_location_assignment_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_object_location_assignment(object_location_assignment_id)
+    locations.get_object_location_assignment(object_location_assignment_id)
     check_component_exists(component_id)
     log_entry = fed_logs.FedObjectLocationAssignmentLogEntry(
         type=type,
@@ -541,7 +541,7 @@ def get_fed_location_log_entries_for_location(location_id: int, component_id: ty
     else:
         log_entries = fed_logs.FedLocationLogEntry.query.filter_by(location_id=location_id).order_by(db.desc(fed_logs.FedLocationLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        check_location_exists(location_id)
+        locations.check_location_exists(location_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -565,7 +565,7 @@ def get_fed_location_type_log_entries_for_location_type(
     else:
         log_entries = fed_logs.FedLocationTypeLogEntry.query.filter_by(location_type_id=location_type_id).order_by(db.desc(fed_logs.FedLocationTypeLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_location_type(location_type_id)
+        locations.get_location_type(location_type_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -588,7 +588,7 @@ def get_fed_action_log_entries_for_action(action_id: int, component_id: typing.O
     else:
         log_entries = fed_logs.FedActionLogEntry.query.filter_by(action_id=action_id).order_by(db.desc(fed_logs.FedActionLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        check_action_exists(action_id)
+        actions.check_action_exists(action_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -630,7 +630,7 @@ def get_fed_instrument_log_entries_for_instrument(instrument_id: int, component_
     else:
         log_entries = fed_logs.FedInstrumentLogEntry.query.filter_by(instrument_id=instrument_id).order_by(db.desc(fed_logs.FedInstrumentLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        check_instrument_exists(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -719,7 +719,7 @@ def get_fed_object_location_assignment_log_entries_for_assignment(object_locatio
     else:
         log_entries = fed_logs.FedObjectLocationAssignmentLogEntry.query.filter_by(object_location_assignment_id=object_location_assignment_id).order_by(db.desc(fed_logs.FedObjectLocationAssignmentLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_object_location_assignment(object_location_assignment_id)
+        locations.get_object_location_assignment(object_location_assignment_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries

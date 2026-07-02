@@ -19,6 +19,7 @@
       {% endif %}
       <li><a href="#notification_settings">{{ _('Notification Settings') }}</a></li>
       <li><a href="#default_permissions">{{ _('Default Permissions') }}</a></li>
+      <li><a href="#other_databases">{{ _('Default Sharing') }}</a></li>
       <li><a href="#other_settings">{{ _('Other Settings') }}</a></li>
       <li><a href="#administrator_settings">{{ _('Administrator Settings') }}</a></li>
     </ul>
@@ -419,6 +420,38 @@
   {% set write_permissions_description = _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') %}
   {% set grant_permissions_description = _('Permission to grant permissions to other users. Includes Write permissions.') %}
   {% include "permissions/permissions.html" %}
+
+  {% if (federation_shares or possible_new_components) and config['ENABLE_DEFAULT_SHARING'] %}
+    <h2 id="other_databases">{{ _('Default Sharing with Other Databases') }}</h2>
+    {% if federation_shares %}
+      <p><strong>{{ _('Note:') }}</strong> {{ _('Objects that you create in the future will be shared with these databases. To change which databases an existing object is shared with, please use the <strong>Edit permissions</strong> button on the object\'s site.') }}</p>
+    {% else %}
+      <p><strong>{{ _('Note:') }}</strong> {{ _('If you add another database, objects that you create in the future will be shared with it. To change which databases an existing object is shared with, please use the <strong>Edit permissions</strong> button on the object\'s site.') }}</p>
+    {% endif %}
+    {% if federation_shares %}
+      <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
+        {% include "objects/object_permissions_edit_databases.html" %}
+        <div class="container">
+          <div class="col-md-offset-3 col-md-6" style="text-align: right; padding: 0;">
+            <button type="submit" class="btn btn-danger" style="width: 50%; margin-right: 15px" name="delete_component_policy" value="delete_component_policy">{{ _('Delete') }}</button>
+          </div>
+          <button type="submit" class="btn btn-success col-md-3" name="edit_component_policy" value="edit_component_policy">{{ _('Save') }}</button>
+        </div>
+      </form>
+    {% endif %}
+    {% if possible_new_components %}
+      <h3>{{ _('Add database') }}</h3>
+      <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
+        {{ add_component_policy_form.csrf_token }}
+        <div class="well">
+          {% include "objects/object_permissions_add_database.html" %}
+        </div>
+        <div class="container">
+          <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="add_component_policy" value="add_component_policy">{{ _('Add') }}</button>
+        </div>
+      </form>
+    {% endif %}
+  {% endif %}
 
   <h2 id="other_settings">{{ _('Other Settings') }}</h2>
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
@@ -963,17 +996,33 @@
   {% do set_template_value("show_add_webhook_form", show_add_form) %}
   {% do set_template_value("has_created_webhook_secret", webhook_secret is not none) %}
 
+  {% do set_template_value("component_users", component_users) %}
+  {% do set_template_value("policies", policies) %}
+  {% do set_template_value("translations.project_group", _('Project Group')) %}
+  {% do set_template_value("translations.project_groups", _('Project Groups')) %}
+  {% do set_template_value("translations.basic_group", _('Basic Group')) %}
+  {% do set_template_value("translations.basic_groups", _('Basic Groups')) %}
+  {% do set_template_value("translations.user", _('User')) %}
+  {% do set_template_value("translations.users", _('Users')) %}
+  {% do set_template_value("translations.not_a_valid_id", _('Not a valid ID. Expected a positive integer.')) %}
+  {% do set_template_value("translations.project_group_already_added", _('Project Group has already been added.')) %}
+  {% do set_template_value("translations.basic_group_already_added", _('Basic Group has already been added.')) %}
+  {% do set_template_value("translations.user_already_added", _('User has already been added.')) %}
+
   {{ super() }}
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
     <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
     <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
     <script src="{{ fingerprinted_static('sampledb/js/page/preferences.js') }}" type="module"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/policies.js') }}" type="module"></script>
 {% endblock %}
 
 {% block stylesheets %}
-  {{ super() }}
-  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+    {{ super() }}
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
 {% endblock %}

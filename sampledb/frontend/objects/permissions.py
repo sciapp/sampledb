@@ -211,6 +211,55 @@ def object_permissions(object_id: int) -> FlaskResponseT:
     )
 
 
+def parse_policy(form: typing.Union[ObjectNewShareAccessForm, ObjectEditShareAccessForm], prefix: str) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    policy = {
+        'access': {
+            'data': form.data.data,
+            'action': form.action.data,
+            'users': form.users.data,
+            'files': form.files.data,
+            'comments': form.comments.data,
+            'object_location_assignments': form.object_location_assignments.data,
+        },
+        'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
+    }
+    allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+    policy_permissions_are_valid = False
+    for attr_name, value in flask.request.form.items():
+        if attr_name.startswith(prefix + 'user_'):
+            user_id_str = attr_name[len(prefix + 'user_'):]
+            try:
+                user_id = int(user_id_str)
+            except ValueError:
+                break
+            if value not in allowed_permissions:
+                break
+            policy['permissions']['users'][user_id] = value
+        if attr_name.startswith(prefix + 'group_'):
+            basic_group_id_str = attr_name[len(prefix + 'group_'):]
+            try:
+                basic_group_id = int(basic_group_id_str)
+            except ValueError:
+                break
+            if value not in allowed_permissions:
+                break
+            policy['permissions']['groups'][basic_group_id] = value
+        if attr_name.startswith(prefix + 'project_'):
+            project_group_id_str = attr_name[len(prefix + 'project_'):]
+            try:
+                project_group_id = int(project_group_id_str)
+            except ValueError:
+                break
+            if value not in allowed_permissions:
+                break
+            policy['permissions']['projects'][project_group_id] = value
+    else:
+        policy_permissions_are_valid = True
+    if policy_permissions_are_valid:
+        return policy
+    return None
+
+
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
 def update_object_permissions(object_id: int) -> FlaskResponseT:
@@ -231,50 +280,8 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
     elif 'add_component_policy' in flask.request.form and add_component_policy_form.validate_on_submit():
         component_id = add_component_policy_form.component_id.data
         component = get_component(component_id)
-        policy = {
-            'access': {
-                'data': add_component_policy_form.data.data,
-                'action': add_component_policy_form.action.data,
-                'users': add_component_policy_form.users.data,
-                'files': add_component_policy_form.files.data,
-                'comments': add_component_policy_form.comments.data,
-                'object_location_assignments': add_component_policy_form.object_location_assignments.data,
-            },
-            'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
-        }
-        allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
-        policy_permissions_are_valid = False
-        for attr_name, value in flask.request.form.items():
-            if attr_name.startswith('permissions_add_policy_user_'):
-                user_id_str = attr_name[len('permissions_add_policy_user_'):]
-                try:
-                    user_id = int(user_id_str)
-                except ValueError:
-                    break
-                if value not in allowed_permissions:
-                    break
-                policy['permissions']['users'][user_id] = value
-            if attr_name.startswith('permissions_add_policy_group_'):
-                basic_group_id_str = attr_name[len('permissions_add_policy_group_'):]
-                try:
-                    basic_group_id = int(basic_group_id_str)
-                except ValueError:
-                    break
-                if value not in allowed_permissions:
-                    break
-                policy['permissions']['groups'][basic_group_id] = value
-            if attr_name.startswith('permissions_add_policy_project_'):
-                project_group_id_str = attr_name[len('permissions_add_policy_project_'):]
-                try:
-                    project_group_id = int(project_group_id_str)
-                except ValueError:
-                    break
-                if value not in allowed_permissions:
-                    break
-                policy['permissions']['projects'][project_group_id] = value
-        else:
-            policy_permissions_are_valid = True
-        if not policy_permissions_are_valid:
+        policy = parse_policy(add_component_policy_form, 'permissions_add_policy_')
+        if policy is None:
             flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
             return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
         add_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
@@ -291,50 +298,8 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
     elif 'edit_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
         component_id = edit_component_policy_form.component_id.data
         component = get_component(component_id)
-        policy = {
-            'access': {
-                'data': edit_component_policy_form.data.data,
-                'action': edit_component_policy_form.action.data,
-                'users': edit_component_policy_form.users.data,
-                'files': edit_component_policy_form.files.data,
-                'comments': edit_component_policy_form.comments.data,
-                'object_location_assignments': edit_component_policy_form.object_location_assignments.data,
-            },
-            'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
-        }
-        allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
-        policy_permissions_are_valid = False
-        for attr_name, value in flask.request.form.items():
-            if attr_name.startswith('permissions_edit_policy_user_'):
-                user_id_str = attr_name[len('permissions_edit_policy_user_'):]
-                try:
-                    user_id = int(user_id_str)
-                except ValueError:
-                    break
-                if value not in allowed_permissions:
-                    break
-                policy['permissions']['users'][user_id] = value
-            if attr_name.startswith('permissions_edit_policy_group_'):
-                basic_group_id_str = attr_name[len('permissions_edit_policy_group_'):]
-                try:
-                    basic_group_id = int(basic_group_id_str)
-                except ValueError:
-                    break
-                if value not in allowed_permissions:
-                    break
-                policy['permissions']['groups'][basic_group_id] = value
-            if attr_name.startswith('permissions_edit_policy_project_'):
-                project_group_id_str = attr_name[len('permissions_edit_policy_project_'):]
-                try:
-                    project_group_id = int(project_group_id_str)
-                except ValueError:
-                    break
-                if value not in allowed_permissions:
-                    break
-                policy['permissions']['projects'][project_group_id] = value
-        else:
-            policy_permissions_are_valid = True
-        if not policy_permissions_are_valid:
+        policy = parse_policy(edit_component_policy_form, 'permissions_edit_policy_')
+        if policy is None:
             flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
             return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
         update_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)

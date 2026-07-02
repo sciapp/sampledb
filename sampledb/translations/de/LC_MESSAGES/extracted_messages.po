@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-06-30 14:56+0200\n"
+"POT-Creation-Date: 2026-07-01 16:07+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1274,6 +1274,26 @@ msgstr "Nutzer"
 msgid "Anonymous Users"
 msgstr "Anonyme Nutzer"
 
+#, python-format
+msgid "Unable to contact %(component_name)s. Missing database address."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s ist fehlgeschlagen. Die "
+"Datenbankadresse fehlt."
+
+#, python-format
+msgid ""
+"No valid authentication method configured for %(component_name)s "
+"(%(component_address)s)."
+msgstr ""
+"Es besteht keine gültige Authentifikationsmethode für %(component_name)s "
+"(%(component_address)s)."
+
+#, python-format
+msgid "Unable to contact %(component_name)s (%(component_address)s)."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
+"fehlgeschlagen."
+
 msgid "Creating objects with this action has been disabled."
 msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
 
@@ -1516,26 +1536,6 @@ msgid "A problem occurred while sharing the object. Please try again."
 msgstr ""
 "Beim Teilen des Objekts ist ein Problem aufgetreten. Bitte versuchen Sie "
 "es später erneut."
-
-#, python-format
-msgid "Unable to contact %(component_name)s. Missing database address."
-msgstr ""
-"Der Verbindungsaufbau zu %(component_name)s ist fehlgeschlagen. Die "
-"Datenbankadresse fehlt."
-
-#, python-format
-msgid ""
-"No valid authentication method configured for %(component_name)s "
-"(%(component_address)s)."
-msgstr ""
-"Es besteht keine gültige Authentifikationsmethode für %(component_name)s "
-"(%(component_address)s)."
-
-#, python-format
-msgid "Unable to contact %(component_name)s (%(component_address)s)."
-msgstr ""
-"Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
-"fehlgeschlagen."
 
 #, python-format
 msgid "Successfully shared objects with %(component_name)s."
@@ -2401,6 +2401,9 @@ msgstr "Benachrichtigungs&shy;einstellungen"
 msgid "Default Permissions"
 msgstr "Standard&shy;berechtigungen"
 
+msgid "Default Sharing"
+msgstr "Standard&shy;freigaben"
+
 msgid "Other Settings"
 msgstr "Sonstige Einstellungen"
 
@@ -2630,6 +2633,38 @@ msgstr ""
 "Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
 "Schreib-Berechtigungen."
 
+msgid "Default Sharing with Other Databases"
+msgstr "Standardfreigaben für andere Datenbanken"
+
+msgid ""
+"Objects that you create in the future will be shared with these "
+"databases. To change which databases an existing object is shared with, "
+"please use the <strong>Edit permissions</strong> button on the object's "
+"site."
+msgstr ""
+"Objekte, die Sie in Zukunft erstellen, werden mit diesen Datenbanken "
+"geteilt werden. Um die Berechtigungen eines bereits erstellten Objekts zu"
+" ändern, verwenden Sie bitte den <strong>Berechtigungen "
+"bearbeiten</strong>-Knopf auf der Seite des Objekts."
+
+msgid ""
+"If you add another database, objects that you create in the future will "
+"be shared with it. To change which databases an existing object is shared"
+" with, please use the <strong>Edit permissions</strong> button on the "
+"object's site."
+msgstr ""
+"Falls Sie eine andere Datenbank hinzufügen, werden Objekte, die Sie in "
+"Zukunft erstellen, mit dieser geteilt werden. Um die Berechtigungen eines"
+" bereits erstellten Objekts zu ändern, verwenden Sie bitte den "
+"<strong>Berechtigungen bearbeiten</strong>-Knopf auf der Seite des "
+"Objekts."
+
+msgid "Add database"
+msgstr "Datenbank hinzufügen"
+
+msgid "Add"
+msgstr "Hinzufügen"
+
 msgid "Dataverse API Token"
 msgstr "Dataverse API Token"
 
@@ -2780,9 +2815,6 @@ msgstr ""
 "%(service_name)szusätzlich in Ihren Einstellungen eingerichtete Zwei-"
 "Faktor-Authentisierungsmethoden <strong>nicht</strong> verwenden."
 
-msgid "Add"
-msgstr "Hinzufügen"
-
 msgid "Change Password"
 msgstr "Passwort ändern"
 
@@ -2833,6 +2865,18 @@ msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
+
+msgid "Not a valid ID. Expected a positive integer."
+msgstr "Keine gültige ID. Positive Ganzzahl erwartet."
+
+msgid "Project Group has already been added."
+msgstr "Projektgruppe wurde bereits hinzugefügt."
+
+msgid "Basic Group has already been added."
+msgstr "Einfache Gruppe wurde bereits hinzugefügt."
+
+msgid "User has already been added."
+msgstr "Nutzer wurde bereits hinzugefügt."
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -5429,23 +5473,27 @@ msgstr "Export fehlgeschlagen"
 msgid "The export failed with the following message: %(error_message)s"
 msgstr "Der Export ist mit folgender Meldung fehlgeschlagen: %(error_message)s"
 
-msgid "Not a valid ID. Expected a positive integer."
-msgstr "Keine gültige ID. Positive Ganzzahl erwartet."
-
-msgid "Project Group has already been added."
-msgstr "Projektgruppe wurde bereits hinzugefügt."
-
-msgid "Basic Group has already been added."
-msgstr "Einfache Gruppe wurde bereits hinzugefügt."
-
-msgid "User has already been added."
-msgstr "Nutzer wurde bereits hinzugefügt."
-
 msgid "Permissions"
 msgstr "Berechtigungen"
 
 msgid "Other databases"
 msgstr "Andere Datenbanken"
+
+msgid "Loading..."
+msgstr "Laden..."
+
+msgid "Copy Permissions"
+msgstr "Berechtigungen kopieren"
+
+msgid "Copy permissions from other Object"
+msgstr "Berechtigungen von anderem Objekt kopieren"
+
+msgid ""
+"You can replace the current permissions by copying the permissions from "
+"another object."
+msgstr ""
+"Sie können die aktuellen Berechtigungen ersetzen, indem Sie die "
+"Berechtigungen von einem anderen Objekt kopieren."
 
 msgid "Database"
 msgstr "Datenbank"
@@ -5461,6 +5509,16 @@ msgstr "Nicht teilen"
 
 msgid "Comments"
 msgstr "Kommentare"
+
+msgid ""
+"Some of the objects were previously shared with less access. By granting "
+"this access to the database for these objects, users that already had "
+"permissions for the objects will also be able to access the new content."
+msgstr ""
+"Einige der Objekte wurden zuvor mit weniger Zugriff geteilt. Wenn diese "
+"Objekte mit diesem Zugriff mit der anderen Datenbank geteilt werden, "
+"können auch Nutzer, die bereits Berechtigungen für die Objekte hatten, "
+"auf die neuen Inhalte zugreifen."
 
 msgid "Special Groups"
 msgstr "Sondergruppen"
@@ -5512,35 +5570,6 @@ msgstr "Projektgruppen-ID eingeben"
 
 msgid "Project Group ID"
 msgstr "Projektgruppen-ID"
-
-msgid "Add database"
-msgstr "Datenbank hinzufügen"
-
-msgid "Loading..."
-msgstr "Laden..."
-
-msgid "Copy Permissions"
-msgstr "Berechtigungen kopieren"
-
-msgid "Copy permissions from other Object"
-msgstr "Berechtigungen von anderem Objekt kopieren"
-
-msgid ""
-"You can replace the current permissions by copying the permissions from "
-"another object."
-msgstr ""
-"Sie können die aktuellen Berechtigungen ersetzen, indem Sie die "
-"Berechtigungen von einem anderen Objekt kopieren."
-
-msgid ""
-"Some of the objects were previously shared with less access. By granting "
-"this access to the database for these objects, users that already had "
-"permissions for the objects will also be able to access the new content."
-msgstr ""
-"Einige der Objekte wurden zuvor mit weniger Zugriff geteilt. Wenn diese "
-"Objekte mit diesem Zugriff mit der anderen Datenbank geteilt werden, "
-"können auch Nutzer, die bereits Berechtigungen für die Objekte hatten, "
-"auf die neuen Inhalte zugreifen."
 
 msgid "Versions"
 msgstr "Versionen"
@@ -6111,6 +6140,9 @@ msgstr "Initiale Berechtigungen"
 
 msgid "Use default permissions"
 msgstr "Standardberechtigungen verwenden"
+
+msgid "Use default sharing with other databases"
+msgstr "Standardfreigaben für andere Datenbanken verwenden"
 
 msgid "Give permissions to basic group"
 msgstr "Berechtigungen an einfache Gruppe vergeben"
@@ -7965,6 +7997,40 @@ msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
 
 msgid "Successfully updated default permissions."
 msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
+
+msgid ""
+"A problem occurred while adding default sharing with another database. "
+"Please try again."
+msgstr ""
+"Beim Hinzufügen der Standardfreigabe für eine andere Datenbank ist ein "
+"Problem aufgetreten. Bitte versuchen Sie es später erneut."
+
+msgid "Successfully added default sharing with another database."
+msgstr ""
+"Die Standardfreigabe für eine andere Datenbank wurde erfolgreich "
+"hinzugefügt."
+
+msgid ""
+"A problem occurred while changing default sharing with another database. "
+"Please try again."
+msgstr ""
+"Beim Bearbeiten der Standardfreigabe für eine andere Datenbank ist ein "
+"Problem aufgetreten. Bitte versuchen Sie es später erneut."
+
+msgid "Successfully updated default sharing with another database."
+msgstr ""
+"Die Standardfreigabe für eine andere Datenbank wurde erfolgreich "
+"aktualisiert."
+
+msgid ""
+"A problem occurred while deleting default sharing with another database. "
+"Please try again."
+msgstr ""
+"Beim Entfernen der Standardfreigabe für eine andere Datenbank ist ein "
+"Problem aufgetreten. Bitte versuchen Sie es später erneut."
+
+msgid "Successfully deleted default sharing with another database."
+msgstr "Die Standardfreigabe für eine andere Datenbank wurde erfolgreich gelöscht."
 
 msgid "Successfully updated your settings."
 msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
