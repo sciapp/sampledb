@@ -27,7 +27,7 @@ def user(auth_user):
     return auth_user[1]
 
 
-sampledb.api.server.api.add_url_rule(
+sampledb.api.v2.api.add_url_rule(
     '/api/v1/errors/<int:error_code>', endpoint='errors', view_func=lambda error_code: flask.abort(error_code)
 )
 
