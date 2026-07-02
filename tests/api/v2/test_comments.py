@@ -59,7 +59,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     assert len(comments) == 0
 
     data = []
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/comments/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/comments/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be an object",
@@ -73,7 +73,7 @@ def test_create_invalid_comment(flask_server, object, auth):
         'object_id': object.id+1,
         'content': "Content"
     }
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": f"Input should be {object.id} (object_id)",
@@ -87,7 +87,7 @@ def test_create_invalid_comment(flask_server, object, auth):
 
     data = {
     }
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Field required (content)",
@@ -99,7 +99,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     data = {
         'content': None
     }
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be a valid string (content)",
@@ -114,7 +114,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     data = {
         'content': ''
     }
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "String should have at least 1 character (content)",
@@ -138,7 +138,7 @@ def test_create_comment(flask_server, object, auth, user):
     data = {
         'content': content
     }
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     comments = sampledb.logic.comments.get_comments_for_object(object.id)
     assert len(comments) == 1
@@ -154,7 +154,7 @@ def test_get_comment(flask_server, object, auth, user):
         user_id=user.id,
         content=content
     )
-    r = requests.get(flask_server.base_url + f'api/v1/objects/{object.id}/comments/{comment_id}', auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.id}/comments/{comment_id}', auth=auth, allow_redirects=False)
     assert r.status_code == 200
     result_json = r.json()
     assert 'utc_datetime' in result_json
@@ -166,10 +166,10 @@ def test_get_comment(flask_server, object, auth, user):
         'content': content
     }
 
-    r = requests.get(flask_server.base_url + f'api/v1/objects/{object.id}/comments/{comment_id + 1}', auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.id}/comments/{comment_id + 1}', auth=auth, allow_redirects=False)
     assert r.status_code == 404
 
-    r = requests.get(flask_server.base_url + f'api/v1/objects/{object.id + 1}/comments/{comment_id}', auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.id + 1}/comments/{comment_id}', auth=auth, allow_redirects=False)
     assert r.status_code == 404
 
 
@@ -180,7 +180,7 @@ def test_get_comments(flask_server, object, auth, user):
         user_id=user.id,
         content=content
     )
-    r = requests.get(flask_server.base_url + f'api/v1/objects/{object.id}/comments/', auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', auth=auth, allow_redirects=False)
     assert r.status_code == 200
     result_json = r.json()
     assert len(result_json) == 1
