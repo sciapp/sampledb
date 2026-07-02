@@ -367,6 +367,10 @@ a.multiselect-submit[disabled] {
 .alert-danger .search-error {
     border-bottom: 2px solid #a94442;
 }
+.alert .fa.fa-arrow-down {
+    color: black;
+    opacity: 20%;
+}
 
 .search-error-full {
     font-family: monospace;
