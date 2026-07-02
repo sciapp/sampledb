@@ -9,8 +9,7 @@ from pydantic import (AfterValidator, AliasChoices, BaseModel, BeforeValidator,
 from pydantic_core import PydanticCustomError
 
 from ... import models
-from ...api.server.authentication import (multi_auth,
-                                          object_permissions_required)
+from .authentication import multi_auth, object_permissions_required
 from ...logic import errors, user_log, users
 from ...logic.action_permissions import get_user_action_permissions
 from ...logic.action_types import check_action_type_exists
