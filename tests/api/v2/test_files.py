@@ -64,7 +64,7 @@ def test_create_invalid_file(flask_server, object, auth):
     assert len(files) == 0
 
     data = []
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be an object",
@@ -79,7 +79,7 @@ def test_create_invalid_file(flask_server, object, auth):
         'storage': 'database',
         'url': 'https://iffsamples.fz-juelich.de'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": f"Input should be {object.object_id} (object_id)",
@@ -116,7 +116,7 @@ def test_create_invalid_file(flask_server, object, auth):
 
     data = {
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Unable to extract tag using discriminator 'storage'",
@@ -129,7 +129,7 @@ def test_create_invalid_file(flask_server, object, auth):
     data = {
         'storage': 'local'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
@@ -150,7 +150,7 @@ def test_create_url_file(flask_server, object, auth):
         'storage': 'url',
         'url': 'https://iffsamples.fz-juelich.de'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 1
@@ -166,7 +166,7 @@ def test_create_invalid_url_file(flask_server, object, auth):
         'storage': 'url',
         'address': 'https://iffsamples.fz-juelich.de'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Field required (url)",
@@ -184,7 +184,7 @@ def test_create_invalid_url_file(flask_server, object, auth):
     data = {
         'storage': 'url'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Field required (url)",
@@ -195,7 +195,7 @@ def test_create_invalid_url_file(flask_server, object, auth):
         'storage': 'url',
         'url': 'test.txt'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
         "message": "String should be a valid URL (url)",
@@ -219,7 +219,7 @@ def test_get_url_file(flask_server, object, auth, user):
         user_id=user.id,
         url='https://iffsamples.fz-juelich.de'
     )
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert r.json() == {
         'object_id': object.id,
@@ -237,7 +237,7 @@ def test_create_database_file(flask_server, object, auth):
         'original_file_name': 'test.txt',
         'base64_content': base64.b64encode('test'.encode('utf8')).decode('utf8')
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 1
@@ -264,7 +264,7 @@ def test_create_database_file_with_hash(flask_server, object, auth):
                 'hexdigest': getattr(hashlib, algorithm)(f'test{i}'.encode('utf8')).hexdigest()
             }
         }
-        r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+        r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
         assert r.status_code == 201
         files = sampledb.logic.files.get_files_for_object(object.id)
         assert len(files) == i + 1
@@ -291,7 +291,7 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
                 'hexdigest': getattr(hashlib, algorithm)(f'test'.encode('utf8')).hexdigest()
             }
         }
-        r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+        r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
         assert r.status_code == 400
         files = sampledb.logic.files.get_files_for_object(object.id)
         assert len(files) == 0
@@ -302,7 +302,7 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
         'base64_content': base64.b64encode(f'test'.encode('utf8')).decode('utf8'),
         'hash': hashlib.sha256(f'test'.encode('utf8')).hexdigest()
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
@@ -315,7 +315,7 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
             'hexdigest': hashlib.sha256(f'test'.encode('utf8')).hexdigest()
         }
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
@@ -329,7 +329,7 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
             'hexdigest': hashlib.sha256(f'test'.encode('utf8')).hexdigest().upper()
         }
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
@@ -349,7 +349,7 @@ def test_create_database_file_with_invalid_hash_algorithms(flask_server, object,
                 'hexdigest': getattr(hashlib, algorithm)(f'test{i}'.encode('utf8')).hexdigest()
             }
         }
-        r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+        r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
         assert r.status_code == 400
         files = sampledb.logic.files.get_files_for_object(object.id)
         assert len(files) == 0
@@ -368,7 +368,7 @@ def test_create_database_file_with_preview_image(flask_server, object, auth):
         'preview_image_mime_type': 'image/png',
         'base64_preview_image': base64.b64encode(preview_image_stream.getvalue()).decode('utf8')
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 1
@@ -395,7 +395,7 @@ def test_get_database_file(flask_server, object, auth, user, tmpdir):
         preview_image_mime_type='image/png',
         preview_image_binary_data=preview_image_stream.getvalue()
     )
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert r.json() == {
         'object_id': object.id,
@@ -427,7 +427,7 @@ def test_get_files(flask_server, object, auth, user):
         file_name='test.txt',
         save_content=lambda stream: stream.write('test'.encode('utf8'))
     )
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert r.json() == [
         {
@@ -462,7 +462,7 @@ def test_get_hidden_file(flask_server, object, auth, user):
         user_id=user.id,
         reason=''
     )
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 403
     assert r.json() == {
         "message": "file {} of object {} has been hidden".format(0, object.object_id)
@@ -470,7 +470,7 @@ def test_get_hidden_file(flask_server, object, auth, user):
 
 
 def test_get_nonexistent_file(flask_server, object, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 404
     assert r.json() == {
         "message": "file {} of object {} does not exist".format(0, object.object_id)
@@ -491,7 +491,7 @@ def test_create_local_reference_file(flask_server, object, auth, user):
             'hexdigest': hashlib.sha256(b'test').hexdigest()
         }
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 1
@@ -504,7 +504,7 @@ def test_create_local_reference_file(flask_server, object, auth, user):
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
         '/': [user.id]
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 2
@@ -523,28 +523,28 @@ def test_create_local_reference_file_without_permissions(flask_server, object, a
         'storage': 'local_reference',
         'filepath': '/example/example.txt'
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
         '/example/': [user.id + 1]
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
         '/example1': [user.id]
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
         '/': [user.id + 1]
     }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0

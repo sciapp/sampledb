@@ -50,7 +50,7 @@ def action():
 
 
 def test_get_location(flask_server, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v1/locations/1', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/1', auth=auth)
     assert r.status_code == 404
 
     location = sampledb.logic.locations.create_location(
@@ -60,11 +60,11 @@ def test_get_location(flask_server, auth, user):
         user_id=user.id,
         type_id=sampledb.logic.locations.LocationType.LOCATION
     )
-    r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 403
 
     sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'location_id': location.id,
@@ -93,7 +93,7 @@ def test_get_location(flask_server, auth, user):
         is_hidden=True,
         enable_object_assignments=True,
     )
-    r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'location_id': location.id,
@@ -107,7 +107,7 @@ def test_get_location(flask_server, auth, user):
 
 
 def test_get_locations(flask_server, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v1/locations/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/', auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -118,12 +118,12 @@ def test_get_locations(flask_server, auth, user):
         user_id=user.id,
         type_id=sampledb.logic.locations.LocationType.LOCATION
     )
-    r = requests.get(flask_server.base_url + 'api/v1/locations/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/', auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
     sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/locations/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
@@ -139,7 +139,7 @@ def test_get_locations(flask_server, auth, user):
 
 
 def test_get_location_assignment(flask_server, auth, user, action):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/1/locations/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth)
     assert r.status_code == 404
     data = {
         'name': {
@@ -149,7 +149,7 @@ def test_get_location_assignment(flask_server, auth, user, action):
     }
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/0'.format(object.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/locations/0'.format(object.id), auth=auth)
     assert r.status_code == 404
 
     location = sampledb.logic.locations.create_location(
@@ -161,7 +161,7 @@ def test_get_location_assignment(flask_server, auth, user, action):
     )
     sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, {'en': "This is an example description"})
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/0'.format(object.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/locations/0'.format(object.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'object_id': object.id,
@@ -174,7 +174,7 @@ def test_get_location_assignment(flask_server, auth, user, action):
 
 
 def test_get_location_assignments(flask_server, auth, user, action):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/1/locations/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth)
     assert r.status_code == 404
     data = {
         'name': {
@@ -184,7 +184,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
     }
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/'.format(object.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/locations/'.format(object.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -197,7 +197,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
     )
     sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, {'en': "This is an example description"})
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/locations/'.format(object.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/locations/'.format(object.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
@@ -211,7 +211,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
     ]
 
 def test_create_location_assignment(flask_server, auth, user, action):
-    r = requests.post(flask_server.base_url + 'api/v1/objects/1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth, json={
         'location_id': 2,
         'responsible_user_id': user.id,
         'description': 'This is an example description',
@@ -226,27 +226,27 @@ def test_create_location_assignment(flask_server, auth, user, action):
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'description': 'This is an example description',
     })
     assert r.status_code == 400
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'description': 'This is an example description',
         'location_id': 1
     })
     assert r.status_code == 400
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'description': 'This is an example description',
         'responsible_user_id': user.id + 1
     })
     assert r.status_code == 400
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'description': 'This is an example description',
         'responsible_user_id': user.id,
     })
@@ -259,7 +259,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert object_location_assignment.responsible_user_id == user.id
     assert object_location_assignment.user_id == user.id
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'responsible_user_id': user.id,
     })
     assert r.status_code == 201
@@ -280,7 +280,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     )
     sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.READ)
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'location_id': location.id
     })
     assert r.status_code == 201
@@ -292,7 +292,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert object_location_assignment.responsible_user_id is None
     assert object_location_assignment.user_id == user.id
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'location_id': location.id,
         'responsible_user_id': user.id,
     })
@@ -305,7 +305,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert object_location_assignment.responsible_user_id == user.id
     assert object_location_assignment.user_id == user.id
 
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'object_id': object.id + 1,
         'location_id': location.id,
         'responsible_user_id': user.id,
@@ -314,7 +314,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 4
 
     sampledb.logic.object_permissions.set_user_object_permissions(object.id, user.id, sampledb.models.Permissions.READ)
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'location_id': location.id,
         'responsible_user_id': user.id,
     })
@@ -332,7 +332,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
         is_hidden=False,
         enable_object_assignments=False
     )
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'location_id': location.id,
         'responsible_user_id': user.id,
     })
@@ -350,7 +350,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     )
 
     sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.NONE)
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'location_id': location.id,
         'responsible_user_id': user.id,
     })
@@ -372,7 +372,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
         enable_capacities=True,
         show_location_log=location.type.show_location_log,
     )
-    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
         'location_id': location.id,
         'responsible_user_id': user.id,
     })
@@ -381,11 +381,11 @@ def test_create_location_assignment(flask_server, auth, user, action):
 
 
 def test_create_location(flask_server, auth, user):
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth)
     assert r.status_code == 400
     assert len(sampledb.logic.locations.get_locations()) == 0
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
     })
     assert r.status_code == 201
@@ -413,7 +413,7 @@ def test_create_location(flask_server, auth, user):
         show_location_log=False,
     )
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -427,7 +427,7 @@ def test_create_location(flask_server, auth, user):
     assert location.parent_location_id == parent_location_id
     assert location.type_id == location_type.id
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id + 1,
@@ -450,7 +450,7 @@ def test_create_location(flask_server, auth, user):
         enable_capacities=True,
         show_location_log=False,
     )
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -473,7 +473,7 @@ def test_create_location(flask_server, auth, user):
         enable_capacities=True,
         show_location_log=False,
     )
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -482,7 +482,7 @@ def test_create_location(flask_server, auth, user):
     assert r.status_code == 400
     assert len(sampledb.logic.locations.get_locations()) == 2
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -510,7 +510,7 @@ def test_create_location(flask_server, auth, user):
         show_location_log=False,
     )
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -534,7 +534,7 @@ def test_create_location(flask_server, auth, user):
         show_location_log=False,
     )
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -543,7 +543,7 @@ def test_create_location(flask_server, auth, user):
     assert r.status_code == 201
     assert len(sampledb.logic.locations.get_locations()) == 4
 
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -553,7 +553,7 @@ def test_create_location(flask_server, auth, user):
     assert len(sampledb.logic.locations.get_locations()) == 4
 
     sampledb.logic.location_permissions.set_user_location_permissions(parent_location_id, user.id, sampledb.models.Permissions.READ)
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -577,7 +577,7 @@ def test_create_location(flask_server, auth, user):
         enable_capacities=True,
         show_location_log=False,
     )
-    r = requests.post(flask_server.base_url + 'api/v1/locations/', auth=auth, json={
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
@@ -588,7 +588,7 @@ def test_create_location(flask_server, auth, user):
 
 
 def test_update_location(flask_server, auth, user):
-    r = requests.put(flask_server.base_url + 'api/v1/locations/1', auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/locations/1', auth=auth)
     assert r.status_code == 404
 
     location = sampledb.logic.locations.create_location(
@@ -599,19 +599,19 @@ def test_update_location(flask_server, auth, user):
         type_id=sampledb.logic.locations.LocationType.LOCATION
     )
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth)
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth)
     assert r.status_code == 403
 
     sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.WRITE)
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth)
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth)
     assert r.status_code == 400
 
-    location_json = requests.get(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth).json()
+    location_json = requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json=location_json)
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=location_json)
     assert r.status_code == 200
-    assert r.json() == requests.get(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth).json()
+    assert r.json() == requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
     location = sampledb.logic.locations.get_location(location.id)
     assert location.name == {'en': 'Example Location'}
     assert location.description == {'en': 'This is an example location'}
@@ -621,7 +621,7 @@ def test_update_location(flask_server, auth, user):
     assert location.enable_object_assignments == True
 
     for key in location_json:
-        r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+        r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
             k: v
             for k, v in location_json.items()
             if key != k
@@ -631,7 +631,7 @@ def test_update_location(flask_server, auth, user):
         else:
             assert r.status_code == 400
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location',
         'description': 'This is an example location',
@@ -641,7 +641,7 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 200
-    assert r.json() == requests.get(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth).json()
+    assert r.json() == requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
     location = sampledb.logic.locations.get_location(location.id)
     assert location.name == {'en': 'Example Location'}
     assert location.description == {'en': 'This is an example location'}
@@ -650,7 +650,7 @@ def test_update_location(flask_server, auth, user):
     assert location.is_hidden == False
     assert location.enable_object_assignments == True
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -660,7 +660,7 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 200
-    assert r.json() == requests.get(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth).json()
+    assert r.json() == requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
     location = sampledb.logic.locations.get_location(location.id)
     assert location.name == {'en': 'Example Location 2'}
     assert location.description == {'en': 'This is an example location 2'}
@@ -673,7 +673,7 @@ def test_update_location(flask_server, auth, user):
         type_id=sampledb.logic.locations.LocationType.LOCATION
     )
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -684,7 +684,7 @@ def test_update_location(flask_server, auth, user):
     })
     assert r.status_code == 400
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -710,7 +710,7 @@ def test_update_location(flask_server, auth, user):
         enable_capacities=True,
         show_location_log=False,
     )
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -735,7 +735,7 @@ def test_update_location(flask_server, auth, user):
         enable_capacities=True,
         show_location_log=False,
     )
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -760,7 +760,7 @@ def test_update_location(flask_server, auth, user):
         enable_capacities=True,
         show_location_log=False,
     )
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -770,11 +770,11 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 200
-    assert r.json() == requests.get(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth).json()
+    assert r.json() == requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
     location = sampledb.logic.locations.get_location(location.id)
     assert location.parent_location_id == parent_location.id
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -785,7 +785,7 @@ def test_update_location(flask_server, auth, user):
     })
     assert r.status_code == 400
 
-    r = requests.put(flask_server.base_url + f'api/v1/locations/{location.id}', auth=auth, json={
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id + 1,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',

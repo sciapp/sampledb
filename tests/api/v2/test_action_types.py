@@ -26,13 +26,13 @@ def auth(auth_user):
 
 
 def test_get_action_type(flask_server, auth):
-    r = requests.get(flask_server.base_url + 'api/v1/action_types/1', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/action_types/1', auth=auth)
     assert r.status_code == 404
 
     action_types = sampledb.logic.action_types.get_action_types()
 
     for action_type in action_types:
-        r = requests.get(flask_server.base_url + 'api/v1/action_types/{}'.format(action_type.id), auth=auth)
+        r = requests.get(flask_server.base_url + 'api/v2/action_types/{}'.format(action_type.id), auth=auth)
         assert r.status_code == 200
         assert r.json() == {
             'type_id': action_type.id,
@@ -43,7 +43,7 @@ def test_get_action_type(flask_server, auth):
 
 
 def test_get_action_types(flask_server, auth):
-    r = requests.get(flask_server.base_url + 'api/v1/action_types/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/action_types/', auth=auth)
     assert r.status_code == 200
     expected_json = []
     for action_type in sampledb.logic.action_types.get_action_types():

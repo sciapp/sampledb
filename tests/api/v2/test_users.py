@@ -38,10 +38,10 @@ def users(user):
 
 
 def test_get_user(flask_server, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v1/users/10', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/users/10', auth=auth)
     assert r.status_code == 404
 
-    r = requests.get(flask_server.base_url + 'api/v1/users/{}'.format(user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/users/{}'.format(user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'user_id': user.id,
@@ -53,7 +53,7 @@ def test_get_user(flask_server, auth, user):
 
     sampledb.logic.users.set_user_administrator(user.id, True)
 
-    r = requests.get(flask_server.base_url + 'api/v1/users/{}'.format(user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/users/{}'.format(user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'user_id': user.id,
@@ -69,7 +69,7 @@ def test_get_user(flask_server, auth, user):
 
 
 def test_get_current_user(flask_server, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v1/users/me', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/users/me', auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'user_id': user.id,
@@ -81,7 +81,7 @@ def test_get_current_user(flask_server, auth, user):
 
 
 def test_get_users(flask_server, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v1/users/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/users/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
@@ -111,7 +111,7 @@ def test_get_users(flask_server, auth, user, users, param, getter, setter):
         for user in users
     ]
     for value in [True, False]:
-        r = requests.get(flask_server.base_url + 'api/v1/users/', auth=auth, params={param: str(value).lower()})
+        r = requests.get(flask_server.base_url + 'api/v2/users/', auth=auth, params={param: str(value).lower()})
         assert r.status_code == 200
         assert r.json() == [
             {

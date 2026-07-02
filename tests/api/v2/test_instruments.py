@@ -46,7 +46,7 @@ def location(flask_server, user):
 
 
 def test_get_instrument(flask_server, auth, user, location):
-    r = requests.get(flask_server.base_url + 'api/v1/instruments/1', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/1', auth=auth)
     assert r.status_code == 404
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -57,7 +57,7 @@ def test_get_instrument(flask_server, auth, user, location):
         short_description='This is the short description',
         description="This is an example instrument"
     )
-    r = requests.get(flask_server.base_url + 'api/v1/instruments/{}'.format(instrument.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/{}'.format(instrument.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'instrument_id': instrument.id,
@@ -73,7 +73,7 @@ def test_get_instrument(flask_server, auth, user, location):
 
     sampledb.logic.instruments.set_instrument_location(instrument.id, location.id)
     sampledb.logic.instruments.add_instrument_responsible_user(instrument.id, user.id)
-    r = requests.get(flask_server.base_url + 'api/v1/instruments/{}'.format(instrument.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/{}'.format(instrument.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'instrument_id': instrument.id,
@@ -89,7 +89,7 @@ def test_get_instrument(flask_server, auth, user, location):
 
 
 def test_get_instruments(flask_server, auth):
-    r = requests.get(flask_server.base_url + 'api/v1/instruments/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/', auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -109,7 +109,7 @@ def test_get_instruments(flask_server, auth):
         description="This is an example fed instrument"
     )
 
-    r = requests.get(flask_server.base_url + 'api/v1/instruments/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
