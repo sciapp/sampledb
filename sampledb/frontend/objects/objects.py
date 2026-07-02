@@ -11,7 +11,6 @@ import typing
 import flask
 import flask_login
 import markupsafe
-import requests
 import werkzeug
 from flask_babel import _
 
@@ -35,10 +34,9 @@ from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
-from ...logic.federation.update import update_poke_component
 from ...logic.shares import add_object_share, update_object_share, get_share, ObjectShare, get_shares_for_object, merge_policies
 from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, \
-    parse_filter_id_params, build_modified_url, LocationFormInformation
+    parse_filter_id_params, build_modified_url, LocationFormInformation, update_poke_component_with_error_handling
 from ...logic.utils import get_translated_text, relative_url_for
 from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm, MultiObjectNewShareAccessForm
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -2033,14 +2031,7 @@ def multiselect_share() -> FlaskResponseT:
             share = get_share(object_id, component_id)
             merged_policy = merge_policies(share.policy, policy)
             update_object_share(object_id, component_id, merged_policy, user_id=flask_login.current_user.id)
-    try:
-        update_poke_component(component)
-    except logic.errors.MissingComponentAddressError:
-        flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
-    except logic.errors.NoAuthenticationMethodError:
-        flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
-    except requests.ConnectionError:
-        flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+    update_poke_component_with_error_handling(component)
     for object_id in object_ids:
         background_tasks.post_trigger_object_permissions_webhooks(object_id)
     flask.flash(_("Successfully shared objects with %(component_name)s.", component_name=component.get_name()), 'success')

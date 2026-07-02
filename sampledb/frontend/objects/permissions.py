@@ -7,10 +7,8 @@ import typing
 
 import flask
 import flask_login
-import requests
 from flask_babel import _
 
-from ...logic.federation.update import update_poke_component
 from .. import frontend
 from ... import logic
 from ...logic import user_log, background_tasks
@@ -28,7 +26,7 @@ from ...logic.components import get_component, get_components
 from .forms import CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ...utils import object_permissions_required, FlaskResponseT
-from ..utils import check_current_user_is_not_readonly, get_groups_form_data
+from ..utils import check_current_user_is_not_readonly, get_groups_form_data, update_poke_component_with_error_handling
 from ...models import Permissions, Object
 
 
@@ -285,14 +283,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
             flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
             return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
         add_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
-        try:
-            update_poke_component(component)
-        except logic.errors.MissingComponentAddressError:
-            flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
-        except logic.errors.NoAuthenticationMethodError:
-            flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
-        except requests.ConnectionError:
-            flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        update_poke_component_with_error_handling(component)
         background_tasks.post_trigger_object_permissions_webhooks(object_id)
         flask.flash(_("Successfully updated object permissions."), 'success')
     elif 'edit_component_policy' in flask.request.form and edit_component_policy_form.validate_on_submit():
@@ -303,14 +294,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
             flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
             return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
         update_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
-        try:
-            update_poke_component(component)
-        except logic.errors.MissingComponentAddressError:
-            flask.flash(_('Unable to contact %(component_name)s. Missing database address.', component_name=component.get_name()), 'warning')
-        except logic.errors.NoAuthenticationMethodError:
-            flask.flash(_('No valid authentication method configured for %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
-        except requests.ConnectionError:
-            flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
+        update_poke_component_with_error_handling(component)
         background_tasks.post_trigger_object_permissions_webhooks(object_id)
         flask.flash(_("Successfully updated object permissions."), 'success')
     else:
