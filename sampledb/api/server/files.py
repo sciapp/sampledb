@@ -239,7 +239,7 @@ class ObjectFiles(Resource):
                 "message": "storage must be 'local_reference', 'database' or 'url'"
             }, 400
         file_url = flask.url_for(
-            'api.object_file',
+            '.object_file',
             object_id=file.object_id,
             file_id=file.id,
             _external=True

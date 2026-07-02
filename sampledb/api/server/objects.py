@@ -184,7 +184,7 @@ class ObjectVersions(Resource):
             }, 400
 
         object_version_url = flask.url_for(
-            'api.object_version',
+            '.object_version',
             object_id=object.object_id,
             version_id=object.version_id + 1,
             _external=True
@@ -198,7 +198,7 @@ class Object(Resource):
     def get(self, object_id: int) -> ResponseData:
         object = get_object(object_id=object_id)
         object_version_url = flask.url_for(
-            'api.object_version',
+            '.object_version',
             object_id=object.object_id,
             version_id=object.version_id,
             _external=True
@@ -479,7 +479,7 @@ class Objects(Resource):
                 "message": "failed to create object"
             }, 400
         object_version_url = flask.url_for(
-            'api.object_version',
+            '.object_version',
             object_id=object.object_id,
             version_id=object.version_id,
             _external=True
