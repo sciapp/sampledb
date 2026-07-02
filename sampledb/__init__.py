@@ -179,7 +179,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     babel.init_app(app, locale_selector=babel_locale_selector, timezone_selector=babel_timezone_selector)
 
     app.register_blueprint(sampledb.api.v1.api)
-    app.register_blueprint(sampledb.api.server.api)
+    app.register_blueprint(sampledb.api.v2.api)
     app.register_blueprint(sampledb.api.federation.federation_api)
     app.register_blueprint(sampledb.api.frontend.frontend_api)
 
