@@ -26,7 +26,7 @@ def user(auth_user):
 
 
 def test_get_action(flask_server, auth):
-    r = requests.get(flask_server.base_url + 'api/v1/actions/1', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/actions/1', auth=auth)
     assert r.status_code == 404
 
     action = sampledb.logic.actions.create_action(
@@ -50,7 +50,7 @@ def test_get_action(flask_server, auth):
         description="This is an example action",
     )
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'action_id': action.id,
@@ -76,7 +76,7 @@ def test_get_action(flask_server, auth):
 
 
 def test_get_actions(flask_server, auth, auth_user):
-    r = requests.get(flask_server.base_url + 'api/v1/actions/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/actions/', auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -102,7 +102,7 @@ def test_get_actions(flask_server, auth, auth_user):
         description="This is an example action",
     )
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/actions/', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/actions/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
@@ -130,7 +130,7 @@ def test_get_actions(flask_server, auth, auth_user):
 
 
 def test_post_action(flask_server, auth):
-    r = requests.post(flask_server.base_url + 'api/v1/actions/1', auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v2/actions/1', auth=auth)
     assert r.status_code == 404
 
     action = sampledb.logic.actions.create_action(
@@ -154,14 +154,14 @@ def test_post_action(flask_server, auth):
         description="This is an example action",
     )
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
-    r = requests.post(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 403
 
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
-    r = requests.post(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 400
 
-    r = requests.get(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 200
 
     action_data = r.json()
@@ -170,7 +170,7 @@ def test_post_action(flask_server, auth):
     action_data['is_hidden'] = True
     action_data['schema']['title'] = 'Updated Example Object'
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
-    r = requests.post(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth, json=action_data)
+    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
     assert r.status_code == 200
     assert r.json() == {
         'action_id': action.id,
@@ -221,5 +221,5 @@ def test_post_action(flask_server, auth):
         ('name', ''),
         ('name', 'x' * 101)
     ]:
-        r = requests.post(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth, json={**action_data, key: value})
+        r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json={**action_data, key: value})
         assert r.status_code == 400

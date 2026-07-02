@@ -28,18 +28,18 @@ def user(auth_user):
 
 
 sampledb.api.v2.api.add_url_rule(
-    '/api/v1/errors/<int:error_code>', endpoint='errors', view_func=lambda error_code: flask.abort(error_code)
+    '/api/v2/errors/<int:error_code>', endpoint='errors', view_func=lambda error_code: flask.abort(error_code)
 )
 
 
 def test_errors(flask_server, auth, user):
     # actual errors from the API
-    r = requests.get(flask_server.base_url + 'api/v1/errors', auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/errors', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         'message': "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."
     }
-    r = requests.get(flask_server.base_url + 'api/v1/objects/')
+    r = requests.get(flask_server.base_url + 'api/v2/objects/')
     assert r.status_code == 401
     assert r.json() == {
         'message': "The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials (e.g. a bad password), or your browser doesn't understand how to supply the credentials required."
@@ -48,7 +48,7 @@ def test_errors(flask_server, auth, user):
     for error in [BadRequest, Unauthorized, Forbidden, NotFound, InternalServerError]:
         status_code = error.code
         message = error.description
-        r = requests.get(flask_server.base_url + f'api/v1/errors/{status_code}', auth=auth)
+        r = requests.get(flask_server.base_url + f'api/v2/errors/{status_code}', auth=auth)
         assert r.status_code == status_code
         assert r.json() == {
             'message': message

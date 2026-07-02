@@ -601,7 +601,7 @@ def test_status_codes(flask_server, user, driver):
     excluded_routes = [
         f'users/{user_id}/autologin',
         'users/me/loginstatus',
-        'api/v1/errors/400',
+        'api/v2/errors/400',
     ]
 
     handled_routes = list(expected_status_codes.keys()) + excluded_routes

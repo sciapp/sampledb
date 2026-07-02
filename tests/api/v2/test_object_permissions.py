@@ -67,24 +67,24 @@ def object_id(action, user):
 
 
 def test_get_user_object_permissions(flask_server, auth, user, other_user, object_id):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "grant"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id + 1, user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id + 1, user.id), auth=auth)
     assert r.status_code == 404
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, other_user.id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, other_user.id, sampledb.models.Permissions.WRITE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, other_user.id, sampledb.models.Permissions.NONE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
 
@@ -93,16 +93,16 @@ def test_get_user_object_permissions(flask_server, auth, user, other_user, objec
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.WRITE)
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), params={'include_groups': True}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), params={'include_groups': True}, auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), params={'include_projects': True}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), params={'include_projects': True}, auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         "message": "user {} does not exist".format(other_user.id + 1)
@@ -111,23 +111,23 @@ def test_get_user_object_permissions(flask_server, auth, user, other_user, objec
 
 def test_set_user_object_permissions(flask_server, auth, user, other_user, object_id):
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="read", auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.READ
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="write", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="write", auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.WRITE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="grant", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="grant", auth=auth)
     assert r.status_code == 200
     assert r.json() == "grant"
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.GRANT
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="none", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="none", auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="all", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -137,7 +137,7 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
         },
     }
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json={"permissions": "read"}, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -147,7 +147,7 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
         },
     }
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), json="read", auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         "message": "User should exist",
@@ -162,21 +162,21 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
 def test_get_group_object_permissions(flask_server, auth, other_user, object_id):
     group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id + 1, group_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id + 1, group_id), auth=auth)
     assert r.status_code == 404
     sampledb.logic.object_permissions.set_group_object_permissions(object_id, group_id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     sampledb.logic.object_permissions.set_group_object_permissions(object_id, group_id, sampledb.models.Permissions.WRITE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
     sampledb.logic.object_permissions.set_group_object_permissions(object_id, group_id, sampledb.models.Permissions.NONE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
 
@@ -184,13 +184,13 @@ def test_get_group_object_permissions(flask_server, auth, other_user, object_id)
     sampledb.logic.projects.add_group_to_project(project_id, group_id, sampledb.models.Permissions.GRANT)
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.WRITE)
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), params={'include_projects': True}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), params={'include_projects': True}, auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         "message": "group {} does not exist".format(group_id + 1)
@@ -201,23 +201,23 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
     group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="read", auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.READ
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="write", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="write", auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.WRITE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="grant", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="grant", auth=auth)
     assert r.status_code == 200
     assert r.json() == "grant"
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.GRANT
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="none", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="none", auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="all", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -227,7 +227,7 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
         },
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id), json={"permissions": "read"}, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -237,7 +237,7 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
         },
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), json="read", auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         "message": "Group should exist",
@@ -252,25 +252,25 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
 def test_get_project_object_permissions(flask_server, auth, other_user, object_id):
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id + 1, project_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id + 1, project_id), auth=auth)
     assert r.status_code == 404
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.WRITE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.NONE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         "message": "project {} does not exist".format(project_id + 1)
@@ -281,23 +281,23 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="read", auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.READ
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="write", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="write", auth=auth)
     assert r.status_code == 200
     assert r.json() == "write"
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.WRITE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="grant", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="grant", auth=auth)
     assert r.status_code == 200
     assert r.json() == "grant"
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.GRANT
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="none", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="none", auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="all", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -307,7 +307,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
         },
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id), json={"permissions": "read"}, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -317,7 +317,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
         },
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), json="read", auth=auth)
     assert r.status_code == 404
     assert r.json() == {
         "message": "Project should exist",
@@ -330,7 +330,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
 
 
 def test_get_users_object_permissions(flask_server, auth, user, other_user, object_id):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(user.id): "grant"
@@ -342,19 +342,19 @@ def test_get_users_object_permissions(flask_server, auth, user, other_user, obje
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.GRANT)
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(user.id): "grant",
         str(other_user.id): "read"
     }
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/'.format(object_id), params={"include_groups": True}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/'.format(object_id), params={"include_groups": True}, auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(user.id): "grant",
         str(other_user.id): "write"
     }
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users/'.format(object_id), params={"include_projects": True}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/'.format(object_id), params={"include_projects": True}, auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(user.id): "grant",
@@ -365,12 +365,12 @@ def test_get_users_object_permissions(flask_server, auth, user, other_user, obje
 def test_get_groups_object_permissions(flask_server, auth, user, other_user, object_id):
     group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {}
 
     sampledb.logic.object_permissions.set_group_object_permissions(object_id, group_id, sampledb.models.Permissions.WRITE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(group_id): "write"
@@ -380,12 +380,12 @@ def test_get_groups_object_permissions(flask_server, auth, user, other_user, obj
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.GRANT)
     sampledb.logic.projects.add_group_to_project(project_id, group_id, sampledb.models.Permissions.GRANT)
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(group_id): "write"
     }
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups/'.format(object_id), params={"include_projects": True}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/'.format(object_id), params={"include_projects": True}, auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(group_id): "grant"
@@ -395,12 +395,12 @@ def test_get_groups_object_permissions(flask_server, auth, user, other_user, obj
 def test_get_projects_object_permissions(flask_server, auth, user, other_user, object_id):
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {}
 
     sampledb.logic.object_permissions.set_project_object_permissions(object_id, project_id, sampledb.models.Permissions.WRITE)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects/'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         str(project_id): "write"
@@ -408,12 +408,12 @@ def test_get_projects_object_permissions(flask_server, auth, user, other_user, o
 
 
 def test_get_object_public(flask_server, auth, object_id):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() is False
 
     sampledb.logic.object_permissions.set_object_permissions_for_all_users(object_id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() is True
 
@@ -421,17 +421,17 @@ def test_get_object_public(flask_server, auth, object_id):
 def test_set_object_public(flask_server, auth, object_id):
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), json=True, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), json=True, auth=auth)
     assert r.status_code == 200
     assert r.json() is True
     assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), json=False, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), json=False, auth=auth)
     assert r.status_code == 200
     assert r.json() is False
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/public'.format(object_id), json="True", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), json="True", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be a valid boolean",
@@ -444,12 +444,12 @@ def test_set_object_public(flask_server, auth, object_id):
 
 
 def test_get_all_user_object_permissions(flask_server, auth, object_id):
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
 
     sampledb.logic.object_permissions.set_object_permissions_for_all_users(object_id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
 
@@ -457,17 +457,17 @@ def test_get_all_user_object_permissions(flask_server, auth, object_id):
 def test_set_all_user_object_permissions(flask_server, auth, object_id):
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json="read", auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json="none", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json="none", auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json="write", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json="write", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Permissions for authenticated users should be 'none' or 'read'",
@@ -477,7 +477,7 @@ def test_set_all_user_object_permissions(flask_server, auth, object_id):
         },
     }
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), json=True, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -492,17 +492,17 @@ def test_set_all_user_object_permissions(flask_server, auth, object_id):
 def test_get_anonymous_user_object_permissions(flask_server, auth, object_id):
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
 
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
 
     sampledb.logic.object_permissions.set_object_permissions_for_anonymous_users(object_id, sampledb.models.Permissions.READ)
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
 
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "anonymous users are disabled"
@@ -513,17 +513,17 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json="read", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json="read", auth=auth)
     assert r.status_code == 200
     assert r.json() == "read"
     assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json="none", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json="none", auth=auth)
     assert r.status_code == 200
     assert r.json() == "none"
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json="write", auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json="write", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Permissions for anonymous users should be 'none' or 'read'",
@@ -533,7 +533,7 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
         },
     }
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), json=True, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
@@ -545,7 +545,7 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
 
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "anonymous users are disabled"
@@ -561,12 +561,12 @@ def test_get_all_object_permissions(flask_server, auth, user, other_user, object
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=object_id, user_id=user.id, permissions=sampledb.models.Permissions.READ)
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=object_id, user_id=other_user.id, permissions=sampledb.models.Permissions.READ)
 
-    r_all = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), auth=auth)
-    r_users = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/users'.format(object_id), auth=auth)
-    r_groups = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/groups'.format(object_id), auth=auth)
-    r_projects = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/projects'.format(object_id), auth=auth)
-    r_authenticated = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
-    r_anonymous = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
+    r_all = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), auth=auth)
+    r_users = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users'.format(object_id), auth=auth)
+    r_groups = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups'.format(object_id), auth=auth)
+    r_projects = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects'.format(object_id), auth=auth)
+    r_authenticated = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), auth=auth)
+    r_anonymous = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
 
     assert r_all.status_code == 200
     assert r_all.json()["users"] == r_users.json()
@@ -575,7 +575,7 @@ def test_get_all_object_permissions(flask_server, auth, user, other_user, object
     assert r_all.json()["authenticated_users"] == r_authenticated.json()
     assert r_all.json()["anonymous_users"] == (r_anonymous.json() if r_anonymous.ok else 'none')
 
-    r_all = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id+1), auth=auth)
+    r_all = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id+1), auth=auth)
     assert r_all.status_code == 404
 
 
@@ -635,7 +635,7 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
             project_ids[2]: 'read',
         },
     }
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 200
 
     assert all([
@@ -660,7 +660,7 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
         'authenticated_users': 'none',
         'anonymous_users': 'none',
     }
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 200
     assert r.json()["authenticated_users"] == 'none'
     assert r.json()["anonymous_users"] == 'none'
@@ -669,7 +669,7 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
         'authenticated_users': 'write',
         'anonymous_users': 'grant',
     }
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "Permissions for authenticated users should be 'none' or 'read' (authenticated_users)",
@@ -685,14 +685,14 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
         },
     }
 
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id+1), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id+1), json=request_json, auth=auth)
     assert r.status_code == 404
 
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
     request_json = {
         'anonymous_users': 'read',
     }
-    r = requests.put(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
         "message": "anonymous users are disabled"
@@ -717,9 +717,9 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "source_object_id": object_id,
         "target_object_id": other_object_id,
     }
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 200
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
     assert r.status_code == 200
     perms_source_object = sampledb.api.v2.object_permissions.all_object_permissions_dict_to_json(sampledb.logic.object_permissions.get_all_object_permissions(object_id))
     perms_source_object["users"] = {str(k): v for k,v in perms_source_object["users"].items()} if perms_source_object.get("users") else None
@@ -736,9 +736,9 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
     c_object_id = c_object.object_id
 
     # Make sure c_object and b_object do not have the same permissions as object
-    perms_source = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
-    perms_b_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
-    perms_c_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
+    perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
+    perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
+    perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
     assert not all([perms_source.get(key, None) == perms_b_obj.get(key, None) for key in perms_source.keys()]) # Fails if object and b_object have same permissions
     assert not all([perms_source.get(key, None) == perms_c_obj.get(key, None) for key in perms_source.keys()]) # Failes if object and c_object have same permissions
 
@@ -752,11 +752,11 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "target_object_id": c_object_id,
         },
     ]
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 200
-    perms_source = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
-    perms_b_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
-    perms_c_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
+    perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
+    perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
+    perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
     for key in perms_source.keys():
         assert perms_source[key] == perms_b_obj[key]
         assert perms_source[key] == perms_c_obj[key]
@@ -768,13 +768,13 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
 
     # Not enough permission to view source object's permissions
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, user.id, sampledb.models.Permissions.NONE)
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 403
 
     # Not enough permissions to perform a grant action on target object
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, user.id, sampledb.models.Permissions.READ)
     sampledb.logic.object_permissions.set_user_object_permissions(other_object_id, user.id, sampledb.models.Permissions.READ)
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 403
 
     # Not existing object
@@ -784,5 +784,5 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "source_object_id": object_id,
         "target_object_id": last_object_id+1,
     }
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 400
