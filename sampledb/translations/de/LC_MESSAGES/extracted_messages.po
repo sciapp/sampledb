@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-07-15 16:25+0200\n"
+"POT-Creation-Date: 2026-07-15 17:00+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5171,6 +5171,9 @@ msgstr "… an Unter-Orten"
 msgid "… at this location and sub-locations"
 msgstr "… an diesem Ort oder Unter-Orten"
 
+msgid "View Instruments"
+msgstr "Instrumente anzeigen"
+
 msgid "Edit Location"
 msgstr "Ort bearbeiten"
 
@@ -7649,9 +7652,6 @@ msgid "No, this topic should not be shown in the instruments tab of the navbar"
 msgstr ""
 "Nein, dieses Thema nicht im Instrumenten-Tab der Navigationsleiste "
 "anzeigen"
-
-msgid "View Instruments"
-msgstr "Instrumente anzeigen"
 
 msgid "View Locations"
 msgstr "Orte anzeigen"
