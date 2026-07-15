@@ -1863,7 +1863,7 @@ def edit_multiple_locations() -> FlaskResponseT:
                     location_capacity = location_capacities.get(action_type_id, 0)
                     if location_capacity is not None and num_stored_objects.get(action_type_id, 0) + selected_action_type_ids.count(action_type_id) > location_capacity:
                         flask.flash(_('The selected location does not have the capacity to store these objects.'), 'error')
-                        return flask.redirect(flask.url_for('.objects'))
+                        return flask.redirect(flask.url_for('.objects', edit_location=True))
         if location_id is not None or responsible_user_id is not None:
             for object_id in selected_object_ids:
                 logic.locations.assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
@@ -1871,7 +1871,7 @@ def edit_multiple_locations() -> FlaskResponseT:
             return flask.redirect(flask.url_for('.objects', ids=','.join(map(str, selected_object_ids))))
 
     flask.flash(_('Please select a location or a responsible user.'), 'error')
-    return flask.redirect(flask.url_for('.objects'))
+    return flask.redirect(flask.url_for('.objects', edit_location=True))
 
 
 @frontend.route("/multiselect_action", methods=["POST"])
@@ -1908,7 +1908,7 @@ def multiselect_permissions() -> FlaskResponseT:
         if edit_permissions_form.target_type.data == 'anonymous':
             if permission > Permissions.READ:
                 flask.flash(_('It is not allowed to use permissions higher than read for special groups.'), 'error')
-                return flask.redirect(flask.url_for('.objects'))
+                return flask.redirect(flask.url_for('.objects', edit_permissions=True))
 
             for object_id in object_ids:
                 current_permission = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
@@ -1918,7 +1918,7 @@ def multiselect_permissions() -> FlaskResponseT:
         elif edit_permissions_form.target_type.data == 'signed-in-users':
             if permission > Permissions.READ:
                 flask.flash(_('It is not allowed to use permissions higher than read for special groups.'), 'error')
-                return flask.redirect(flask.url_for('.objects'))
+                return flask.redirect(flask.url_for('.objects', edit_permissions=True))
             for object_id in object_ids:
                 current_permission = logic.object_permissions.get_object_permissions_for_all_users(object_id)
                 if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
@@ -1964,7 +1964,7 @@ def multiselect_permissions() -> FlaskResponseT:
 
         flask.flash(_('Updated permissions successfully.'), 'success')
         return flask.redirect(flask.url_for('.objects', ids=edit_permissions_form.objects.data))
-    return flask.redirect(flask.url_for('.objects'))
+    return flask.redirect(flask.url_for('.objects', edit_permissions=True))
 
 
 @frontend.route("/multiselect_share", methods=["POST"])
