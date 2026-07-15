@@ -7,7 +7,7 @@ import typing
 
 import flask
 import flask_login
-from flask_babel import _
+from flask_babel import _, ngettext
 
 from . import frontend
 from .. import logic
@@ -397,9 +397,10 @@ def project(project_id: int) -> FlaskResponseT:
     if 'add_user' in flask.request.form and Permissions.GRANT in user_permissions and invite_user_form is not None:
         if invite_user_form.validate_on_submit():
             check_current_user_is_not_readonly()
-            if not any(user.id == invite_user_form.user_id.data for user in invitable_user_list):
-                flask.flash(_('You cannot add this user.'), 'error')
-                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            invitable_user_ids = {
+                user.id
+                for user in invitable_user_list
+            }
             permissions = Permissions.from_value(invite_user_form.permissions.data)
             if Permissions.READ not in permissions:
                 flask.flash(_('Please select read permissions (or higher) for the invitation.'), 'error')
@@ -412,30 +413,52 @@ def project(project_id: int) -> FlaskResponseT:
                             other_project_ids.append(int(other_project_id_form.project_id.data))
                     except (KeyError, ValueError):
                         pass
+                success_count = 0
+                failed_count = 0
                 if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
-                    logic.projects.add_user_to_project(
-                        project_id=project_id,
-                        user_id=invite_user_form.user_id.data,
-                        other_project_ids=other_project_ids,
-                        permissions=permissions
-                    )
-                    flask.flash(_('The user was successfully added to the project group.'), 'success')
+                    for user_id in invite_user_form.user_id.data:
+                        if user_id not in invitable_user_ids:
+                            failed_count += 1
+                            continue
+                        try:
+                            logic.projects.add_user_to_project(
+                                project_id=project_id,
+                                user_id=user_id,
+                                other_project_ids=other_project_ids,
+                                permissions=permissions
+                            )
+                            success_count += 1
+                        except (logic.errors.UserDoesNotExistError, logic.errors.UserAlreadyMemberOfProjectError):
+                            failed_count += 1
                 else:
-                    logic.projects.invite_user_to_project(
-                        project_id=project_id,
-                        user_id=invite_user_form.user_id.data,
-                        inviter_id=flask_login.current_user.id,
-                        add_to_parent_project_ids=other_project_ids,
-                        permissions=permissions
-                    )
-                    flask.flash(_('The user was successfully invited to the project group.'), 'success')
+                    for user_id in invite_user_form.user_id.data:
+                        if user_id not in invitable_user_ids:
+                            failed_count += 1
+                            continue
+                        try:
+                            logic.projects.invite_user_to_project(
+                                project_id=project_id,
+                                user_id=user_id,
+                                inviter_id=flask_login.current_user.id,
+                                add_to_parent_project_ids=other_project_ids,
+                                permissions=permissions
+                            )
+                            success_count += 1
+                        except (logic.errors.UserDoesNotExistError, logic.errors.UserAlreadyMemberOfProjectError):
+                            failed_count += 1
+                if success_count:
+                    if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                        flask.flash(ngettext('1 user was successfully added to the project group.', '%(num)s users were successfully added to the project group.', success_count), 'success')
+                    else:
+                        flask.flash(ngettext('1 user was successfully invited to the project group.', '%(num)s users were successfully invited to the project group.', success_count), 'success')
+                if failed_count:
+                    if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                        flask.flash(ngettext('1 selected user could not be added as they are already a member of this project group or do not exist.', '%(num)s selected users could not be added as they are already members of this project group or do not exist.', failed_count), 'warning')
+                    else:
+                        flask.flash(ngettext('1 selected user could not be invited as they are already a member of this project group or do not exist.', '%(num)s selected users could not be invited as they are already members of this project group or do not exist.', failed_count), 'warning')
             except logic.errors.ProjectDoesNotExistError:
                 flask.flash(_('This project group does not exist.'), 'error')
                 return flask.redirect(flask.url_for('.projects'))
-            except logic.errors.UserDoesNotExistError:
-                flask.flash(_('This user does not exist.'), 'error')
-            except logic.errors.UserAlreadyMemberOfProjectError:
-                flask.flash(_('This user is already a member of this project group.'), 'error')
             else:
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
     if 'add_group' in flask.request.form and Permissions.GRANT in user_permissions and invite_group_form is not None:
