@@ -1,26 +1,144 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
-
 import base64
 import datetime
-import json
 import typing
+from contextlib import suppress
+from dataclasses import dataclass
 
 import flask
+from pydantic import (BaseModel, BeforeValidator, NonNegativeInt, Strict,
+                      ValidationInfo, constr, model_validator)
+from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth
 from ..utils import Resource, ResponseData
 from ...logic.instruments import get_instrument
-from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, update_instrument_log_entry, hide_instrument_log_object_attachment, hide_instrument_log_file_attachment
+from ...logic.instrument_log_entries import InstrumentLogEntry as LogicInstrumentLogEntry, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, update_instrument_log_entry, hide_instrument_log_object_attachment, hide_instrument_log_file_attachment
 from ...logic import errors, instrument_log_entries
 from ...logic.object_permissions import get_user_object_permissions
 from ...models import Permissions
-
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+from .validation_utils import (Base64Encoded,
+                               ModelWithDefaultsFromValidationInfo,
+                               ValidatingError, is_valid,
+                               populate_missing_or_expect_from_validation_info,
+                               validate)
 
 MAX_FILE_NAME_LENGTH = 256
+
+
+@dataclass(frozen=True, slots=True)
+class _ValidationContext:
+    log_entry: typing.Optional[LogicInstrumentLogEntry]
+    existing_category_ids: frozenset[int]
+
+    @property
+    def existing_file_attachments(self) -> typing.List[InstrumentLogFileAttachment]:
+        assert self.log_entry is not None
+        return [fa for fa in self.log_entry.file_attachments if not fa.is_hidden]
+
+    @property
+    def existing_object_attachments(self) -> typing.List[InstrumentLogObjectAttachment]:
+        assert self.log_entry is not None
+        return [oa for oa in self.log_entry.object_attachments if not oa.is_hidden]
+
+
+# pyflakes doesn't like string literals in type annotations that don't correspond to a Python identifier
+_base64_content = "base64_content"
+
+
+class _FileAttachment(BaseModel):
+    if typing.TYPE_CHECKING:
+        file_name: str
+        content: bytes
+    else:
+        file_name: constr(strip_whitespace=True, min_length=1, max_length=MAX_FILE_NAME_LENGTH)
+        content: Base64Encoded(_base64_content)
+
+
+class _ObjectAttachment(BaseModel):
+    object_id: typing.Annotated[NonNegativeInt, Strict()]
+
+    @model_validator(mode="after")
+    def check_object_exists(self) -> typing.Self:
+        try:
+            permissions = get_user_object_permissions(self.object_id, flask.g.user.id)
+            if Permissions.READ not in permissions:
+                raise errors.ObjectDoesNotExistError()
+            return self
+        except errors.ObjectDoesNotExistError:
+            raise PydanticCustomError("no_such_object", "Object should exist")
+
+
+def _parse_datetime(value: typing.Any) -> datetime.datetime:
+    if not isinstance(value, str):
+        raise PydanticCustomError("datetime_type", "Input should be a valid timestamp")
+    try:
+        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+    except Exception:
+        raise PydanticCustomError("datetime_parsing", "Timestamp should be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910")
+
+
+class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
+    content: typing.Optional[str]
+    content_is_markdown: bool = False
+    category_ids: typing.List[
+        typing.Annotated[
+            int,
+            Strict(),
+            is_valid(
+                lambda v, i: v in i.context.existing_category_ids,
+                lambda i: PydanticCustomError(
+                    "unexpected",
+                    f"Category ID should be one of: {", ".join(map(str, i.context.existing_category_ids))}" if i.context.existing_category_ids else "Category ID does not exist, instrument has no log categories",
+                    {"allowed": i.context.existing_category_ids},
+                ),
+            ),
+        ],
+    ] = []
+    event_utc_datetime: typing.Optional[
+        typing.Annotated[
+            datetime.datetime,
+            BeforeValidator(_parse_datetime),
+            is_valid(
+                lambda v, i: abs(v - datetime.datetime.now()) <= datetime.timedelta(days=365_242),
+                lambda i: PydanticCustomError("datetime_range", "Timestamp should not be more than 1000 years before or after the current date"),
+            ),
+        ]
+    ] = None
+
+
+_ObjectAttachments = typing.Annotated[
+    typing.List[_ObjectAttachment],
+    is_valid(
+        lambda v, i: len({x.object_id for x in v}) == len(v),
+        lambda i: PydanticCustomError("unique", "Object should only be attached once"),
+    ),
+]
+
+
+class _InstrumentLogEntry(_BaseInstrumentLogEntry):
+    file_attachments: typing.List[_FileAttachment] = []
+    object_attachments: _ObjectAttachments = []
+
+    @model_validator(mode="after")
+    def check_not_empty(self) -> typing.Self:
+        if self.content or self.file_attachments or self.object_attachments:
+            return self
+        raise PydanticCustomError("log_entry_empty", "Log entry should contain content or an attachment")
+
+
+class _InstrumentLogEntryVersion(_BaseInstrumentLogEntry):
+    version_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: len(i.context.log_entry.versions) + 1)]
+    log_entry_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: i.context.log_entry.id)]
+    file_attachments: typing.Optional[typing.List[_FileAttachment]] = None
+    object_attachments: typing.Optional[_ObjectAttachments] = None
+
+    @model_validator(mode="after")
+    def check_not_empty(self, info: ValidationInfo[_ValidationContext]) -> typing.Self:
+        file_attachments = info.context.existing_file_attachments if self.file_attachments is None else self.file_attachments
+        object_attachments = info.context.existing_object_attachments if self.object_attachments is None else self.object_attachments
+        if self.content or file_attachments or object_attachments:
+            return self
+        raise PydanticCustomError("log_entry_empty", "Log entry should contain content or an attachment")
 
 
 def instrument_log_entry_to_json(log_entry: instrument_log_entries.InstrumentLogEntry) -> typing.Dict[str, typing.Any]:
@@ -109,155 +227,32 @@ class InstrumentLogEntries(Resource):
             return {
                 "message": f"log entries for instrument {instrument_id} can only be created by instrument scientists"
             }, 403
+        request_json = flask.request.get_json(force=True)
         try:
-            data = json.loads(flask.request.data)
-            unexpected_keys = set(data.keys()) - {'content', 'content_is_markdown', 'category_ids', 'file_attachments', 'object_attachments', 'event_utc_datetime'}
-            if unexpected_keys:
-                raise ValueError()
-            content_is_markdown = data.get('content_is_markdown', False)
-            content = data['content']
-            category_ids = data.get('category_ids', [])
-            file_attachments = data.get('file_attachments', [])
-            object_attachments = data.get('object_attachments', [])
-            event_utc_datetime_str = data.get('event_utc_datetime', None)
-        except Exception:
-            return {
-                "message": "expected json object containing content, content_is_markdown, category_ids, file_attachments, object attachments and event_utc_datetime"
-            }, 400
-        if content is None:
-            content = ''
-        if not isinstance(content, str):
-            return {
-                "message": "expected string or null for content"
-            }, 400
-        try:
-            if not isinstance(category_ids, list):
-                raise TypeError()
-            for category_id in category_ids:
-                if not isinstance(category_id, int):
-                    raise TypeError()
-        except TypeError:
-            return {
-                "message": "expected list containing integer numbers for category_ids"
-            }, 400
-
-        existing_category_ids = {
-            category.id
-            for category in get_instrument_log_categories(instrument_id)
-        }
-        unknown_category_ids = set(category_ids) - existing_category_ids
-        if unknown_category_ids:
-            return {
-                "message": f"unknown category_ids: {', '.join(map(str, unknown_category_ids))}"
-            }, 400
-
-        if not isinstance(content_is_markdown, bool):
-            return {
-                "message": "expected true or false for content_is_markdown"
-            }, 400
-
-        try:
-            if not isinstance(file_attachments, list):
-                raise TypeError()
-            for file_attachment in file_attachments:
-                if not isinstance(file_attachment, dict):
-                    raise TypeError()
-                if set(file_attachment.keys()) - {'file_name', 'base64_content'}:
-                    raise ValueError()
-                if not isinstance(file_attachment['file_name'], str):
-                    raise TypeError()
-                file_attachment['file_name'] = file_attachment['file_name'].strip()
-                if not isinstance(file_attachment['base64_content'], str):
-                    raise TypeError()
-                file_attachment['content'] = base64.b64decode(file_attachment['base64_content'].encode('ascii'))
-        except Exception:
-            return {
-                "message": "expected list containing dicts containing file_name and base64_content for file_attachments"
-            }, 400
-
-        for file_attachment in file_attachments:
-            if not file_attachment['file_name'] or len(file_attachment['file_name']) > MAX_FILE_NAME_LENGTH:
-                return {
-                    "message": f"file attachment names must not be empty and must contain at most {MAX_FILE_NAME_LENGTH} characters"
-                }, 400
-
-        try:
-            if not isinstance(object_attachments, list):
-                raise TypeError()
-            for object_attachment in object_attachments:
-                if not isinstance(object_attachment, dict):
-                    raise TypeError()
-                if set(object_attachment.keys()) - {'object_id'}:
-                    raise ValueError()
-                if not isinstance(object_attachment['object_id'], int):
-                    raise TypeError()
-                if object_attachment['object_id'] < 0:
-                    raise ValueError()
-        except Exception:
-            return {
-                "message": "expected list containing dicts containing object_id for object_attachments"
-            }, 400
-
-        unknown_object_ids = set()
-        attached_object_ids = []
-        for object_attachment in object_attachments:
-            object_id = object_attachment['object_id']
-            try:
-                permissions = get_user_object_permissions(object_id, flask.g.user.id)
-                if Permissions.READ not in permissions:
-                    raise errors.ObjectDoesNotExistError()
-            except errors.ObjectDoesNotExistError:
-                unknown_object_ids.add(object_id)
-            else:
-                if object_id in attached_object_ids:
-                    return {
-                        "message": f"duplicate object id in object_attachments: {object_id}"
-                    }, 400
-                attached_object_ids.append(object_id)
-        if unknown_object_ids:
-            return {
-                "message": f"unknown object ids in object_attachments: {', '.join(map(str, unknown_object_ids))}"
-            }, 400
-
-        if not (content or file_attachments or object_attachments):
-            return {
-                "message": "log entry must contain content or an attachment"
-            }, 400
-
-        if event_utc_datetime_str is None:
-            event_utc_datetime = None
-        else:
-            try:
-                event_utc_datetime = datetime.datetime.strptime(event_utc_datetime_str, '%Y-%m-%dT%H:%M:%S.%f')
-            except Exception:
-                return {
-                    "message": "event_utc_datetime must be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910"
-                }, 400
-            if abs(event_utc_datetime.year - datetime.date.today().year) > 1000:
-                return {
-                    "message": "event_utc_datetime must be not be more than 1000 years before or after the current date"
-                }, 400
+            request_data = validate(_InstrumentLogEntry, request_json, context=_ValidationContext(None, frozenset(category.id for category in get_instrument_log_categories(instrument_id))))
+        except ValidatingError as e:
+            return e.response
 
         log_entry = create_instrument_log_entry(
             instrument_id=instrument.id,
             user_id=flask.g.user.id,
-            content=content,
-            content_is_markdown=content_is_markdown,
-            category_ids=category_ids,
-            event_utc_datetime=event_utc_datetime
+            content=request_data.content or "",
+            content_is_markdown=request_data.content_is_markdown,
+            category_ids=request_data.category_ids,
+            event_utc_datetime=request_data.event_utc_datetime,
         )
 
-        for file_attachment in file_attachments:
+        for file_attachment in request_data.file_attachments:
             create_instrument_log_file_attachment(
                 instrument_log_entry_id=log_entry.id,
-                file_name=file_attachment['file_name'],
-                content=file_attachment['content']
+                file_name=file_attachment.file_name,
+                content=file_attachment.content,
             )
 
-        for object_id in attached_object_ids:
+        for object_attachment in request_data.object_attachments:
             create_instrument_log_object_attachment(
                 instrument_log_entry_id=log_entry.id,
-                object_id=object_id
+                object_id=object_attachment.object_id,
             )
 
         return None, 201, {
@@ -352,191 +347,41 @@ class InstrumentLogEntryVersions(Resource):
             return {
                 "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
             }, 404
-        expected_version_id = len(log_entry.versions) + 1
+        validation_context = _ValidationContext(log_entry, frozenset(category.id for category in get_instrument_log_categories(instrument_id)))
+        request_json = flask.request.get_json(force=True)
         try:
-            data = json.loads(flask.request.data)
-            unexpected_keys = set(data.keys()) - {'version_id', 'log_entry_id', 'content', 'category_ids', 'content_is_markdown', 'file_attachments', 'object_attachments', 'event_utc_datetime'}
-            if unexpected_keys:
-                raise ValueError()
-            version_id = data.get('version_id', expected_version_id)
-            if data.get('log_entry_id', log_entry_id) != log_entry_id:
-                return {
-                    "message": f"log_entry_id must be {log_entry_id}"
-                }, 400
-            content_is_markdown = data.get('content_is_markdown', False)
-            content = data['content']
-            category_ids = data.get('category_ids', [])
-            file_attachments = data.get('file_attachments', None)
-            object_attachments = data.get('object_attachments', None)
-            event_utc_datetime_str = data.get('event_utc_datetime', None)
-        except Exception:
-            return {
-                "message": "expected json object containing version_id, log_entry_id, content, content_is_markdown, category_ids, file_attachments, object attachments and event_utc_datetime"
-            }, 400
-        if version_id != expected_version_id:
-            return {
-                "message": f"version_id must be {expected_version_id}"
-            }, 400
-        if content is None:
-            content = ''
-        if not isinstance(content, str):
-            return {
-                "message": "expected string or null for content"
-            }, 400
-        try:
-            if not isinstance(category_ids, list):
-                raise TypeError()
-            for category_id in category_ids:
-                if not isinstance(category_id, int):
-                    raise TypeError()
-        except TypeError:
-            return {
-                "message": "expected list containing integer numbers for category_ids"
-            }, 400
-
-        if not isinstance(content_is_markdown, bool):
-            return {
-                "message": "expected true or false for content_is_markdown"
-            }, 400
-
-        existing_category_ids = {
-            category.id
-            for category in get_instrument_log_categories(instrument_id)
-        }
-        unknown_category_ids = set(category_ids) - existing_category_ids
-        if unknown_category_ids:
-            return {
-                "message": f"unknown category_ids: {', '.join(map(str, unknown_category_ids))}"
-            }, 400
-
-        if file_attachments is not None:
-            try:
-                if not isinstance(file_attachments, list):
-                    raise TypeError()
-                for file_attachment in file_attachments:
-                    if not isinstance(file_attachment, dict):
-                        raise TypeError()
-                    if set(file_attachment.keys()) - {'file_name', 'base64_content'}:
-                        raise ValueError()
-                    if not isinstance(file_attachment['file_name'], str):
-                        raise TypeError()
-                    file_attachment['file_name'] = file_attachment['file_name'].strip()
-                    if not isinstance(file_attachment['base64_content'], str):
-                        raise TypeError()
-                    file_attachment['content'] = base64.b64decode(file_attachment['base64_content'].encode('ascii'))
-            except Exception:
-                return {
-                    "message": "expected list containing dicts containing file_name and base64_content for file_attachments"
-                }, 400
-
-            for file_attachment in file_attachments:
-                if not file_attachment['file_name'] or len(file_attachment['file_name']) > MAX_FILE_NAME_LENGTH:
-                    return {
-                        "message": f"file attachment names must not be empty and must contain at most {MAX_FILE_NAME_LENGTH} characters"
-                    }, 400
-
-        if object_attachments is not None:
-            try:
-                if not isinstance(object_attachments, list):
-                    raise TypeError()
-                for object_attachment in object_attachments:
-                    if not isinstance(object_attachment, dict):
-                        raise TypeError()
-                    if set(object_attachment.keys()) - {'object_id'}:
-                        raise ValueError()
-                    if not isinstance(object_attachment['object_id'], int):
-                        raise TypeError()
-                    if object_attachment['object_id'] < 0:
-                        raise ValueError()
-            except Exception:
-                return {
-                    "message": "expected list containing dicts containing object_id for object_attachments"
-                }, 400
-
-            unknown_object_ids = set()
-            attached_object_ids = []
-            for object_attachment in object_attachments:
-                object_id = object_attachment['object_id']
-                try:
-                    permissions = get_user_object_permissions(object_id, flask.g.user.id)
-                    if Permissions.READ not in permissions:
-                        raise errors.ObjectDoesNotExistError()
-                except errors.ObjectDoesNotExistError:
-                    unknown_object_ids.add(object_id)
-                else:
-                    if object_id in attached_object_ids:
-                        return {
-                            "message": f"duplicate object id in object_attachments: {object_id}"
-                        }, 400
-                    attached_object_ids.append(object_id)
-            if unknown_object_ids:
-                return {
-                    "message": f"unknown object ids in object_attachments: {', '.join(map(str, unknown_object_ids))}"
-                }, 400
-
-        if not (content or file_attachments or (file_attachments is None and [file_attachment for file_attachment in log_entry.file_attachments if not file_attachment.is_hidden]) or object_attachments or (object_attachments is None and [object_attachment for object_attachment in log_entry.object_attachments if not object_attachment.is_hidden])):
-            return {
-                "message": "log entry must contain content or an attachment"
-            }, 400
-
-        if event_utc_datetime_str is None:
-            event_utc_datetime = None
-        else:
-            try:
-                event_utc_datetime = datetime.datetime.strptime(event_utc_datetime_str, '%Y-%m-%dT%H:%M:%S.%f')
-            except Exception:
-                return {
-                    "message": "event_utc_datetime must be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910"
-                }, 400
-            if abs(event_utc_datetime.year - datetime.date.today().year) > 1000:
-                return {
-                    "message": "event_utc_datetime must be not be more than 1000 years before or after the current date"
-                }, 400
+            request_data = validate(_InstrumentLogEntryVersion, request_json, context=validation_context)
+        except ValidatingError as e:
+            return e.response
         log_entry = update_instrument_log_entry(
             log_entry_id=log_entry.id,
-            content=content,
-            category_ids=category_ids,
-            content_is_markdown=content_is_markdown,
-            event_utc_datetime=event_utc_datetime,
+            content=request_data.content or "",
+            category_ids=request_data.category_ids,
+            content_is_markdown=request_data.content_is_markdown,
+            event_utc_datetime=request_data.event_utc_datetime,
         )
-
-        if file_attachments is not None:
-            existing_file_attachments = {
-                (file_attachment.file_name, file_attachment.content): file_attachment
-                for file_attachment in log_entry.file_attachments
-                if not file_attachment.is_hidden
-            }
-            for file_attachment in file_attachments:
-                if (file_attachment['file_name'], file_attachment['content']) in existing_file_attachments:
-                    continue
+        if request_data.file_attachments is not None:
+            new_file_attachments = {(file_attachment.file_name, file_attachment.content) for file_attachment in request_data.file_attachments}
+            for file_name, content in new_file_attachments.difference(
+                    (file_attachment.file_name, file_attachment.content) for file_attachment in validation_context.existing_file_attachments
+            ):
                 create_instrument_log_file_attachment(
                     instrument_log_entry_id=log_entry.id,
-                    file_name=file_attachment['file_name'],
-                    content=file_attachment['content']
+                    file_name=file_name,
+                    content=content,
                 )
-            for file_attachment in log_entry.file_attachments:
-                if not file_attachment.is_hidden and (file_attachment.file_name, file_attachment.content) not in {(file_attachment['file_name'], file_attachment['content']) for file_attachment in file_attachments}:
+            for file_attachment in validation_context.existing_file_attachments:
+                if (file_attachment.file_name, file_attachment.content) not in new_file_attachments:
                     hide_instrument_log_file_attachment(file_attachment.id)
-
-        if object_attachments is not None:
-            previously_attached_object_ids = {
-                object_attachment.object_id: object_attachment
-                for object_attachment in log_entry.object_attachments
-            }
-            for object_id in attached_object_ids:
-                if object_id in previously_attached_object_ids:
-                    object_attachment = previously_attached_object_ids[object_id]
-                    if object_attachment.is_hidden:
-                        hide_instrument_log_object_attachment(object_attachment.id, set_hidden=False)
-                    continue
-                try:
+        if request_data.object_attachments is not None:
+            new_object_attachments = {object_attachment.object_id for object_attachment in request_data.object_attachments}
+            for object_id in new_object_attachments.difference(oa.object_id for oa in log_entry.object_attachments):
+                with suppress(errors.ObjectDoesNotExistError):
                     create_instrument_log_object_attachment(log_entry.id, object_id)
-                except errors.ObjectDoesNotExistError:
-                    continue
-            for object_id in set(previously_attached_object_ids) - set(attached_object_ids):
-                object_attachment = previously_attached_object_ids[object_id]
-                if not object_attachment.is_hidden:
-                    hide_instrument_log_object_attachment(object_attachment.id, set_hidden=True)
+            for object_attachment in log_entry.object_attachments:
+                should_be_hidden = object_attachment.object_id not in new_object_attachments
+                if should_be_hidden != object_attachment.is_hidden:
+                    hide_instrument_log_object_attachment(object_attachment.id, set_hidden=should_be_hidden)
 
         return None, 201, {
             'Location': flask.url_for(
