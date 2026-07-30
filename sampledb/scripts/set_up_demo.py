@@ -549,7 +549,8 @@ This example shows how Markdown can be used for instrument Notes.
             },
             'comment': {
                 '_type': 'text',
-                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'}
+                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'},
+                'is_markdown': True
             },
             'tags': {
                 '_type': 'tags',
@@ -573,7 +574,8 @@ This example shows how Markdown can be used for instrument Notes.
             },
             'comment': {
                 '_type': 'text',
-                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'}
+                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'},
+                'is_markdown': True
             },
             'tags': {
                 '_type': 'tags',

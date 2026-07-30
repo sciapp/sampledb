@@ -8,6 +8,54 @@ import sampledb
 from sampledb.frontend.objects import object_form_parser
 
 
+def test_parse_text_form_data_normalizes_newlines():
+    id_prefix = 'object__comment'
+    schema = {
+        'type': 'text',
+        'title': 'Comment',
+        'markdown': True
+    }
+    form_data = {
+        id_prefix + '__text': ['First line\r\nSecond line\rThird line']
+    }
+    errors = {}
+
+    data = object_form_parser.parse_text_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+
+    assert not errors
+    assert data == {
+        '_type': 'text',
+        'text': 'First line\nSecond line\nThird line',
+        'is_markdown': True
+    }
+
+
+def test_parse_translated_text_form_data_normalizes_newlines(flask_server):
+    id_prefix = 'object__comment'
+    schema = {
+        'type': 'text',
+        'title': 'Comment',
+        'languages': ['en', 'de']
+    }
+    form_data = {
+        id_prefix + '__text_languages': ['en', 'de'],
+        id_prefix + '__text_en': ['First line\r\nSecond line'],
+        id_prefix + '__text_de': ['Erste Zeile\rZweite Zeile']
+    }
+    errors = {}
+
+    data = object_form_parser.parse_text_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+
+    assert not errors
+    assert data == {
+        '_type': 'text',
+        'text': {
+            'en': 'First line\nSecond line',
+            'de': 'Erste Zeile\nZweite Zeile'
+        }
+    }
+
+
 def test_parse_time_input(flask_server, mock_current_user):
     mock_current_user.id = 1
 

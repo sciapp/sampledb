@@ -77,6 +77,43 @@ def test_validate_text():
     validate(instance, schema)
 
 
+def test_validate_text_normalizes_newlines():
+    schema = {
+        'title': 'Example',
+        'type': 'text'
+    }
+    instance = {
+        '_type': 'text',
+        'text': 'First line\r\nSecond line\rThird line'
+    }
+
+    validate(instance, schema)
+
+    assert instance['text'] == 'First line\nSecond line\nThird line'
+
+
+def test_validate_translated_text_normalizes_newlines():
+    schema = {
+        'title': 'Example',
+        'type': 'text',
+        'languages': ['en', 'de']
+    }
+    instance = {
+        '_type': 'text',
+        'text': {
+            'en': 'First line\r\nSecond line',
+            'de': 'Erste Zeile\rZweite Zeile'
+        }
+    }
+
+    validate(instance, schema)
+
+    assert instance['text'] == {
+        'en': 'First line\nSecond line',
+        'de': 'Erste Zeile\nZweite Zeile'
+    }
+
+
 def test_validate_text_invalid():
     schema = {
         'title': 'Example',
