@@ -18,6 +18,7 @@ Currently in development.
 - Added tree picker to location form
 - Improved .eln file support
 - Added miscellaneous OIDC improvements
+- Added location filter for instrument list
 - Minor fixes and improvements
 
 

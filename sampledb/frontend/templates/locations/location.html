@@ -92,6 +92,22 @@
   {% else %}
     <a href="{{ url_for('.objects', location_ids=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
   {% endif %}
+  {% if not config['DISABLE_INSTRUMENTS'] %}
+    {% if descendent_location_ids %}
+    <div class="btn-group" style="margin-bottom: 2px">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 220px">
+        {{ _('View Instruments') }} <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a href="{{ url_for('.instruments', location_ids=location.id, include_sub_locations=false) }}">{{ _('… at this location') }}</a></li>
+        <li><a href="{{ url_for('.instruments', location_ids=descendent_location_ids | list, include_sub_locations=false) }}">{{ _('… at sub-locations') }}</a></li>
+        <li><a href="{{ url_for('.instruments', location_ids=location.id, include_sub_locations=true) }}">{{ _('… at this location and sub-locations') }}</a></li>
+      </ul>
+    </div>
+    {% else %}
+    <a href="{{ url_for('.instruments', location_ids=location.id, include_sub_locations=false) }}" class="btn btn-default">{{ _('View Instruments')}}</a>
+    {% endif %}
+  {% endif %}
   {% if Permissions.WRITE in permissions %}
     {% if location.fed_id is none %}
   <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">{{ _('Edit Location')}}</a>
