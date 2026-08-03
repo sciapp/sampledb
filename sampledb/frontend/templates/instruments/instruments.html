@@ -4,7 +4,7 @@
 
 {% block content %}
   <h1>{{ _('Instruments') }}</h1>
-  {% if filter_topic_infos %}
+  {% if filter_topic_infos or filter_location_infos %}
     <ul>
     {% if filter_topic_infos %}
       <li>
@@ -18,6 +18,20 @@
         {% endfor %}
       </li>
     {% endif %}
+    {% if filter_location_infos %}
+      <li>
+        {% if filter_location_infos | length == 1 %}
+          {% if include_sub_locations %}{{ _('at location (including sub-locations):') }}{% else %}{{ _('at location:') }}{% endif %}
+        {% else %}
+          {% if include_sub_locations %}{{ _('at locations (including sub-locations):') }}{% else %}{{ _('at locations:') }}{% endif %}
+        {% endif %}
+        {% for location_info in filter_location_infos %}
+          <a href="{{ location_info.url }}">{{ location_info.name }}</a>
+          {{ import_information_symbol(location_info.location) }}
+          {% if loop.index + 1 < filter_location_infos | length %},{% elif loop.index + 1 == filter_location_infos | length %} {{ _('or') }} {% endif %}
+        {% endfor %}
+      </li>
+    {% endif %}
     </ul>
   {% endif %}
   <p class="text-muted">{{ _('Instruments in %(service_name)s map real instruments to <a href="%(actions_url)s">actions</a> performed with them.', service_name=service_name, actions_url=url_for('.actions')) }} <a href="{{ config["DOCUMENTATION_ROOT_URL"] }}user_guide/instruments.html">{{ _('Read more.') }}</a></p>
@@ -25,7 +39,7 @@
   {% if current_user.is_admin and not current_user.is_readonly %}
     <a href="{{ url_for('.new_instrument', topic_ids=filter_topic_ids | join(',') or None) }}" class="btn btn-default">{{ _('Create Instrument') }}</a>
   {% endif %}
-  {% if not config['DISABLE_TOPICS'] and topics %}
+  {% if (not config['DISABLE_TOPICS'] and topics) or location_filter_all_choices | length > 1 %}
     <a class="btn btn-default" data-toggle="modal" data-target="#filtersModal">
       {{ _('Filters') }}
     </a>
@@ -34,7 +48,7 @@
       <div class="modal-dialog" role="document">
         <form method="get" class="form">
           {% for key in request.args %}
-            {% if key not in ['instrument_list_filters', 'topic_ids'] %}
+            {% if key not in ['instrument_list_filters', 'topic_ids', 'location_ids', 'location', 'include_sub_locations'] %}
               {% for value in request.args.getlist(key) %}
                 <input type="hidden" name="{{ key }}" value="{{ value }}" />
               {% endfor %}
@@ -47,6 +61,19 @@
               <h4 class="modal-title" id="filtersModalLabel">{{ _('Filters') }}</h4>
             </div>
             <div class="modal-body">
+              {% if location_filter_all_choices | length > 1 %}
+              <div class="form-group">
+                <label for="input-locations" class="control-label">{{ _('Filter by Locations') }}</label>
+                {{ treepicker_select(location_filter_all_choices, 'location_ids', 'input-locations', selected_values=filter_location_ids, multiple=true, data_width='100%', none_selected_text=_('All locations'), skip_empty=true) }}
+                <div class="checkbox" style="margin-top: 5px; margin-bottom: 0">
+                  <label>
+                    <input type="hidden" name="include_sub_locations" value="false" />
+                    <input type="checkbox" name="include_sub_locations" value="true" {% if include_sub_locations %}checked="checked"{% endif %} /> {{ _('Include sub-locations') }}
+                  </label>
+                </div>
+              </div>
+              {% endif %}
+              {% if not config['DISABLE_TOPICS'] and topics %}
               <div class="form-group">
                 <label for="input-topics" class="control-label">{{ _('Filter by Topics') }}</label>
                 <select class="selectpicker form-control" id="input-topics" name="topic_ids" data-none-selected-text="{{ _('No topic selected') }}" multiple>
@@ -55,6 +82,7 @@
                   {% endfor %}
                 </select>
               </div>
+              {% endif %}
             </div>
             <div class="modal-footer">
               <button type="submit" class="btn btn-default" name="save_default_instrument_filters" formmethod="post">{{ _('Save') }}</button>
@@ -128,4 +156,5 @@
   <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/filter-by-name.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
 {% endblock %}
