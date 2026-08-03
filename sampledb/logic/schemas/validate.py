@@ -291,6 +291,12 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         raise ValidationError('expected _type "text"', path)
     if not isinstance(instance['text'], str) and not isinstance(instance['text'], dict):
         raise ValidationError('text must be str or a dictionary', path)
+    if isinstance(instance['text'], str):
+        instance['text'] = _normalize_text(instance['text'])
+    else:
+        for language_code, text in instance['text'].items():
+            if isinstance(text, str):
+                instance['text'][language_code] = _normalize_text(text)
     choices = schema.get('choices', None)
     if choices:
         for choice in choices:
@@ -350,6 +356,10 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
                 raise ValidationError(_('Input must match: %(pattern)s', pattern=schema['pattern']), path)
     if 'is_markdown' in instance and not isinstance(instance['is_markdown'], bool):
         raise ValidationError('is_markdown must be bool', path)
+
+
+def _normalize_text(text: str) -> str:
+    return text.replace('\r\n', '\n').replace('\r', '\n')
 
 
 def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
