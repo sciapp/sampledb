@@ -7,6 +7,7 @@ import flask_mail
 
 from ... import mail
 from . import core
+from ..smime import prepare_mail
 from ...models import BackgroundTask, BackgroundTaskStatus
 
 
@@ -34,14 +35,15 @@ def handle_send_mail_task(
         task_id: typing.Optional[int]
 ) -> typing.Tuple[bool, typing.Optional[dict[str, typing.Any]]]:
     try:
-        mail.send(flask_mail.Message(
+        message = flask_mail.Message(
             subject=data['subject'],
             sender=flask.current_app.config['MAIL_SENDER'],
             reply_to=flask.current_app.config['MAIL_REPLY_TO'],
             recipients=data['recipients'],
             body=data['text'],
             html=data['html']
-        ))
+        )
+        mail.send(prepare_mail(message))
         return True, None
     except smtplib.SMTPRecipientsRefused:
         return False, None

@@ -50,6 +50,18 @@ OIDC_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'OIDC_CLIENT_SECRET',
 }
 
+SMIME_CONFIG_KEYS: typing.Set[str] = {
+    'MAIL_SMIME_CERTIFICATE_FILE',
+    'MAIL_SMIME_PRIVATE_KEY_FILE',
+    'MAIL_SMIME_PRIVATE_KEY_PASSWORD',
+    'MAIL_SMIME_EXTRA_CERTIFICATES_FILE',
+}
+
+SMIME_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
+    'MAIL_SMIME_CERTIFICATE_FILE',
+    'MAIL_SMIME_PRIVATE_KEY_FILE',
+}
+
 
 def use_environment_configuration(env_prefix: str) -> None:
     """
@@ -500,6 +512,30 @@ def check_config(
         )
         show_config_info = True
 
+    if SMIME_CONFIG_KEYS & defined_config_keys:
+        missing_config_keys = SMIME_REQUIRED_CONFIG_KEYS - defined_config_keys
+        if missing_config_keys:
+            print(
+                'S/MIME signing is configured, but the following configuration '
+                'values are missing:\n - ' +
+                '\n - '.join(missing_config_keys) + '\n',
+                file=sys.stderr
+            )
+            can_run = False
+            show_config_info = True
+        else:
+            try:
+                from sampledb.logic.smime import validate_smime_configuration
+                validate_smime_configuration(config)
+            except Exception as exc:
+                print(
+                    'S/MIME signing is configured, but the configured certificate '
+                    f'or private key could not be loaded: {exc}\n',
+                    file=sys.stderr
+                )
+                can_run = False
+                show_config_info = True
+
     if 'DOWNLOAD_SERVICE_URL' not in defined_config_keys:
         print(
             'Download service will be disabled, because the configuration '
@@ -891,6 +927,10 @@ MAIL_SERVER = None
 MAIL_SENDER = None
 MAIL_REPLY_TO = None
 CONTACT_EMAIL = None
+MAIL_SMIME_CERTIFICATE_FILE = None
+MAIL_SMIME_PRIVATE_KEY_FILE = None
+MAIL_SMIME_PRIVATE_KEY_PASSWORD = None
+MAIL_SMIME_EXTRA_CERTIFICATES_FILE = None
 
 # branding and legal info
 SERVICE_NAME = 'SampleDB'
