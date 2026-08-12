@@ -1712,3 +1712,80 @@ def test_import_nested_datasets(user):
         ]
     }
     assert not errors
+
+
+def test_import_nested_datasets_preserves_parts_metadata(user):
+    eln_file_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..',
+        'test_data',
+        'eln_files',
+        'SciLog',
+        'export.eln'
+    )
+    eln_zip_bytes = io.BytesIO()
+    with zipfile.ZipFile(eln_file_path, 'r') as source_zip_file:
+        with zipfile.ZipFile(eln_zip_bytes, 'w') as modified_zip_file:
+            for member in source_zip_file.infolist():
+                member_content = source_zip_file.read(member)
+                if member.filename.endswith('ro-crate-metadata.json'):
+                    metadata = json.loads(member_content)
+                    root_dataset = next(
+                        node
+                        for node in metadata['@graph']
+                        if node.get('@id') == './696e3f05d55e4c57ec58cea9/'
+                    )
+                    root_dataset['variableMeasured'] = {
+                        '@type': 'PropertyValue',
+                        'propertyID': 'parts',
+                        'value': 'Original parts metadata'
+                    }
+                    member_content = json.dumps(metadata).encode('utf-8')
+                modified_zip_file.writestr(member, member_content)
+
+    eln_import_id = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='parts-metadata.eln',
+        zip_bytes=eln_zip_bytes.getvalue()
+    ).id
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    root_object_info = next(
+        object_info
+        for object_info in parsed_eln_import.objects
+        if object_info.id == './696e3f05d55e4c57ec58cea9/'
+    )
+    assert root_object_info.versions[0].data['parts'] == {
+        '_type': 'text',
+        'text': {
+            'en': 'Original parts metadata'
+        }
+    }
+
+    imported_object_ids, _, errors = logic.eln_import.import_eln_file(eln_import_id)
+    imported_objects = [
+        logic.objects.get_object(object_id)
+        for object_id in imported_object_ids
+    ]
+    imported_objects_by_eln_object_id = {
+        imported_object.eln_object_id: imported_object
+        for imported_object in imported_objects
+    }
+    imported_root_object = imported_objects_by_eln_object_id['./696e3f05d55e4c57ec58cea9/']
+
+    assert not errors
+    assert imported_root_object.data['parts'] == {
+        '_type': 'text',
+        'text': {
+            'en': 'Original parts metadata'
+        }
+    }
+    assert imported_root_object.schema['properties']['parts']['type'] == 'text'
+    assert imported_root_object.schema['propertyOrder'][-1] == 'property_parts'
+    assert imported_root_object.schema['properties']['property_parts']['type'] == 'array'
+    assert imported_root_object.data['property_parts'] == [
+        {
+            '_type': 'object_reference',
+            'object_id': imported_objects_by_eln_object_id[eln_object_id].object_id
+        }
+        for eln_object_id in parsed_eln_import.object_parts_relationships['./696e3f05d55e4c57ec58cea9/']
+    ]

@@ -427,9 +427,11 @@ def import_eln_file(
         current_object = get_object(object_id=object_id)
         if current_object.data is None or current_object.schema is None:
             continue
-        # TODO: sanitize key
-        parts_property_name = 'parts'
         schema = copy.deepcopy(current_object.schema)
+        parts_property_name = typing.cast(str, _sanitize_keys([
+            *schema['properties'],
+            'parts'
+        ])[len(schema['properties'])])
         schema['properties'][parts_property_name] = {
             "type": "array",
             "title": {
