@@ -44,7 +44,7 @@ class OtherProjectIdForm(FlaskForm):
 
 
 class InviteUserToProjectForm(FlaskForm):
-    user_id = IntegerField(validators=[InputRequired()])
+    user_id = SelectMultipleField(coerce=int, validators=[InputRequired()], validate_choice=False)
     other_project_ids = FieldList(FormField(OtherProjectIdForm), min_entries=0)
     permissions = IntegerField(validators=[InputRequired(), NumberRange(min=Permissions.READ.value, max=Permissions.GRANT.value)])
     add_directly = BooleanField(default=False)

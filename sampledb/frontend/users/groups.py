@@ -7,7 +7,7 @@ import typing
 
 import flask
 import flask_login
-from flask_babel import _
+from flask_babel import _, ngettext
 
 from .. import frontend
 from ... import logic
@@ -322,29 +322,39 @@ def group(group_id: int) -> FlaskResponseT:
         elif 'add_user' in flask.request.form:
             check_current_user_is_not_readonly()
             if invite_user_form.validate_on_submit():
+                success_count = 0
+                failed_count = 0
                 try:
-                    if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
-                        logic.groups.add_user_to_group(
-                            group_id=group_id,
-                            user_id=invite_user_form.user_id.data
-                        )
-                        flask.flash(_('The user was successfully added to the basic group.'), 'success')
-                    else:
-                        logic.groups.invite_user_to_group(
-                            group_id=group_id,
-                            user_id=invite_user_form.user_id.data,
-                            inviter_id=flask_login.current_user.id
-                        )
-                        flask.flash(_('The user was successfully invited to the basic group.'), 'success')
+                    for user_id in invite_user_form.user_id.data:
+                        try:
+                            if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                                logic.groups.add_user_to_group(
+                                    group_id=group_id,
+                                    user_id=user_id
+                                )
+                            else:
+                                logic.groups.invite_user_to_group(
+                                    group_id=group_id,
+                                    user_id=user_id,
+                                    inviter_id=flask_login.current_user.id
+                                )
+                            success_count += 1
+                        except (logic.errors.UserDoesNotExistError, logic.errors.UserAlreadyMemberOfGroupError):
+                            failed_count += 1
                 except logic.errors.GroupDoesNotExistError:
                     flask.flash(_('This basic group does not exist.'), 'error')
                     return flask.redirect(flask.url_for('.groups'))
-                except logic.errors.UserDoesNotExistError:
-                    flask.flash(_('This user does not exist.'), 'error')
-                except logic.errors.UserAlreadyMemberOfGroupError:
-                    flask.flash(_('This user is already a member of this basic group.'), 'error')
-                else:
-                    return flask.redirect(flask.url_for('.group', group_id=group_id))
+                if success_count:
+                    if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                        flask.flash(ngettext('1 user was successfully added to the basic group.', '%(num)s users were successfully added to the basic group.', success_count), 'success')
+                    else:
+                        flask.flash(ngettext('1 user was successfully invited to the basic group.', '%(num)s users were successfully invited to the basic group.', success_count), 'success')
+                if failed_count:
+                    if invite_user_form.add_directly.data and flask_login.current_user.is_admin:
+                        flask.flash(ngettext('1 selected user could not be added as they are already a member of this basic group or do not exist.', '%(num)s selected users could not be added as they are already members of this basic group or do not exist.', failed_count), 'warning')
+                    else:
+                        flask.flash(ngettext('1 selected user could not be invited as they are already a member of this basic group or do not exist.', '%(num)s selected users could not be invited as they are already members of this basic group or do not exist.', failed_count), 'warning')
+                return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'leave' in flask.request.form and leave_group_form is not None:
             if user_can_leave and leave_group_form.validate_on_submit():
                 try:

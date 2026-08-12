@@ -242,6 +242,41 @@ def test_add_user(flask_server, user_session, user):
     assert sampledb.logic.groups.get_user_groups(new_user.id)[0].id == group_id
 
 
+def test_add_multiple_users(flask_server, user_session):
+    group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
+    users = [
+        sampledb.models.User(name="Basic User {}".format(index), email="example{}@example.com".format(index), type=sampledb.models.UserType.PERSON)
+        for index in range(2)
+    ]
+    sampledb.db.session.add_all(users)
+    sampledb.db.session.commit()
+
+    r = user_session.get(flask_server.base_url + 'groups/{}'.format(group_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    invite_user_form = document.find(id='inviteUserModal').find('form')
+    csrf_token = invite_user_form.find('input', {'name': 'csrf_token'})['value']
+
+    r = user_session.post(flask_server.base_url + 'groups/{}'.format(group_id), {
+        'add_user': 'add_user',
+        'csrf_token': csrf_token,
+        'user_id': [str(user.id) for user in users] + ['-1']
+    })
+    assert r.status_code == 200
+
+    for user in users:
+        notifications = sampledb.logic.notifications.get_notifications(user.id)
+        assert any(
+            notification.type == sampledb.logic.notifications.NotificationType.INVITED_TO_GROUP and
+            notification.data['group_id'] == group_id and
+            notification.data['inviter_id'] == user_session.user_id
+            for notification in notifications
+        )
+    assert '2 users were successfully invited to the basic group.' in r.content.decode('utf-8')
+    assert '1 selected user could not be invited' in r.content.decode('utf-8')
+
+
 def test_delete_group(flask_server, user_session):
     group_id = sampledb.logic.groups.create_group("Example Group", "", user_session.user_id).id
 

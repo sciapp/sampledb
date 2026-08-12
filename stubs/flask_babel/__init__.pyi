@@ -48,6 +48,15 @@ def _(
     ...
 
 
+def ngettext(
+        singular: str,
+        plural: str,
+        num: int,
+        **variables: typing.Any
+) -> str:
+    ...
+
+
 def lazy_gettext(
         string: str,
         **variables: typing.Any
