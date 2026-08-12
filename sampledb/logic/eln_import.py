@@ -1284,8 +1284,9 @@ def parse_eln_file(
             _eln_assert(zip_file.testzip() is None, ".eln file must be valid .zip file")
 
             member_names = {
-                os.path.normpath(member_name): member_name
-                for member_name in zip_file.namelist()
+                os.path.normpath(member.filename): member.filename
+                for member in zip_file.infolist()
+                if not member.is_dir()
             }
             root_path_names = set()
             for member_name in member_names:
