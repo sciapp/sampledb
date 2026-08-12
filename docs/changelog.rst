@@ -19,6 +19,7 @@ Currently in development.
 - Improved .eln file support
 - Added miscellaneous OIDC improvements
 - Added location filter for instrument list
+- Added SMIME mail signature support
 - Minor fixes and improvements
 
 

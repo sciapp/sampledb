@@ -29,8 +29,20 @@ E-Mail
      - The username sent to the mail server
    * - SAMPLEDB_MAIL_PASSWORD
      - The password sent to the mail server
+   * - SAMPLEDB_MAIL_SMIME_CERTIFICATE_FILE
+     - Path to the PEM encoded S/MIME signing certificate
+   * - SAMPLEDB_MAIL_SMIME_PRIVATE_KEY_FILE
+     - Path to the PEM encoded private key for the S/MIME signing certificate
+   * - SAMPLEDB_MAIL_SMIME_PRIVATE_KEY_PASSWORD
+     - Password for the S/MIME private key, if it is encrypted
+   * - SAMPLEDB_MAIL_SMIME_EXTRA_CERTIFICATES_FILE
+     - Path to a PEM file containing additional certificates, such as intermediate certificates, to include in the S/MIME signature
 
 While the ``SAMPLEDB_CONTACT_EMAIL``, ``SAMPLEDB_MAIL_SENDER`` and ``SAMPLEDB_MAIL_SERVER`` variables are required, you may need to set one or more of the other variables to connect to your mail server, depending on its configuration.
+
+If any of the ``SAMPLEDB_MAIL_SMIME_*`` variables are set, SampleDB will sign outbound emails. ``SAMPLEDB_MAIL_SMIME_CERTIFICATE_FILE`` and ``SAMPLEDB_MAIL_SMIME_PRIVATE_KEY_FILE`` are required to sign emails.
+The configured certificate has to be valid for the address used as ``SAMPLEDB_MAIL_SENDER``.
+If the certificate or private key cannot be loaded or required configuration parameters are missing, SampleDB will abort during startup.
 
 .. _ldap_configuration:
 
