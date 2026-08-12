@@ -32,7 +32,7 @@ class RemoveGroupMemberForm(FlaskForm):
 
 
 class InviteUserForm(FlaskForm):
-    user_id = IntegerField(validators=[InputRequired()])
+    user_id = SelectMultipleField(coerce=int, validators=[InputRequired()], validate_choice=False)
     add_directly = BooleanField(default=False)
 
 
