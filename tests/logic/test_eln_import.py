@@ -78,6 +78,44 @@ def eln_zip_bytes_unsigned(user, app):
 
 
 @pytest.fixture
+def minimal_eln_zip_bytes_with_directory_members():
+    ro_crate_metadata = {
+        '@context': 'https://w3id.org/ro/crate/1.1/context',
+        '@graph': [
+            {
+                '@id': 'ro-crate-metadata.json',
+                '@type': 'CreativeWork',
+                'about': {'@id': './'},
+                'conformsTo': {'@id': 'https://w3id.org/ro/crate/1.1'},
+            },
+            {
+                '@id': './',
+                '@type': 'Dataset',
+                'name': 'Synthetic ELN',
+                'description': 'Minimal archive for testing ZIP directory members.',
+                'license': 'https://spdx.org/licenses/CC0-1.0.html',
+                'datePublished': '2026-08-12',
+                'hasPart': [{'@id': './experiment/'}],
+            },
+            {
+                '@id': './experiment/',
+                '@type': 'Dataset',
+                'name': 'Synthetic experiment',
+            },
+        ],
+    }
+    zip_bytes = io.BytesIO()
+    with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+        zip_file.mkdir('synthetic-eln/')
+        zip_file.mkdir('synthetic-eln/experiment/')
+        zip_file.writestr(
+            'synthetic-eln/ro-crate-metadata.json',
+            json.dumps(ro_crate_metadata),
+        )
+    return zip_bytes.getvalue()
+
+
+@pytest.fixture
 def sampledb_eln_import_id(user, eln_zip_bytes):
     return logic.eln_import.create_eln_import(
         user_id=user.id,
@@ -265,6 +303,33 @@ def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by is None
 
+
+def test_parse_eln_file_with_directory_members(user, minimal_eln_zip_bytes_with_directory_members):
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.eln',
+        zip_bytes=minimal_eln_zip_bytes_with_directory_members,
+    )
+
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+
+    assert [object.name for object in parsed_eln_import.objects] == ['Synthetic experiment']
+
+
+def test_parse_eln_file_with_multiple_root_directories(user, minimal_eln_zip_bytes_with_directory_members):
+    zip_bytes = io.BytesIO(minimal_eln_zip_bytes_with_directory_members)
+    with zipfile.ZipFile(zip_bytes, 'a') as zip_file:
+        zip_file.mkdir('unexpected-root/')
+        zip_file.writestr('unexpected-root/unexpected.txt', 'unexpected')
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.eln',
+        zip_bytes=zip_bytes.getvalue(),
+    )
+
+    with pytest.raises(logic.errors.InvalidELNFileError) as exc_info:
+        logic.eln_import.parse_eln_file(eln_import.id)
+    assert str(exc_info.value) == '.eln file must contain a single root directory'
 
 
 def test_parse_eln_file_without_objects(user, app, flask_server, eln_zip_bytes):
