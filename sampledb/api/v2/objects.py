@@ -25,7 +25,7 @@ from ...utils import text_to_bool
 from ..utils import Resource, ResponseData
 from .actions import action_to_json
 from .users import user_to_json
-from .validation_utils import (ModelWithDefaultsFromValidationInfo,
+from .utils.validation import (ModelWithDefaultsFromValidationInfo,
                                OptionalNotNone, ValidatingError,
                                populate_missing_or_expect_from_validation_info,
                                validate)

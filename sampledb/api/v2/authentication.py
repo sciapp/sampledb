@@ -15,7 +15,7 @@ from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
 from ..utils import Resource, ResponseData
 from ..errors import handle_api_error
-from .validation_utils import validate, ValidatingError
+from .utils.validation import validate, ValidatingError
 
 
 class _AccessToken(BaseModel):

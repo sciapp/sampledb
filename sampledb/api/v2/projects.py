@@ -7,7 +7,7 @@ from ...logic import errors, projects
 from ...models import Permissions
 from ..utils import Resource, ResponseData
 from .authentication import multi_auth
-from .validation_utils import UserId, ValidatingError, validate
+from .utils.validation import UserId, ValidatingError, validate
 
 
 class _ProjectMemberUser(BaseModel):

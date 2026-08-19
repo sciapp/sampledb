@@ -10,7 +10,7 @@ from ...logic.comments import (Comment, create_comment, get_comment_for_object,
 from ...models import Permissions
 from ..utils import Resource, ResponseData
 from .authentication import object_permissions_required
-from .validation_utils import is_expected_from_validation_info, validate, NonEmptyString, ValidatingError
+from .utils.validation import is_expected_from_validation_info, validate, NonEmptyString, ValidatingError
 
 
 @dataclass(frozen=True, slots=True)

@@ -17,7 +17,7 @@ from ...logic.objects import get_object
 from ...models import Object, Permissions
 from ..utils import Resource, ResponseData
 from .authentication import object_permissions_required
-from .validation_utils import (Base64Encoded, HexString, NonEmptyString,
+from .utils.validation import (Base64Encoded, HexString, NonEmptyString,
                                OptionalNotNone, Url, ValidatingError,
                                is_expected_from_validation_info, is_valid,
                                validate)
