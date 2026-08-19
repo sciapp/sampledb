@@ -8,8 +8,8 @@ from pydantic import (AfterValidator, BaseModel, BeforeValidator, Field,
                       model_validator)
 from pydantic_core import ErrorDetails, PydanticCustomError
 
-from ...logic import errors, users
-from ...logic.utils import parse_url
+from ....logic import errors, users
+from ....logic.utils import parse_url
 
 
 class _ErrorDict(typing.TypedDict):

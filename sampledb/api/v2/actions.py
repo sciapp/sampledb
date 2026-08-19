@@ -16,7 +16,7 @@ from ...logic import errors, utils, actions, action_types
 from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
-from .validation_utils import (ModelWithDefaultsFromValidationInfo,
+from .utils.validation import (ModelWithDefaultsFromValidationInfo,
                                OptionalNotNone, ValidatingError,
                                populate_missing_or_expect_from_validation_info,
                                validate)
