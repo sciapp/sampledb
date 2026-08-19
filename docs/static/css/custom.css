@@ -246,3 +246,16 @@ div.document.landing_page {
     flex-direction: row;
 }
 }
+
+.swagger-ui code {
+    color: inherit;
+    background-color: inherit;
+}
+
+.swagger-ui tr[data-param-in] .parameters-col_description :is(input, select)[disabled] {
+    display: none;
+}
+
+.swagger-ui .copy-to-clipboard > button[type="button"] {
+    background: transparent;
+}

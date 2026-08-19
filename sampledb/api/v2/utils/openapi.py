@@ -182,6 +182,7 @@ def _generate_description_by_status_code(
     return f"{status.phrase}: {status.description.replace('--', '—')}"
 
 
+@functools.cache
 def generate_openapi_spec() -> typing.Dict[str, typing.Any]:
     spec_dict: typing.Dict[str, typing.Any] = {
         "openapi": "3.2.0",
