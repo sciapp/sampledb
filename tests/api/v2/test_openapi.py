@@ -62,3 +62,16 @@ def test_descriptions_and_examples(spec_dict):
         for property_name, property_schema in schema['properties'].items():
             assert 'description' in property_schema, f'missing description for {property_name} in schema {schema} at {path}'
             assert 'examples' in property_schema and len(property_schema['examples']) == 1, f'missing description for {property_name} in schema {schema} at {path}'
+
+
+def test_openapi_spec_in_docs(spec_dict):
+    server_independent_spec_dict = copy.deepcopy(spec_dict)
+    del server_independent_spec_dict["servers"]
+    del server_independent_spec_dict["security"]
+    del server_independent_spec_dict["components"]["securitySchemes"]
+    docs_yaml_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..',  '..', 'docs', 'static',  'api_v2_openapi.yaml')
+    current_yaml_file_content = open(docs_yaml_file_path, 'r').read()
+    generated_yaml_file_content = yaml.dump(server_independent_spec_dict)
+    with open(docs_yaml_file_path, 'w') as f:
+        f.write(generated_yaml_file_content)
+    assert current_yaml_file_content == generated_yaml_file_content

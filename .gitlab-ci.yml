@@ -289,6 +289,7 @@ documentation:
     # clone SampleDB-Docs repo
     - git clone --depth=1 https://github.com/sciapp/sampledb-docs.git
     # install dependencies
+    - python3 -m pip install -r requirements.documentation.txt
     - python3 -m pip install -r sampledb-docs/requirements.txt
     # set up develop docs
     - mkdir sampledb-docs/develop

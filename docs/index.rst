@@ -77,7 +77,8 @@ Developer Guide
     :maxdepth: 2
     :caption: Developer Guide
 
-    developer_guide/api.rst
+    developer_guide/api_v1.rst
+    developer_guide/api_v2.rst
     developer_guide/webhooks.rst
     developer_guide/contributing.rst
 
