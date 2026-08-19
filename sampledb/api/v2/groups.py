@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from ...logic import errors, groups
 from ..utils import Resource, ResponseData
 from .authentication import multi_auth
-from .validation_utils import UserId, ValidatingError, validate
+from .utils.validation import UserId, ValidatingError, validate
 
 
 class _GroupMemberUsers(BaseModel):

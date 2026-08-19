@@ -16,7 +16,7 @@ from ...logic.instrument_log_entries import InstrumentLogEntry as LogicInstrumen
 from ...logic import errors, instrument_log_entries
 from ...logic.object_permissions import get_user_object_permissions
 from ...models import Permissions
-from .validation_utils import (Base64Encoded,
+from .utils.validation import (Base64Encoded,
                                ModelWithDefaultsFromValidationInfo,
                                ValidatingError, is_valid,
                                populate_missing_or_expect_from_validation_info,

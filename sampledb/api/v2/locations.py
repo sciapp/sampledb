@@ -10,7 +10,7 @@ from .authentication import multi_auth, object_permissions_required
 from ..utils import Resource, ResponseData
 from ...logic import errors, locations, location_permissions, utils
 from ...models import Permissions
-from .validation_utils import (ModelWithDefaultsFromValidationInfo,
+from .utils.validation import (ModelWithDefaultsFromValidationInfo,
                                OptionalNotNone, UserId, ValidatingError,
                                is_expected_from_validation_info,
                                populate_missing_or_expect_from_validation_info,

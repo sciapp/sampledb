@@ -9,7 +9,7 @@ from .authentication import object_permissions_required, multi_auth
 from ..utils import Resource, ResponseData
 from ...logic import users, groups, projects, errors, object_permissions, background_tasks, objects
 from ...models import Permissions
-from .validation_utils import UserId, ValidatingError, is_valid, validate
+from .utils.validation import UserId, ValidatingError, is_valid, validate
 
 
 def _permissions(value: typing.Any) -> Permissions:
