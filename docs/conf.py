@@ -43,6 +43,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.autodoc',
     'sphinxcontrib.httpdomain',
+    'swagger_plugin_for_sphinx',
 ]
 
 todo_include_todos = False
@@ -116,3 +117,5 @@ rst_prolog = """
     service_url=service_url,
     contact_email=contact_email
 )
+
+swagger_mirror_external_resources = True
