@@ -447,6 +447,8 @@ def test_status_codes(flask_server, user, driver):
         f'api/v2/projects/{project_id}': 200,
         f'api/v2/projects/{project_id}/member_users/': 200,
         f'api/v2/projects/{project_id}/member_users/{user_id}': 200,
+        'api/v2/openapi.json': 200,
+        'api/v2/openapi.yaml': 200,
         'apple-touch-icon.png': 200,
         'dashboard/telemetry/get_is_telemetry_answered': 200,
         'eln_imports': 200,

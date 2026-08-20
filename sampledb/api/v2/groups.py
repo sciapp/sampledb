@@ -6,8 +6,9 @@ from pydantic import BaseModel, Field
 from ...logic import errors, groups
 from ..utils import Resource
 from .authentication import multi_auth
-from .utils.validation import UserId, method, generate_example
+from .utils.validation import UserId, generate_example
 from .utils.responses import NotFoundErrorModel, ForbiddenErrorModel, CreatedResponseModel, BadRequestErrorModel, NoContentModel
+from .utils.openapi import method
 
 
 class UserRef(BaseModel):

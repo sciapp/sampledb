@@ -8,6 +8,7 @@ import flask
 import werkzeug
 import werkzeug.exceptions
 from flask.views import MethodView
+from flask.typing import RouteCallable
 
 
 ResponseContent = typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.Dict[int, typing.Any], typing.List[typing.Any], str, bool, int]]
@@ -15,9 +16,13 @@ ResponseData = typing.Union[werkzeug.Response, ResponseContent, typing.Tuple[Res
 
 
 class Resource(MethodView):
+    view_function_map: typing.ClassVar[typing.Dict[RouteCallable, typing.Type[typing.Self]]] = {}
+
     @classmethod
     def as_view(cls, name: typing.Any, *class_args: typing.Any, **class_kwargs: typing.Any) -> typing.Any:
-        return super(Resource, _resource_decorator(cls)).as_view(name, *class_args, **class_kwargs)
+        view_function = super(Resource, _resource_decorator(cls)).as_view(name, *class_args, **class_kwargs)
+        Resource.view_function_map[view_function] = cls
+        return view_function
 
 
 def _resource_decorator(cls: typing.Type[Resource]) -> typing.Type[Resource]:

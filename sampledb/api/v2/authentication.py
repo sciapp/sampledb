@@ -14,7 +14,7 @@ from ...logic.users import User
 from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
 from ..utils import Resource
-from .utils.validation import method
+from .utils.openapi import method
 from ..errors import handle_api_error
 from .utils.responses import BadRequestErrorModel
 

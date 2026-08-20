@@ -16,8 +16,9 @@ from ...logic.instrument_log_entries import InstrumentLogEntry as LogicInstrumen
 from ...logic import errors, instrument_log_entries
 from ...logic.object_permissions import get_user_object_permissions
 from ...models import Permissions
-from .utils.validation import Base64Encoded, ModelWithDefaultsFromValidationInfo, is_valid, populate_missing_or_expect_from_validation_info, method, generate_example
+from .utils.validation import Base64Encoded, ModelWithDefaultsFromValidationInfo, is_valid, populate_missing_or_expect_from_validation_info, generate_example
 from .utils.responses import ForbiddenErrorModel, NotFoundErrorModel, CreatedResponseModel
+from .utils.openapi import method
 
 MAX_FILE_NAME_LENGTH = 256
 

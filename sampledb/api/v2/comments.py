@@ -9,8 +9,9 @@ from ...logic.comments import Comment, create_comment, get_comment_for_object, g
 from ...models import Permissions
 from ..utils import Resource
 from .authentication import object_permissions_required
-from .utils.validation import is_expected_from_validation_info, NonEmptyString, method
+from .utils.validation import is_expected_from_validation_info, NonEmptyString
 from .utils.responses import CreatedResponseModel
+from .utils.openapi import method
 
 
 class CommentModel(BaseModel):
