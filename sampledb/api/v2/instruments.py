@@ -8,8 +8,8 @@ import flask
 from pydantic import BaseModel, Field
 
 from .authentication import multi_auth
-from .utils.validation import method
 from .utils.responses import NotFoundErrorModel
+from .utils.openapi import method
 from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
 from ...logic import errors, utils, instruments

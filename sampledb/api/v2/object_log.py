@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from ..utils import Resource
 from .authentication import multi_auth
 from ...logic.object_log import get_object_log_entries_by_user
-from .utils.validation import method
+from .utils.openapi import method
 from ...models import object_log
 
 

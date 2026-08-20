@@ -17,8 +17,9 @@ from ...logic.objects import get_object
 from ...models import Object, Permissions
 from ..utils import Resource
 from .authentication import object_permissions_required
-from .utils.validation import Base64Encoded, HexString, NonEmptyString, OptionalNotNone, Url, is_expected_from_validation_info, is_valid, method, generate_example
+from .utils.validation import Base64Encoded, HexString, NonEmptyString, OptionalNotNone, Url, is_expected_from_validation_info, is_valid, generate_example
 from .utils.responses import ForbiddenErrorModel, NotFoundErrorModel, CreatedResponseModel, ReturnValue
+from .utils.openapi import method
 
 
 class _Hash(BaseModel):

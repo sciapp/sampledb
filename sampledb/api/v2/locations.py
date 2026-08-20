@@ -11,8 +11,9 @@ from .authentication import multi_auth, object_permissions_required
 from ..utils import Resource
 from ...logic import errors, locations, location_permissions, utils
 from ...models import Permissions
-from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, UserId, is_expected_from_validation_info, populate_missing_or_expect_from_validation_info, method
+from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, UserId, is_expected_from_validation_info, populate_missing_or_expect_from_validation_info
 from .utils.responses import NotFoundErrorModel, ForbiddenErrorModel, BadRequestErrorModel, CreatedResponseModel
+from .utils.openapi import method
 
 
 @typing.overload

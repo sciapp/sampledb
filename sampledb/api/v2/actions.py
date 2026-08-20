@@ -17,8 +17,9 @@ from ...logic import errors, utils, action_types
 from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
-from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, method
+from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info
 from .utils.responses import NotFoundErrorModel
+from .utils.openapi import method
 
 
 class ActionModel(BaseModel):

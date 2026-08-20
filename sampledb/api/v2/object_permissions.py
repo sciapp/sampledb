@@ -9,8 +9,9 @@ from .authentication import object_permissions_required, multi_auth
 from ..utils import Resource
 from ...logic import users, groups, projects, errors, object_permissions, background_tasks, objects
 from ...models import Permissions
-from .utils.validation import UserId, is_valid, method
+from .utils.validation import UserId, is_valid
 from .utils.responses import NotFoundErrorModel, BadRequestErrorModel, ForbiddenErrorModel, NoContentModel, ReturnValue
+from .utils.openapi import method
 
 
 def _permissions_validator(value: typing.Any) -> Permissions:
