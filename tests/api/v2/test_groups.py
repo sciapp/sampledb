@@ -96,11 +96,7 @@ def test_get_group_member_users(flask_server, auth, user):
 
 def test_post_group_member_user(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/groups/10/member_users/', auth=auth)
-    assert r.status_code == 403
-
-    sampledb.logic.users.set_user_administrator(user.id, True)
-    r = requests.post(flask_server.base_url + f'api/v2/groups/10/member_users/', auth=auth)
-    assert r.status_code == 404
+    assert r.status_code == 400
 
     group = sampledb.logic.groups.create_group(name='Test Group', description={}, initial_user_id=user.id)
 
@@ -116,6 +112,10 @@ def test_post_group_member_user(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/groups/{group.id}/member_users/', auth=auth, json={"user_id": user.id + 1})
     assert r.status_code == 400
 
+    r = requests.post(flask_server.base_url + f'api/v2/groups/{group.id}/member_users/', auth=auth, json={"user_id": user.id})
+    assert r.status_code == 403
+
+    sampledb.logic.users.set_user_administrator(user.id, True)
     r = requests.post(flask_server.base_url + f'api/v2/groups/{group.id}/member_users/', auth=auth, json={"user_id": user.id})
     assert r.status_code == 400
 

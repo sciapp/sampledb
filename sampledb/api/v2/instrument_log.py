@@ -1,12 +1,12 @@
 import base64
 import datetime
+import json
 import typing
 from contextlib import suppress
 from dataclasses import dataclass
 
 import flask
-from pydantic import (BaseModel, BeforeValidator, NonNegativeInt, Strict,
-                      ValidationInfo, constr, model_validator)
+from pydantic import BaseModel, BeforeValidator, NonNegativeInt, Strict, ValidationInfo, constr, model_validator, Field
 from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth
@@ -16,11 +16,7 @@ from ...logic.instrument_log_entries import InstrumentLogEntry as LogicInstrumen
 from ...logic import errors, instrument_log_entries
 from ...logic.object_permissions import get_user_object_permissions
 from ...models import Permissions
-from .utils.validation import (Base64Encoded,
-                               ModelWithDefaultsFromValidationInfo,
-                               ValidatingError, is_valid,
-                               populate_missing_or_expect_from_validation_info,
-                               validate)
+from .utils.validation import Base64Encoded, ModelWithDefaultsFromValidationInfo, is_valid, populate_missing_or_expect_from_validation_info, method
 
 MAX_FILE_NAME_LENGTH = 256
 
@@ -40,6 +36,34 @@ class _ValidationContext:
         assert self.log_entry is not None
         return [oa for oa in self.log_entry.object_attachments if not oa.is_hidden]
 
+    @classmethod
+    def from_path_without_log_entry(cls, path: InstrumentLogEntries.PathModel) -> typing.Self:
+        try:
+            existing_category_ids = frozenset(category.id for category in get_instrument_log_categories(path.instrument_id))
+        except errors.InstrumentDoesNotExistError:
+            flask.abort(flask.Response(json.dumps({"error": "Not Found", "message": f"instrument {path.instrument_id} does not exist"}), status=404, mimetype='application/json'))
+        return cls(
+            log_entry=None,
+            existing_category_ids=existing_category_ids
+        )
+
+    @classmethod
+    def from_path_with_log_entry(cls, path: InstrumentLogEntryVersions.PathModel) -> typing.Self:
+        try:
+            existing_category_ids = frozenset(category.id for category in get_instrument_log_categories(path.instrument_id))
+        except errors.InstrumentDoesNotExistError:
+            flask.abort(flask.Response(json.dumps({"error": "Not Found", "message": f"instrument {path.instrument_id} does not exist"}), status=404, mimetype='application/json'))
+        try:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
+                raise errors.InstrumentLogEntryDoesNotExistError()
+        except errors.InstrumentLogEntryDoesNotExistError:
+            flask.abort(flask.Response(json.dumps({"error": "Not Found", "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"}), status=404, mimetype='application/json'))
+        return cls(
+            log_entry=log_entry,
+            existing_category_ids=existing_category_ids,
+        )
+
 
 # pyflakes doesn't like string literals in type annotations that don't correspond to a Python identifier
 _base64_content = "base64_content"
@@ -50,12 +74,12 @@ class _FileAttachment(BaseModel):
         file_name: str
         content: bytes
     else:
-        file_name: constr(strip_whitespace=True, min_length=1, max_length=MAX_FILE_NAME_LENGTH)
-        content: Base64Encoded(_base64_content)
+        file_name: constr(strip_whitespace=True, min_length=1, max_length=MAX_FILE_NAME_LENGTH) = Field(description="the name of the attached file", examples=["example.txt"])
+        content: Base64Encoded(_base64_content) = Field(description="the base64 encoded content of the attached file", examples=["ZXhhbXBsZQ=="])
 
 
 class _ObjectAttachment(BaseModel):
-    object_id: typing.Annotated[NonNegativeInt, Strict()]
+    object_id: typing.Annotated[NonNegativeInt, Strict()] = Field(description="the ID of the attached object", examples=[1])
 
     @model_validator(mode="after")
     def check_object_exists(self) -> typing.Self:
@@ -78,8 +102,8 @@ def _parse_datetime(value: typing.Any) -> datetime.datetime:
 
 
 class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
-    content: typing.Optional[str]
-    content_is_markdown: bool = False
+    content: typing.Optional[str] = Field(description="the content for the instrument log entry", examples=["This is an instrument log entry."])
+    content_is_markdown: bool = Field(False, description="whether the content for the instrument log entry is formatted in Markdown", examples=[False])
     category_ids: typing.List[
         typing.Annotated[
             int,
@@ -93,7 +117,7 @@ class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
                 ),
             ),
         ],
-    ] = []
+    ] = Field([], description="the IDs of the categories for the instrument log entry", examples=[[1, 2, 4]])
     event_utc_datetime: typing.Optional[
         typing.Annotated[
             datetime.datetime,
@@ -103,7 +127,7 @@ class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
                 lambda i: PydanticCustomError("datetime_range", "Timestamp should not be more than 1000 years before or after the current date"),
             ),
         ]
-    ] = None
+    ] = Field(None, description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
 
 
 _ObjectAttachments = typing.Annotated[
@@ -113,32 +137,6 @@ _ObjectAttachments = typing.Annotated[
         lambda i: PydanticCustomError("unique", "Object should only be attached once"),
     ),
 ]
-
-
-class _InstrumentLogEntry(_BaseInstrumentLogEntry):
-    file_attachments: typing.List[_FileAttachment] = []
-    object_attachments: _ObjectAttachments = []
-
-    @model_validator(mode="after")
-    def check_not_empty(self) -> typing.Self:
-        if self.content or self.file_attachments or self.object_attachments:
-            return self
-        raise PydanticCustomError("log_entry_empty", "Log entry should contain content or an attachment")
-
-
-class _InstrumentLogEntryVersion(_BaseInstrumentLogEntry):
-    version_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: len(i.context.log_entry.versions) + 1)]
-    log_entry_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: i.context.log_entry.id)]
-    file_attachments: typing.Optional[typing.List[_FileAttachment]] = None
-    object_attachments: typing.Optional[_ObjectAttachments] = None
-
-    @model_validator(mode="after")
-    def check_not_empty(self, info: ValidationInfo[_ValidationContext]) -> typing.Self:
-        file_attachments = info.context.existing_file_attachments if self.file_attachments is None else self.file_attachments
-        object_attachments = info.context.existing_object_attachments if self.object_attachments is None else self.object_attachments
-        if self.content or file_attachments or object_attachments:
-            return self
-        raise PydanticCustomError("log_entry_empty", "Log entry should contain content or an attachment")
 
 
 def instrument_log_entry_to_json(log_entry: instrument_log_entries.InstrumentLogEntry) -> typing.Dict[str, typing.Any]:
@@ -192,64 +190,80 @@ def category_to_json(category: instrument_log_entries.InstrumentLogCategory) -> 
 
 
 class InstrumentLogEntries(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+
+    class RequestBodyModel(_BaseInstrumentLogEntry):
+        file_attachments: typing.List[_FileAttachment] = Field([], description="a list of file attachments", examples=[[]])
+        object_attachments: _ObjectAttachments = Field([], description="a list of object attachments", examples=[[]])
+
+        @model_validator(mode="after")
+        def check_not_empty(self) -> typing.Self:
+            if self.content or self.file_attachments or self.object_attachments:
+                return self
+            raise PydanticCustomError("log_entry_empty", "Log entry should contain content or an attachment")
+
     @multi_auth.login_required
-    def get(self, instrument_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all log entries for an instrument.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
-        log_entries = get_instrument_log_entries(instrument_id)
+        log_entries = get_instrument_log_entries(path.instrument_id)
         return [instrument_log_entry_to_json(log_entry) for log_entry in log_entries]
 
     @multi_auth.login_required
-    def post(self, instrument_id: int) -> ResponseData:
+    @method(request_body_context_builder=_ValidationContext.from_path_without_log_entry)
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+        """
+        Create a new instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_create_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be created by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be created by instrument scientists"
             }, 403
-        request_json = flask.request.get_json(force=True)
-        try:
-            request_data = validate(_InstrumentLogEntry, request_json, context=_ValidationContext(None, frozenset(category.id for category in get_instrument_log_categories(instrument_id))))
-        except ValidatingError as e:
-            return e.response
 
         log_entry = create_instrument_log_entry(
             instrument_id=instrument.id,
             user_id=flask.g.user.id,
-            content=request_data.content or "",
-            content_is_markdown=request_data.content_is_markdown,
-            category_ids=request_data.category_ids,
-            event_utc_datetime=request_data.event_utc_datetime,
+            content=request_body.content or "",
+            content_is_markdown=request_body.content_is_markdown,
+            category_ids=request_body.category_ids,
+            event_utc_datetime=request_body.event_utc_datetime,
         )
 
-        for file_attachment in request_data.file_attachments:
+        for file_attachment in request_body.file_attachments:
             create_instrument_log_file_attachment(
                 instrument_log_entry_id=log_entry.id,
                 file_name=file_attachment.file_name,
                 content=file_attachment.content,
             )
 
-        for object_attachment in request_data.object_attachments:
+        for object_attachment in request_body.object_attachments:
             create_instrument_log_object_attachment(
                 instrument_log_entry_id=log_entry.id,
                 object_id=object_attachment.object_id,
@@ -258,7 +272,7 @@ class InstrumentLogEntries(Resource):
         return None, 201, {
             'Location': flask.url_for(
                 '.instrument_log_entry',
-                instrument_id=instrument_id,
+                instrument_id=path.instrument_id,
                 log_entry_id=log_entry.id,
                 _external=True
             )
@@ -266,57 +280,87 @@ class InstrumentLogEntries(Resource):
 
 
 class InstrumentLogEntry(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         return instrument_log_entry_to_json(log_entry)
 
 
 class InstrumentLogEntryVersions(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+
+    class RequestBodyModel(_BaseInstrumentLogEntry):
+        version_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: len(i.context.log_entry.versions) + 1)] = Field(description="the ID for the new version of the instrument log entry, must be the current version_id + 1", examples=[1])
+        log_entry_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: i.context.log_entry.id)] = Field(description="the ID of an existing instrument log entry to update", examples=[1])
+        file_attachments: typing.Optional[typing.List[_FileAttachment]] = Field(None, description="the file attachments for the new instrument log entry version", examples=[[{"file_name": "example.txt", "base64_content": "ZXhhbXBsZQ=="}]])
+        object_attachments: typing.Optional[_ObjectAttachments] = Field(None, description="the object attachments for the new instrument log entry version", examples=[[{"object_id": 1}]])
+
+        @model_validator(mode="after")
+        def check_not_empty(self, info: ValidationInfo[_ValidationContext]) -> typing.Self:
+            file_attachments = info.context.existing_file_attachments if self.file_attachments is None else self.file_attachments
+            object_attachments = info.context.existing_object_attachments if self.object_attachments is None else self.object_attachments
+            if self.content or file_attachments or object_attachments:
+                return self
+            raise PydanticCustomError("log_entry_empty", "Log entry should contain content or an attachment")
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all versions of an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         return [
             instrument_log_entry_version_to_json(version)
@@ -324,44 +368,43 @@ class InstrumentLogEntryVersions(Resource):
         ]
 
     @multi_auth.login_required
-    def post(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+    @method(request_body_context_builder=_ValidationContext.from_path_with_log_entry)
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+        """
+        Create a new version of an instrument log entry.
+        """
+        validation_context = _ValidationContext.from_path_with_log_entry(path)
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
-        validation_context = _ValidationContext(log_entry, frozenset(category.id for category in get_instrument_log_categories(instrument_id)))
-        request_json = flask.request.get_json(force=True)
-        try:
-            request_data = validate(_InstrumentLogEntryVersion, request_json, context=validation_context)
-        except ValidatingError as e:
-            return e.response
         log_entry = update_instrument_log_entry(
             log_entry_id=log_entry.id,
-            content=request_data.content or "",
-            category_ids=request_data.category_ids,
-            content_is_markdown=request_data.content_is_markdown,
-            event_utc_datetime=request_data.event_utc_datetime,
+            content=request_body.content or "",
+            category_ids=request_body.category_ids,
+            content_is_markdown=request_body.content_is_markdown,
+            event_utc_datetime=request_body.event_utc_datetime,
         )
-        if request_data.file_attachments is not None:
-            new_file_attachments = {(file_attachment.file_name, file_attachment.content) for file_attachment in request_data.file_attachments}
+        if request_body.file_attachments is not None:
+            new_file_attachments = {(file_attachment.file_name, file_attachment.content) for file_attachment in request_body.file_attachments}
             for file_name, content in new_file_attachments.difference(
                     (file_attachment.file_name, file_attachment.content) for file_attachment in validation_context.existing_file_attachments
             ):
@@ -373,8 +416,8 @@ class InstrumentLogEntryVersions(Resource):
             for file_attachment in validation_context.existing_file_attachments:
                 if (file_attachment.file_name, file_attachment.content) not in new_file_attachments:
                     hide_instrument_log_file_attachment(file_attachment.id)
-        if request_data.object_attachments is not None:
-            new_object_attachments = {object_attachment.object_id for object_attachment in request_data.object_attachments}
+        if request_body.object_attachments is not None:
+            new_object_attachments = {object_attachment.object_id for object_attachment in request_body.object_attachments}
             for object_id in new_object_attachments.difference(oa.object_id for oa in log_entry.object_attachments):
                 with suppress(errors.ObjectDoesNotExistError):
                     create_instrument_log_object_attachment(log_entry.id, object_id)
@@ -386,7 +429,7 @@ class InstrumentLogEntryVersions(Resource):
         return None, 201, {
             'Location': flask.url_for(
                 '.instrument_log_entry_version',
-                instrument_id=instrument_id,
+                instrument_id=path.instrument_id,
                 log_entry_id=log_entry.id,
                 log_entry_version_id=log_entry.versions[-1].version_id,
                 _external=True
@@ -395,65 +438,82 @@ class InstrumentLogEntryVersions(Resource):
 
 
 class InstrumentLogEntryVersion(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+        log_entry_version_id: int = Field(description="the ID of an existing version of this instrument log entry", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int, log_entry_version_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get a version of an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         versions_by_id = {
             version.version_id: version
             for version in log_entry.versions
         }
-        if log_entry_version_id not in versions_by_id:
+        if path.log_entry_version_id not in versions_by_id:
             return {
-                "message": f"version {log_entry_version_id} for log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"version {path.log_entry_version_id} for log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
-        return instrument_log_entry_version_to_json(versions_by_id[log_entry_version_id])
+        return instrument_log_entry_version_to_json(versions_by_id[path.log_entry_version_id])
 
 
 class InstrumentLogEntryFileAttachments(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all file attachments for an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         return [
             file_attachment_to_json(file_attachment)
@@ -462,65 +522,82 @@ class InstrumentLogEntryFileAttachments(Resource):
 
 
 class InstrumentLogEntryFileAttachment(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+        file_attachment_id: int = Field(description="the ID of an existing file attachment for this instrument log entry", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int, file_attachment_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get a file attachment for an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            file_attachment = get_instrument_log_file_attachment(file_attachment_id)
-            if file_attachment.log_entry_id != log_entry_id:
+            file_attachment = get_instrument_log_file_attachment(path.file_attachment_id)
+            if file_attachment.log_entry_id != path.log_entry_id:
                 raise errors.InstrumentLogFileAttachmentDoesNotExistError()
         except errors.InstrumentLogFileAttachmentDoesNotExistError:
             return {
-                "message": f"file attachment {file_attachment_id} for log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"file attachment {path.file_attachment_id} for log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         return file_attachment_to_json(file_attachment)
 
 
 class InstrumentLogEntryObjectAttachments(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all object attachments for an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         return [
             object_attachment_to_json(object_attachment)
@@ -529,59 +606,75 @@ class InstrumentLogEntryObjectAttachments(Resource):
 
 
 class InstrumentLogEntryObjectAttachment(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        log_entry_id: int = Field(description="the ID of an existing log entry for this instrument", examples=[1])
+        object_attachment_id: int = Field(description="the ID of an existing object attachment for this instrument log entry", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int, object_attachment_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get an object attachment for an instrument log entry.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log entries for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log entries for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
         try:
-            log_entry = get_instrument_log_entry(log_entry_id)
-            if log_entry.instrument_id != instrument_id:
+            log_entry = get_instrument_log_entry(path.log_entry_id)
+            if log_entry.instrument_id != path.instrument_id:
                 raise errors.InstrumentLogEntryDoesNotExistError()
         except errors.InstrumentLogEntryDoesNotExistError:
             return {
-                "message": f"log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            object_attachment = get_instrument_log_object_attachment(object_attachment_id)
-            if object_attachment.log_entry_id != log_entry_id:
+            object_attachment = get_instrument_log_object_attachment(path.object_attachment_id)
+            if object_attachment.log_entry_id != path.log_entry_id:
                 raise errors.InstrumentLogObjectAttachmentDoesNotExistError()
         except errors.InstrumentLogObjectAttachmentDoesNotExistError:
             return {
-                "message": f"object attachment {object_attachment_id} for log entry {log_entry_id} for instrument {instrument_id} does not exist"
+                "message": f"object attachment {path.object_attachment_id} for log entry {path.log_entry_id} for instrument {path.instrument_id} does not exist"
             }, 404
         return object_attachment_to_json(object_attachment)
 
 
 class InstrumentLogCategories(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all log categories for an instrument.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log categories for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log categories for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
-        categories = get_instrument_log_categories(instrument_id)
+        categories = get_instrument_log_categories(path.instrument_id)
         return [
             category_to_json(category)
             for category in categories
@@ -589,26 +682,34 @@ class InstrumentLogCategories(Resource):
 
 
 class InstrumentLogCategory(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+        category_id: int = Field(description="the ID of an existing log entry category for this instrument", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int, category_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get an instrument log category.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
-            instrument = get_instrument(instrument_id=instrument_id)
+            instrument = get_instrument(instrument_id=path.instrument_id)
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         if not instrument.users_can_view_log_entries and flask.g.user not in instrument.responsible_users:
             return {
-                "message": f"log categories for instrument {instrument_id} can only be accessed by instrument scientists"
+                "message": f"log categories for instrument {path.instrument_id} can only be accessed by instrument scientists"
             }, 403
-        categories = get_instrument_log_categories(instrument_id)
+        categories = get_instrument_log_categories(path.instrument_id)
         for category in categories:
-            if category.id == category_id:
+            if category.id == path.category_id:
                 return category_to_json(category)
         return {
-            "message": f"log category {category_id} for instrument {instrument_id} does not exist"
+            "message": f"log category {path.category_id} for instrument {path.instrument_id} does not exist"
         }, 404

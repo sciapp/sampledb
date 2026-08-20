@@ -159,17 +159,9 @@ def test_get_project_member_users(flask_server, auth, user):
 
 
 def test_post_project_member_user(flask_server, auth, user):
-    r = requests.post(flask_server.base_url + f'api/v2/projects/10/member_users/', auth=auth)
-    assert r.status_code == 403
-
-    sampledb.logic.users.set_user_administrator(user.id, True)
-    r = requests.post(flask_server.base_url + f'api/v2/projects/10/member_users/', auth=auth)
-    assert r.status_code == 404
-
     project = sampledb.logic.projects.create_project(name='Test Project', description={}, initial_user_id=user.id)
+    other_user = sampledb.logic.users.create_user(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
 
-    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth)
-    assert r.status_code == 400
 
     r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={})
     assert r.status_code == 400
@@ -177,10 +169,7 @@ def test_post_project_member_user(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": "test", "permissions": "read"})
     assert r.status_code == 400
 
-    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": user.id + 1, "permissions": "read"})
-    assert r.status_code == 400
-
-    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": user.id, "permissions": "read"})
+    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": user.id, "permissions": "invalid"})
     assert r.status_code == 400
 
     other_user = sampledb.logic.users.create_user(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
@@ -188,16 +177,36 @@ def test_post_project_member_user(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "invalid"})
     assert r.status_code == 400
 
+    sampledb.logic.users.set_user_readonly(user.id, True)
+    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
+    assert r.status_code == 403
+    assert r.json() == {
+        "message": "Only admins may manage projects"
+    }
+
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
+    assert r.status_code == 403
+    assert r.json() == {
+        "message": "Read-only users may not manage projects"
+    }
+
+    sampledb.logic.users.set_user_readonly(user.id, False)
     r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
     assert r.status_code == 201
     assert r.headers['Location'].endswith(f'/api/v2/projects/{project.id}/member_users/{other_user.id}')
     assert sampledb.logic.projects.get_user_project_permissions(project_id=project.id, user_id=other_user.id) == sampledb.models.Permissions.READ
 
-    sampledb.logic.users.set_user_readonly(user.id, True)
-    other_user = sampledb.logic.users.create_user(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
+    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
+    assert r.status_code == 400
 
-    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id})
-    assert r.status_code == 403
+    other_user = sampledb.logic.users.create_user(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
+    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id + 1}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
+    assert r.status_code == 404
+
+    r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id + 1, "permissions": "read"})
+    assert r.status_code == 400
+
 
 def test_get_project_member_user(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth)
@@ -221,21 +230,21 @@ def test_get_project_member_user(flask_server, auth, user):
 
 
 def test_put_project_member_user(flask_server, auth, user):
-    r = requests.put(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth)
+    r = requests.put(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth, json={"permissions": "read"})
     assert r.status_code == 403
 
     sampledb.logic.users.set_user_administrator(user.id, True)
-    r = requests.put(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth)
+    r = requests.put(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth, json={"permissions": "read"})
     assert r.status_code == 404
 
     sampledb.logic.users.set_user_readonly(user.id, True)
-    r = requests.put(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth)
+    r = requests.put(flask_server.base_url + f'api/v2/projects/10/member_users/{user.id}', auth=auth, json={"permissions": "read"})
     assert r.status_code == 403
     sampledb.logic.users.set_user_readonly(user.id, False)
 
     project = sampledb.logic.projects.create_project(name='Test Project', description={}, initial_user_id=user.id)
 
-    r = requests.put(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/{user.id + 1}', auth=auth)
+    r = requests.put(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/{user.id + 1}', auth=auth, json={"permissions": "read"})
     assert r.status_code == 404
 
     other_user = sampledb.logic.users.create_user(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)

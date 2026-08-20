@@ -409,7 +409,13 @@ def test_post_object_version(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'].startswith('Failed to decode JSON object')
+    assert r.json() == {
+        "error_details": {
+            "input": None,
+            "msg": "Input should be an object",
+        },
+        "message": "Input should be an object"
+    }
 
     object_json=[]
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
@@ -936,7 +942,13 @@ def test_create_object(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'].startswith('Failed to decode JSON object')
+    assert r.json() == {
+        "error_details": {
+            "input": None,
+            "msg": "Input should be an object",
+        },
+        "message": "Input should be an object"
+    }
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/', json=[], auth=auth, allow_redirects=False)
     assert r.status_code == 400
