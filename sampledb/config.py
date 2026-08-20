@@ -153,6 +153,7 @@ def parse_configuration_values() -> None:
         'ENABLE_ISOLATED_OBJECT_DATA_RENDERING',
         'ENABLE_OBJECT_DATA_HTML_CACHE',
         'ENABLE_DEFAULT_SHARING',
+        'ENABLE_HTTP_API_V2_DRAFT',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -1045,6 +1046,8 @@ DISABLE_TOPICS = False
 MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
 
 DEFAULT_NOTIFICATION_MODES = None
+
+ENABLE_HTTP_API_V2_DRAFT = False
 
 
 class LinkConfig(typing.TypedDict):
