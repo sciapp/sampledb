@@ -145,7 +145,10 @@ def test_get_object_version(flask_server, auth, user, action):
         "data": object.data,
         "fed_object_id": object.fed_object_id,
         "fed_version_id": object.fed_version_id,
-        "component_id": object.component_id
+        "component_id": object.component_id,
+        "user": None,
+        "action": None,
+        "data_diff": None,
     }
     r = requests.get(flask_server.base_url + 'api/v2/objects/1/versions/1', auth=auth)
     assert r.status_code == 404
@@ -162,14 +165,20 @@ def test_get_object_version(flask_server, auth, user, action):
             'name': user.name,
             'orcid': None,
             'affiliation': None,
-            'role': None
+            'role': None,
+            'email': None,
+            'is_active': None,
+            'is_hidden': None,
+            'is_readonly': None
         },
         "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
         "data": object.data,
         "fed_object_id": object.fed_object_id,
         "fed_version_id": object.fed_version_id,
-        "component_id": object.component_id
+        "component_id": object.component_id,
+        "action": None,
+        "data_diff": None,
     }
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
@@ -185,7 +194,9 @@ def test_get_object_version(flask_server, auth, user, action):
         "data": object.data,
         "fed_object_id": object.fed_object_id,
         "fed_version_id": object.fed_version_id,
-        "component_id": object.component_id
+        "component_id": object.component_id,
+        "user": None,
+        "data_diff": None,
     }
 
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(object.action_id, sampledb.models.Permissions.READ)
@@ -212,7 +223,9 @@ def test_get_object_version(flask_server, auth, user, action):
         "data": object.data,
         "fed_object_id": object.fed_object_id,
         "fed_version_id": object.fed_version_id,
-        "component_id": object.component_id
+        "component_id": object.component_id,
+        "user": None,
+        "data_diff": None,
     }
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/0?include_diff=1'.format(object.object_id, object.version_id), auth=auth)
@@ -227,7 +240,10 @@ def test_get_object_version(flask_server, auth, user, action):
         "fed_object_id": object.fed_object_id,
         "fed_version_id": object.fed_version_id,
         "component_id": object.component_id,
-        "data": object.data
+        "data": object.data,
+        "user": None,
+        "action": None,
+        "data_diff": None,
     }
 
     object_json = {
@@ -266,7 +282,9 @@ def test_get_object_version(flask_server, auth, user, action):
                     "text": "Example2"
                 }
             }
-        }
+        },
+        "user": None,
+        "action": None,
     }
 
     component = sampledb.logic.components.add_component(str(uuid.uuid4()))
@@ -293,7 +311,10 @@ def test_get_object_version(flask_server, auth, user, action):
         "fed_object_id": 1,
         "fed_version_id": 1,
         "component_id": component.id,
-        "data": None
+        "data": None,
+        "user": None,
+        "action": None,
+        "data_diff": None,
     }
 
     imported_object = sampledb.logic.objects.insert_fed_object_version(
@@ -319,7 +340,9 @@ def test_get_object_version(flask_server, auth, user, action):
         "fed_version_id": 2,
         "component_id": component.id,
         "data": None,
-        "data_diff": None
+        "data_diff": None,
+        "user": None,
+        "action": None,
     }
 
     imported_object = sampledb.logic.objects.insert_fed_object_version(
@@ -348,7 +371,9 @@ def test_get_object_version(flask_server, auth, user, action):
         "data_diff": {
             '_before': None,
             '_after': object.data
-        }
+        },
+        "user": None,
+        "action": None,
     }
 
     imported_object = sampledb.logic.objects.insert_fed_object_version(
@@ -377,7 +402,9 @@ def test_get_object_version(flask_server, auth, user, action):
         "data_diff": {
             '_before': object.data,
             '_after': None
-        }
+        },
+        "user": None,
+        "action": None,
     }
 
 
@@ -410,6 +437,7 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "error_details": {
             "input": None,
             "msg": "Input should be an object",
@@ -417,10 +445,17 @@ def test_post_object_version(flask_server, auth, user, action):
         "message": "Input should be an object"
     }
 
-    object_json=[]
+    object_json = []
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Input should be an object"
+    assert r.json() == {
+        "error": "Bad Request",
+        "error_details": {
+            "input": [],
+            "msg": "Input should be an object",
+        },
+        "message": "Input should be an object"
+    }
 
     object_json = {'unknown': 1}
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
@@ -735,9 +770,13 @@ def test_post_object_version(flask_server, auth, user, action):
     # remove keys that must not be copied
     del object_json['user_id']
     del object_json['utc_datetime']
+    del object_json['data_diff']
+    del object_json['user']
+    del object_json['action']
     # update version_id
     object_json['version_id'] += 1
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.content == b''
     assert r.status_code == 201
 
 
@@ -772,7 +811,8 @@ def test_get_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
 
@@ -914,7 +954,8 @@ def test_get_objects_with_name_only(flask_server, auth, user):
             },
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
 
@@ -943,6 +984,7 @@ def test_create_object(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "error_details": {
             "input": None,
             "msg": "Input should be an object",
@@ -1168,7 +1210,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1181,7 +1224,9 @@ def test_search_objects(flask_server, auth, user, other_user, action):
     })
     assert r.status_code == 400
     assert r.json() == {
-        'message': 'Error: Unfinished text'
+        'error': 'Bad Request',
+        'message': 'Error: Unfinished text',
+        'error_details': None,
     }
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
         'q': 'example'
@@ -1203,7 +1248,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1242,7 +1288,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1260,7 +1307,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1278,7 +1326,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1301,7 +1350,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1326,7 +1376,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": {"name": {"_type": "text", "text": "Example"}},
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1355,7 +1406,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1374,7 +1426,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": {"name": {"_type": "text", "text": "Example"}},
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     for timezone_name in pytz.common_timezones:
@@ -1397,7 +1450,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
                     "data": {"name": {"_type": "text", "text": "Example"}},
                     "fed_object_id": object.fed_object_id,
                     "fed_version_id": object.fed_version_id,
-                    "component_id": object.component_id
+                    "component_id": object.component_id,
+                    "referencing_objects": None,
                 }
             ]
         else:
@@ -1424,7 +1478,8 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
 
@@ -1457,7 +1512,8 @@ def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, 
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1499,7 +1555,8 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1517,7 +1574,8 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
@@ -1565,7 +1623,9 @@ def test_get_related_object_ids(flask_server, auth, user, action, other_action):
         'referencing_objects': [
             {
                 'object_id': measurement.object_id,
-                'component_uuid': None
+                'component_uuid': None,
+                'eln_source_url': None,
+                'eln_object_url': None
             }
         ]
     }
@@ -1575,7 +1635,9 @@ def test_get_related_object_ids(flask_server, auth, user, action, other_action):
         'referenced_objects': [
             {
                 'object_id': sample.object_id,
-                'component_uuid': None
+                'component_uuid': None,
+                'eln_source_url': None,
+                'eln_object_url': None
             }
         ],
         'referencing_objects': []
@@ -1676,7 +1738,14 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
             'fed_object_id': sample.fed_object_id,
             'fed_version_id': sample.fed_version_id,
             'object_id': sample.object_id,
-            'referencing_objects': [{'object_id': measurement2.object_id}],
+            'referencing_objects': [
+                {
+                    'object_id': measurement2.object_id,
+                    'component_uuid': None,
+                    'eln_source_url': None,
+                    'eln_object_url': None
+                }
+            ],
             'schema': sample.schema,
             'version_id': sample.version_id
          }
@@ -1752,8 +1821,11 @@ def test_create_object_with_missing_required(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        'error': 'Validation Error',
         'message': 'validation failed:\n - missing required property "name" (at name)',
-        'error_paths': [['name']]
+        'error_details': {
+            'paths': [['name']]
+        }
     }
 
 def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
@@ -1773,8 +1845,8 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
         'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}'
     })
-    assert r.status_code == 200
     assert r.json() == []
+    assert r.status_code == 200
     for object in objects[::2]:
         sampledb.logic.object_permissions.set_user_object_permissions(
             object_id=object.object_id,
@@ -1796,7 +1868,8 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
         for object in [objects[-2], objects[0]]
     ]
@@ -1815,7 +1888,8 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
         for object in [objects[-2], objects[0]]
     ]
@@ -1834,7 +1908,8 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
         for object in reversed(objects[::2])
     ]
@@ -1854,7 +1929,8 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
             "data": object.data,
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id
+            "component_id": object.component_id,
+            "referencing_objects": None,
         }
         for object in [objects[0]]
     ]

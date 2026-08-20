@@ -67,7 +67,10 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
         except Exception as e:
             cherrypy.log(''.join(traceback.format_exception(e)))
             response = make_json_response(
-                obj={'message': 'Internal Server Error'},
+                obj={
+                    "error": "Internal Server Error",
+                    "message": "An internal server error occurred."
+                },
                 status=500
             )
         return response

@@ -7,20 +7,28 @@ from pydantic import BaseModel, Strict, Field
 from ...logic import errors
 from ...logic.comments import Comment, create_comment, get_comment_for_object, get_comments_for_object
 from ...models import Permissions
-from ..utils import Resource, ResponseData
+from ..utils import Resource
 from .authentication import object_permissions_required
 from .utils.validation import is_expected_from_validation_info, NonEmptyString, method
+from .utils.responses import CreatedResponseModel
 
 
-def comment_to_json(comment: Comment) -> typing.Dict[str, typing.Any]:
-    comment_json = {
-        'object_id': comment.object_id,
-        'comment_id': comment.id,
-        'user_id': comment.user_id,
-        'utc_datetime': comment.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if comment.utc_datetime is not None else None,
-        'content': comment.content
-    }
-    return comment_json
+class CommentModel(BaseModel):
+    object_id: int = Field(description="the ID of the object the comment was posted for", examples=[1])
+    comment_id: int = Field(description="the ID of the comment", examples=[1])
+    user_id: typing.Optional[int] = Field(description="the ID of the user who posted the comment", examples=[1])
+    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the comment was posted, formatted as YYYY-MM-DD HH:MM:SS.ffffff", examples=["2026-01-02 03:04:05.678910"])
+    content: str = Field(description="the content of the comment", examples=["This is a comment."])
+
+    @classmethod
+    def from_comment(cls, comment: Comment) -> typing.Self:
+        return cls(
+            object_id=comment.object_id,
+            comment_id=comment.id,
+            user_id=comment.user_id,
+            utc_datetime=comment.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if comment.utc_datetime is not None else None,
+            content=comment.content,
+        )
 
 
 class ObjectComment(Resource):
@@ -30,17 +38,20 @@ class ObjectComment(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> CommentModel:
         """
         Get a comment.
         """
         try:
             comment = get_comment_for_object(object_id=path.object_id, comment_id=path.comment_id)
         except errors.CommentDoesNotExistError:
-            return {
-                "message": f"comment {path.comment_id} of object {path.object_id} does not exist"
-            }, 404
-        return comment_to_json(comment)
+            return flask.abort(flask.Response(
+                response={
+                    "message": f"comment {path.comment_id} of object {path.object_id} does not exist"
+                },
+                status=404
+            ))
+        return CommentModel.from_comment(comment)
 
 
 class ObjectComments(Resource):
@@ -67,7 +78,7 @@ class ObjectComments(Resource):
 
     @object_permissions_required(Permissions.WRITE)
     @method(request_body_context_builder=ValidationContext.from_path_model)
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel:
         """
         Post a new comment for an object.
         """
@@ -78,15 +89,17 @@ class ObjectComments(Resource):
             comment_id=comment_id,
             _external=True
         )
-        return flask.redirect(comment_url, code=201)
+        return CreatedResponseModel(
+            location=comment_url
+        )
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> typing.List[CommentModel]:
         """
         Get all comments for an object.
         """
         return [
-            comment_to_json(comment)
+            CommentModel.from_comment(comment)
             for comment in get_comments_for_object(path.object_id)
         ]

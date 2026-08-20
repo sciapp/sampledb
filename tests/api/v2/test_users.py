@@ -48,7 +48,11 @@ def test_get_user(flask_server, auth, user):
         'name': "Basic User",
         'orcid': None,
         'affiliation': None,
-        'role': None
+        'role': None,
+        'email': None,
+        'is_active': None,
+        'is_hidden': None,
+        'is_readonly': None,
     }
 
     sampledb.logic.users.set_user_administrator(user.id, True)
@@ -76,7 +80,11 @@ def test_get_current_user(flask_server, auth, user):
         'name': "Basic User",
         'orcid': None,
         'affiliation': None,
-        'role': None
+        'role': None,
+        'email': None,
+        'is_active': None,
+        'is_hidden': None,
+        'is_readonly': None,
     }
 
 

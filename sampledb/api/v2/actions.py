@@ -7,7 +7,7 @@ from pydantic import AfterValidator, Field, Strict, ValidationInfo, BaseModel
 from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth
-from ..utils import Resource, ResponseData
+from ..utils import Resource
 from ...logic.action_translations import set_action_translation
 from ...logic.actions import Action as LogicAction
 from ...logic.actions import get_action, update_action
@@ -18,30 +18,57 @@ from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, method
+from .utils.responses import NotFoundErrorModel
 
 
-def action_to_json(action: LogicAction) -> typing.Dict[str, typing.Any]:
-    return {
-        'action_id': action.id,
-        'instrument_id': action.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
-        'user_id': action.user_id,
-        'type': {
-            action_types.ActionType.SAMPLE_CREATION: 'sample',
-            action_types.ActionType.MEASUREMENT: 'measurement',
-            action_types.ActionType.SIMULATION: 'simulation'
-        }.get(action.type_id, 'custom') if action.type_id is not None else 'custom',
-        'type_id': action.type_id,
-        'name': utils.get_translated_text(
-            action.name,
-            language_code='en'
-        ) or None,
-        'description': utils.get_translated_text(
-            action.description,
-            language_code='en'
-        ) or None,
-        'is_hidden': action.is_hidden,
-        'schema': action.schema
-    }
+class ActionModel(BaseModel):
+    action_id: int = Field(description="the ID of the action", examples=[1])
+    instrument_id: typing.Optional[int] = Field(description="the ID of the instrument the action belongs to", examples=[1])
+    user_id: typing.Optional[int] = Field(description="the ID of the user who created the action", examples=[1])
+    type: typing.Union[typing.Literal['sample'], typing.Literal['measurement'], typing.Literal['simulation'], typing.Literal['custom']] = Field(description="a string representation of the action type", examples=["sample"], deprecated=True)
+    type_id: typing.Optional[int] = Field(description="the ID of the action type", examples=[1])
+    name: typing.Optional[str] = Field(description="the name of the action", examples=["Example Action"])
+    description: typing.Optional[str] = Field(description="the description of the action", examples=["This is an example action."])
+    is_hidden: bool = Field(description="whether the action is hidden from action lists", examples=[False])
+    action_schema: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+        alias='schema',
+        description='the schema of the action',
+        examples=[{
+            "type": "object",
+            "title": {"en": "Object Information"},
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": {"en": "Name"}
+                },
+            },
+            "required": ["name"]
+        }]
+    )
+
+    @classmethod
+    def from_action(cls, action: LogicAction) -> typing.Self:
+        return cls(
+            action_id=action.id,
+            instrument_id=action.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
+            user_id=action.user_id,
+            type={
+                action_types.ActionType.SAMPLE_CREATION: 'sample',
+                action_types.ActionType.MEASUREMENT: 'measurement',
+                action_types.ActionType.SIMULATION: 'simulation'
+            }.get(action.type_id, 'custom') if action.type_id is not None else 'custom',  # type: ignore[arg-type]
+            type_id=action.type_id,
+            name=utils.get_translated_text(
+                action.name,
+                language_code='en'
+            ) or None,
+            description=utils.get_translated_text(
+                action.description,
+                language_code='en'
+            ) or None,
+            is_hidden=action.is_hidden,
+            schema=action.schema
+        )
 
 
 class Action(Resource):
@@ -59,7 +86,7 @@ class Action(Resource):
                 action = get_action(path.action_id)
             except errors.ActionDoesNotExistError:
                 flask.abort(flask.Response(json.dumps({"msg": f"action {path.action_id} does not exist"}), status=404, mimetype='application/json'))
-            return cls(action=action, action_type=action_to_json(action)["type"])
+            return cls(action=action, action_type=ActionModel.from_action(action).type)
 
     class RequestBodyModel(ModelWithDefaultsFromValidationInfo):
         action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.id)] = Field(description="the ID of the action to update, must match the action_id path parameter", examples=[1])
@@ -115,7 +142,7 @@ class Action(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ActionModel | NotFoundErrorModel:
         """
         Get an action.
         """
@@ -124,16 +151,17 @@ class Action(Resource):
                 action_id=path.action_id
             )
         except errors.ActionDoesNotExistError:
-            return {
-                "message": f"action {path.action_id} does not exist"
-            }, 404
+            return NotFoundErrorModel(
+                error="NotFound",
+                message=f"action {path.action_id} does not exist"
+            )
         if Permissions.READ not in get_user_action_permissions(action_id=path.action_id, user_id=flask.g.user.id):
             return flask.abort(403)
-        return action_to_json(action)
+        return ActionModel.from_action(action)
 
     @multi_auth.login_required
     @method(request_body_context_builder=ValidationContext.from_path_model)
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> ActionModel | NotFoundErrorModel:
         """
         Update an action.
         """
@@ -142,9 +170,10 @@ class Action(Resource):
                 action_id=path.action_id
             )
         except errors.ActionDoesNotExistError:
-            return {
-                "message": f"action {path.action_id} does not exist"
-            }, 404
+            return NotFoundErrorModel(
+                error="NotFound",
+                message=f"action {path.action_id} does not exist"
+            )
         if Permissions.WRITE not in get_user_action_permissions(action_id=path.action_id, user_id=flask.g.user.id):
             return flask.abort(403)
         if action.fed_id is not None:
@@ -164,13 +193,13 @@ class Action(Resource):
             short_description=action.short_description.get("en") or ""
         )
         action = get_action(action_id=path.action_id)
-        return action_to_json(action)
+        return ActionModel.from_action(action)
 
 
 class Actions(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> ResponseData:
+    def get(self) -> typing.List[ActionModel]:
         """
         List all actions.
 
@@ -178,6 +207,6 @@ class Actions(Resource):
         """
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
         return [
-            action_to_json(action)
+            ActionModel.from_action(action)
             for action in actions
         ]

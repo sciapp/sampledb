@@ -13,6 +13,7 @@ from pydantic_core import ErrorDetails, PydanticCustomError
 from ....logic import errors, users
 from ....logic.utils import parse_url
 from ...utils import Resource, ResponseData, make_json_response
+from .responses import make_response, ResultUnion
 
 
 class _ErrorDict(typing.TypedDict):
@@ -21,6 +22,13 @@ class _ErrorDict(typing.TypedDict):
 
 
 type _ValidationError = _ErrorDict | typing.Dict[int, _ValidationError] | typing.Dict[str, _ValidationError]
+
+
+def generate_example(model: typing.Type[BaseModel]) -> typing.Dict[str, typing.Any]:
+    return {
+        field_name: field_info.examples[0]  # type: ignore[index]
+        for field_name, field_info in model.model_fields.items()
+    }
 
 
 def _error_details_to_returned_error(error_details: typing.List[ErrorDetails], idx: int = 0, /) -> _ValidationError:
@@ -56,7 +64,11 @@ class ValidatingError(ValueError):
 
     @property
     def response(self) -> typing.Tuple[typing.Dict[str, typing.Any], int]:
-        return {"message": self.message, "error_details": self.error_details}, 400
+        return {
+            "error": "Bad Request",
+            "message": self.message,
+            "error_details": self.error_details
+        }, 400
 
 
 @typing.overload
@@ -215,24 +227,25 @@ ReqM = typing.TypeVar('ReqM')  # , bound=BaseModel)
 
 def method(
         *,
+        default_status_code: int = 200,
         request_body_context_builder: typing.Optional[typing.Callable[[PM], typing.Any]] = None
 ) -> typing.Callable[
     [
         typing.Union[
-            typing.Callable[[R], ResponseData],
-            typing.Callable[[R, PM], ResponseData],
-            typing.Callable[[R, PM, ReqM], ResponseData],
-            typing.Callable[[R, PM, QM, ReqM], ResponseData],
+            typing.Callable[[R], ResultUnion],
+            typing.Callable[[R, PM], ResultUnion],
+            typing.Callable[[R, PM, ReqM], ResultUnion],
+            typing.Callable[[R, PM, QM, ReqM], ResultUnion],
         ]
     ],
     GenericOperationCallable[R]
 ]:
     def method_decorator_impl(
             func: typing.Union[
-                typing.Callable[[R], ResponseData],
-                typing.Callable[[R, PM], ResponseData],
-                typing.Callable[[R, PM, ReqM], ResponseData],
-                typing.Callable[[R, PM, QM, ReqM], ResponseData],
+                typing.Callable[[R], ResultUnion],
+                typing.Callable[[R, PM], ResultUnion],
+                typing.Callable[[R, PM, ReqM], ResultUnion],
+                typing.Callable[[R, PM, QM, ReqM], ResultUnion],
             ]
     ) -> GenericOperationCallable[R]:
         type_hints = typing.get_type_hints(func)
@@ -244,6 +257,8 @@ def method(
         if isinstance(request_body_model, typing.TypeAliasType):
             request_body_model = request_body_model.__value__
         # no assert for request_body_model to be BaseModel or None, as various other inputs currently exist, e.g. for permissions
+        return_type_hint: typing.Optional[type] = type_hints.get('return')
+        assert return_type_hint is not None
 
         class KWArgsDict(typing.TypedDict, total=False):
             path: PM
@@ -291,6 +306,10 @@ def method(
                     e.response[0],
                     status=e.response[1]
                 )
-            return func(self, **new_kwargs)  # type: ignore[misc]
+            return make_response(
+                result=func(self, **new_kwargs),  # type: ignore[misc]
+                default_status_code=default_status_code,
+                return_type_hint=return_type_hint,
+            )
         return method_impl
     return method_decorator_impl

@@ -181,6 +181,7 @@ def test_post_project_member_user(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
     assert r.status_code == 403
     assert r.json() == {
+        "error": "Forbidden",
         "message": "Only admins may manage projects"
     }
 
@@ -188,6 +189,7 @@ def test_post_project_member_user(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/', auth=auth, json={"user_id": other_user.id, "permissions": "read"})
     assert r.status_code == 403
     assert r.json() == {
+        "error": "Forbidden",
         "message": "Read-only users may not manage projects"
     }
 
@@ -289,9 +291,9 @@ def test_delete_project_member_user(flask_server, auth, user):
     assert r.status_code == 400
 
     r = requests.delete(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/{other_user.id}', auth=auth)
-    assert r.status_code == 200
+    assert r.status_code == 204
     assert sampledb.logic.projects.get_user_project_permissions(project_id=project.id, user_id=other_user.id) == sampledb.models.Permissions.NONE
 
     r = requests.delete(flask_server.base_url + f'api/v2/projects/{project.id}/member_users/{user.id}', auth=auth)
-    assert r.status_code == 200
+    assert r.status_code == 204
     assert not sampledb.logic.projects.get_projects()
