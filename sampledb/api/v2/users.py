@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 from .authentication import multi_auth
 from ..utils import Resource
 from ...logic import errors, users
-from .utils.validation import method
 from .utils.responses import NotFoundErrorModel
+from .utils.openapi import method
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

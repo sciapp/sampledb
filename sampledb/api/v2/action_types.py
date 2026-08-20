@@ -10,8 +10,8 @@ from .authentication import multi_auth
 from ..utils import Resource
 from ...logic.action_types import get_action_types, get_action_type
 from ...logic import errors, utils, action_types
-from .utils.validation import method
 from .utils.responses import NotFoundErrorModel
+from .utils.openapi import method
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 

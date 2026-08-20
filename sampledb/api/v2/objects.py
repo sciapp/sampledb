@@ -24,8 +24,9 @@ from ...utils import text_to_bool
 from ..utils import Resource
 from .actions import ActionModel
 from .users import UserModel
-from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, method, generate_example
+from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, generate_example
 from .utils.responses import BadRequestErrorModel, CreatedResponseModel, FoundResponseModel, NotFoundErrorModel
+from .utils.openapi import method
 
 
 class ObjectReferenceModel(BaseModel):

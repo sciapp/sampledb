@@ -20,6 +20,7 @@ from .object_permissions import ObjectPermissions, UsersObjectPermissions, UserO
 from .users import CurrentUser, User, Users
 from .groups import Group, Groups, GroupMemberUser, GroupMemberUsers
 from .projects import Project, Projects, ProjectMemberUser, ProjectMemberUsers
+from .utils.openapi import OpenAPISpecJSON, OpenAPISpecYAML
 
 api = Blueprint('api_v2', __name__)
 CORS(api)
@@ -78,3 +79,5 @@ api.add_url_rule('/api/v2/projects/<int:project_id>', endpoint='project', view_f
 api.add_url_rule('/api/v2/projects/<int:project_id>/member_users/', endpoint='project_member_users', view_func=ProjectMemberUsers.as_view('project_member_users'))
 api.add_url_rule('/api/v2/projects/<int:project_id>/member_users/<int:user_id>', endpoint='project_member_user', view_func=ProjectMemberUser.as_view('project_member_user'))
 api.add_url_rule('/api/v2/object_log_entries/', endpoint='object_log_entries', view_func=ObjectLogEntries.as_view('object_log_entry'))
+api.add_url_rule('/api/v2/openapi.json', endpoint='openapi_json', view_func=OpenAPISpecJSON.as_view('openapi_json'))
+api.add_url_rule('/api/v2/openapi.yaml', endpoint='openapi_yaml', view_func=OpenAPISpecYAML.as_view('openapi_yaml'))
