@@ -97,6 +97,7 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': "invalid"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "error_details": {
             "after_id": {
                 "input": "invalid",
