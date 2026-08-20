@@ -598,17 +598,16 @@ def test_update_location(flask_server, auth, user):
         user_id=user.id,
         type_id=sampledb.logic.locations.LocationType.LOCATION
     )
-
-    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth)
-    assert r.status_code == 403
-
-    sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.WRITE)
+    sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.READ)
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth)
     assert r.status_code == 400
 
     location_json = requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=location_json)
+    assert r.status_code == 403
 
+    sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.WRITE)
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=location_json)
     assert r.status_code == 200
     assert r.json() == requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()

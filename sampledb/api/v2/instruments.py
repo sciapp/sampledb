@@ -5,8 +5,10 @@ RESTful API for SampleDB
 import typing
 
 import flask
+from pydantic import BaseModel, Field
 
 from .authentication import multi_auth
+from .utils.validation import method
 from ..utils import Resource, ResponseData
 from ...logic.instruments import get_instrument, get_instruments
 from ...logic import errors, utils, instruments
@@ -29,26 +31,37 @@ def instrument_to_json(instrument: instruments.Instrument) -> typing.Dict[str, t
 
 
 class Instrument(Resource):
+    class PathModel(BaseModel):
+        instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
+
     @multi_auth.login_required
-    def get(self, instrument_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get an instrument.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         try:
             instrument = get_instrument(
-                instrument_id=instrument_id
+                instrument_id=path.instrument_id
             )
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": f"instrument {instrument_id} does not exist"
+                "message": f"instrument {path.instrument_id} does not exist"
             }, 404
         return instrument_to_json(instrument)
 
 
 class Instruments(Resource):
     @multi_auth.login_required
+    @method()
     def get(self) -> ResponseData:
+        """
+        List all instruments.
+        """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
             return []
         instruments = get_instruments()

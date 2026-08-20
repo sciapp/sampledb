@@ -1,8 +1,10 @@
 import base64
+import functools
 import typing
 from collections.abc import Callable
 from itertools import groupby
 
+import flask
 from pydantic import (AfterValidator, BaseModel, BeforeValidator, Field,
                       TypeAdapter, ValidationError, ValidationInfo,
                       model_validator)
@@ -10,6 +12,7 @@ from pydantic_core import ErrorDetails, PydanticCustomError
 
 from ....logic import errors, users
 from ....logic.utils import parse_url
+from ...utils import Resource, ResponseData, make_json_response
 
 
 class _ErrorDict(typing.TypedDict):
@@ -197,3 +200,97 @@ def _user_exists(value: int) -> int:
 
 
 type UserId = typing.Annotated[int, AfterValidator(_user_exists)]
+
+
+class GenericOperationCallable[R: Resource](typing.Protocol):
+    def __call__(self_, self: R, **kwargs: typing.Any) -> ResponseData:
+        ...
+
+
+R = typing.TypeVar('R', bound=Resource)
+PM = typing.TypeVar('PM', bound=BaseModel)
+QM = typing.TypeVar('QM', bound=BaseModel)
+ReqM = typing.TypeVar('ReqM')  # , bound=BaseModel)
+
+
+def method(
+        *,
+        request_body_context_builder: typing.Optional[typing.Callable[[PM], typing.Any]] = None
+) -> typing.Callable[
+    [
+        typing.Union[
+            typing.Callable[[R], ResponseData],
+            typing.Callable[[R, PM], ResponseData],
+            typing.Callable[[R, PM, ReqM], ResponseData],
+            typing.Callable[[R, PM, QM, ReqM], ResponseData],
+        ]
+    ],
+    GenericOperationCallable[R]
+]:
+    def method_decorator_impl(
+            func: typing.Union[
+                typing.Callable[[R], ResponseData],
+                typing.Callable[[R, PM], ResponseData],
+                typing.Callable[[R, PM, ReqM], ResponseData],
+                typing.Callable[[R, PM, QM, ReqM], ResponseData],
+            ]
+    ) -> GenericOperationCallable[R]:
+        type_hints = typing.get_type_hints(func)
+        path_model: typing.Optional[typing.Type[PM]] = type_hints.get('path')
+        assert path_model is None or issubclass(path_model, BaseModel)
+        query_model: typing.Optional[typing.Type[QM]] = type_hints.get('query')
+        assert query_model is None or issubclass(query_model, BaseModel)
+        request_body_model: typing.Optional[typing.Type[ReqM]] = type_hints.get('request_body')
+        if isinstance(request_body_model, typing.TypeAliasType):
+            request_body_model = request_body_model.__value__
+        # no assert for request_body_model to be BaseModel or None, as various other inputs currently exist, e.g. for permissions
+
+        class KWArgsDict(typing.TypedDict, total=False):
+            path: PM
+            query: QM
+            request_body: ReqM
+
+        @functools.wraps(func)
+        def method_impl(self: R, **kwargs: typing.Any) -> ResponseData:
+            new_kwargs: KWArgsDict = {}
+            try:
+                if path_model is not None:
+                    new_kwargs['path'] = validate(
+                        path_model,
+                        kwargs
+                    )
+                if query_model is not None:
+                    new_kwargs['query'] = validate(
+                        query_model,
+                        {
+                            key: values[0] if len(values) == 1 else values
+                            for key, values in flask.request.args.lists()
+                        }
+                    )
+                if request_body_model is not None:
+                    new_kwargs['request_body'] = validate(
+                        request_body_model,
+                        flask.request.get_json(force=True) if flask.request.content_length else None,
+                        context=request_body_context_builder(new_kwargs['path']) if request_body_context_builder is not None else None
+                    )
+            except ValidatingError as e:
+                # TODO: refactor special error handling for ObjectFiles
+                msg, _, loc = e.message.rpartition(" (")
+                if not msg:
+                    return make_json_response(
+                        e.response[0],
+                        status=e.response[1]
+                    )
+                assert loc.endswith(")")
+                loc = loc[:-1]
+                for prefix in "database.without_preview_image.", "database.with_preview_image.", "local_reference.", "url.":
+                    if loc.startswith(prefix):
+                        e.message = f"{msg} ({loc.removeprefix(prefix)})"
+                        break
+                return make_json_response(
+                    e.response[0],
+                    status=e.response[1]
+                )
+            return func(self, **new_kwargs)  # type: ignore[misc]
+        return method_impl
+    return method_decorator_impl

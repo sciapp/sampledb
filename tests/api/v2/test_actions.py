@@ -130,9 +130,6 @@ def test_get_actions(flask_server, auth, auth_user):
 
 
 def test_post_action(flask_server, auth):
-    r = requests.post(flask_server.base_url + 'api/v2/actions/1', auth=auth)
-    assert r.status_code == 404
-
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema={
@@ -154,13 +151,6 @@ def test_post_action(flask_server, auth):
         description="This is an example action",
     )
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
-    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
-    assert r.status_code == 403
-
-    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
-    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
-    assert r.status_code == 400
-
     r = requests.get(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 200
 
@@ -169,7 +159,18 @@ def test_post_action(flask_server, auth):
     action_data['description'] = 'This is an updated example action'
     action_data['is_hidden'] = True
     action_data['schema']['title'] = 'Updated Example Object'
+
+    r = requests.post(flask_server.base_url + f'api/v2/actions/{action.id + 1}', auth=auth, json=action_data)
+    assert r.status_code == 404
+    assert r.json() == {"msg": f"action {action.id + 1} does not exist"}
+
+    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
+    assert r.status_code == 403
+
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
+    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
+    assert r.status_code == 400
+
     r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
     assert r.status_code == 200
     assert r.json() == {

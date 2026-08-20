@@ -7,7 +7,7 @@ import flask
 from werkzeug.exceptions import HTTPException
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, login_via_oidc_access_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
 from ...logic.users import User
@@ -15,11 +15,7 @@ from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
 from ..utils import Resource, ResponseData
 from ..errors import handle_api_error
-from .utils.validation import validate, ValidatingError
-
-
-class _AccessToken(BaseModel):
-    description: str
+from .utils.validation import method
 
 
 http_basic_auth = HTTPBasicAuth()
@@ -111,8 +107,15 @@ def object_permissions_required(permissions: Permissions) -> typing.Callable[[ty
 
 
 class AccessTokens(Resource):
+    class RequestBodyModel(BaseModel):
+        description: str = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
+
     @multi_auth_for_access_tokens.login_required
-    def post(self) -> ResponseData:
+    @method()
+    def post(self, request_body: typing.Optional[RequestBodyModel]) -> ResponseData:
+        """
+        Create a new access token.
+        """
         refresh_token = getattr(flask.g, 'api_refresh_token', None)
         if refresh_token:
             result = refresh_api_access_token(refresh_token)
@@ -121,9 +124,9 @@ class AccessTokens(Resource):
                     "message": "failed to refresh API token"
                 }, 400
             return result, 201
-        request_json = flask.request.get_json(force=True)
-        try:
-            request_data = validate(_AccessToken, request_json)
-        except ValidatingError as e:
-            return e.response
-        return generate_api_access_token(user_id=flask.g.user.id, description=request_data.description), 201
+        if request_body is None:
+            return {
+                "error": "Bad Request",
+                "message": "neither description nor refresh API token provided"
+            }, 400
+        return generate_api_access_token(user_id=flask.g.user.id, description=request_body.description), 201

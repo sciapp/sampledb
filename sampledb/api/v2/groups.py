@@ -1,16 +1,12 @@
 import typing
 
 import flask
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ...logic import errors, groups
 from ..utils import Resource, ResponseData
 from .authentication import multi_auth
-from .utils.validation import UserId, ValidatingError, validate
-
-
-class _GroupMemberUsers(BaseModel):
-    user_id: UserId
+from .utils.validation import UserId, method
 
 
 def group_to_json(group: groups.Group) -> typing.Dict[str, typing.Any]:
@@ -27,7 +23,11 @@ def group_to_json(group: groups.Group) -> typing.Dict[str, typing.Any]:
 
 class Groups(Resource):
     @multi_auth.login_required
+    @method()
     def get(self) -> ResponseData:
+        """
+        List all basic groups.
+        """
         return [
             group_to_json(group)
             for group in sorted(groups.get_groups(), key=lambda group: group.id)
@@ -35,29 +35,46 @@ class Groups(Resource):
 
 
 class Group(Resource):
+    class PathModel(BaseModel):
+        group_id: int = Field(description="the ID of an existing basic group", examples=[1])
+
     @multi_auth.login_required
-    def get(self, group_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get a basic group.
+        """
         try:
-            group = groups.get_group(group_id=group_id)
+            group = groups.get_group(group_id=path.group_id)
         except errors.GroupDoesNotExistError:
             return {
-                "message": f"group {group_id} does not exist"
+                "message": f"group {path.group_id} does not exist"
             }, 404
         return group_to_json(group)
 
 
 class GroupMemberUsers(Resource):
+    class PathModel(BaseModel):
+        group_id: int = Field(description="the ID of an existing basic group", examples=[1])
+
+    class RequestBodyModel(BaseModel):
+        user_id: UserId = Field(description="the ID of an existing user to add to the basic group", examples=[1])
+
     @multi_auth.login_required
-    def get(self, group_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all member users of a basic group.
+        """
         if not flask.g.user.is_admin:
             return {
                 "message": "Only admins may manage groups"
             }, 403
         try:
-            group_member_ids = groups.get_group_member_ids(group_id)
+            group_member_ids = groups.get_group_member_ids(path.group_id)
         except errors.GroupDoesNotExistError:
             return {
-                "message": f"group {group_id} does not exist"
+                "message": f"group {path.group_id} does not exist"
             }, 404
         return [{
             'user_id': user_id,
@@ -65,7 +82,11 @@ class GroupMemberUsers(Resource):
         } for user_id in sorted(group_member_ids)]
 
     @multi_auth.login_required
-    def post(self, group_id: int) -> ResponseData:
+    @method()
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+        """
+        Add a user to a basic group.
+        """
         if not flask.g.user.is_admin:
             return {
                 "message": "Only admins may manage groups"
@@ -75,49 +96,56 @@ class GroupMemberUsers(Resource):
                 "message": "Read-only users may not manage groups"
             }, 403
         try:
-            group_member_ids = groups.get_group_member_ids(group_id)
+            group_member_ids = groups.get_group_member_ids(path.group_id)
         except errors.GroupDoesNotExistError:
             return {
-                "message": f"group {group_id} does not exist"
+                "message": f"group {path.group_id} does not exist"
             }, 404
-        request_json = flask.request.get_json(force=True)
-        try:
-            request_data = validate(_GroupMemberUsers, request_json)
-        except ValidatingError as err:
-            return err.response
-        user_id = request_data.user_id
+        user_id = request_body.user_id
         if user_id in group_member_ids:
             return {
                 "message": "user is already a member of this group"
             }, 400
-        groups.add_user_to_group(group_id, user_id)
-        return flask.redirect(flask.url_for('.group_member_user', group_id=group_id, user_id=user_id), code=201)
+        groups.add_user_to_group(path.group_id, user_id)
+        return flask.redirect(flask.url_for('.group_member_user', group_id=path.group_id, user_id=user_id), code=201)
 
 
 class GroupMemberUser(Resource):
+    class PathModel(BaseModel):
+        group_id: int = Field(description="the ID of an existing basic group", examples=[1])
+        user_id: int = Field(description="the ID of an existing user", examples=[1])
+
     @multi_auth.login_required
-    def get(self, group_id: int, user_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get a member user of a basic group.
+        """
         if not flask.g.user.is_admin:
             return {
                 "message": "Only admins may manage groups"
             }, 403
         try:
-            group_member_ids = groups.get_group_member_ids(group_id)
+            group_member_ids = groups.get_group_member_ids(path.group_id)
         except errors.GroupDoesNotExistError:
             return {
-                "message": f"group {group_id} does not exist"
+                "message": f"group {path.group_id} does not exist"
             }, 404
-        if user_id not in group_member_ids:
+        if path.user_id not in group_member_ids:
             return {
                 "message": "user is not a member of this group"
             }, 404
         return {
-            'user_id': user_id,
-            'href': flask.url_for('.user', user_id=user_id, _external=True),
+            'user_id': path.user_id,
+            'href': flask.url_for('.user', user_id=path.user_id, _external=True),
         }
 
     @multi_auth.login_required
-    def delete(self, group_id: int, user_id: int) -> ResponseData:
+    @method()
+    def delete(self, path: PathModel) -> ResponseData:
+        """
+        Remove a user from a basic group.
+        """
         if not flask.g.user.is_admin:
             return {
                 "message": "Only admins may manage groups"
@@ -127,16 +155,16 @@ class GroupMemberUser(Resource):
                 "message": "Read-only users may not manage groups"
             }, 403
         try:
-            group_member_ids = groups.get_group_member_ids(group_id)
+            group_member_ids = groups.get_group_member_ids(path.group_id)
         except errors.GroupDoesNotExistError:
             return {
-                "message": f"group {group_id} does not exist"
+                "message": f"group {path.group_id} does not exist"
             }, 404
-        if user_id not in group_member_ids:
+        if path.user_id not in group_member_ids:
             return {
                 "message": "user is not a member of this group"
             }, 404
-        groups.remove_user_from_group(group_id, user_id)
+        groups.remove_user_from_group(path.group_id, path.user_id)
         return {
-            "message": f"user {user_id} has been removed from group {group_id}"
+            "message": f"user {path.user_id} has been removed from group {path.group_id}"
         }, 200

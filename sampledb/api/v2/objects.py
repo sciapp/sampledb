@@ -25,93 +25,30 @@ from ...utils import text_to_bool
 from ..utils import Resource, ResponseData
 from .actions import action_to_json
 from .users import user_to_json
-from .utils.validation import (ModelWithDefaultsFromValidationInfo,
-                               OptionalNotNone, ValidatingError,
-                               populate_missing_or_expect_from_validation_info,
-                               validate)
-
-
-@dataclass(frozen=True, slots=True)
-class _ValidationContext:
-    object: models.Object
-
-
-class _ObjectVersion(ModelWithDefaultsFromValidationInfo):
-    object_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.object_id)]
-    fed_object_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_object_id)]
-    fed_version_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_version_id)]
-    component_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.component_id)]
-    version_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.version_id + 1)]
-    action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.action_id)]
-    action_schema: typing.Annotated[
-        OptionalNotNone[typing.Dict[str, typing.Any]],
-        Field(validation_alias="schema"),
-    ]
-    data: OptionalNotNone[typing.Dict[str, typing.Any]]
-    data_diff: OptionalNotNone[typing.Dict[str, typing.Any]]
-
-    @cached_property
-    def action(self) -> Action:
-        try:
-            return get_action(action_id=self.action_id)
-        except errors.ActionDoesNotExistError:
-            raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
-
-    @model_validator(mode="after")
-    def check_action_and_schema(self, info: ValidationInfo[_ValidationContext]) -> typing.Self:
-        if self.action_schema not in (None, info.context.object.schema, self.action.schema):
-            raise PydanticCustomError(
-                "unexpected",
-                f"Schema should be {json.dumps(info.context.object.schema, indent=4)} or {json.dumps(self.action.schema, indent=4)}",
-                {"expected": self.action.schema},
-            )
-        return self
-
-    @model_validator(mode="after")
-    def check_data_specified(self) -> typing.Self:
-        if (self.data, self.data_diff) == (None, None):
-            raise PydanticCustomError("missing", "At least one required: data, data_diff")
-        return self
-
-
-class _Object(BaseModel):
-    fed_object_id: None = None
-    fed_version_id: None = None
-    component_id: None = None
-    version_id: typing.Literal[0] = 0
-    action_id: typing.Annotated[int, Strict()]
-    action_schema: typing.Annotated[
-        OptionalNotNone[typing.Dict[str, typing.Any]],
-        Field(validation_alias="schema"),
-    ]
-    data: typing.Dict[str, typing.Any]
-
-    @cached_property
-    def action(self) -> Action:
-        try:
-            return get_action(action_id=self.action_id)
-        except errors.ActionDoesNotExistError:
-            raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
-
-    @model_validator(mode="after")
-    def check_action_and_schema(self) -> typing.Self:
-        if self.action_schema not in (None, self.action.schema):
-            raise PydanticCustomError(
-                "unexpected",
-                f"Schema should be {json.dumps(self.action.schema, indent=4)}",
-                {"expected": self.action.schema},
-            )
-        return self
+from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, method
 
 
 class ObjectVersion(Resource):
+    class PathModel(BaseModel):
+        object_id: int = Field(description="the ID of an existing object", examples=[1])
+        version_id: int = Field(description="the ID of an existing object version", examples=[0])
+
+    class QueryModel(BaseModel):
+        embed_action: bool = Field(False, description="whether to embed the action in the response", examples=[False])
+        embed_user: bool = Field(False, description="whether to embed the user in the response", examples=[False])
+        include_diff: bool = Field(False, description="whether to include the diff to the previous version in the response", examples=[False])
+
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, version_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel, query: QueryModel) -> ResponseData:
+        """
+        Get an object version.
+        """
         try:
-            object = get_object(object_id=object_id, version_id=version_id)
+            object = get_object(object_id=path.object_id, version_id=path.version_id)
         except errors.ObjectVersionDoesNotExistError:
             return {
-                "message": f"version {version_id} of object {object_id} does not exist"
+                "message": f"version {path.version_id} of object {path.object_id} does not exist"
             }, 404
         object_version_json: typing.Dict[str, typing.Any] = {
             'object_id': object.object_id,
@@ -125,8 +62,7 @@ class ObjectVersion(Resource):
             'fed_version_id': object.fed_version_id,
             'component_id': object.component_id
         }
-        embed_action = bool(flask.request.args.get('embed_action'))
-        if embed_action:
+        if query.embed_action:
             object_version_json['action'] = None
             if object.action_id is not None:
                 try:
@@ -137,8 +73,7 @@ class ObjectVersion(Resource):
                         object_version_json['action'] = action_to_json(action)
                 except errors.ActionDoesNotExistError:
                     pass
-        embed_user = bool(flask.request.args.get('embed_user'))
-        if embed_user:
+        if query.embed_user:
             object_version_json['user'] = None
             if object.user_id is not None:
                 try:
@@ -146,8 +81,7 @@ class ObjectVersion(Resource):
                     object_version_json['user'] = user_to_json(user)
                 except errors.UserDoesNotExistError:
                     pass
-        include_diff = text_to_bool(flask.request.args.get('include_diff', ''))
-        if include_diff and object.version_id > 0:
+        if query.include_diff and object.version_id > 0:
             previous_object_version = get_object(object_id=object.object_id, version_id=object.version_id - 1)
             data_diff = calculate_diff(previous_object_version.data, object.data)
             object_version_json['data_diff'] = data_diff
@@ -155,22 +89,107 @@ class ObjectVersion(Resource):
 
 
 class ObjectVersions(Resource):
+    class PathModel(BaseModel):
+        object_id: int = Field(description="the ID of an existing object", examples=[1])
+
+    @dataclass(frozen=True, slots=True)
+    class ValidationContext:
+        object: models.Object
+
+        @classmethod
+        def from_path(cls, path: ObjectVersions.PathModel) -> typing.Self:
+            return cls(
+                object=get_object(object_id=path.object_id)
+            )
+
+    class RequestBodyModel(ModelWithDefaultsFromValidationInfo):
+        object_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.object_id)] = Field(description="the ID of the object to update, must match the object_id path parameter", examples=[1])
+        fed_object_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_object_id)] = Field(description="the federated object ID of the object to update, must match its current fed_object_id", examples=[1])
+        fed_version_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_version_id)] = Field(description="the federated version ID of the object to update, must match its current fed_object_id", examples=[1])
+        component_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.component_id)] = Field(description="the federation component ID of the object to update, must match its current component_id", examples=[1])
+        version_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.version_id + 1)] = Field(description="the ID of the new object version to create, must match its current version_id + 1", examples=[1])
+        action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.action_id)] = Field(description="the action ID of the object to update, must match its current action_id", examples=[1])
+        action_schema: typing.Annotated[
+            OptionalNotNone[typing.Dict[str, typing.Any]],
+            Field(
+                validation_alias="schema",
+                description="the schema for the object, must be the same as its current schema or the schema of the action used",
+                examples=[{
+                    "type": "object",
+                    "title": {"en": "Object Information"},
+                    "properties": {
+                        "name": {
+                            "type": "text",
+                            "title": {"en": "Name"}
+                        },
+                    },
+                    "required": ["name"]
+                }]
+            ),
+        ]
+        data: OptionalNotNone[typing.Dict[str, typing.Any]] = Field(
+            description="the data for the object",
+            examples=[{
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "New Object Version"}
+                }
+            }]
+        )
+        data_diff: OptionalNotNone[typing.Dict[str, typing.Any]] = Field(
+            description="the data diff between the previous object version and the one to create",
+            examples=[{
+                "name": {
+                    "_before": {
+                        "_type": "text",
+                        "text": {"en": "Example Object"}
+                    },
+                    "_after": {
+                        "_type": "text",
+                        "text": {"en": "New Object Version"}
+                    }
+                }
+            }]
+        )
+
+        @cached_property
+        def action(self) -> Action:
+            try:
+                return get_action(action_id=self.action_id)
+            except errors.ActionDoesNotExistError:
+                raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
+
+        @model_validator(mode="after")
+        def check_action_and_schema(self, info: ValidationInfo[ObjectVersions.ValidationContext]) -> typing.Self:
+            if self.action_schema not in (None, info.context.object.schema, self.action.schema):
+                raise PydanticCustomError(
+                    "unexpected",
+                    f"Schema should be {json.dumps(info.context.object.schema, indent=4)} or {json.dumps(self.action.schema, indent=4)}",
+                    {"expected": self.action.schema},
+                )
+            return self
+
+        @model_validator(mode="after")
+        def check_data_specified(self) -> typing.Self:
+            if (self.data, self.data_diff) == (None, None):
+                raise PydanticCustomError("missing", "At least one required: data, data_diff")
+            return self
+
     @object_permissions_required(Permissions.WRITE)
-    def post(self, object_id: int) -> ResponseData:
-        request_json = flask.request.get_json(force=True)
-        object = get_object(object_id=object_id)
+    @method(request_body_context_builder=ValidationContext.from_path)
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+        """
+        Create a new object version.
+        """
+        object = get_object(object_id=path.object_id)
         if object.action_id is None:
             return {
                 "message": "editing this object is not supported"
             }, 400
-        try:
-            request_data = validate(_ObjectVersion, request_json, context=_ValidationContext(object))
-        except ValidatingError as e:
-            return e.response
-        schema = object.schema if request_data.action_schema is None else request_data.action_schema
+        schema = object.schema if request_body.action_schema is None else request_body.action_schema
 
-        data = request_data.data
-        data_diff = request_data.data_diff
+        data = request_body.data
+        data_diff = request_body.data_diff
         try:
             if data_diff is not None:
                 if object.data is None or object.schema is None:
@@ -218,9 +237,16 @@ class ObjectVersions(Resource):
 
 
 class Object(Resource):
+    class PathModel(BaseModel):
+        object_id: int = Field(description="the ID of an existing object", examples=[1])
+
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int) -> ResponseData:
-        object = get_object(object_id=object_id)
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get an object.
+        """
+        object = get_object(object_id=path.object_id)
         object_version_url = flask.url_for(
             '.object_version',
             object_id=object.object_id,
@@ -265,33 +291,85 @@ def _int_in_range(value: str, lo: int, hi: int) -> int | None:
     return v if lo <= v < hi else None
 
 
-class _ObjectsQuery(BaseModel):
-    action_id: typing.Annotated[int, AfterValidator(_action_exists)] | None = None
-    action_type_id: typing.Annotated[
-        typing.Annotated[int, BeforeValidator(_action_type_id)] | None,
-        Field(validation_alias=AliasChoices("action_type_id", "action_type")),
-    ] = None
-    object_ids: typing.Annotated[
-        typing.List[int],
-        BeforeValidator(lambda value: [int(ss) for s in value for ss in s.split(",")]),
-    ] | None = None
-    related_user_id: int | None = None
-    limit: typing.Annotated[int | None, BeforeValidator(lambda value: _int_in_range(value, 1, 1e15))] = None
-    offset: typing.Annotated[int | None, BeforeValidator(lambda value: _int_in_range(value, 0, 1e15))] = None
-    name_only: typing.Annotated[bool, BeforeValidator(text_to_bool)] = False
-    query_string: typing.Annotated[str | None, Field(validation_alias="q")] = None
-    use_advanced_search: typing.Annotated[bool, BeforeValidator(text_to_bool)] = True
-    get_referencing_objects: typing.Annotated[bool, BeforeValidator(text_to_bool)] = False
-
-
 class Objects(Resource):
+    class RequestBodyModel(BaseModel):
+        fed_object_id: None = Field(None, description="the federated object ID of the object, must be None", examples=[None])
+        fed_version_id: None = Field(None, description="the federated version ID of the object, must be None", examples=[None])
+        component_id: None = Field(None, description="the federation component ID of the object, must be None", examples=[None])
+        version_id: typing.Literal[0] = Field(0, description="the version ID of the object, must be 0", examples=[0])
+        action_id: typing.Annotated[int, Strict()] = Field(description="the ID of an existing action to create the object with", examples=[1])
+        action_schema: typing.Annotated[
+            OptionalNotNone[typing.Dict[str, typing.Any]],
+            Field(
+                validation_alias="schema",
+                description="the schema for the object, must be the same as the schema of the action used",
+                examples=[{
+                    "type": "object",
+                    "title": {"en": "Object Information"},
+                    "properties": {
+                        "name": {
+                            "type": "text",
+                            "title": {"en": "Name"}
+                        },
+                    },
+                    "required": ["name"]
+                }]
+            ),
+        ]
+        data: typing.Dict[str, typing.Any] = Field(
+            description="the data for the object",
+            examples=[{
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "Example Object"}
+                }
+            }]
+        )
+
+        @cached_property
+        def action(self) -> Action:
+            try:
+                return get_action(action_id=self.action_id)
+            except errors.ActionDoesNotExistError:
+                raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
+
+        @model_validator(mode="after")
+        def check_action_and_schema(self) -> typing.Self:
+            if self.action_schema not in (None, self.action.schema):
+                raise PydanticCustomError(
+                    "unexpected",
+                    f"Schema should be {json.dumps(self.action.schema, indent=4)}",
+                    {"expected": self.action.schema},
+                )
+            return self
+
+    class QueryModel(BaseModel):
+        action_id: typing.Annotated[int, AfterValidator(_action_exists)] | None = Field(None, description="the ID of an existing action — filter for objects created with this action", examples=[1])
+        action_type_id: typing.Annotated[
+            typing.Annotated[int, BeforeValidator(_action_type_id)] | None,
+            Field(validation_alias=AliasChoices("action_type_id", "action_type")),
+        ] = Field(None, description="the ID of an existing action type — filter for objects created with actions of this type", examples=[1])
+        object_ids: typing.Annotated[
+            typing.List[int],
+            BeforeValidator(lambda value: [int(ss) for s in (value if isinstance(value, list) else [value]) for ss in s.split(",")]),
+        ] | None = Field(None, description="a list of objects IDs  — filter for objects created with any of these IDs", examples=[[1, 2, 3]])
+        related_user_id: int | None = Field(None, description="the ID of an existing user — filter for objects related to this user", examples=[1])
+        limit: typing.Annotated[int | None, BeforeValidator(lambda value: _int_in_range(value, 1, 1e15))] = Field(None, description="an upper limit for the number of objects to return", examples=[1])
+        offset: typing.Annotated[int | None, BeforeValidator(lambda value: _int_in_range(value, 0, 1e15))] = Field(None, description="an offset for returned objects when also using `limit`", examples=[1])
+        name_only: typing.Annotated[bool, BeforeValidator(text_to_bool)] = Field(False, description="whether to reduce data and schema to the object name", examples=[False])
+        query_string: typing.Annotated[str | None, Field(validation_alias="q")] = Field(None, description="a query string for the object search", examples=["name == \"Object-1\""])
+        use_advanced_search: typing.Annotated[bool, BeforeValidator(text_to_bool)] = Field(True, description="whether to use the advanced search when also using `q`", examples=[True])
+        get_referencing_objects: typing.Annotated[bool, BeforeValidator(text_to_bool)] = Field(False, description="whether to include referencing objects in the response", examples=[False])
+
     @multi_auth.login_required
-    def get(self) -> ResponseData:
-        args_dict = {k: vs if k == "object_ids" else vs[0] for k, vs in flask.request.args.lists()}
-        try:
-            args = validate(_ObjectsQuery, args_dict)
-        except ValidatingError as e:
-            return e.response
+    @method()
+    def get(self, query: QueryModel) -> ResponseData:
+        """
+        List all (or some) objects.
+
+        Get a list of all objects matching the query parameters.
+        """
+        args = query
         if args.related_user_id is None:
             object_ids = None if args.object_ids is None else set(args.object_ids)
         else:
@@ -389,25 +467,24 @@ class Objects(Resource):
             ], 200
 
     @multi_auth.login_required
-    def post(self) -> ResponseData:
+    @method()
+    def post(self, request_body: RequestBodyModel) -> ResponseData:
+        """
+        Create a new object.
+        """
         if flask.g.user.is_readonly:
             return {
                 'message': 'user has been marked as read only'
             }, 400
-        request_json = flask.request.get_json(force=True)
-        try:
-            request_data = validate(_Object, request_json)
-        except ValidatingError as e:
-            return e.response
-        action = request_data.action
+        action = request_body.action
         if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
             return {
-                "message": f"creating objects with action {request_data.action_id} is disabled"
+                "message": f"creating objects with action {request_body.action_id} is disabled"
             }, 400
         try:
             object = create_object(
-                action_id=request_data.action_id,
-                data=request_data.data,
+                action_id=request_body.action_id,
+                data=request_body.data,
                 user_id=flask.g.user.id,
                 schema=action.schema,
             )
@@ -431,10 +508,17 @@ class Objects(Resource):
 
 
 class RelatedObjects(Resource):
+    class PathModel(BaseModel):
+        object_id: int = Field(description="the ID of an existing object", examples=[1])
+
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List references to related objects.
+        """
         referencing_object_ids, referenced_object_ids = get_related_object_ids(
-            object_id=object_id,
+            object_id=path.object_id,
             include_referencing_objects=True,
             include_referenced_objects=True,
             user_id=flask.g.user.id
