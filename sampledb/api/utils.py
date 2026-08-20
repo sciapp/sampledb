@@ -5,9 +5,9 @@ import typing
 
 import cherrypy
 import flask
-from flask.views import MethodView
 import werkzeug
 import werkzeug.exceptions
+from flask.views import MethodView
 
 
 ResponseContent = typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.Dict[int, typing.Any], typing.List[typing.Any], str, bool, int]]
@@ -57,7 +57,7 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
                         headers=headers
                     )
                 else:
-                    response = _make_json_response(
+                    response = make_json_response(
                         message,
                         status=status,
                         headers=headers
@@ -66,7 +66,7 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
             raise
         except Exception as e:
             cherrypy.log(''.join(traceback.format_exception(e)))
-            response = _make_json_response(
+            response = make_json_response(
                 obj={'message': 'Internal Server Error'},
                 status=500
             )
@@ -74,7 +74,7 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
     return decorator
 
 
-def _make_json_response(
+def make_json_response(
         obj: typing.Any,
         status: int = 200,
         headers: typing.Optional[typing.Dict[str, typing.Any]] = None
@@ -99,7 +99,7 @@ def _make_json_response(
 
 
 def _on_json_loading_failed_replacement(_e: Exception) -> typing.NoReturn:
-    flask.abort(_make_json_response(
+    flask.abort(make_json_response(
         obj={'message': 'Failed to decode JSON object'},
         status=400
     ))

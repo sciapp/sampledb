@@ -5,6 +5,7 @@ RESTful API for SampleDB
 
 from flask import Blueprint
 from flask_cors import CORS
+
 from .objects import Object, Objects, ObjectVersion, ObjectVersions, RelatedObjects
 from .actions import Action, Actions
 from .action_types import ActionType, ActionTypes

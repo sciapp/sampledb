@@ -17,20 +17,11 @@ from ...logic.objects import get_object
 from ...models import Object, Permissions
 from ..utils import Resource, ResponseData
 from .authentication import object_permissions_required
-from .utils.validation import (Base64Encoded, HexString, NonEmptyString,
-                               OptionalNotNone, Url, ValidatingError,
-                               is_expected_from_validation_info, is_valid,
-                               validate)
-
-
-@dataclass(frozen=True, slots=True)
-class _ValidationContext:
-    object: Object
-    supported_mime_types: frozenset[str]
+from .utils.validation import Base64Encoded, HexString, NonEmptyString, OptionalNotNone, Url, is_expected_from_validation_info, is_valid, method
 
 
 class _Hash(BaseModel):
-    hexdigest: HexString
+    hexdigest: HexString = Field(description="the hexadecimal representation of the hash", examples=["ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff"])
     algorithm: typing.Annotated[
         str,
         is_valid(
@@ -41,7 +32,7 @@ class _Hash(BaseModel):
                 {"allowed": SUPPORTED_HASH_ALGORITHMS},
             ),
         ),
-    ]
+    ] = Field(description="the hash algorithm used", examples=["sha512"])
 
 
 class _BaseFile(BaseModel):
@@ -49,7 +40,7 @@ class _BaseFile(BaseModel):
         typing.Optional[int],
         Strict(),
         is_expected_from_validation_info(lambda info: info.context.object.object_id, allow_none=True),
-    ] = None
+    ] = Field(None, description="the ID of an existing object", examples=[1])
 
 
 # pyflakes doesn't like string literals in type annotations that don't correspond to a Python identifier
@@ -58,13 +49,13 @@ _base64_preview_image = "base64_preview_image"
 
 
 class _DatabaseFile(_BaseFile):
-    storage: typing.Literal["database"]
-    original_file_name: NonEmptyString
+    storage: typing.Literal["database"] = Field(description="the storage type for the file", examples=["database"])
+    original_file_name: NonEmptyString = Field(description="the name of the file", examples=["example.txt"])
     if typing.TYPE_CHECKING:
         content: bytes
     else:
-        content: Base64Encoded(_base64_content)
-    hash: OptionalNotNone[_Hash]
+        content: Base64Encoded(_base64_content) = Field(description="the base64 encoded content of the file", examples=["ZXhhbXBsZQ=="])
+    hash: OptionalNotNone[_Hash] = Field(description="optional hash information for the file", examples=[{"hexdigest": "ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff", "algorithm": "sha512"}])
 
     @cached_property
     def hash_info(self) -> File.HashInfo:
@@ -91,7 +82,7 @@ class _DatabaseFileWithPreview(_DatabaseFile):
     if typing.TYPE_CHECKING:
         preview_image_binary_data: bytes
     else:
-        preview_image_binary_data: Base64Encoded(_base64_preview_image)
+        preview_image_binary_data: Base64Encoded(_base64_preview_image) = Field(description="the base64 encoded preview image for the file", examples=["iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8////fwY8gAmf5PBRAAAbbgQMid1tCwAAAABJRU5ErkJggg=="])
     preview_image_mime_type: typing.Annotated[
         str,
         AfterValidator(lambda value: value.lower()),
@@ -103,18 +94,18 @@ class _DatabaseFileWithPreview(_DatabaseFile):
                 {"allowed": i.context.supported_mime_types},
             ),
         ),
-    ] = ""
+    ] = Field("", description="the MIME type for the file preview image", examples=["image/png"])
 
 
 class _LocalReferenceFile(_BaseFile):
-    storage: typing.Literal["local_reference"]
-    filepath: NonEmptyString
-    hash: OptionalNotNone[_Hash]
+    storage: typing.Literal["local_reference"] = Field(description="the storage type for the file", examples=["local_reference"])
+    filepath: NonEmptyString = Field(description="the local path for the file", examples=["local_reference"])
+    hash: OptionalNotNone[_Hash] = Field(description="optional hash information for the file", examples=[{"hexdigest": "ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff", "algorithm": "sha512"}])
 
 
 class _UrlFile(_BaseFile):
-    storage: typing.Literal["url"]
-    url: Url
+    storage: typing.Literal["url"] = Field(description="the storage type for the file", examples=["url"])
+    url: Url = Field(description="the URL for the file", examples=["https://example.com"])
 
 
 type _DatabaseFileUnion = typing.Annotated[_DatabaseFile, Tag("without_preview_image")] | typing.Annotated[_DatabaseFileWithPreview, Tag("with_preview_image")]
@@ -153,73 +144,79 @@ def file_info_to_json(file_info: File, include_content: bool = True) -> typing.D
 
 
 class ObjectFile(Resource):
+    class PathModel(BaseModel):
+        object_id: int = Field(description="the ID of an existing object", examples=[1])
+        file_id: int = Field(description="the ID of an existing file for this object", examples=[1])
+
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, file_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        Get an object file.
+        """
         try:
-            file_info = get_file_for_object(object_id=object_id, file_id=file_id)
+            file_info = get_file_for_object(object_id=path.object_id, file_id=path.file_id)
             if file_info is None:
                 raise errors.FileDoesNotExistError()
         except errors.FileDoesNotExistError:
             return {
-                "message": f"file {file_id} of object {object_id} does not exist"
+                "message": f"file {path.file_id} of object {path.object_id} does not exist"
             }, 404
         if file_info.is_hidden:
             return {
-                "message": f"file {file_id} of object {object_id} has been hidden"
+                "message": f"file {path.file_id} of object {path.object_id} has been hidden"
             }, 403
         return file_info_to_json(file_info)
 
 
 class ObjectFiles(Resource):
+    class PathModel(BaseModel):
+        object_id: int = Field(description="the ID of an existing object", examples=[1])
+
+    @dataclass(frozen=True, slots=True)
+    class ValidationContext:
+        object: Object
+        supported_mime_types: frozenset[str]
+
+        @classmethod
+        def from_path(cls, path: ObjectFiles.PathModel) -> typing.Self:
+            return cls(
+                object=get_object(object_id=path.object_id),
+                supported_mime_types=frozenset(flask.current_app.config["MIME_TYPES"].values()),
+            )
+
     @object_permissions_required(Permissions.WRITE)
-    def post(self, object_id: int) -> ResponseData:
-        request_json = flask.request.get_json(force=True)
-        object = get_object(object_id=object_id)
+    @method(request_body_context_builder=ValidationContext.from_path)
+    def post(self, path: PathModel, request_body: _File) -> ResponseData:
+        """
+        Create a new file for an object.
+        """
+        object = get_object(object_id=path.object_id)
         if object.action_id is not None:
             action = get_action(action_id=object.action_id)
             if action.type is None or not action.type.enable_files:
                 return {
                     "message": "Adding files is not enabled for objects of this type"
                 }, 403
-        try:
-            request_data: _File = validate(
-                _File,
-                request_json,
-                context=_ValidationContext(
-                    object,
-                    frozenset(flask.current_app.config["MIME_TYPES"].values()),
-                ),
-            )
-        except ValidatingError as e:
-            msg, _, loc = e.message.rpartition(" (")
-            if not msg:
-                return e.response
-            assert loc.endswith(")")
-            loc = loc[:-1]
-            for prefix in "database.without_preview_image.", "database.with_preview_image.", "local_reference.", "url.":
-                if loc.startswith(prefix):
-                    e.message = f"{msg} ({loc.removeprefix(prefix)})"
-                    break
-            return e.response
-        if request_data.storage == "database":
+        if request_body.storage == "database":
             file = create_database_file(
-                object_id=object_id,
+                object_id=path.object_id,
                 user_id=flask.g.user.id,
-                file_name=request_data.original_file_name,
-                save_content=lambda stream: typing.cast(None, stream.write(request_data.content)),
-                hash=request_data.hash_info,
-                preview_image_binary_data=getattr(request_data, "preview_image_binary_data", None),
-                preview_image_mime_type=getattr(request_data, "preview_image_mime_type", None)
+                file_name=request_body.original_file_name,
+                save_content=lambda stream: typing.cast(None, stream.write(request_body.content)),
+                hash=request_body.hash_info,
+                preview_image_binary_data=getattr(request_body, "preview_image_binary_data", None),
+                preview_image_mime_type=getattr(request_body, "preview_image_mime_type", None)
             )
-        elif request_data.storage == "local_reference":
+        elif request_body.storage == "local_reference":
             try:
                 file = create_local_file_reference(
-                    object_id=object_id,
+                    object_id=path.object_id,
                     user_id=flask.g.user.id,
-                    filepath=request_data.filepath,
-                    hash=None if request_data.hash is None else File.HashInfo(
-                        algorithm=request_data.hash.algorithm,
-                        hexdigest=request_data.hash.hexdigest,
+                    filepath=request_body.filepath,
+                    hash=None if request_body.hash is None else File.HashInfo(
+                        algorithm=request_body.hash.algorithm,
+                        hexdigest=request_body.hash.hexdigest,
                     ),
                 )
             except errors.UnauthorizedRequestError:
@@ -227,11 +224,11 @@ class ObjectFiles(Resource):
                     "message": "user not authorized to add this path"
                 }, 403
         else:
-            assert request_data.storage == "url"
+            assert request_body.storage == "url"
             file = create_url_file(
-                object_id=object_id,
+                object_id=path.object_id,
                 user_id=flask.g.user.id,
-                url=request_data.url,
+                url=request_body.url,
             )
         file_url = flask.url_for(
             '.object_file',
@@ -242,9 +239,13 @@ class ObjectFiles(Resource):
         return flask.redirect(file_url, code=201)
 
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int) -> ResponseData:
+    @method()
+    def get(self, path: PathModel) -> ResponseData:
+        """
+        List all files for an object.
+        """
         return [
             file_info_to_json(file_info, include_content=False)
-            for file_info in get_files_for_object(object_id)
+            for file_info in get_files_for_object(path.object_id)
             if not file_info.is_hidden
         ]

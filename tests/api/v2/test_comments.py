@@ -193,4 +193,3 @@ def test_get_comments(flask_server, object, auth, user):
             'content': content
         }
     ]
-

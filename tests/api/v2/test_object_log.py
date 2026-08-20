@@ -94,6 +94,17 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     assert local_entry.user_id == entries[0]['user_id']
     assert local_entry.data == entries[0]['data']
     assert local_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') == entries[0]['utc_datetime']
+    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': "invalid"}, auth=auth)
+    assert r.status_code == 400
+    assert r.json() == {
+        "error_details": {
+            "after_id": {
+                "input": "invalid",
+                "msg": "Input should be a valid integer, unable to parse string as an integer",
+           },
+       },
+       "message": "Input should be a valid integer, unable to parse string as an integer (after_id)",
+    }
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': local_entry.id}, auth=auth)
     entries = r.json()
     assert entries == []  # There is no object log_entry > 1
