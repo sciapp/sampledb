@@ -8,27 +8,38 @@ import flask
 from pydantic import BaseModel, Field
 
 from .authentication import multi_auth
-from ..utils import Resource, ResponseData
+from ..utils import Resource
 from ...logic import errors, users
 from .utils.validation import method
+from .utils.responses import NotFoundErrorModel
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def user_to_json(user: users.User) -> typing.Dict[str, typing.Any]:
-    user_json = {
-        'user_id': user.id,
-        'name': user.name,
-        'orcid': user.orcid if user.orcid else None,
-        'affiliation': user.affiliation if user.affiliation else None,
-        'role': user.role if user.role else None
-    }
-    if flask.g.user.is_admin:
-        user_json['email'] = user.email
-        user_json['is_hidden'] = user.is_hidden
-        user_json['is_active'] = user.is_active
-        user_json['is_readonly'] = user.is_readonly
-    return user_json
+class UserModel(BaseModel):
+    user_id: int = Field(description="the ID of the user", examples=[1])
+    name: typing.Optional[str] = Field(description="the name of the user", examples=["Example User"])
+    orcid: typing.Optional[str] = Field(description="the ORCID iD of the user", examples=["0000-0001-2345-6789"])
+    affiliation: typing.Optional[str] = Field(description="the affiliation of the user", examples=["Example Institute"])
+    role: typing.Optional[str] = Field(description="the role of the user", examples=["Researcher"])
+    email: typing.Optional[str] = Field(None, description="the email address of the user, only set when queried by administrators", examples=["user@example.com"])
+    is_hidden: typing.Optional[bool] = Field(None, description="whether the user is hidden from user lists, only set when queried by administrators", examples=[False])
+    is_active: typing.Optional[bool] = Field(None, description="whether the user is active, only set when queried by administrators", examples=[True])
+    is_readonly: typing.Optional[bool] = Field(None, description="whether the user is readonly, only set when queried by administrators", examples=[False])
+
+    @classmethod
+    def from_user(cls, user: users.User) -> typing.Self:
+        return cls(
+            user_id=user.id,
+            name=user.name,
+            orcid=user.orcid,
+            affiliation=user.affiliation,
+            role=user.role,
+            email=user.email if flask.g.user.is_admin else None,
+            is_hidden=user.is_hidden if flask.g.user.is_admin else None,
+            is_active=user.is_active if flask.g.user.is_admin else None,
+            is_readonly=user.is_readonly if flask.g.user.is_admin else None,
+        )
 
 
 class User(Resource):
@@ -37,27 +48,28 @@ class User(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> UserModel | NotFoundErrorModel:
         """
         Get a user.
         """
         try:
             user = users.get_user(user_id=path.user_id)
         except errors.UserDoesNotExistError:
-            return {
-                "message": f"user {path.user_id} does not exist"
-            }, 404
-        return user_to_json(user)
+            return NotFoundErrorModel(
+                error="NotFound",
+                message=f"user {path.user_id} does not exist",
+            )
+        return UserModel.from_user(user)
 
 
 class CurrentUser(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> ResponseData:
+    def get(self) -> UserModel:
         """
         Get the currently authenticated user.
         """
-        return user_to_json(flask.g.user)
+        return UserModel.from_user(flask.g.user)
 
 
 class Users(Resource):
@@ -68,7 +80,7 @@ class Users(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> ResponseData:
+    def get(self, query: QueryModel) -> typing.List[UserModel]:
         """
         List all users.
         """
@@ -87,6 +99,6 @@ class Users(Resource):
                     if getattr(user, filter_attr) == filter_value
                 ]
         return [
-            user_to_json(user)
+            UserModel.from_user(user)
             for user in filtered_users
         ]

@@ -67,6 +67,7 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be an object",
         "error_details": {
             "msg": "Input should be an object",
@@ -82,6 +83,7 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": f"Input should be {object.object_id} (object_id)",
         "error_details": {
             "database": {
@@ -119,6 +121,7 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Unable to extract tag using discriminator 'storage'",
         "error_details": {
             "msg": "Unable to extract tag using discriminator 'storage'",
@@ -132,6 +135,7 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
         "error_details": {
             "msg": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
@@ -169,6 +173,7 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Field required (url)",
         "error_details": {
             "url": {
@@ -187,6 +192,7 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Field required (url)",
         "error_details": {"url": {"url": {"msg": "Field required"}}},
     }
@@ -198,6 +204,7 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "String should be a valid URL (url)",
         "error_details": {
             "url": {
@@ -444,7 +451,10 @@ def test_get_files(flask_server, object, auth, user):
             'hash': {
                 'algorithm': 'sha256',
                 'hexdigest': '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
-            }
+            },
+            'base64_content': None,
+            'base64_preview_image': None,
+            'preview_image_mime_type': None,
         }
     ]
 
@@ -465,6 +475,7 @@ def test_get_hidden_file(flask_server, object, auth, user):
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 403
     assert r.json() == {
+        "error": "Forbidden",
         "message": "file {} of object {} has been hidden".format(0, object.object_id)
     }
 
@@ -473,6 +484,7 @@ def test_get_nonexistent_file(flask_server, object, auth, user):
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 404
     assert r.json() == {
+        "error": "Not Found",
         "message": "file {} of object {} does not exist".format(0, object.object_id)
     }
 

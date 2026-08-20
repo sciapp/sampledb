@@ -15,9 +15,10 @@ from ...logic.files import (DEFAULT_HASH_ALGORITHM, SUPPORTED_HASH_ALGORITHMS,
                             get_file_for_object, get_files_for_object)
 from ...logic.objects import get_object
 from ...models import Object, Permissions
-from ..utils import Resource, ResponseData
+from ..utils import Resource
 from .authentication import object_permissions_required
-from .utils.validation import Base64Encoded, HexString, NonEmptyString, OptionalNotNone, Url, is_expected_from_validation_info, is_valid, method
+from .utils.validation import Base64Encoded, HexString, NonEmptyString, OptionalNotNone, Url, is_expected_from_validation_info, is_valid, method, generate_example
+from .utils.responses import ForbiddenErrorModel, NotFoundErrorModel, CreatedResponseModel, ReturnValue
 
 
 class _Hash(BaseModel):
@@ -55,7 +56,7 @@ class _DatabaseFile(_BaseFile):
         content: bytes
     else:
         content: Base64Encoded(_base64_content) = Field(description="the base64 encoded content of the file", examples=["ZXhhbXBsZQ=="])
-    hash: OptionalNotNone[_Hash] = Field(description="optional hash information for the file", examples=[{"hexdigest": "ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff", "algorithm": "sha512"}])
+    hash: OptionalNotNone[_Hash] = Field(description="optional hash information for the file", examples=[generate_example(_Hash)])
 
     @cached_property
     def hash_info(self) -> File.HashInfo:
@@ -115,32 +116,58 @@ type _File = typing.Annotated[
 ]
 
 
-def file_info_to_json(file_info: File, include_content: bool = True) -> typing.Dict[str, typing.Any]:
-    file_json = {
-        'object_id': file_info.object_id,
-        'file_id': file_info.id,
-        'storage': file_info.storage
-    }
+class DatabaseFileModel(BaseModel):
+    class HashInfoModel(BaseModel):
+        hexdigest: str = Field(description="the hexadecimal representation of the hash", examples=["ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff"])
+        algorithm: str = Field(description="the hash algorithm used", examples=["sha512"])
+
+    object_id: int = Field(description="the ID of the object the file belongs to", examples=[1])
+    file_id: int = Field(description="the ID of the file", examples=[1])
+    storage: str = Field(description="the storage type for the file", examples=["database"])
+    original_file_name: typing.Optional[str] = Field(None, description="the name of the file", examples=["example.txt"])
+    base64_content: typing.Optional[str] = Field(None, description="the base64 encoded content of the file", examples=["ZXhhbXBsZQ=="])
+    hash: typing.Optional[HashInfoModel] = Field(None, description="optional hash information for the file", examples=[generate_example(HashInfoModel)])
+    base64_preview_image: typing.Optional[str] = Field(None, description="the base64 encoded preview image for the file", examples=["iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8////fwY8gAmf5PBRAAAbbgQMid1tCwAAAABJRU5ErkJggg=="])
+    preview_image_mime_type: typing.Optional[str] = Field(None, description="the MIME type for the file preview image", examples=["image/png"])
+
+    @classmethod
+    def from_file(cls, file_info: File, include_content: bool = True) -> typing.Self:
+        assert file_info.storage == 'database'
+        return cls(
+            object_id=file_info.object_id,
+            file_id=file_info.id,
+            storage=file_info.storage,
+            original_file_name=file_info.original_file_name,
+            base64_content=base64.b64encode(file_info.open().read()).decode('utf-8') if include_content else None,
+            hash=file_info.data.get('hash') if file_info.data else None,
+            base64_preview_image=base64.b64encode(file_info.preview_image_binary_data).decode('utf-8') if file_info.preview_image_binary_data and file_info.preview_image_mime_type else None,
+            preview_image_mime_type=file_info.preview_image_mime_type if file_info.preview_image_binary_data and file_info.preview_image_mime_type else None,
+        )
+
+
+class UrlFileModel(BaseModel):
+    object_id: int = Field(description="the ID of the object the file belongs to", examples=[1])
+    file_id: int = Field(description="the ID of the file", examples=[1])
+    storage: str = Field(description="the storage type for the file", examples=["url"])
+    url: typing.Optional[str] = Field(None, description="the URL of the file", examples=["https://example.com"])
+
+    @classmethod
+    def from_file(cls, file_info: File) -> typing.Self:
+        assert file_info.storage == 'url'
+        return cls(
+            object_id=file_info.object_id,
+            file_id=file_info.id,
+            storage=file_info.storage,
+            url=file_info.url if file_info.storage == 'url' else None
+        )
+
+
+def file_model_from_file(file_info: File, include_content: bool = True) -> DatabaseFileModel | UrlFileModel:
     if file_info.storage == 'database':
-        file_json.update({
-            'original_file_name': file_info.original_file_name
-        })
-        if include_content:
-            with file_info.open() as f:
-                base64_content = base64.b64encode(f.read())
-            file_json.update({
-                'base64_content': base64_content.decode('utf-8')
-            })
-        if file_info.data:
-            file_json['hash'] = file_info.data.get('hash')
-        if file_info.preview_image_binary_data and file_info.preview_image_mime_type:
-            file_json['base64_preview_image'] = base64.b64encode(file_info.preview_image_binary_data).decode('utf-8')
-            file_json['preview_image_mime_type'] = file_info.preview_image_mime_type
-    if file_info.storage == 'url' and file_info.url is not None:
-        file_json.update({
-            'url': file_info.url
-        })
-    return file_json
+        return DatabaseFileModel.from_file(file_info, include_content=include_content)
+    if file_info.storage == 'url':
+        return UrlFileModel.from_file(file_info)
+    assert False
 
 
 class ObjectFile(Resource):
@@ -150,7 +177,7 @@ class ObjectFile(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[DatabaseFileModel | UrlFileModel] | NotFoundErrorModel | ForbiddenErrorModel:
         """
         Get an object file.
         """
@@ -159,14 +186,16 @@ class ObjectFile(Resource):
             if file_info is None:
                 raise errors.FileDoesNotExistError()
         except errors.FileDoesNotExistError:
-            return {
-                "message": f"file {path.file_id} of object {path.object_id} does not exist"
-            }, 404
+            return NotFoundErrorModel(
+                error="Not Found",
+                message=f"file {path.file_id} of object {path.object_id} does not exist"
+            )
         if file_info.is_hidden:
-            return {
-                "message": f"file {path.file_id} of object {path.object_id} has been hidden"
-            }, 403
-        return file_info_to_json(file_info)
+            return ForbiddenErrorModel(
+                error="Forbidden",
+                message=f"file {path.file_id} of object {path.object_id} has been hidden"
+            )
+        return ReturnValue(file_model_from_file(file_info=file_info))
 
 
 class ObjectFiles(Resource):
@@ -187,7 +216,7 @@ class ObjectFiles(Resource):
 
     @object_permissions_required(Permissions.WRITE)
     @method(request_body_context_builder=ValidationContext.from_path)
-    def post(self, path: PathModel, request_body: _File) -> ResponseData:
+    def post(self, path: PathModel, request_body: _File) -> CreatedResponseModel | ForbiddenErrorModel:
         """
         Create a new file for an object.
         """
@@ -195,9 +224,10 @@ class ObjectFiles(Resource):
         if object.action_id is not None:
             action = get_action(action_id=object.action_id)
             if action.type is None or not action.type.enable_files:
-                return {
-                    "message": "Adding files is not enabled for objects of this type"
-                }, 403
+                return ForbiddenErrorModel(
+                    error="Forbidden",
+                    message="Adding files is not enabled for objects of this type"
+                )
         if request_body.storage == "database":
             file = create_database_file(
                 object_id=path.object_id,
@@ -220,9 +250,10 @@ class ObjectFiles(Resource):
                     ),
                 )
             except errors.UnauthorizedRequestError:
-                return {
-                    "message": "user not authorized to add this path"
-                }, 403
+                return ForbiddenErrorModel(
+                    error="Forbidden",
+                    message="user not authorized to add this path"
+                )
         else:
             assert request_body.storage == "url"
             file = create_url_file(
@@ -236,16 +267,18 @@ class ObjectFiles(Resource):
             file_id=file.id,
             _external=True
         )
-        return flask.redirect(file_url, code=201)
+        return CreatedResponseModel(
+            location=file_url
+        )
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[typing.List[DatabaseFileModel | UrlFileModel]]:
         """
         List all files for an object.
         """
-        return [
-            file_info_to_json(file_info, include_content=False)
+        return ReturnValue([
+            file_model_from_file(file_info=file_info, include_content=False)
             for file_info in get_files_for_object(path.object_id)
             if not file_info.is_hidden
-        ]
+        ])

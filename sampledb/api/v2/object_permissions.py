@@ -2,14 +2,15 @@ import typing
 from contextlib import suppress
 
 import flask
-from pydantic import AfterValidator, BaseModel, BeforeValidator, Strict, Tag, Discriminator, Field
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Strict, Tag, Discriminator, SerializerFunctionWrapHandler, WrapSerializer, Field
 from pydantic_core import PydanticCustomError
 
 from .authentication import object_permissions_required, multi_auth
-from ..utils import Resource, ResponseData
+from ..utils import Resource
 from ...logic import users, groups, projects, errors, object_permissions, background_tasks, objects
 from ...models import Permissions
 from .utils.validation import UserId, is_valid, method
+from .utils.responses import NotFoundErrorModel, BadRequestErrorModel, ForbiddenErrorModel, NoContentModel, ReturnValue
 
 
 def _permissions_validator(value: typing.Any) -> Permissions:
@@ -19,6 +20,10 @@ def _permissions_validator(value: typing.Any) -> Permissions:
         with suppress(ValueError):
             return Permissions.from_name(value)
     raise PydanticCustomError("enum", "Input should be 'none', 'read', 'write' or 'grant'")
+
+
+def _permissions_serializer(permissions: Permissions, handler: SerializerFunctionWrapHandler) -> str:
+    return permissions.name.lower()
 
 
 def _group_exists(value: int) -> int:
@@ -50,7 +55,7 @@ def _is_valid_unknown_permissions(type_: typing.Literal["authenticated", "anonym
 
 type GroupId = typing.Annotated[int, AfterValidator(_group_exists)]
 type ProjectId = typing.Annotated[int, AfterValidator(_project_exists)]
-type PermissionsModel = typing.Annotated[Permissions, BeforeValidator(_permissions_validator)]
+type PermissionsModel = typing.Annotated[Permissions, BeforeValidator(_permissions_validator), WrapSerializer(_permissions_serializer)]
 type _AnonymousPermissions = typing.Annotated[PermissionsModel, _is_valid_unknown_permissions("anonymous")]
 type _AuthenticatedPermissions = typing.Annotated[PermissionsModel, _is_valid_unknown_permissions("authenticated")]
 type _UserPermissions = typing.Dict[UserId, PermissionsModel]
@@ -82,20 +87,28 @@ class _CopyObjectPermissions(BaseModel):
     target_object_id: _ObjectId = Field(description="the ID of an existing object to apply permissions to", examples=[2])
 
 
-def all_object_permissions_dict_to_json(permissions: object_permissions.AllObjectPermissionsDict) -> typing.Dict[str, typing.Any]:
-    return {
-        "users": {
-            user_id: permission.name.lower() for user_id, permission in permissions["users"].items()
-        },
-        "groups": {
-            group_id: permission.name.lower() for group_id, permission in permissions["groups"].items()
-        },
-        "projects": {
-            project_id: permission.name.lower() for project_id, permission in permissions["projects"].items()
-        },
-        "authenticated_users": permissions["authenticated"].name.lower(),
-        "anonymous_users": permissions["anonymous"].name.lower(),
-    }
+class AllObjectPermissionsModel(BaseModel):
+    users: typing.Dict[int, str] = Field(description="the permissions for users for this object", examples=[{"1": "grant"}])
+    groups: typing.Dict[int, str] = Field(description="the permissions for basic groups for this object", examples=[{"1": "read"}])
+    projects: typing.Dict[int, str] = Field(description="the permissions for project groups for this object", examples=[{"1": "write"}])
+    authenticated_users: str = Field(description="the permissions for all authenticated users for this object", examples=["read"])
+    anonymous_users: str = Field(description="the permissions for anonymous users for this object", examples=["read"])
+
+    @classmethod
+    def from_all_object_permissions(cls, permissions: object_permissions.AllObjectPermissionsDict) -> typing.Self:
+        return cls(
+            users={
+                user_id: permission.name.lower() for user_id, permission in permissions["users"].items()
+            },
+            groups={
+                group_id: permission.name.lower() for group_id, permission in permissions["groups"].items()
+            },
+            projects={
+                project_id: permission.name.lower() for project_id, permission in permissions["projects"].items()
+            },
+            authenticated_users=permissions["authenticated"].name.lower(),
+            anonymous_users=permissions["anonymous"].name.lower(),
+        )
 
 
 class ObjectPermissions(Resource):
@@ -104,30 +117,32 @@ class ObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> AllObjectPermissionsModel | NotFoundErrorModel:
         """
         Get all permissions for an object.
         """
         try:
             permissions = object_permissions.get_all_object_permissions(object_id=path.object_id)
         except errors.ObjectDoesNotExistError:
-            return {
-                "message": f"object {path.object_id} does not exist"
-            }, 404
-        return all_object_permissions_dict_to_json(
+            return NotFoundErrorModel(
+                error="Not Found",
+                message=f"object {path.object_id} does not exist"
+            )
+        return AllObjectPermissionsModel.from_all_object_permissions(
             permissions
-        ), 200
+        )
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: _ObjectPermissions) -> ResponseData:
+    def put(self, path: PathModel, request_body: _ObjectPermissions) -> AllObjectPermissionsModel | BadRequestErrorModel:
         """
         Set new permissions for an object.
         """
         if request_body.anonymous_users is not None and not flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
-            return {
-                "message": "anonymous users are disabled"
-            }, 400
+            return BadRequestErrorModel(
+                error="Bad Request",
+                message="anonymous users are disabled"
+            )
         for user_id, permissions in (request_body.users or {}).items():
             object_permissions.set_user_object_permissions(
                 path.object_id,
@@ -156,9 +171,9 @@ class ObjectPermissions(Resource):
                 path.object_id,
                 request_body.anonymous_users,
             )
-        return all_object_permissions_dict_to_json(
+        return AllObjectPermissionsModel.from_all_object_permissions(
             object_permissions.get_all_object_permissions(object_id=path.object_id)
-        ), 200
+        )
 
 
 class CopyObjectsPermissions(Resource):
@@ -172,16 +187,17 @@ class CopyObjectsPermissions(Resource):
 
     @multi_auth.login_required
     @method()
-    def post(self, request_body: RequestBodyModel) -> ResponseData:
+    def post(self, request_body: RequestBodyModel) -> NoContentModel | ForbiddenErrorModel:
         """
         Copy permissions from one object to another..
         """
         user_id = flask.g.user.id
         user = users.get_user(user_id=user_id)
         if user.is_readonly:
-            return {
-                "message": "No permission to copy object's permissions"
-            }, 403
+            return ForbiddenErrorModel(
+                error="Forbidden",
+                message="No permission to copy object's permissions"
+            )
         if not isinstance(request_body, list):
             request_body = [request_body]
         for item in request_body:
@@ -194,24 +210,26 @@ class CopyObjectsPermissions(Resource):
                     user_id=user_id,
                 )
             ) < Permissions.READ:
-                return {
-                    "message": f"missing object permission for source object {item.source_object_id}"
-                }, 403
+                return ForbiddenErrorModel(
+                    error="Forbidden",
+                    message=f"missing object permission for source object {item.source_object_id}"
+                )
             # Assure highest permission for target object is atleast GRANT
             # to allow permission-manipulation
             if object_permissions.get_user_object_permissions(
                 object_id=item.target_object_id,
                 user_id=user_id,
             ) < Permissions.GRANT:
-                return {
-                    "message": f"missing object permission for target object {item.target_object_id}"
-                }, 403
+                return ForbiddenErrorModel(
+                    error="Forbidden",
+                    message=f"missing object permission for target object {item.target_object_id}"
+                )
         for item in request_body:
             object_permissions.copy_permissions(
                 source_object_id=item.source_object_id,
                 target_object_id=item.target_object_id,
             )
-        return "", 200
+        return NoContentModel()
 
 
 class UserObjectPermissions(Resource):
@@ -227,7 +245,7 @@ class UserObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ResponseData:
+    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[PermissionsModel] | NotFoundErrorModel:
         """
         Get the object permissions for a user.
         """
@@ -242,21 +260,22 @@ class UserObjectPermissions(Resource):
             try:
                 users.check_user_exists(path.user_id)
             except errors.UserDoesNotExistError:
-                return {
-                    "message": f"user {path.user_id} does not exist"
-                }, 404
-        return permissions.name.lower()
+                return NotFoundErrorModel(
+                    error="Not Found",
+                    message=f"user {path.user_id} does not exist"
+                )
+        return ReturnValue(permissions)
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: PermissionsModel) -> ResponseData:
+    def put(self, path: PathModel, request_body: PermissionsModel) -> ReturnValue[PermissionsModel]:
         """
         Set the object permissions for a user.
         """
         permissions = request_body
         object_permissions.set_user_object_permissions(path.object_id, path.user_id, permissions)
         background_tasks.post_trigger_object_permissions_webhooks(path.object_id)
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)
 
 
 class UsersObjectPermissions(Resource):
@@ -271,7 +290,7 @@ class UsersObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ResponseData:
+    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[typing.Dict[int, PermissionsModel]]:
         """
         Get the object permissions granted to users.
         """
@@ -282,10 +301,10 @@ class UsersObjectPermissions(Resource):
             include_projects=query.include_projects,
             include_admin_permissions=query.include_admins
         )
-        return {
-            user_id: permissions.name.lower()
+        return ReturnValue({
+            user_id: permissions
             for user_id, permissions in permissions.items()
-        }, 200
+        })
 
 
 class GroupObjectPermissions(Resource):
@@ -298,7 +317,7 @@ class GroupObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ResponseData:
+    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[PermissionsModel] | NotFoundErrorModel:
         """
         Get the object permissions for a basic group.
         """
@@ -310,21 +329,22 @@ class GroupObjectPermissions(Resource):
             try:
                 groups.get_group(path.group_id)
             except errors.GroupDoesNotExistError:
-                return {
-                    "message": f"group {path.group_id} does not exist"
-                }, 404
-        return permissions.name.lower()
+                return NotFoundErrorModel(
+                    error="Not Found",
+                    message=f"group {path.group_id} does not exist"
+                )
+        return ReturnValue(permissions)
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: PermissionsModel) -> ResponseData:
+    def put(self, path: PathModel, request_body: PermissionsModel) -> ReturnValue[PermissionsModel]:
         """
         Set the object permissions for a basic group.
         """
         permissions = request_body
         object_permissions.set_group_object_permissions(path.object_id, path.group_id, permissions)
         background_tasks.post_trigger_object_permissions_webhooks(path.object_id)
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)
 
 
 class GroupsObjectPermissions(Resource):
@@ -336,7 +356,7 @@ class GroupsObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ResponseData:
+    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[typing.Dict[int, PermissionsModel]]:
         """
         Get the object permissions granted to basic groups.
         """
@@ -344,10 +364,10 @@ class GroupsObjectPermissions(Resource):
             object_id=path.object_id,
             include_projects=query.include_projects
         )
-        return {
-            group_id: permissions.name.lower()
+        return ReturnValue({
+            group_id: permissions
             for group_id, permissions in permissions.items()
-        }, 200
+        })
 
 
 class ProjectObjectPermissions(Resource):
@@ -357,7 +377,7 @@ class ProjectObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[PermissionsModel] | NotFoundErrorModel:
         """
         Get the object permissions for a project group.
         """
@@ -368,21 +388,22 @@ class ProjectObjectPermissions(Resource):
             try:
                 projects.get_project(path.project_id)
             except errors.ProjectDoesNotExistError:
-                return {
-                    "message": f"project {path.project_id} does not exist"
-                }, 404
-        return permissions.name.lower()
+                return NotFoundErrorModel(
+                    error="Not Found",
+                    message=f"project {path.project_id} does not exist"
+                )
+        return ReturnValue(permissions)
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: PermissionsModel) -> ResponseData:
+    def put(self, path: PathModel, request_body: PermissionsModel) -> ReturnValue[PermissionsModel]:
         """
         Set the object permissions for a project group.
         """
         permissions = request_body
         object_permissions.set_project_object_permissions(path.object_id, path.project_id, permissions)
         background_tasks.post_trigger_object_permissions_webhooks(path.object_id)
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)
 
 
 class ProjectsObjectPermissions(Resource):
@@ -391,17 +412,17 @@ class ProjectsObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[typing.Dict[int, PermissionsModel]]:
         """
         Get the object permissions granted to project groups.
         """
         permissions = object_permissions.get_object_permissions_for_projects(
             object_id=path.object_id,
         )
-        return {
-            project_id: permissions.name.lower()
+        return ReturnValue({
+            project_id: permissions
             for project_id, permissions in permissions.items()
-        }, 200
+        })
 
 
 class PublicObjectPermissions(Resource):
@@ -412,18 +433,18 @@ class PublicObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[bool]:
         """
         Get whether authenticated users have READ permissions.
         """
         is_public = Permissions.READ in object_permissions.get_object_permissions_for_all_users(
             object_id=path.object_id
         )
-        return is_public, 200
+        return ReturnValue(is_public)
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+    def put(self, path: PathModel, request_body: RequestBodyModel) -> ReturnValue[bool]:
         """
         Set whether authenticated users have READ permissions.
         """
@@ -433,7 +454,7 @@ class PublicObjectPermissions(Resource):
             permissions=Permissions.READ if is_public else Permissions.NONE
         )
         background_tasks.post_trigger_object_permissions_webhooks(path.object_id)
-        return is_public, 200
+        return ReturnValue(is_public)
 
 
 class AuthenticatedUserObjectPermissions(Resource):
@@ -442,18 +463,18 @@ class AuthenticatedUserObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[PermissionsModel]:
         """
         Get the object permissions for authenticated users.
         """
         permissions = object_permissions.get_object_permissions_for_all_users(
             object_id=path.object_id
         )
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: _AuthenticatedPermissions) -> ResponseData:
+    def put(self, path: PathModel, request_body: _AuthenticatedPermissions) -> ReturnValue[PermissionsModel]:
         """
         Set the object permissions for authenticated users.
         """
@@ -463,7 +484,7 @@ class AuthenticatedUserObjectPermissions(Resource):
             permissions=permissions
         )
         background_tasks.post_trigger_object_permissions_webhooks(path.object_id)
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)
 
 
 class AnonymousUserObjectPermissions(Resource):
@@ -472,33 +493,35 @@ class AnonymousUserObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> ReturnValue[PermissionsModel] | BadRequestErrorModel:
         """
         Get the object permissions for anonymous users.
         """
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
-            return {
-                "message": "anonymous users are disabled"
-            }, 400
+            return BadRequestErrorModel(
+                error="Bad Request",
+                message="anonymous users are disabled"
+            )
         permissions = object_permissions.get_object_permissions_for_anonymous_users(
             object_id=path.object_id
         )
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)
 
     @object_permissions_required(Permissions.GRANT)
     @method()
-    def put(self, path: PathModel, request_body: _AnonymousPermissions) -> ResponseData:
+    def put(self, path: PathModel, request_body: _AnonymousPermissions) -> ReturnValue[PermissionsModel] | BadRequestErrorModel:
         """
         Set the object permissions for anonymous users.
         """
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
-            return {
-                "message": "anonymous users are disabled"
-            }, 400
+            return BadRequestErrorModel(
+                error="Bad Request",
+                message="anonymous users are disabled"
+            )
         permissions = request_body
         object_permissions.set_object_permissions_for_anonymous_users(
             object_id=path.object_id,
             permissions=permissions
         )
         background_tasks.post_trigger_object_permissions_webhooks(path.object_id)
-        return permissions.name.lower(), 200
+        return ReturnValue(permissions)

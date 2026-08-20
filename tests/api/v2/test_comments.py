@@ -62,6 +62,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/comments/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be an object",
         "error_details": {
             "msg": "Input should be an object",
@@ -76,6 +77,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": f"Input should be {object.id} (object_id)",
         "error_details": {
             "object_id": {
@@ -90,6 +92,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Field required (content)",
         "error_details": {
             "content": {"msg": "Field required"}
@@ -102,6 +105,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be a valid string (content)",
         "error_details": {
             "content": {
@@ -117,6 +121,7 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "String should have at least 1 character (content)",
         "error_details": {
             "content": {

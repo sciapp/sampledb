@@ -13,9 +13,10 @@ from ...logic.authentication import login, login_via_api_token, login_via_api_ac
 from ...logic.users import User
 from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
-from ..utils import Resource, ResponseData
-from ..errors import handle_api_error
+from ..utils import Resource
 from .utils.validation import method
+from ..errors import handle_api_error
+from .utils.responses import BadRequestErrorModel
 
 
 http_basic_auth = HTTPBasicAuth()
@@ -106,13 +107,20 @@ def object_permissions_required(permissions: Permissions) -> typing.Callable[[ty
     )
 
 
+class AccessTokenModel(BaseModel):
+    access_token: str = Field(..., title="Access Token", description="A token usable to authenticate with the API via HTTP Bearer authentication", examples=["be740310706c1050e7a1668e2c0c407e029559a862d544d2d059f363c9ad8219"])
+    refresh_token: str = Field(..., title="Refresh Token", description="A token usable to authenticate with the /access_tokens/ endpoint via HTTP Bearer authentication to refresh an access token", examples=["a844185d4a924f52eec40d5b83f68fed8953665553b134dd5a02521250205b19"])
+    expiration_utc_datetime: str = Field(..., title="Expiration Datetime", description="A string containing the datetime (in UTC) when the access token expires", examples=["2026-01-01 12:34:56"])
+    description: typing.Optional[str] = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
+
+
 class AccessTokens(Resource):
     class RequestBodyModel(BaseModel):
         description: str = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
 
     @multi_auth_for_access_tokens.login_required
-    @method()
-    def post(self, request_body: typing.Optional[RequestBodyModel]) -> ResponseData:
+    @method(default_status_code=201)
+    def post(self, request_body: typing.Optional[RequestBodyModel]) -> BadRequestErrorModel | AccessTokenModel:
         """
         Create a new access token.
         """
@@ -120,13 +128,25 @@ class AccessTokens(Resource):
         if refresh_token:
             result = refresh_api_access_token(refresh_token)
             if result is None:
-                return {
-                    "message": "failed to refresh API token"
-                }, 400
-            return result, 201
+                return BadRequestErrorModel(
+                    error="LogicError",
+                    message="failed to refresh API token"
+                )
+            return AccessTokenModel(
+                access_token=result["access_token"],
+                refresh_token=result["refresh_token"],
+                expiration_utc_datetime=result["expiration_utc_datetime"],
+                description=result["description"]
+            )
         if request_body is None:
-            return {
-                "error": "Bad Request",
-                "message": "neither description nor refresh API token provided"
-            }, 400
-        return generate_api_access_token(user_id=flask.g.user.id, description=request_body.description), 201
+            return BadRequestErrorModel(
+                error="LogicError",
+                message="neither description nor refresh API token provided"
+            )
+        access_token = generate_api_access_token(user_id=flask.g.user.id, description=request_body.description)
+        return AccessTokenModel(
+            access_token=typing.cast(str, access_token["access_token"]),
+            refresh_token=typing.cast(str, access_token["refresh_token"]),
+            expiration_utc_datetime=typing.cast(str, access_token["expiration_utc_datetime"]),
+            description=access_token["description"]
+        )

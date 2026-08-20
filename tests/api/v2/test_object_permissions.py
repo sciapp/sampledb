@@ -105,6 +105,7 @@ def test_get_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "User should exist (user_id)",
         "error_details": {
            "user_id": {
@@ -136,6 +137,7 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": "all",
@@ -146,6 +148,7 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": {"permissions": "read"},
@@ -156,6 +159,7 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), json="read", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "User should exist (user_id)",
         "error_details": {
             "user_id": {
@@ -201,6 +205,7 @@ def test_get_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Group should exist (group_id)",
         "error_details": {
             "group_id": {
@@ -234,6 +239,7 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": "all",
@@ -244,6 +250,7 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": {"permissions": "read"},
@@ -254,6 +261,7 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), json="read", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Group should exist (group_id)",
         "error_details": {
             "group_id": {
@@ -289,6 +297,7 @@ def test_get_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Project should exist (project_id)",
         "error_details": {
             "project_id": {
@@ -322,6 +331,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": "all",
@@ -332,6 +342,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": {"permissions": "read"},
@@ -342,6 +353,7 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), json="read", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Project should exist (project_id)",
         "error_details": {
             "project_id": {
@@ -458,6 +470,7 @@ def test_set_object_public(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), json="True", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be a valid boolean",
         "error_details": {
             "input": "True",
@@ -494,6 +507,7 @@ def test_set_all_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json="write", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Permissions for authenticated users should be 'none' or 'read'",
         "error_details": {
             "input": "write",
@@ -504,6 +518,7 @@ def test_set_all_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": True,
@@ -529,7 +544,9 @@ def test_get_anonymous_user_object_permissions(flask_server, auth, object_id):
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "anonymous users are disabled"
+        "error": "Bad Request",
+        "message": "anonymous users are disabled",
+        "error_details": None,
     }
 
 
@@ -550,6 +567,7 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json="write", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Permissions for anonymous users should be 'none' or 'read'",
         "error_details": {
             "input": "write",
@@ -560,6 +578,7 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Input should be 'none', 'read', 'write' or 'grant'",
         "error_details": {
             "input": True,
@@ -572,7 +591,9 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json='read', auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "anonymous users are disabled"
+        "error": "Bad Request",
+        "message": "anonymous users are disabled",
+        "error_details": None
     }
 
 
@@ -696,6 +717,7 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
+        "error": "Bad Request",
         "message": "Permissions for authenticated users should be 'none' or 'read' (authenticated_users)",
         "error_details": {
             "authenticated_users": {
@@ -719,7 +741,9 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "anonymous users are disabled"
+        "error": "Bad Request",
+        "message": "anonymous users are disabled",
+        "error_details": None
     }
 
 
@@ -742,10 +766,23 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "target_object_id": other_object_id,
     }
     r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
-    assert r.status_code == 200
+    assert r.status_code == 204
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
     assert r.status_code == 200
-    perms_source_object = sampledb.api.v2.object_permissions.all_object_permissions_dict_to_json(sampledb.logic.object_permissions.get_all_object_permissions(object_id))
+    permissions = sampledb.logic.object_permissions.get_all_object_permissions(object_id)
+    perms_source_object = {
+        "users": {
+            user_id: permission.name.lower() for user_id, permission in permissions["users"].items()
+        },
+        "groups": {
+            group_id: permission.name.lower() for group_id, permission in permissions["groups"].items()
+        },
+        "projects": {
+            project_id: permission.name.lower() for project_id, permission in permissions["projects"].items()
+        },
+        "authenticated_users": permissions["authenticated"].name.lower(),
+        "anonymous_users": permissions["anonymous"].name.lower(),
+    }
     perms_source_object["users"] = {str(k): v for k,v in perms_source_object["users"].items()} if perms_source_object.get("users") else None
     perms_source_object["groups"] = {str(k): v for k,v in perms_source_object["groups"].items()} if perms_source_object.get("groups") else None
     perms_source_object["projects"] = {str(k): v for k,v in perms_source_object["projects"].items()} if perms_source_object.get("projects") else None
@@ -777,7 +814,7 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         },
     ]
     r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
-    assert r.status_code == 200
+    assert r.status_code == 204
     perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
     perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
     perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()

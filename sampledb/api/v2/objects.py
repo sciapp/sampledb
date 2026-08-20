@@ -15,17 +15,125 @@ from ...logic.action_permissions import get_user_action_permissions
 from ...logic.action_types import check_action_type_exists
 from ...logic.actions import Action, check_action_exists, get_action
 from ...logic.object_permissions import get_objects_with_permissions
-from ...logic.object_relationships import (get_referencing_object_ids,
-                                           get_related_object_ids)
+from ...logic.object_relationships import get_referencing_object_ids, get_related_object_ids, ObjectRef
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import create_object, get_object, update_object
 from ...logic.schemas.data_diffs import apply_diff, calculate_diff
 from ...models import Permissions
 from ...utils import text_to_bool
-from ..utils import Resource, ResponseData
-from .actions import action_to_json
-from .users import user_to_json
-from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, method
+from ..utils import Resource
+from .actions import ActionModel
+from .users import UserModel
+from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, method, generate_example
+from .utils.responses import BadRequestErrorModel, CreatedResponseModel, FoundResponseModel, NotFoundErrorModel
+
+
+class ObjectReferenceModel(BaseModel):
+    object_id: int = Field(description="the ID of the referenced object", examples=[1])
+    component_uuid: typing.Optional[str] = Field(None, description="the UUID of the federation component the referenced object belongs to", examples=["59b4f08d-f2e6-4343-a155-9880e988cead"])
+    eln_source_url: typing.Optional[str] = Field(None, description="the URL of the source ELN of the referenced object", examples=["https://example.com"])
+    eln_object_url: typing.Optional[str] = Field(None, description="the URL of the referenced object in its source ELN", examples=["https://example.com/objects/A"])
+
+    @classmethod
+    def from_object_ref(cls, object_ref: ObjectRef) -> typing.Self:
+        return cls(
+            object_id=object_ref.object_id,
+            component_uuid=object_ref.component_uuid,
+            eln_source_url=object_ref.eln_source_url,
+            eln_object_url=object_ref.eln_object_url
+        )
+
+
+class _ObjectModel(BaseModel):
+    object_id: int = Field(description="the ID of the object", examples=[1])
+    version_id: int = Field(description="the ID of the current object version", examples=[0])
+    action_id: typing.Optional[int] = Field(description="the ID of the action the object was created with", examples=[1])
+    user_id: typing.Optional[int] = Field(description="the ID of the user who created this object version", examples=[1])
+    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the current object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    schema_: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+        alias="schema",
+        description="the schema of the current object version",
+        examples=[{
+            "type": "object",
+            "title": {"en": "Object Information"},
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": {"en": "Name"}
+                },
+            },
+            "required": ["name"]
+        }]
+    )
+    data: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+        description="the data of the current object version",
+        examples=[{
+            "name": {
+                "_type": "text",
+                "text": {
+                    "en": "Example Object"
+                }
+            }
+        }]
+    )
+    fed_object_id: typing.Optional[int] = Field(description="the federated object ID of the object", examples=[1])
+    fed_version_id: typing.Optional[int] = Field(description="the federated object version ID for the current object version", examples=[1])
+    component_id: typing.Optional[int] = Field(description="the federation component ID of the object", examples=[1])
+    referencing_objects: typing.Optional[typing.List[ObjectReferenceModel]] = Field(description="the list of referencing objects", examples=[generate_example(ObjectReferenceModel)])
+
+
+class ObjectVersionModel(BaseModel):
+    object_id: int = Field(description="the ID of the object the version belongs to", examples=[1])
+    version_id: int = Field(description="the ID of the object version", examples=[0])
+    action_id: typing.Optional[int] = Field(description="the ID of the action the object was created with", examples=[1])
+    user_id: typing.Optional[int] = Field(description="the ID of the user who created this object version", examples=[1])
+    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    schema_: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+        alias="schema",
+        description="the schema of the object version",
+        examples=[{
+            "type": "object",
+            "title": {"en": "Object Information"},
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": {"en": "Name"}
+                },
+            },
+            "required": ["name"]
+        }]
+    )
+    data: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+        description="the data of the object version",
+        examples=[{
+            "name": {
+                "_type": "text",
+                "text": {
+                    "en": "Example Object"
+                }
+            }
+        }]
+    )
+    fed_object_id: typing.Optional[int] = Field(description="the federated object ID of the object the version belongs to", examples=[1])
+    fed_version_id: typing.Optional[int] = Field(description="the federated object version ID for this object version", examples=[1])
+    component_id: typing.Optional[int] = Field(description="the federation component ID of the object this version belongs to", examples=[1])
+    user: typing.Optional[UserModel] = Field(description="the user who created this object version, as if queried via their ID", examples=[generate_example(UserModel)])
+    action: typing.Optional[ActionModel] = Field(description="the action the object was created with, as if queried via its ID", examples=[generate_example(ActionModel)])
+    data_diff: typing.Optional[typing.Any] = Field(
+        description="the data diff between the previous object version and this one",
+        examples=[{
+            "name": {
+                "_before": {
+                    "_type": "text",
+                    "text": {"en": "Previous Example Object"}
+                },
+                "_after": {
+                    "_type": "text",
+                    "text": {"en": "Example Object"}
+                }
+            }
+        }]
+    )
 
 
 class ObjectVersion(Resource):
@@ -40,52 +148,56 @@ class ObjectVersion(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ResponseData:
+    def get(self, path: PathModel, query: QueryModel) -> ObjectVersionModel | NotFoundErrorModel:
         """
         Get an object version.
         """
         try:
             object = get_object(object_id=path.object_id, version_id=path.version_id)
         except errors.ObjectVersionDoesNotExistError:
-            return {
-                "message": f"version {path.version_id} of object {path.object_id} does not exist"
-            }, 404
-        object_version_json: typing.Dict[str, typing.Any] = {
-            'object_id': object.object_id,
-            'version_id': object.version_id,
-            'action_id': object.action_id,
-            'user_id': object.user_id,
-            'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime else None,
-            'schema': object.schema,
-            'data': object.data,
-            'fed_object_id': object.fed_object_id,
-            'fed_version_id': object.fed_version_id,
-            'component_id': object.component_id
-        }
+            return NotFoundErrorModel(
+                error="NotFound",
+                message=f"version {path.version_id} of object {path.object_id} does not exist"
+            )
+        object_version = ObjectVersionModel(
+            object_id=object.object_id,
+            version_id=object.version_id,
+            action_id=object.action_id,
+            user_id=object.user_id,
+            utc_datetime=object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime else None,
+            schema=object.schema,
+            data=object.data,
+            fed_object_id=object.fed_object_id,
+            fed_version_id=object.fed_version_id,
+            component_id=object.component_id,
+            action=None,
+            user=None,
+            data_diff=None,
+        )
         if query.embed_action:
-            object_version_json['action'] = None
+            object_version.action = None
             if object.action_id is not None:
                 try:
                     if Permissions.READ in get_user_action_permissions(action_id=object.action_id, user_id=flask.g.user.id):
                         action = get_action(
                             action_id=object.action_id
                         )
-                        object_version_json['action'] = action_to_json(action)
+                        object_version.action = ActionModel.from_action(action)
                 except errors.ActionDoesNotExistError:
                     pass
         if query.embed_user:
-            object_version_json['user'] = None
+            object_version.user = None
             if object.user_id is not None:
                 try:
                     user = users.get_user(object.user_id)
-                    object_version_json['user'] = user_to_json(user)
+                    object_version.user = UserModel.from_user(user)
                 except errors.UserDoesNotExistError:
                     pass
         if query.include_diff and object.version_id > 0:
             previous_object_version = get_object(object_id=object.object_id, version_id=object.version_id - 1)
             data_diff = calculate_diff(previous_object_version.data, object.data)
-            object_version_json['data_diff'] = data_diff
-        return object_version_json
+            object_version.data_diff = data_diff
+        return object_version
 
 
 class ObjectVersions(Resource):
@@ -177,15 +289,16 @@ class ObjectVersions(Resource):
 
     @object_permissions_required(Permissions.WRITE)
     @method(request_body_context_builder=ValidationContext.from_path)
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> ResponseData:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel:
         """
         Create a new object version.
         """
         object = get_object(object_id=path.object_id)
         if object.action_id is None:
-            return {
-                "message": "editing this object is not supported"
-            }, 400
+            return BadRequestErrorModel(
+                error="LogicError",
+                message="editing this object is not supported"
+            )
         schema = object.schema if request_body.action_schema is None else request_body.action_schema
 
         data = request_body.data
@@ -193,16 +306,18 @@ class ObjectVersions(Resource):
         try:
             if data_diff is not None:
                 if object.data is None or object.schema is None:
-                    return {
-                        "message": "previous object version must contain data and schema"
-                    }, 400
+                    return BadRequestErrorModel(
+                        error="LogicError",
+                        message="previous object version must contain data and schema"
+                    )
                 data_from_diff = apply_diff(object.data, data_diff, object.schema)
                 if data is None:
                     data = data_from_diff
                 elif data_from_diff != data:
-                    return {
-                        "message": "data and data_diff are conflicting"
-                    }, 400
+                    return BadRequestErrorModel(
+                        error="Bad Request",
+                        message="data and data_diff are conflicting"
+                    )
 
             update_object(
                 object_id=object.id,
@@ -213,18 +328,23 @@ class ObjectVersions(Resource):
 
         except errors.ValidationError as e:
             messages = e.message.splitlines()
-            return {
-                "message": "validation failed:\n - " + "\n - ".join(messages),
-                "error_paths": e.paths
-            }, 400
+            return BadRequestErrorModel(
+                error="Validation Error",
+                message="validation failed:\n - " + "\n - ".join(messages),
+                error_details={
+                    "paths": e.paths
+                }
+            )
         except errors.DiffMismatchError:
-            return {
-                "message": "failed to apply diff"
-            }, 400
+            return BadRequestErrorModel(
+                error="Bad Request",
+                message="failed to apply diff"
+            )
         except Exception:
-            return {
-                "message": "failed to update object"
-            }, 400
+            return BadRequestErrorModel(
+                error="LogicError",
+                message="failed to update object"
+            )
 
         object_version_url = flask.url_for(
             '.object_version',
@@ -233,7 +353,7 @@ class ObjectVersions(Resource):
             _external=True
         )
 
-        return flask.redirect(object_version_url, code=201)
+        return CreatedResponseModel(location=object_version_url)
 
 
 class Object(Resource):
@@ -242,7 +362,7 @@ class Object(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> FoundResponseModel:
         """
         Get an object.
         """
@@ -253,7 +373,9 @@ class Object(Resource):
             version_id=object.version_id,
             _external=True
         )
-        return flask.redirect(object_version_url, code=302)
+        return FoundResponseModel(
+            location=object_version_url,
+        )
 
 
 def _action_exists(value: int) -> int:
@@ -363,7 +485,7 @@ class Objects(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> ResponseData:
+    def get(self, query: QueryModel) -> typing.List[_ObjectModel] | BadRequestErrorModel:
         """
         List all (or some) objects.
 
@@ -410,77 +532,74 @@ class Objects(Resource):
             search_notes.append(('error', f"Error during search: {e}", 0, 0))
             objects = []
         if any(search_note[0] == 'error' for search_note in search_notes):
-            return {
-                'message': '\n'.join(
+            return BadRequestErrorModel(
+                error='Bad Request',
+                message='\n'.join(
                     'Error: ' + search_note[1]
                     for search_note in search_notes
                     if search_note[0] == 'error'
-                )
-            }, 400
+                ),
+            )
         elif args.get_referencing_objects:
             object_references = get_referencing_object_ids({object.id for object in objects})
             ret = []
             for object in objects:
                 references = object_references[object.object_id]
-                referenced: typing.List[typing.Dict[str, typing.Any]] = []
+                referenced: typing.List[ObjectReferenceModel] = []
                 for ref in references:
                     if ref is not None:
-                        reference_dict: typing.Dict[str, typing.Any] = {'object_id': ref.object_id}
-                        if ref.component_uuid is not None:
-                            reference_dict['component_uuid'] = ref.component_uuid
-                        if ref.eln_source_url is not None:
-                            reference_dict['eln_source_url'] = ref.eln_source_url
-                        if ref.eln_object_url is not None:
-                            reference_dict['eln_object_id'] = ref.eln_object_url
-                        referenced.append(reference_dict)
+                        referenced.append(ObjectReferenceModel.from_object_ref(ref))
                 ret.append(
-                    {
-                        'object_id': object.object_id,
-                        'version_id': object.version_id,
-                        'action_id': object.action_id,
-                        'user_id': object.user_id,
-                        'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
-                        'schema': object.schema,
-                        'data': object.data,
-                        'fed_object_id': object.fed_object_id,
-                        'fed_version_id': object.fed_version_id,
-                        'component_id': object.component_id,
-                        'referencing_objects': referenced
-                    }
+                    _ObjectModel(
+                        object_id=object.object_id,
+                        version_id=object.version_id,
+                        action_id=object.action_id,
+                        user_id=object.user_id,
+                        utc_datetime=object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
+                        schema=object.schema,
+                        data=object.data,
+                        fed_object_id=object.fed_object_id,
+                        fed_version_id=object.fed_version_id,
+                        component_id=object.component_id,
+                        referencing_objects=referenced
+                    )
                 )
-            return ret, 200
+            return ret
         else:
             return [
-                {
-                    'object_id': object.object_id,
-                    'version_id': object.version_id,
-                    'action_id': object.action_id,
-                    'user_id': object.user_id,
-                    'utc_datetime': object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
-                    'schema': object.schema,
-                    'data': object.data,
-                    'fed_object_id': object.fed_object_id,
-                    'fed_version_id': object.fed_version_id,
-                    'component_id': object.component_id
-                }
+                _ObjectModel(
+                    object_id=object.object_id,
+                    version_id=object.version_id,
+                    action_id=object.action_id,
+                    user_id=object.user_id,
+                    utc_datetime=object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
+                    schema=object.schema,
+                    data=object.data,
+                    fed_object_id=object.fed_object_id,
+                    fed_version_id=object.fed_version_id,
+                    component_id=object.component_id,
+                    referencing_objects=None
+                )
                 for object in objects
-            ], 200
+            ]
 
     @multi_auth.login_required
     @method()
-    def post(self, request_body: RequestBodyModel) -> ResponseData:
+    def post(self, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel:
         """
         Create a new object.
         """
         if flask.g.user.is_readonly:
-            return {
-                'message': 'user has been marked as read only'
-            }, 400
+            return BadRequestErrorModel(
+                error='ReadOnlyUserError',
+                message="user has been marked as read only"
+            )
         action = request_body.action
         if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
-            return {
-                "message": f"creating objects with action {request_body.action_id} is disabled"
-            }, 400
+            return BadRequestErrorModel(
+                error="LogicError",
+                message=f"creating objects with action {request_body.action_id} is disabled"
+            )
         try:
             object = create_object(
                 action_id=request_body.action_id,
@@ -490,21 +609,32 @@ class Objects(Resource):
             )
         except errors.ValidationError as e:
             messages = e.message.splitlines()
-            return {
-                "message": "validation failed:\n - " + "\n - ".join(messages),
-                "error_paths": e.paths
-            }, 400
+            return BadRequestErrorModel(
+                error="Validation Error",
+                message="validation failed:\n - " + "\n - ".join(messages),
+                error_details={
+                    "paths": e.paths
+                }
+            )
         except Exception:
-            return {
-                "message": "failed to create object"
-            }, 400
+            return BadRequestErrorModel(
+                error="LogicError",
+                message="failed to create object"
+            )
         object_version_url = flask.url_for(
             '.object_version',
             object_id=object.object_id,
             version_id=object.version_id,
             _external=True
         )
-        return flask.redirect(object_version_url, code=201)
+        return CreatedResponseModel(
+            location=object_version_url
+        )
+
+
+class RelatedObjectsModel(BaseModel):
+    referencing_objects: typing.List[ObjectReferenceModel] = Field(description="the list of referencing objects", examples=[[generate_example(ObjectReferenceModel)]])
+    referenced_objects: typing.List[ObjectReferenceModel] = Field(description="the list of referenced objects", examples=[[generate_example(ObjectReferenceModel)]])
 
 
 class RelatedObjects(Resource):
@@ -513,7 +643,7 @@ class RelatedObjects(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ResponseData:
+    def get(self, path: PathModel) -> RelatedObjectsModel:
         """
         List references to related objects.
         """
@@ -523,19 +653,23 @@ class RelatedObjects(Resource):
             include_referenced_objects=True,
             user_id=flask.g.user.id
         )
-        return {
-            "referencing_objects": [
-                {
-                    "object_id": object_id,
-                    "component_uuid": component_uuid
-                }
+        return RelatedObjectsModel(
+            referencing_objects=[
+                ObjectReferenceModel(
+                    object_id=object_id,
+                    component_uuid=component_uuid,
+                    eln_object_url=None,
+                    eln_source_url=None
+                )
                 for object_id, component_uuid in referencing_object_ids
             ],
-            "referenced_objects": [
-                {
-                    "object_id": object_id,
-                    "component_uuid": component_uuid
-                }
+            referenced_objects=[
+                ObjectReferenceModel(
+                    object_id=object_id,
+                    component_uuid=component_uuid,
+                    eln_object_url=None,
+                    eln_source_url=None
+                )
                 for object_id, component_uuid in referenced_object_ids
             ]
-        }
+        )

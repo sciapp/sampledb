@@ -120,7 +120,6 @@ def test_post_group_member_user(flask_server, auth, user):
     assert r.status_code == 400
 
     other_user = sampledb.logic.users.create_user(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
-
     r = requests.post(flask_server.base_url + f'api/v2/groups/{group.id}/member_users/', auth=auth, json={"user_id": other_user.id})
     assert r.status_code == 201
     assert r.headers['Location'].endswith(f'/api/v2/groups/{group.id}/member_users/{other_user.id}')
@@ -169,4 +168,4 @@ def test_delete_group_member_user(flask_server, auth, user):
     assert r.status_code == 404
 
     r = requests.delete(flask_server.base_url + f'api/v2/groups/{group.id}/member_users/{user.id}', auth=auth)
-    assert r.status_code == 200
+    assert r.status_code == 204
