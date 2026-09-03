@@ -1,8 +1,3 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
-
 from flask import Blueprint
 from flask_cors import CORS
 
