@@ -1,7 +1,3 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
 import typing
 
 import flask
