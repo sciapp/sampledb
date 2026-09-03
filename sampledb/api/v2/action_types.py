@@ -1,7 +1,3 @@
-# coding: utf-8
-"""
-RESTful API for SampleDB
-"""
 import typing
 
 from pydantic import BaseModel, Field

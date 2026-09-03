@@ -1,6 +1,3 @@
-"""
-Authentication functions for the SampleDB RESTful API.
-"""
 import typing
 
 import flask
