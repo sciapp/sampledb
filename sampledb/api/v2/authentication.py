@@ -4,6 +4,7 @@ Authentication functions for the SampleDB RESTful API.
 import typing
 
 import flask
+from werkzeug.exceptions import HTTPException
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 from pydantic import BaseModel
@@ -11,8 +12,9 @@ from pydantic import BaseModel
 from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, login_via_oidc_access_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
 from ...logic.users import User
 from ...models import Permissions
-from ...utils import object_permissions_required as object_permissions_required_generic
+from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
 from ..utils import Resource, ResponseData
+from ..errors import handle_api_error
 from .validation_utils import validate, ValidatingError
 
 
@@ -77,6 +79,18 @@ def verify_password(username: str, password: str) -> typing.Optional[User]:
         return None
     flask.g.user = user
     return user
+
+
+@http_basic_auth.error_handler
+@http_api_token_or_access_token_auth.error_handler
+@http_api_token_or_refresh_token_auth.error_handler
+def auth_error(status: int) -> FlaskResponseT:
+    try:
+        flask.abort(status)
+    except HTTPException as e:
+        return handle_api_error(e)
+    else:
+        return handle_api_error(None)
 
 
 def object_permissions_required(permissions: Permissions) -> typing.Callable[[typing.Any], typing.Any]:
