@@ -8,7 +8,7 @@ import flask
 
 from . import frontend
 from ..logic.errors import UserIsReadonlyError, DataverseNotReachableError
-from ..api.v2.errors import is_api_error, handle_api_error
+from ..api.errors import is_api_error, handle_api_error
 from ..utils import FlaskResponseT
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
