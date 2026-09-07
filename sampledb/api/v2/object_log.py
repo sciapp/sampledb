@@ -15,7 +15,7 @@ class ObjectLogEntryModel(BaseModel):
     type: str = Field(description="the type of the object log entry", examples=["CREATE_OBJECT"])
     object_id: int = Field(description="the ID of the object the log entry belongs to", examples=[1])
     user_id: int = Field(description="the ID of the user who caused the object log entry", examples=[1])
-    data: typing.Dict[str, typing.Any] = Field(description="the data of the log entry", examples=[{}])
+    data: dict[str, typing.Any] = Field(description="the data of the log entry", examples=[{}])
     utc_datetime: str = Field(description="the datetime in UTC when the object log entry was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
     is_imported: bool = Field(description="whether the object log entry was imported", examples=[False])
 
@@ -38,7 +38,7 @@ class ObjectLogEntries(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> typing.List[ObjectLogEntryModel]:
+    def get(self, query: QueryModel) -> list[ObjectLogEntryModel]:
         """
         List all object log entries.
         """

@@ -19,10 +19,10 @@ class InstrumentModel(BaseModel):
     short_description: str = Field(description="the short description of the instrument, shown in instrument lists", examples=["This is an example instrument."])
     description: str = Field(description="the description of the instrument, shown on the instrument page", examples=["This is an example instrument."])
     is_hidden: bool = Field(description="whether the instrument is hidden from object lists", examples=[False])
-    instrument_scientists: typing.List[int] = Field(description="the list of instrument scientists for the instrument", examples=[[1]])
-    location_id: typing.Optional[int] = Field(description="the ID of the location of the instrument", examples=[1])
-    fed_id: typing.Optional[int] = Field(description="the federated ID of the instrument", examples=[1])
-    component_id: typing.Optional[int] = Field(description="the federation component ID of the instrument", examples=[1])
+    instrument_scientists: list[int] = Field(description="the list of instrument scientists for the instrument", examples=[[1]])
+    location_id: int | None = Field(description="the ID of the location of the instrument", examples=[1])
+    fed_id: int | None = Field(description="the federated ID of the instrument", examples=[1])
+    component_id: int | None = Field(description="the federation component ID of the instrument", examples=[1])
 
     @classmethod
     def from_instrument(cls, instrument: instruments.Instrument) -> typing.Self:
@@ -69,7 +69,7 @@ class Instrument(Resource):
 class Instruments(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[InstrumentModel]:
+    def get(self) -> list[InstrumentModel]:
         """
         List all instruments.
         """

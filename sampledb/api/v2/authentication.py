@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Callable
 
 import flask
 from werkzeug.exceptions import HTTPException
@@ -24,7 +25,7 @@ multi_auth_for_access_tokens = MultiAuth(http_basic_auth, http_api_token_or_refr
 
 
 @http_api_token_or_access_token_auth.verify_token
-def verify_api_token_or_access_token(api_token: typing.Optional[str]) -> typing.Optional[User]:
+def verify_api_token_or_access_token(api_token: str | None) -> User | None:
     if not api_token:
         return None
 
@@ -46,7 +47,7 @@ def verify_api_token_or_access_token(api_token: typing.Optional[str]) -> typing.
 
 
 @http_api_token_or_refresh_token_auth.verify_token
-def verify_api_token_or_refresh_token(api_token: typing.Optional[str]) -> typing.Optional[User]:
+def verify_api_token_or_refresh_token(api_token: str | None) -> User | None:
     if not api_token:
         return None
     user = login_via_api_token(api_token)
@@ -61,7 +62,7 @@ def verify_api_token_or_refresh_token(api_token: typing.Optional[str]) -> typing
 
 
 @http_basic_auth.verify_password
-def verify_password(username: str, password: str) -> typing.Optional[User]:
+def verify_password(username: str, password: str) -> User | None:
     if not username:
         return None
     user = login(username, password)
@@ -87,7 +88,7 @@ def auth_error(status: int) -> FlaskResponseT:
         return handle_api_error(None)
 
 
-def object_permissions_required(permissions: Permissions) -> typing.Callable[[typing.Any], typing.Any]:
+def object_permissions_required(permissions: Permissions) -> Callable[[typing.Any], typing.Any]:
     """
     Only allow access to a route it the user has the required permissions.
 
@@ -108,7 +109,7 @@ class AccessTokenModel(BaseModel):
     access_token: str = Field(..., title="Access Token", description="A token usable to authenticate with the API via HTTP Bearer authentication", examples=["be740310706c1050e7a1668e2c0c407e029559a862d544d2d059f363c9ad8219"])
     refresh_token: str = Field(..., title="Refresh Token", description="A token usable to authenticate with the /access_tokens/ endpoint via HTTP Bearer authentication to refresh an access token", examples=["a844185d4a924f52eec40d5b83f68fed8953665553b134dd5a02521250205b19"])
     expiration_utc_datetime: str = Field(..., title="Expiration Datetime", description="A string containing the datetime (in UTC) when the access token expires", examples=["2026-01-01 12:34:56"])
-    description: typing.Optional[str] = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
+    description: str | None = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
 
 
 class AccessTokens(Resource):
@@ -117,7 +118,7 @@ class AccessTokens(Resource):
 
     @multi_auth_for_access_tokens.login_required
     @method(default_status_code=201)
-    def post(self, request_body: typing.Optional[RequestBodyModel]) -> BadRequestErrorModel | AccessTokenModel:
+    def post(self, request_body: RequestBodyModel | None) -> BadRequestErrorModel | AccessTokenModel:
         """
         Create a new access token.
         """

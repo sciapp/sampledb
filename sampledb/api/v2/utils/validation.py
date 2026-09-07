@@ -17,17 +17,17 @@ class _ErrorDict(typing.TypedDict):
     input: typing.NotRequired[typing.Any]
 
 
-type _ValidationError = _ErrorDict | typing.Dict[int, _ValidationError] | typing.Dict[str, _ValidationError]
+type _ValidationError = _ErrorDict | dict[int, _ValidationError] | dict[str, _ValidationError]
 
 
-def generate_example(model: typing.Type[BaseModel]) -> typing.Dict[str, typing.Any]:
+def generate_example(model: type[BaseModel]) -> dict[str, typing.Any]:
     return {
         field_name: field_info.examples[0]  # type: ignore[index]
         for field_name, field_info in model.model_fields.items()
     }
 
 
-def _error_details_to_returned_error(error_details: typing.List[ErrorDetails], idx: int = 0, /) -> _ValidationError:
+def _error_details_to_returned_error(error_details: list[ErrorDetails], idx: int = 0, /) -> _ValidationError:
     match error_details:
         case [{"type": type_, "loc": loc, "msg": msg, "input": input_}] if len(loc) == idx:
             if type_ == "missing":
@@ -51,7 +51,7 @@ class ValidatingError(ValueError):
             try:
                 error_dict = TypeAdapter(_ErrorDict).validate_python(e, extra="forbid", strict=True)
             except ValidationError:
-                loc_part, e = typing.cast(typing.Tuple[int | str, _ValidationError], next(iter(e.items())))
+                loc_part, e = typing.cast(tuple[int | str, _ValidationError], next(iter(e.items())))
                 loc.append(str(loc_part))
             else:
                 msg = error_dict["msg"]
@@ -59,7 +59,7 @@ class ValidatingError(ValueError):
         self.message = f"{msg} ({".".join(loc)})" if loc else msg
 
     @property
-    def response(self) -> typing.Tuple[typing.Dict[str, typing.Any], int]:
+    def response(self) -> tuple[dict[str, typing.Any], int]:
         return {
             "error": "Bad Request",
             "message": self.message,
@@ -149,7 +149,7 @@ def is_valid[T, ContextT](predicate: Callable[[T, ValidationInfo[ContextT]], boo
 # works because defaults are not validated by Pydantic (unless it has been enabled, which makes this type erroneous)
 T = typing.TypeVar("T")
 OptionalNotNone = typing.Annotated[
-    typing.Optional[T],
+    T | None,
     is_valid(
         lambda v, i: v is not None,
         lambda i: PydanticCustomError("none_forbidden", "Input should be absent or set to a valid value"),

@@ -43,12 +43,12 @@ class ProjectMemberGroupRefModel(BaseModel):
 
 class ProjectModel(BaseModel):
     project_id: int = Field(description="the ID of the project group", examples=[1])
-    name: typing.Dict[str, str] = Field(description="the name of the project group", examples=[{"en": "Example Project Group"}])
-    description: typing.Dict[str, str] = Field(description="the description of the project group", examples=[{"en": "This is an example project group."}])
-    member_users: typing.List[ProjectMemberUserRefModel] = Field(description="the list of users who are members of the project group", examples=[
+    name: dict[str, str] = Field(description="the name of the project group", examples=[{"en": "Example Project Group"}])
+    description: dict[str, str] = Field(description="the description of the project group", examples=[{"en": "This is an example project group."}])
+    member_users: list[ProjectMemberUserRefModel] = Field(description="the list of users who are members of the project group", examples=[
         [generate_example(ProjectMemberUserRefModel)]
     ])
-    member_groups: typing.List[ProjectMemberGroupRefModel] = Field(description="the list of basic groups who are members of the project group", examples=[
+    member_groups: list[ProjectMemberGroupRefModel] = Field(description="the list of basic groups who are members of the project group", examples=[
         [generate_example(ProjectMemberGroupRefModel)]
     ])
 
@@ -78,7 +78,7 @@ class ProjectModel(BaseModel):
 class Projects(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[ProjectModel]:
+    def get(self) -> list[ProjectModel]:
         """
         List all project groups.
         """
@@ -118,7 +118,7 @@ class ProjectMemberUsers(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[ProjectMemberUserRefModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[ProjectMemberUserRefModel] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all member users of a project group.
         """
