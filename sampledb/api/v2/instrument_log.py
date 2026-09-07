@@ -25,16 +25,16 @@ MAX_FILE_NAME_LENGTH = 256
 
 @dataclass(frozen=True, slots=True)
 class _ValidationContext:
-    log_entry: typing.Optional[LogicInstrumentLogEntry]
+    log_entry: LogicInstrumentLogEntry | None
     existing_category_ids: frozenset[int]
 
     @property
-    def existing_file_attachments(self) -> typing.List[InstrumentLogFileAttachment]:
+    def existing_file_attachments(self) -> list[InstrumentLogFileAttachment]:
         assert self.log_entry is not None
         return [fa for fa in self.log_entry.file_attachments if not fa.is_hidden]
 
     @property
-    def existing_object_attachments(self) -> typing.List[InstrumentLogObjectAttachment]:
+    def existing_object_attachments(self) -> list[InstrumentLogObjectAttachment]:
         assert self.log_entry is not None
         return [oa for oa in self.log_entry.object_attachments if not oa.is_hidden]
 
@@ -104,9 +104,9 @@ def _parse_datetime(value: typing.Any) -> datetime.datetime:
 
 
 class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
-    content: typing.Optional[str] = Field(description="the content for the instrument log entry", examples=["This is an instrument log entry."])
+    content: str | None = Field(description="the content for the instrument log entry", examples=["This is an instrument log entry."])
     content_is_markdown: bool = Field(False, description="whether the content for the instrument log entry is formatted in Markdown", examples=[False])
-    category_ids: typing.List[
+    category_ids: list[
         typing.Annotated[
             int,
             Strict(),
@@ -120,20 +120,18 @@ class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
             ),
         ],
     ] = Field([], description="the IDs of the categories for the instrument log entry", examples=[[1, 2, 4]])
-    event_utc_datetime: typing.Optional[
-        typing.Annotated[
-            datetime.datetime,
-            BeforeValidator(_parse_datetime),
-            is_valid(
-                lambda v, i: abs(v - datetime.datetime.now()) <= datetime.timedelta(days=365_242),
-                lambda i: PydanticCustomError("datetime_range", "Timestamp should not be more than 1000 years before or after the current date"),
-            ),
-        ]
-    ] = Field(None, description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
+    event_utc_datetime: typing.Annotated[
+        datetime.datetime,
+        BeforeValidator(_parse_datetime),
+        is_valid(
+            lambda v, i: abs(v - datetime.datetime.now()) <= datetime.timedelta(days=365_242),
+            lambda i: PydanticCustomError("datetime_range", "Timestamp should not be more than 1000 years before or after the current date"),
+        ),
+    ] | None = Field(None, description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
 
 
 _ObjectAttachments = typing.Annotated[
-    typing.List[_ObjectAttachment],
+    list[_ObjectAttachment],
     is_valid(
         lambda v, i: len({x.object_id for x in v}) == len(v),
         lambda i: PydanticCustomError("unique", "Object should only be attached once"),
@@ -158,8 +156,8 @@ class InstrumentLogEntryVersionModel(BaseModel):
     version_id: int = Field(description="the ID of the instrument log entry version", examples=[1])
     utc_datetime: str = Field(description="the datetime in UTC when the instrument log entry version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
     content: str = Field(description="the content of the instrument log entry", examples=["This is a log entry."])
-    categories: typing.List[InstrumentLogCategoryModel] = Field(description="the categories of the instrument log entry", examples=[[generate_example(InstrumentLogCategoryModel)]])
-    event_utc_datetime: typing.Optional[str] = Field(description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
+    categories: list[InstrumentLogCategoryModel] = Field(description="the categories of the instrument log entry", examples=[[generate_example(InstrumentLogCategoryModel)]])
+    event_utc_datetime: str | None = Field(description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
     content_is_markdown: bool = Field(description="whether the content of the instrument log entry is formatted in Markdown", examples=[False])
 
     @classmethod
@@ -181,7 +179,7 @@ class InstrumentLogEntryVersionModel(BaseModel):
 class InstrumentLogEntryModel(BaseModel):
     log_entry_id: int = Field(description="the ID of the instrument log entry", examples=[1])
     author: int = Field(description="the ID of the user who created the instrument log entry", examples=[1])
-    versions: typing.List[InstrumentLogEntryVersionModel] = Field(description="the versions of the instrument log entry", examples=[[generate_example(InstrumentLogEntryVersionModel)]])
+    versions: list[InstrumentLogEntryVersionModel] = Field(description="the versions of the instrument log entry", examples=[[generate_example(InstrumentLogEntryVersionModel)]])
 
     @classmethod
     def from_instrument_log_entry(cls, instrument_log_entry: instrument_log_entries.InstrumentLogEntry) -> typing.Self:
@@ -197,8 +195,8 @@ class InstrumentLogEntryModel(BaseModel):
 
 class InstrumentLogFileAttachmentModel(BaseModel):
     file_attachment_id: int = Field(description="the ID of the file attachment", examples=[1])
-    file_name: typing.Optional[str] = Field(description="the name of the attached file", examples=["example.txt"])
-    base64_content: typing.Optional[str] = Field(description="the base64 encoded content of the attached file", examples=["ZXhhbXBsZQ=="])
+    file_name: str | None = Field(description="the name of the attached file", examples=["example.txt"])
+    base64_content: str | None = Field(description="the base64 encoded content of the attached file", examples=["ZXhhbXBsZQ=="])
     is_hidden: bool = Field(description="whether the file attachment is hidden", examples=[False])
 
     @classmethod
@@ -213,7 +211,7 @@ class InstrumentLogFileAttachmentModel(BaseModel):
 
 class InstrumentLogObjectAttachmentModel(BaseModel):
     object_attachment_id: int = Field(description="the ID of the object attachment", examples=[1])
-    object_id: typing.Optional[int] = Field(description="the ID of the attached object", examples=[1])
+    object_id: int | None = Field(description="the ID of the attached object", examples=[1])
     is_hidden: bool = Field(description="whether the object attachment is hidden", examples=[False])
 
     @classmethod
@@ -230,7 +228,7 @@ class InstrumentLogEntries(Resource):
         instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
 
     class RequestBodyModel(_BaseInstrumentLogEntry):
-        file_attachments: typing.List[_FileAttachment] = Field([], description="a list of file attachments", examples=[[]])
+        file_attachments: list[_FileAttachment] = Field([], description="a list of file attachments", examples=[[]])
         object_attachments: _ObjectAttachments = Field([], description="a list of object attachments", examples=[[]])
 
         @model_validator(mode="after")
@@ -241,7 +239,7 @@ class InstrumentLogEntries(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[InstrumentLogEntryModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[InstrumentLogEntryModel] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all log entries for an instrument.
         """
@@ -372,8 +370,8 @@ class InstrumentLogEntryVersions(Resource):
     class RequestBodyModel(_BaseInstrumentLogEntry):
         version_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: len(i.context.log_entry.versions) + 1)] = Field(description="the ID for the new version of the instrument log entry, must be the current version_id + 1", examples=[1])
         log_entry_id: typing.Annotated[int, populate_missing_or_expect_from_validation_info(lambda i: i.context.log_entry.id)] = Field(description="the ID of an existing instrument log entry to update", examples=[1])
-        file_attachments: typing.Optional[typing.List[_FileAttachment]] = Field(None, description="the file attachments for the new instrument log entry version", examples=[[{"file_name": "example.txt", "base64_content": "ZXhhbXBsZQ=="}]])
-        object_attachments: typing.Optional[_ObjectAttachments] = Field(None, description="the object attachments for the new instrument log entry version", examples=[[{"object_id": 1}]])
+        file_attachments: list[_FileAttachment] | None = Field(None, description="the file attachments for the new instrument log entry version", examples=[[{"file_name": "example.txt", "base64_content": "ZXhhbXBsZQ=="}]])
+        object_attachments: _ObjectAttachments | None = Field(None, description="the object attachments for the new instrument log entry version", examples=[[{"object_id": 1}]])
 
         @model_validator(mode="after")
         def check_not_empty(self, info: ValidationInfo[_ValidationContext]) -> typing.Self:
@@ -385,7 +383,7 @@ class InstrumentLogEntryVersions(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[InstrumentLogEntryVersionModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[InstrumentLogEntryVersionModel] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all versions of an instrument log entry.
         """
@@ -551,7 +549,7 @@ class InstrumentLogEntryFileAttachments(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[InstrumentLogFileAttachmentModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[InstrumentLogFileAttachmentModel] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all file attachments for an instrument log entry.
         """
@@ -644,7 +642,7 @@ class InstrumentLogEntryObjectAttachments(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[InstrumentLogObjectAttachmentModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[InstrumentLogObjectAttachmentModel] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all object attachments for an instrument log entry.
         """
@@ -736,7 +734,7 @@ class InstrumentLogCategories(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[InstrumentLogCategoryModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[InstrumentLogCategoryModel] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all log categories for an instrument.
         """

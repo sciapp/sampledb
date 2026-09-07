@@ -59,17 +59,17 @@ type ProjectId = typing.Annotated[int, AfterValidator(_project_exists)]
 type PermissionsModel = typing.Annotated[Permissions, BeforeValidator(_permissions_validator), WrapSerializer(_permissions_serializer)]
 type _AnonymousPermissions = typing.Annotated[PermissionsModel, _is_valid_unknown_permissions("anonymous")]
 type _AuthenticatedPermissions = typing.Annotated[PermissionsModel, _is_valid_unknown_permissions("authenticated")]
-type _UserPermissions = typing.Dict[UserId, PermissionsModel]
-type _GroupPermissions = typing.Dict[GroupId, PermissionsModel]
-type _ProjectPermissions = typing.Dict[ProjectId, PermissionsModel]
+type _UserPermissions = dict[UserId, PermissionsModel]
+type _GroupPermissions = dict[GroupId, PermissionsModel]
+type _ProjectPermissions = dict[ProjectId, PermissionsModel]
 
 
 class _ObjectPermissions(BaseModel):
-    users: typing.Optional[_UserPermissions] = Field(None, description="the permissions for users for this object", examples=[{"1": "grant"}])
-    groups: typing.Optional[_GroupPermissions] = Field(None, description="the permissions for basic groups for this object", examples=[{"1": "read"}])
-    projects: typing.Optional[_ProjectPermissions] = Field(None, description="the permissions for project groups for this object", examples=[{"1": "write"}])
-    authenticated_users: typing.Optional[_AuthenticatedPermissions] = Field(None, description="the permissions for all authenticated users for this object", examples=["read"])
-    anonymous_users: typing.Optional[_AnonymousPermissions] = Field(None, description="the permissions for anonymous users for this object", examples=["read"])
+    users: _UserPermissions | None = Field(None, description="the permissions for users for this object", examples=[{"1": "grant"}])
+    groups: _GroupPermissions | None = Field(None, description="the permissions for basic groups for this object", examples=[{"1": "read"}])
+    projects: _ProjectPermissions | None = Field(None, description="the permissions for project groups for this object", examples=[{"1": "write"}])
+    authenticated_users: _AuthenticatedPermissions | None = Field(None, description="the permissions for all authenticated users for this object", examples=["read"])
+    anonymous_users: _AnonymousPermissions | None = Field(None, description="the permissions for anonymous users for this object", examples=["read"])
 
 
 def _object_exists(value: int) -> int:
@@ -89,9 +89,9 @@ class _CopyObjectPermissions(BaseModel):
 
 
 class AllObjectPermissionsModel(BaseModel):
-    users: typing.Dict[int, str] = Field(description="the permissions for users for this object", examples=[{"1": "grant"}])
-    groups: typing.Dict[int, str] = Field(description="the permissions for basic groups for this object", examples=[{"1": "read"}])
-    projects: typing.Dict[int, str] = Field(description="the permissions for project groups for this object", examples=[{"1": "write"}])
+    users: dict[int, str] = Field(description="the permissions for users for this object", examples=[{"1": "grant"}])
+    groups: dict[int, str] = Field(description="the permissions for basic groups for this object", examples=[{"1": "read"}])
+    projects: dict[int, str] = Field(description="the permissions for project groups for this object", examples=[{"1": "write"}])
     authenticated_users: str = Field(description="the permissions for all authenticated users for this object", examples=["read"])
     anonymous_users: str = Field(description="the permissions for anonymous users for this object", examples=["read"])
 
@@ -179,10 +179,7 @@ class ObjectPermissions(Resource):
 
 class CopyObjectsPermissions(Resource):
     type RequestBodyModel = typing.Annotated[
-        typing.Union[
-            typing.Annotated[_CopyObjectPermissions, Tag('instance')],
-            typing.Annotated[typing.List[_CopyObjectPermissions], Tag('list')],
-        ],
+        typing.Annotated[_CopyObjectPermissions, Tag('instance')] | typing.Annotated[list[_CopyObjectPermissions], Tag('list')],
         Discriminator(lambda v: 'list' if isinstance(v, list) else 'instance'),
     ]
 
@@ -291,7 +288,7 @@ class UsersObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[typing.Dict[int, PermissionsModel]]:
+    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[dict[int, PermissionsModel]]:
         """
         Get the object permissions granted to users.
         """
@@ -357,7 +354,7 @@ class GroupsObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[typing.Dict[int, PermissionsModel]]:
+    def get(self, path: PathModel, query: QueryModel) -> ReturnValue[dict[int, PermissionsModel]]:
         """
         Get the object permissions granted to basic groups.
         """
@@ -413,7 +410,7 @@ class ProjectsObjectPermissions(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ReturnValue[typing.Dict[int, PermissionsModel]]:
+    def get(self, path: PathModel) -> ReturnValue[dict[int, PermissionsModel]]:
         """
         Get the object permissions granted to project groups.
         """

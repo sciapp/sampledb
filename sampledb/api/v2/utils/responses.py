@@ -1,6 +1,7 @@
 import http
 import inspect
 import typing
+from collections.abc import Sequence
 from http import HTTPStatus
 
 import flask
@@ -64,11 +65,11 @@ class ReturnValue[T]:
         self.value: T = value
 
 
-ResultUnion = typing.Union[BaseModel, typing.Sequence[BaseModel], ReturnValue[typing.Any], ErrorModel, RedirectResponseModel, NoContentModel]
+type ResourceMethodResult = BaseModel | Sequence[BaseModel] | ReturnValue[typing.Any] | ErrorModel | RedirectResponseModel | NoContentModel
 
 
 def make_response(
-        result: ResultUnion,
+        result: ResourceMethodResult,
         default_status_code: int,
         return_type_hint: typing.Any
 ) -> werkzeug.Response:
@@ -90,7 +91,7 @@ def make_response(
             b"",
             status=result.STATUS_CODE
         )
-    if isinstance(result, typing.Sequence):
+    if isinstance(result, Sequence):
         return make_json_response(
             [
                 item.model_dump(by_alias=True) if isinstance(item, BaseModel) else item
@@ -116,7 +117,7 @@ def make_response(
 def _get_return_value_type(
         return_type_hint: typing.Any
 ) -> typing.Any:
-    if typing.get_origin(return_type_hint) is not typing.Union:
+    if typing.get_origin(return_type_hint) is not typing.Union:  # pylint: disable=consider-alternative-union-syntax
         assert typing.get_origin(return_type_hint) is ReturnValue
         return typing.get_args(return_type_hint)[0]
     return_type_hint_options = set(typing.get_args(return_type_hint))
@@ -127,7 +128,7 @@ def _get_return_value_type(
     }
     assert all(
         inspect.isclass(return_type_hint_option) and issubclass(return_type_hint_option, (BaseModel, ErrorModel, NoContentModel, RedirectResponseModel)) or
-        typing.get_origin(return_type_hint_option) is typing.List and inspect.isclass(typing.get_args(return_type_hint_option)[0]) and issubclass(typing.get_args(return_type_hint_option)[0], BaseModel)
+        typing.get_origin(return_type_hint_option) is list and inspect.isclass(typing.get_args(return_type_hint_option)[0]) and issubclass(typing.get_args(return_type_hint_option)[0], BaseModel)
         for return_type_hint_option in (
             return_type_hint_options - return_value_return_type_hint_options
         )

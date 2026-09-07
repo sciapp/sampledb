@@ -31,9 +31,9 @@ from .utils.openapi import method
 
 class ObjectReferenceModel(BaseModel):
     object_id: int = Field(description="the ID of the referenced object", examples=[1])
-    component_uuid: typing.Optional[str] = Field(None, description="the UUID of the federation component the referenced object belongs to", examples=["59b4f08d-f2e6-4343-a155-9880e988cead"])
-    eln_source_url: typing.Optional[str] = Field(None, description="the URL of the source ELN of the referenced object", examples=["https://example.com"])
-    eln_object_url: typing.Optional[str] = Field(None, description="the URL of the referenced object in its source ELN", examples=["https://example.com/objects/A"])
+    component_uuid: str | None = Field(None, description="the UUID of the federation component the referenced object belongs to", examples=["59b4f08d-f2e6-4343-a155-9880e988cead"])
+    eln_source_url: str | None = Field(None, description="the URL of the source ELN of the referenced object", examples=["https://example.com"])
+    eln_object_url: str | None = Field(None, description="the URL of the referenced object in its source ELN", examples=["https://example.com/objects/A"])
 
     @classmethod
     def from_object_ref(cls, object_ref: ObjectRef) -> typing.Self:
@@ -48,10 +48,10 @@ class ObjectReferenceModel(BaseModel):
 class _ObjectModel(BaseModel):
     object_id: int = Field(description="the ID of the object", examples=[1])
     version_id: int = Field(description="the ID of the current object version", examples=[0])
-    action_id: typing.Optional[int] = Field(description="the ID of the action the object was created with", examples=[1])
-    user_id: typing.Optional[int] = Field(description="the ID of the user who created this object version", examples=[1])
-    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the current object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
-    schema_: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+    action_id: int | None = Field(description="the ID of the action the object was created with", examples=[1])
+    user_id: int | None = Field(description="the ID of the user who created this object version", examples=[1])
+    utc_datetime: str | None = Field(description="the datetime in UTC when the current object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    schema_: dict[str, typing.Any] | None = Field(
         alias="schema",
         description="the schema of the current object version",
         examples=[{
@@ -66,7 +66,7 @@ class _ObjectModel(BaseModel):
             "required": ["name"]
         }]
     )
-    data: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+    data: dict[str, typing.Any] | None = Field(
         description="the data of the current object version",
         examples=[{
             "name": {
@@ -77,19 +77,19 @@ class _ObjectModel(BaseModel):
             }
         }]
     )
-    fed_object_id: typing.Optional[int] = Field(description="the federated object ID of the object", examples=[1])
-    fed_version_id: typing.Optional[int] = Field(description="the federated object version ID for the current object version", examples=[1])
-    component_id: typing.Optional[int] = Field(description="the federation component ID of the object", examples=[1])
-    referencing_objects: typing.Optional[typing.List[ObjectReferenceModel]] = Field(description="the list of referencing objects", examples=[generate_example(ObjectReferenceModel)])
+    fed_object_id: int | None = Field(description="the federated object ID of the object", examples=[1])
+    fed_version_id: int | None = Field(description="the federated object version ID for the current object version", examples=[1])
+    component_id: int | None = Field(description="the federation component ID of the object", examples=[1])
+    referencing_objects: list[ObjectReferenceModel] | None = Field(description="the list of referencing objects", examples=[generate_example(ObjectReferenceModel)])
 
 
 class ObjectVersionModel(BaseModel):
     object_id: int = Field(description="the ID of the object the version belongs to", examples=[1])
     version_id: int = Field(description="the ID of the object version", examples=[0])
-    action_id: typing.Optional[int] = Field(description="the ID of the action the object was created with", examples=[1])
-    user_id: typing.Optional[int] = Field(description="the ID of the user who created this object version", examples=[1])
-    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
-    schema_: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+    action_id: int | None = Field(description="the ID of the action the object was created with", examples=[1])
+    user_id: int | None = Field(description="the ID of the user who created this object version", examples=[1])
+    utc_datetime: str | None = Field(description="the datetime in UTC when the object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    schema_: dict[str, typing.Any] | None = Field(
         alias="schema",
         description="the schema of the object version",
         examples=[{
@@ -104,7 +104,7 @@ class ObjectVersionModel(BaseModel):
             "required": ["name"]
         }]
     )
-    data: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+    data: dict[str, typing.Any] | None = Field(
         description="the data of the object version",
         examples=[{
             "name": {
@@ -115,12 +115,12 @@ class ObjectVersionModel(BaseModel):
             }
         }]
     )
-    fed_object_id: typing.Optional[int] = Field(description="the federated object ID of the object the version belongs to", examples=[1])
-    fed_version_id: typing.Optional[int] = Field(description="the federated object version ID for this object version", examples=[1])
-    component_id: typing.Optional[int] = Field(description="the federation component ID of the object this version belongs to", examples=[1])
-    user: typing.Optional[UserModel] = Field(description="the user who created this object version, as if queried via their ID", examples=[generate_example(UserModel)])
-    action: typing.Optional[ActionModel] = Field(description="the action the object was created with, as if queried via its ID", examples=[generate_example(ActionModel)])
-    data_diff: typing.Optional[typing.Any] = Field(
+    fed_object_id: int | None = Field(description="the federated object ID of the object the version belongs to", examples=[1])
+    fed_version_id: int | None = Field(description="the federated object version ID for this object version", examples=[1])
+    component_id: int | None = Field(description="the federation component ID of the object this version belongs to", examples=[1])
+    user: UserModel | None = Field(description="the user who created this object version, as if queried via their ID", examples=[generate_example(UserModel)])
+    action: ActionModel | None = Field(description="the action the object was created with, as if queried via its ID", examples=[generate_example(ActionModel)])
+    data_diff: typing.Any | None = Field(
         description="the data diff between the previous object version and this one",
         examples=[{
             "name": {
@@ -217,13 +217,13 @@ class ObjectVersions(Resource):
 
     class RequestBodyModel(ModelWithDefaultsFromValidationInfo):
         object_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.object_id)] = Field(description="the ID of the object to update, must match the object_id path parameter", examples=[1])
-        fed_object_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_object_id)] = Field(description="the federated object ID of the object to update, must match its current fed_object_id", examples=[1])
-        fed_version_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_version_id)] = Field(description="the federated version ID of the object to update, must match its current fed_object_id", examples=[1])
-        component_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.component_id)] = Field(description="the federation component ID of the object to update, must match its current component_id", examples=[1])
+        fed_object_id: typing.Annotated[int | None, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_object_id)] = Field(description="the federated object ID of the object to update, must match its current fed_object_id", examples=[1])
+        fed_version_id: typing.Annotated[int | None, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.fed_version_id)] = Field(description="the federated version ID of the object to update, must match its current fed_object_id", examples=[1])
+        component_id: typing.Annotated[int | None, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.component_id)] = Field(description="the federation component ID of the object to update, must match its current component_id", examples=[1])
         version_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.version_id + 1)] = Field(description="the ID of the new object version to create, must match its current version_id + 1", examples=[1])
         action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.object.action_id)] = Field(description="the action ID of the object to update, must match its current action_id", examples=[1])
         action_schema: typing.Annotated[
-            OptionalNotNone[typing.Dict[str, typing.Any]],
+            OptionalNotNone[dict[str, typing.Any]],
             Field(
                 validation_alias="schema",
                 description="the schema for the object, must be the same as its current schema or the schema of the action used",
@@ -240,7 +240,7 @@ class ObjectVersions(Resource):
                 }]
             ),
         ]
-        data: OptionalNotNone[typing.Dict[str, typing.Any]] = Field(
+        data: OptionalNotNone[dict[str, typing.Any]] = Field(
             description="the data for the object",
             examples=[{
                 "name": {
@@ -249,7 +249,7 @@ class ObjectVersions(Resource):
                 }
             }]
         )
-        data_diff: OptionalNotNone[typing.Dict[str, typing.Any]] = Field(
+        data_diff: OptionalNotNone[dict[str, typing.Any]] = Field(
             description="the data diff between the previous object version and the one to create",
             examples=[{
                 "name": {
@@ -422,7 +422,7 @@ class Objects(Resource):
         version_id: typing.Literal[0] = Field(0, description="the version ID of the object, must be 0", examples=[0])
         action_id: typing.Annotated[int, Strict()] = Field(description="the ID of an existing action to create the object with", examples=[1])
         action_schema: typing.Annotated[
-            OptionalNotNone[typing.Dict[str, typing.Any]],
+            OptionalNotNone[dict[str, typing.Any]],
             Field(
                 validation_alias="schema",
                 description="the schema for the object, must be the same as the schema of the action used",
@@ -439,7 +439,7 @@ class Objects(Resource):
                 }]
             ),
         ]
-        data: typing.Dict[str, typing.Any] = Field(
+        data: dict[str, typing.Any] = Field(
             description="the data for the object",
             examples=[{
                 "name": {
@@ -473,7 +473,7 @@ class Objects(Resource):
             Field(validation_alias=AliasChoices("action_type_id", "action_type")),
         ] = Field(None, description="the ID of an existing action type — filter for objects created with actions of this type", examples=[1])
         object_ids: typing.Annotated[
-            typing.List[int],
+            list[int],
             BeforeValidator(lambda value: [int(ss) for s in (value if isinstance(value, list) else [value]) for ss in s.split(",")]),
         ] | None = Field(None, description="a list of objects IDs  — filter for objects created with any of these IDs", examples=[[1, 2, 3]])
         related_user_id: int | None = Field(None, description="the ID of an existing user — filter for objects related to this user", examples=[1])
@@ -486,7 +486,7 @@ class Objects(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> typing.List[_ObjectModel] | BadRequestErrorModel:
+    def get(self, query: QueryModel) -> list[_ObjectModel] | BadRequestErrorModel:
         """
         List all (or some) objects.
 
@@ -506,7 +506,7 @@ class Objects(Resource):
                 unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, args.use_advanced_search, use_permissions_filter_for_referenced_objects=not flask.g.user.has_admin_permissions)
             except Exception:
                 # TODO: ensure that advanced search does not cause exceptions
-                def unwrapped_filter_func(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Any:
+                def unwrapped_filter_func(data: typing.Any, search_notes: list[tuple[str, str, int, int | None]]) -> typing.Any:
                     """Return all objects"""
                     search_notes.append(("error", "Unable to parse search expression", 0, len(query_string)))
                     return False
@@ -546,7 +546,7 @@ class Objects(Resource):
             ret = []
             for object in objects:
                 references = object_references[object.object_id]
-                referenced: typing.List[ObjectReferenceModel] = []
+                referenced: list[ObjectReferenceModel] = []
                 for ref in references:
                     if ref is not None:
                         referenced.append(ObjectReferenceModel.from_object_ref(ref))
@@ -634,8 +634,8 @@ class Objects(Resource):
 
 
 class RelatedObjectsModel(BaseModel):
-    referencing_objects: typing.List[ObjectReferenceModel] = Field(description="the list of referencing objects", examples=[[generate_example(ObjectReferenceModel)]])
-    referenced_objects: typing.List[ObjectReferenceModel] = Field(description="the list of referenced objects", examples=[[generate_example(ObjectReferenceModel)]])
+    referencing_objects: list[ObjectReferenceModel] = Field(description="the list of referencing objects", examples=[[generate_example(ObjectReferenceModel)]])
+    referenced_objects: list[ObjectReferenceModel] = Field(description="the list of referenced objects", examples=[[generate_example(ObjectReferenceModel)]])
 
 
 class RelatedObjects(Resource):

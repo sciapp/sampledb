@@ -24,14 +24,14 @@ from .utils.openapi import method
 
 class ActionModel(BaseModel):
     action_id: int = Field(description="the ID of the action", examples=[1])
-    instrument_id: typing.Optional[int] = Field(description="the ID of the instrument the action belongs to", examples=[1])
-    user_id: typing.Optional[int] = Field(description="the ID of the user who created the action", examples=[1])
-    type: typing.Union[typing.Literal['sample'], typing.Literal['measurement'], typing.Literal['simulation'], typing.Literal['custom']] = Field(description="a string representation of the action type", examples=["sample"], deprecated=True)
-    type_id: typing.Optional[int] = Field(description="the ID of the action type", examples=[1])
-    name: typing.Optional[str] = Field(description="the name of the action", examples=["Example Action"])
-    description: typing.Optional[str] = Field(description="the description of the action", examples=["This is an example action."])
+    instrument_id: int | None = Field(description="the ID of the instrument the action belongs to", examples=[1])
+    user_id: int | None = Field(description="the ID of the user who created the action", examples=[1])
+    type: typing.Literal['sample', 'measurement', 'simulation', 'custom'] = Field(description="a string representation of the action type", examples=["sample"], deprecated=True)
+    type_id: int | None = Field(description="the ID of the action type", examples=[1])
+    name: str | None = Field(description="the name of the action", examples=["Example Action"])
+    description: str | None = Field(description="the description of the action", examples=["This is an example action."])
     is_hidden: bool = Field(description="whether the action is hidden from action lists", examples=[False])
-    action_schema: typing.Optional[typing.Dict[str, typing.Any]] = Field(
+    action_schema: dict[str, typing.Any] | None = Field(
         alias='schema',
         description='the schema of the action',
         examples=[{
@@ -92,7 +92,7 @@ class Action(Resource):
     class RequestBodyModel(ModelWithDefaultsFromValidationInfo):
         action_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.id)] = Field(description="the ID of the action to update, must match the action_id path parameter", examples=[1])
         instrument_id: typing.Annotated[
-            typing.Optional[int],
+            int | None,
             Strict(),
             populate_missing_or_expect_from_validation_info(
                 lambda i: (
@@ -102,14 +102,14 @@ class Action(Resource):
                 )
             ),
         ] = Field(description="the instrument ID of the action to update, must match its current instrument_id", examples=[1])
-        user_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.user_id)] = Field(description="the user ID of the action to update, must match its current user_id", examples=[1])
-        type: typing.Annotated[typing.Optional[str], populate_missing_or_expect_from_validation_info(lambda i: i.context.action_type)] = Field(description="the type string representation of the action to update, must match its current type string", examples=["sample"])
-        type_id: typing.Annotated[typing.Optional[int], Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.type_id)] = Field(description="the type ID of the action to update, must match its current type_id", examples=[-99])
+        user_id: typing.Annotated[int | None, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.user_id)] = Field(description="the user ID of the action to update, must match its current user_id", examples=[1])
+        type: typing.Annotated[str | None, populate_missing_or_expect_from_validation_info(lambda i: i.context.action_type)] = Field(description="the type string representation of the action to update, must match its current type string", examples=["sample"])
+        type_id: typing.Annotated[int | None, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.action.type_id)] = Field(description="the type ID of the action to update, must match its current type_id", examples=[-99])
         name: typing.Annotated[OptionalNotNone[str], Field(min_length=1, max_length=100)] = Field(description="the name of the action to update", examples=["Example Action"])
         description: OptionalNotNone[str] = Field(description="the description of the action to update", examples=["This is an example action"])
         is_hidden: OptionalNotNone[bool] = Field(description="whether the action should be set to hidden", examples=[False])
         action_schema: typing.Annotated[
-            OptionalNotNone[typing.Dict[str, typing.Any]],
+            OptionalNotNone[dict[str, typing.Any]],
             AfterValidator(_is_valid_schema),
             Field(
                 validation_alias="schema",
@@ -129,7 +129,7 @@ class Action(Resource):
         ]
 
         @staticmethod
-        def _is_valid_schema(schema: typing.Dict[str, typing.Any], info: ValidationInfo[Action.ValidationContext]) -> typing.Dict[str, typing.Any]:
+        def _is_valid_schema(schema: dict[str, typing.Any], info: ValidationInfo[Action.ValidationContext]) -> dict[str, typing.Any]:
             try:
                 invalid_template_paths = find_invalid_template_paths(schema, flask.g.user.id)
                 if invalid_template_paths:
@@ -200,7 +200,7 @@ class Action(Resource):
 class Actions(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[ActionModel]:
+    def get(self) -> list[ActionModel]:
         """
         List all actions.
 

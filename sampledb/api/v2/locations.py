@@ -26,7 +26,7 @@ def _get_location(location_id: None, loc: str) -> None:
     pass
 
 
-def _get_location(location_id: typing.Optional[int], loc: str) -> typing.Optional[locations.Location]:
+def _get_location(location_id: int | None, loc: str) -> locations.Location | None:
     if location_id is None:
         return None
     try:
@@ -45,7 +45,7 @@ def _get_location_type(type_id: None) -> None:
     pass
 
 
-def _get_location_type(type_id: typing.Optional[int]) -> typing.Optional[locations.LocationType]:
+def _get_location_type(type_id: int | None) -> locations.LocationType | None:
     if type_id is None:
         return None
     try:
@@ -57,7 +57,7 @@ def _get_location_type(type_id: typing.Optional[int]) -> typing.Optional[locatio
 if typing.TYPE_CHECKING:
     class _BaseLocation(typing.Protocol):
         @property
-        def parent_location_id(self) -> typing.Optional[int]:
+        def parent_location_id(self) -> int | None:
             pass
 
         @property
@@ -70,7 +70,7 @@ else:
 
 class _ParentLocationMixin(_BaseLocation):
     @cached_property
-    def parent_location(self) -> typing.Optional[locations.Location]:
+    def parent_location(self) -> locations.Location | None:
         if self.parent_location_id is None:
             return None
         try:
@@ -86,7 +86,7 @@ class _ParentLocationMixin(_BaseLocation):
 
 class LocationTypeModel(BaseModel):
     location_type_id: int = Field(description="the ID of the location type", examples=[1])
-    name: typing.Optional[str] = Field(description="the name of the location type", examples=["Example Location Type"])
+    name: str | None = Field(description="the name of the location type", examples=["Example Location Type"])
 
     @classmethod
     def from_location_type(cls, location_type: locations.LocationType) -> typing.Self:
@@ -98,11 +98,11 @@ class LocationTypeModel(BaseModel):
 
 class ObjectLocationAssignmentModel(BaseModel):
     object_id: int = Field(description="the ID of the object that is assigned to a location/responsible user", examples=[1])
-    location_id: typing.Optional[int] = Field(description="the ID of the location the object is assigned to", examples=[1])
-    responsible_user_id: typing.Optional[int] = Field(description="the ID of the responsible user the object is assigned to", examples=[1])
-    user_id: typing.Optional[int] = Field(description="the ID of the user who assinged the object to a location/responsible user", examples=[1])
-    description: typing.Optional[str] = Field(description="the description of the object location/responsible user assignment", examples=["The object is stored on the example shelf."])
-    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the object was assignment was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    location_id: int | None = Field(description="the ID of the location the object is assigned to", examples=[1])
+    responsible_user_id: int | None = Field(description="the ID of the responsible user the object is assigned to", examples=[1])
+    user_id: int | None = Field(description="the ID of the user who assinged the object to a location/responsible user", examples=[1])
+    description: str | None = Field(description="the description of the object location/responsible user assignment", examples=["The object is stored on the example shelf."])
+    utc_datetime: str | None = Field(description="the datetime in UTC when the object was assignment was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
 
     @classmethod
     def from_object_location_assignment(cls, object_location_assignment: locations.ObjectLocationAssignment) -> typing.Self:
@@ -118,10 +118,10 @@ class ObjectLocationAssignmentModel(BaseModel):
 
 class LocationModel(BaseModel):
     location_id: int = Field(description="the ID of the location", examples=[1])
-    name: typing.Optional[str] = Field(description="the name of the location", examples=["Example Location"])
-    description: typing.Optional[str] = Field(description="the description of the location", examples=["This is an example location."])
-    parent_location_id: typing.Optional[int] = Field(description="the ID of the parent location of the location", examples=[2])
-    type_id: typing.Optional[int] = Field(description="the ID of the location type of the location", examples=[-99])
+    name: str | None = Field(description="the name of the location", examples=["Example Location"])
+    description: str | None = Field(description="the description of the location", examples=["This is an example location."])
+    parent_location_id: int | None = Field(description="the ID of the parent location of the location", examples=[2])
+    type_id: int | None = Field(description="the ID of the location type of the location", examples=[-99])
     is_hidden: bool = Field(description="whether the location is hidden from location lists", examples=[False])
     enable_object_assignments: bool = Field(description="whether objects may be assigned to the location", examples=[True])
 
@@ -160,7 +160,7 @@ class Location(Resource):
         location_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.location.id)] = Field(description="the ID for the location to update, must match the location_id path parameter", examples=[1])
         name: str = Field(description="the name for the location to update", examples=["Example Location"])
         description: str = Field(description="the description for the location to update", examples=["This is an example location"])
-        parent_location_id: typing.Annotated[typing.Optional[int], Strict()] = Field(description="the ID of the parent location for the location to update", examples=[1])
+        parent_location_id: typing.Annotated[int | None, Strict()] = Field(description="the ID of the parent location for the location to update", examples=[1])
         type_id: typing.Annotated[int, Strict()] = Field(description="the location type ID for the location to create", examples=[-99])
         is_hidden: bool = Field(description="whether the location should be set to hidden", examples=[False])
         enable_object_assignments: bool = Field(description="whether object assignments should be enabled for the location to update", examples=[True])
@@ -248,16 +248,16 @@ class Locations(Resource):
     class RequestBodyModel(_ParentLocationMixin, BaseModel):
         name: str = Field(description="the name for the location to create", examples=["Example Location"])
         description: str = Field("", description="the description for the location to create", examples=["This is an example location"])
-        parent_location_id: typing.Annotated[typing.Optional[int], Strict()] = Field(None, description="the ID of the parent location for the location to create", examples=[1])
+        parent_location_id: typing.Annotated[int | None, Strict()] = Field(None, description="the ID of the parent location for the location to create", examples=[1])
         type_id: OptionalNotNone[typing.Annotated[int, Strict()]] = Field(None, description="the location type ID for the location to create", examples=[-99])
 
         @cached_property
-        def type(self) -> typing.Optional[locations.LocationType]:
+        def type(self) -> locations.LocationType | None:
             return _get_location_type(self.type_id)
 
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[LocationModel]:
+    def get(self) -> list[LocationModel]:
         """
         Get all locations.
         """
@@ -337,7 +337,7 @@ class LocationType(Resource):
 class LocationTypes(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[LocationTypeModel]:
+    def get(self) -> list[LocationTypeModel]:
         """
         List all location types.
         """
@@ -384,7 +384,7 @@ class ObjectLocationAssignments(Resource):
         description: str = Field("", description="the description for the object location assignment to create", examples=["The object is stored in shelf A"])
 
         @cached_property
-        def location(self) -> typing.Optional[locations.Location]:
+        def location(self) -> locations.Location | None:
             return _get_location(self.location_id, "location_id")
 
         @model_validator(mode="after")
@@ -406,7 +406,7 @@ class ObjectLocationAssignments(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> typing.List[ObjectLocationAssignmentModel] | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[ObjectLocationAssignmentModel] | NotFoundErrorModel:
         """
         List all object location assignments.
         """

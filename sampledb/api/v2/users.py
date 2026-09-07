@@ -14,14 +14,14 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 class UserModel(BaseModel):
     user_id: int = Field(description="the ID of the user", examples=[1])
-    name: typing.Optional[str] = Field(description="the name of the user", examples=["Example User"])
-    orcid: typing.Optional[str] = Field(description="the ORCID iD of the user", examples=["0000-0001-2345-6789"])
-    affiliation: typing.Optional[str] = Field(description="the affiliation of the user", examples=["Example Institute"])
-    role: typing.Optional[str] = Field(description="the role of the user", examples=["Researcher"])
-    email: typing.Optional[str] = Field(None, description="the email address of the user, only set when queried by administrators", examples=["user@example.com"])
-    is_hidden: typing.Optional[bool] = Field(None, description="whether the user is hidden from user lists, only set when queried by administrators", examples=[False])
-    is_active: typing.Optional[bool] = Field(None, description="whether the user is active, only set when queried by administrators", examples=[True])
-    is_readonly: typing.Optional[bool] = Field(None, description="whether the user is readonly, only set when queried by administrators", examples=[False])
+    name: str | None = Field(description="the name of the user", examples=["Example User"])
+    orcid: str | None = Field(description="the ORCID iD of the user", examples=["0000-0001-2345-6789"])
+    affiliation: str | None = Field(description="the affiliation of the user", examples=["Example Institute"])
+    role: str | None = Field(description="the role of the user", examples=["Researcher"])
+    email: str | None = Field(None, description="the email address of the user, only set when queried by administrators", examples=["user@example.com"])
+    is_hidden: bool | None = Field(None, description="whether the user is hidden from user lists, only set when queried by administrators", examples=[False])
+    is_active: bool | None = Field(None, description="whether the user is active, only set when queried by administrators", examples=[True])
+    is_readonly: bool | None = Field(None, description="whether the user is readonly, only set when queried by administrators", examples=[False])
 
     @classmethod
     def from_user(cls, user: users.User) -> typing.Self:
@@ -70,13 +70,13 @@ class CurrentUser(Resource):
 
 class Users(Resource):
     class QueryModel(BaseModel):
-        filter_hidden: typing.Optional[bool] = Field(None, description="whether to filter for only hidden or only non-hidden users", examples=[False])
-        filter_active: typing.Optional[bool] = Field(None, description="whether to filter for only active or only non-active users", examples=[True])
-        filter_readonly: typing.Optional[bool] = Field(None, description="whether to filter for only readonly or only non-readonly users", examples=[False])
+        filter_hidden: bool | None = Field(None, description="whether to filter for only hidden or only non-hidden users", examples=[False])
+        filter_active: bool | None = Field(None, description="whether to filter for only active or only non-active users", examples=[True])
+        filter_readonly: bool | None = Field(None, description="whether to filter for only readonly or only non-readonly users", examples=[False])
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> typing.List[UserModel]:
+    def get(self, query: QueryModel) -> list[UserModel]:
         """
         List all users.
         """
