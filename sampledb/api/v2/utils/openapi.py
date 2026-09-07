@@ -4,6 +4,7 @@ import json
 import re
 import typing
 import http
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import flask
@@ -13,16 +14,16 @@ from pydantic import BaseModel
 
 from ...utils import Resource, ResponseData, make_json_response
 from .validation import validate, ValidatingError
-from .responses import make_response, ResultUnion, ReturnValue, RedirectResponseModel, ErrorModel, NoContentModel
+from .responses import make_response, ResourceMethodResult, ReturnValue, RedirectResponseModel, ErrorModel, NoContentModel
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class OpenAPIMethodInformation:
     default_status_code: int
-    path_model: typing.Optional[typing.Type[BaseModel]]
-    query_model: typing.Optional[typing.Type[BaseModel]]
-    request_body_model: typing.Optional[type]
-    return_type_hint: typing.Optional[type]
+    path_model: type[BaseModel] | None
+    query_model: type[BaseModel] | None
+    request_body_model: type | None
+    return_type_hint: type | None
 
 
 class GenericOperationCallable[R: Resource](typing.Protocol):
@@ -31,37 +32,37 @@ class GenericOperationCallable[R: Resource](typing.Protocol):
 
 
 class BareCallable[R: Resource](typing.Protocol):
-    def __call__(self_, self: R) -> ResultUnion:
+    def __call__(self_, self: R) -> ResourceMethodResult:
         ...
 
 
 class PathCallable[R: Resource, PM: BaseModel](typing.Protocol):
-    def __call__(self_, self: R, path: PM) -> ResultUnion:
+    def __call__(self_, self: R, path: PM) -> ResourceMethodResult:
         ...
 
 
 class QueryCallable[R: Resource, QM: BaseModel](typing.Protocol):
-    def __call__(self_, self: R, query: QM) -> ResultUnion:
+    def __call__(self_, self: R, query: QM) -> ResourceMethodResult:
         ...
 
 
 class RequestBodyCallable[R: Resource, ReqM](typing.Protocol):
-    def __call__(self_, self: R, request_body: ReqM) -> ResultUnion:
+    def __call__(self_, self: R, request_body: ReqM) -> ResourceMethodResult:
         ...
 
 
 class PathQueryCallable[R: Resource, PM: BaseModel, QM: BaseModel](typing.Protocol):
-    def __call__(self_, self: R, path: PM, query: QM) -> ResultUnion:
+    def __call__(self_, self: R, path: PM, query: QM) -> ResourceMethodResult:
         ...
 
 
 class PathRequestBodyCallable[R: Resource, PM: BaseModel, ReqM](typing.Protocol):
-    def __call__(self_, self: R, path: PM, request_body: ReqM) -> ResultUnion:
+    def __call__(self_, self: R, path: PM, request_body: ReqM) -> ResourceMethodResult:
         ...
 
 
 class PathQueryRequestBodyCallable[R: Resource, PM: BaseModel, QM: BaseModel, ReqM](typing.Protocol):
-    def __call__(self_, self: R, path: PM, query: QM, request_body: ReqM) -> ResultUnion:
+    def __call__(self_, self: R, path: PM, query: QM, request_body: ReqM) -> ResourceMethodResult:
         ...
 
 
@@ -74,42 +75,40 @@ ReqM = typing.TypeVar('ReqM')  # , bound=BaseModel)
 def method(
         *,
         default_status_code: int = 200,
-        request_body_context_builder: typing.Optional[typing.Callable[[PM], typing.Any]] = None
-) -> typing.Callable[
+        request_body_context_builder: Callable[[PM], typing.Any] | None = None
+) -> Callable[
     [
-        typing.Union[
-            BareCallable[R],
-            PathCallable[R, PM],
-            QueryCallable[R, QM],
-            RequestBodyCallable[R, ReqM],
-            PathQueryCallable[R, PM, QM],
-            PathRequestBodyCallable[R, PM, ReqM],
-            PathQueryRequestBodyCallable[R, PM, QM, ReqM],
-        ]
+        BareCallable[R] |
+        PathCallable[R, PM] |
+        QueryCallable[R, QM] |
+        RequestBodyCallable[R, ReqM] |
+        PathQueryCallable[R, PM, QM] |
+        PathRequestBodyCallable[R, PM, ReqM] |
+        PathQueryRequestBodyCallable[R, PM, QM, ReqM]
     ],
     GenericOperationCallable[R]
 ]:
     def method_decorator_impl(
-            func: typing.Union[
-                BareCallable[R],
-                PathCallable[R, PM],
-                QueryCallable[R, QM],
-                RequestBodyCallable[R, ReqM],
-                PathQueryCallable[R, PM, QM],
-                PathRequestBodyCallable[R, PM, ReqM],
-                PathQueryRequestBodyCallable[R, PM, QM, ReqM],
-            ]
+            func: (
+                BareCallable[R] |
+                PathCallable[R, PM] |
+                QueryCallable[R, QM] |
+                RequestBodyCallable[R, ReqM] |
+                PathQueryCallable[R, PM, QM] |
+                PathRequestBodyCallable[R, PM, ReqM] |
+                PathQueryRequestBodyCallable[R, PM, QM, ReqM]
+            )
     ) -> GenericOperationCallable[R]:
         type_hints = typing.get_type_hints(func)
-        path_model: typing.Optional[typing.Type[PM]] = type_hints.get('path')
+        path_model: type[PM] | None = type_hints.get('path')
         assert path_model is None or issubclass(path_model, BaseModel)
-        query_model: typing.Optional[typing.Type[QM]] = type_hints.get('query')
+        query_model: type[QM] | None = type_hints.get('query')
         assert query_model is None or issubclass(query_model, BaseModel)
-        request_body_model: typing.Optional[typing.Type[ReqM]] = type_hints.get('request_body')
+        request_body_model: type[ReqM] | None = type_hints.get('request_body')
         if isinstance(request_body_model, typing.TypeAliasType):
             request_body_model = request_body_model.__value__
         # no assert for request_body_model to be BaseModel or None, as various other inputs currently exist, e.g. for permissions
-        return_type_hint: typing.Optional[type] = type_hints.get('return')
+        return_type_hint: type | None = type_hints.get('return')
         assert return_type_hint is not None
 
         class KWArgsDict(typing.TypedDict, total=False):
@@ -183,8 +182,8 @@ def _generate_description_by_status_code(
 
 
 @functools.cache
-def generate_openapi_spec() -> typing.Dict[str, typing.Any]:
-    spec_dict: typing.Dict[str, typing.Any] = {
+def generate_openapi_spec() -> dict[str, typing.Any]:
+    spec_dict: dict[str, typing.Any] = {
         "openapi": "3.2.0",
         "info": {
             "title": "SampleDB API",
@@ -307,7 +306,7 @@ def generate_openapi_spec() -> typing.Dict[str, typing.Any]:
             if method_info.request_body_model:
                 request_body_required = True
                 request_body_model = method_info.request_body_model
-                if typing.get_origin(request_body_model) is typing.Union and len(typing.get_args(request_body_model)) == 2 and type(None) in typing.get_args(request_body_model):
+                if typing.get_origin(request_body_model) is typing.Union and len(typing.get_args(request_body_model)) == 2 and type(None) in typing.get_args(request_body_model):  # pylint: disable=consider-alternative-union-syntax
                     request_body_required = False
                     request_body_model = next(filter(lambda t: t is not None, typing.get_args(request_body_model)))
                 if inspect.isclass(request_body_model) and issubclass(request_body_model, BaseModel):
@@ -338,7 +337,7 @@ def generate_openapi_spec() -> typing.Dict[str, typing.Any]:
                 }
             if method_info.return_type_hint:
                 return_type_hint = method_info.return_type_hint
-                if typing.get_origin(return_type_hint) is typing.Union:
+                if typing.get_origin(return_type_hint) is typing.Union:  # pylint: disable=consider-alternative-union-syntax
                     return_type_options = list(typing.get_args(return_type_hint))
                 else:
                     return_type_options = [return_type_hint]

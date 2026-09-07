@@ -39,7 +39,7 @@ class _Hash(BaseModel):
 
 class _BaseFile(BaseModel):
     object_id: typing.Annotated[
-        typing.Optional[int],
+        int | None,
         Strict(),
         is_expected_from_validation_info(lambda info: info.context.object.object_id, allow_none=True),
     ] = Field(None, description="the ID of an existing object", examples=[1])
@@ -125,11 +125,11 @@ class DatabaseFileModel(BaseModel):
     object_id: int = Field(description="the ID of the object the file belongs to", examples=[1])
     file_id: int = Field(description="the ID of the file", examples=[1])
     storage: str = Field(description="the storage type for the file", examples=["database"])
-    original_file_name: typing.Optional[str] = Field(None, description="the name of the file", examples=["example.txt"])
-    base64_content: typing.Optional[str] = Field(None, description="the base64 encoded content of the file", examples=["ZXhhbXBsZQ=="])
-    hash: typing.Optional[HashInfoModel] = Field(None, description="optional hash information for the file", examples=[generate_example(HashInfoModel)])
-    base64_preview_image: typing.Optional[str] = Field(None, description="the base64 encoded preview image for the file", examples=["iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8////fwY8gAmf5PBRAAAbbgQMid1tCwAAAABJRU5ErkJggg=="])
-    preview_image_mime_type: typing.Optional[str] = Field(None, description="the MIME type for the file preview image", examples=["image/png"])
+    original_file_name: str | None = Field(None, description="the name of the file", examples=["example.txt"])
+    base64_content: str | None = Field(None, description="the base64 encoded content of the file", examples=["ZXhhbXBsZQ=="])
+    hash: HashInfoModel | None = Field(None, description="optional hash information for the file", examples=[generate_example(HashInfoModel)])
+    base64_preview_image: str | None = Field(None, description="the base64 encoded preview image for the file", examples=["iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8////fwY8gAmf5PBRAAAbbgQMid1tCwAAAABJRU5ErkJggg=="])
+    preview_image_mime_type: str | None = Field(None, description="the MIME type for the file preview image", examples=["image/png"])
 
     @classmethod
     def from_file(cls, file_info: File, include_content: bool = True) -> typing.Self:
@@ -150,7 +150,7 @@ class UrlFileModel(BaseModel):
     object_id: int = Field(description="the ID of the object the file belongs to", examples=[1])
     file_id: int = Field(description="the ID of the file", examples=[1])
     storage: str = Field(description="the storage type for the file", examples=["url"])
-    url: typing.Optional[str] = Field(None, description="the URL of the file", examples=["https://example.com"])
+    url: str | None = Field(None, description="the URL of the file", examples=["https://example.com"])
 
     @classmethod
     def from_file(cls, file_info: File) -> typing.Self:
@@ -274,7 +274,7 @@ class ObjectFiles(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ReturnValue[typing.List[DatabaseFileModel | UrlFileModel]]:
+    def get(self, path: PathModel) -> ReturnValue[list[DatabaseFileModel | UrlFileModel]]:
         """
         List all files for an object.
         """

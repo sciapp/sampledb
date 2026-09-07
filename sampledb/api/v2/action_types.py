@@ -61,7 +61,7 @@ class ActionType(Resource):
 class ActionTypes(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[ActionTypeModel]:
+    def get(self) -> list[ActionTypeModel]:
         """
         List all action types.
         """

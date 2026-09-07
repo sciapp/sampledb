@@ -76,20 +76,17 @@ components:
             type: object
           title: Schema
         type:
-          anyOf:
-          - const: sample
-            type: string
-          - const: measurement
-            type: string
-          - const: simulation
-            type: string
-          - const: custom
-            type: string
           deprecated: true
           description: a string representation of the action type
+          enum:
+          - sample
+          - measurement
+          - simulation
+          - custom
           examples:
           - sample
           title: Type
+          type: string
         type_id:
           anyOf:
           - type: integer
@@ -1785,20 +1782,17 @@ paths:
                       type: object
                     title: Schema
                   type:
-                    anyOf:
-                    - const: sample
-                      type: string
-                    - const: measurement
-                      type: string
-                    - const: simulation
-                      type: string
-                    - const: custom
-                      type: string
                     deprecated: true
                     description: a string representation of the action type
+                    enum:
+                    - sample
+                    - measurement
+                    - simulation
+                    - custom
                     examples:
                     - sample
                     title: Type
+                    type: string
                   type_id:
                     anyOf:
                     - type: integer
@@ -2012,20 +2006,17 @@ paths:
                       type: object
                     title: Schema
                   type:
-                    anyOf:
-                    - const: sample
-                      type: string
-                    - const: measurement
-                      type: string
-                    - const: simulation
-                      type: string
-                    - const: custom
-                      type: string
                     deprecated: true
                     description: a string representation of the action type
+                    enum:
+                    - sample
+                    - measurement
+                    - simulation
+                    - custom
                     examples:
                     - sample
                     title: Type
+                    type: string
                   type_id:
                     anyOf:
                     - type: integer

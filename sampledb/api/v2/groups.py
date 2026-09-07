@@ -1,5 +1,3 @@
-import typing
-
 import flask
 from pydantic import BaseModel, Field
 
@@ -25,9 +23,9 @@ class UserRef(BaseModel):
 
 class GroupModel(BaseModel):
     group_id: int = Field(description="the ID of the basic group", examples=[1])
-    name: typing.Dict[str, str] = Field(description="the name of the basic group", examples=[{"en": "Example Basic Group"}])
-    description: typing.Dict[str, str] = Field(description="the description of the basic group", examples=[{"en": "This is an example basic group."}])
-    member_users: typing.List[UserRef] = Field(description="the list of users who are members of the basic group", examples=[
+    name: dict[str, str] = Field(description="the name of the basic group", examples=[{"en": "Example Basic Group"}])
+    description: dict[str, str] = Field(description="the description of the basic group", examples=[{"en": "This is an example basic group."}])
+    member_users: list[UserRef] = Field(description="the list of users who are members of the basic group", examples=[
         [generate_example(UserRef)]
     ])
 
@@ -47,7 +45,7 @@ class GroupModel(BaseModel):
 class Groups(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> typing.List[GroupModel]:
+    def get(self) -> list[GroupModel]:
         """
         List all basic groups.
         """
@@ -86,7 +84,7 @@ class GroupMemberUsers(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> typing.List[UserRef] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[UserRef] | ForbiddenErrorModel | NotFoundErrorModel:
         """
         List all member users of a basic group.
         """

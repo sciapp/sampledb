@@ -17,8 +17,8 @@ from .utils.openapi import method
 class CommentModel(BaseModel):
     object_id: int = Field(description="the ID of the object the comment was posted for", examples=[1])
     comment_id: int = Field(description="the ID of the comment", examples=[1])
-    user_id: typing.Optional[int] = Field(description="the ID of the user who posted the comment", examples=[1])
-    utc_datetime: typing.Optional[str] = Field(description="the datetime in UTC when the comment was posted, formatted as YYYY-MM-DD HH:MM:SS.ffffff", examples=["2026-01-02 03:04:05.678910"])
+    user_id: int | None = Field(description="the ID of the user who posted the comment", examples=[1])
+    utc_datetime: str | None = Field(description="the datetime in UTC when the comment was posted, formatted as YYYY-MM-DD HH:MM:SS.ffffff", examples=["2026-01-02 03:04:05.678910"])
     content: str = Field(description="the content of the comment", examples=["This is a comment."])
 
     @classmethod
@@ -71,7 +71,7 @@ class ObjectComments(Resource):
 
     class RequestBodyModel(BaseModel):
         object_id: typing.Annotated[
-            typing.Optional[int],
+            int | None,
             Strict(),
             is_expected_from_validation_info(lambda info: info.context.object_id, allow_none=True),
         ] = Field(None, title='Object ID', description='the ID of an existing object, must be the same ID as in the path.', examples=[1])
@@ -96,7 +96,7 @@ class ObjectComments(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> typing.List[CommentModel]:
+    def get(self, path: PathModel) -> list[CommentModel]:
         """
         Get all comments for an object.
         """
