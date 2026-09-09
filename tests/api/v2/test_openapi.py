@@ -35,33 +35,20 @@ def test_openapi_spec_all_paths(flask_server, spec_dict):
             assert {method.lower() for method in rule.methods} - {'options', 'head'} == set(path_spec)
 
 
+
+
 def test_descriptions_and_examples(spec_dict):
-    def is_schema_entry(path, value):
-        return isinstance(value, dict) and value.get('type') == 'object' and 'properties' in value
-    def iterate_over_list(spec_list, path):
-        for index, value in enumerate(spec_list):
-            value_path = path + [str(index)]
-            if is_schema_entry(value_path, value):
-                yield (value_path, value)
-            if isinstance(value, dict):
-                yield from iterate_over_dict(value, value_path)
-            elif isinstance(value, list):
-                yield from iterate_over_list(value, value_path)
-    def iterate_over_dict(spec_dict, path):
-        for key, value in spec_dict.items():
-            if key in ('examples', 'example'):
-                continue
-            value_path = path + [key]
-            if is_schema_entry(value_path, value):
-                yield (value_path, value)
-            if isinstance(value, dict):
-                yield from iterate_over_dict(value, value_path)
-            elif isinstance(value, list):
-                yield from iterate_over_list(value, value_path)
-    for path, schema in iterate_over_dict(spec_dict, []):
+    for path, schema in sampledb.api.v2.utils.openapi.iterate_over_schema_dicts(spec_dict):
         for property_name, property_schema in schema['properties'].items():
             assert 'description' in property_schema, f'missing description for {property_name} in schema {schema} at {path}'
             assert 'examples' in property_schema and len(property_schema['examples']) == 1, f'missing description for {property_name} in schema {schema} at {path}'
+
+
+def test_no_duplicate_components(spec_dict):
+    component_schemas = list(spec_dict['components']['schemas'].values())
+    for path, schema in sampledb.api.v2.utils.openapi.iterate_over_schema_dicts(spec_dict):
+        if path[:2] != ['components', 'schemas']:
+            assert schema not in component_schemas, f"schema at {path} also found as component schema {[key for key, value in spec_dict['components']['schemas'].items() if value == schema][0]}"
 
 
 def test_openapi_spec_in_docs(spec_dict):
