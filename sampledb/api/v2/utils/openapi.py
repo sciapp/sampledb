@@ -4,7 +4,7 @@ import json
 import re
 import typing
 import http
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from dataclasses import dataclass
 
 import flask
@@ -453,7 +453,59 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
             if not spec_dict["paths"][rule_path][method]["responses"]:
                 del spec_dict["paths"][rule_path][method]["responses"]
 
+    _remove_duplicate_schemas(spec_dict)
     return spec_dict
+
+
+def _is_schema_entry(path: list[str], value: typing.Any) -> bool:
+    return isinstance(value, dict) and value.get('type') == 'object' and 'properties' in value
+
+
+def _iterate_over_list(spec_list: list[typing.Any], path: list[str]) -> Generator[tuple[list[str], dict[str, typing.Any]]]:
+    for index, value in enumerate(spec_list):
+        value_path = path + [str(index)]
+        if _is_schema_entry(value_path, value):
+            yield (value_path, value)
+        if isinstance(value, dict):
+            yield from _iterate_over_dict(value, value_path)
+        elif isinstance(value, list):
+            yield from _iterate_over_list(value, value_path)
+
+
+def _iterate_over_dict(spec_dict: dict[str, typing.Any], path: list[str]) -> Generator[tuple[list[str], dict[str, typing.Any]]]:
+    for key, value in spec_dict.items():
+        if key in ('examples', 'example'):
+            continue
+        value_path = path + [key]
+        if _is_schema_entry(value_path, value):
+            yield (value_path, value)
+        if isinstance(value, dict):
+            yield from _iterate_over_dict(value, value_path)
+        elif isinstance(value, list):
+            yield from _iterate_over_list(value, value_path)
+
+
+def iterate_over_schema_dicts(spec_dict: dict[str, typing.Any]) -> Generator[tuple[list[str], dict[str, typing.Any]]]:
+    return _iterate_over_dict(spec_dict, [])
+
+
+def _remove_duplicate_schemas(spec_dict: dict[str, typing.Any]) -> None:
+    schemas_to_replace_with_references = []
+    for path, schema in iterate_over_schema_dicts(spec_dict):
+        if path[:2] != ['components', 'schemas']:
+            component_schema_keys = [key for key, value in spec_dict['components']['schemas'].items() if value == schema]
+            if component_schema_keys:
+                assert len(component_schema_keys) == 1
+                schemas_to_replace_with_references.append((path, component_schema_keys[0]))
+
+    for path, component_schema_key in schemas_to_replace_with_references:
+        reference = {
+            "$ref": f"#/components/schemas/{component_schema_key}"
+        }
+        spec_dict_part = spec_dict
+        for path_step in path[:-1]:
+            spec_dict_part = spec_dict_part[path_step]
+        spec_dict_part[path[-1]] = reference
 
 
 class OpenAPISpecJSON(Resource):

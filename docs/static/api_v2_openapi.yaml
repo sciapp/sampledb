@@ -1650,39 +1650,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  admin_only:
-                    description: whether the action type may only be used by administrators
-                    examples:
-                    - false
-                    title: Admin Only
-                    type: boolean
-                  name:
-                    description: the name of the action type
-                    examples:
-                    - Sample Creation
-                    title: Name
-                    type: string
-                  object_name:
-                    description: the name for objects created with actions of the
-                      action type
-                    examples:
-                    - Sample
-                    title: Object Name
-                    type: string
-                  type_id:
-                    description: the ID of the action type
-                    examples:
-                    - 1
-                    title: Type Id
-                    type: integer
-                required:
-                - type_id
-                - name
-                - object_name
-                - admin_only
-                title: ActionTypeModel
-                type: object
+                $ref: '#/components/schemas/ActionTypeModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -1726,101 +1694,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  action_id:
-                    description: the ID of the action
-                    examples:
-                    - 1
-                    title: Action Id
-                    type: integer
-                  description:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the description of the action
-                    examples:
-                    - This is an example action.
-                    title: Description
-                  instrument_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the instrument the action belongs to
-                    examples:
-                    - 1
-                    title: Instrument Id
-                  is_hidden:
-                    description: whether the action is hidden from action lists
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the action
-                    examples:
-                    - Example Action
-                    title: Name
-                  schema:
-                    anyOf:
-                    - additionalProperties: true
-                      type: object
-                    - type: 'null'
-                    description: the schema of the action
-                    examples:
-                    - properties:
-                        name:
-                          title:
-                            en: Name
-                          type: text
-                      required:
-                      - name
-                      title:
-                        en: Object Information
-                      type: object
-                    title: Schema
-                  type:
-                    deprecated: true
-                    description: a string representation of the action type
-                    enum:
-                    - sample
-                    - measurement
-                    - simulation
-                    - custom
-                    examples:
-                    - sample
-                    title: Type
-                    type: string
-                  type_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the action type
-                    examples:
-                    - 1
-                    title: Type Id
-                  user_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the user who created the action
-                    examples:
-                    - 1
-                    title: User Id
-                required:
-                - action_id
-                - instrument_id
-                - user_id
-                - type
-                - type_id
-                - name
-                - description
-                - is_hidden
-                - schema
-                title: ActionModel
-                type: object
+                $ref: '#/components/schemas/ActionModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -1950,101 +1824,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  action_id:
-                    description: the ID of the action
-                    examples:
-                    - 1
-                    title: Action Id
-                    type: integer
-                  description:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the description of the action
-                    examples:
-                    - This is an example action.
-                    title: Description
-                  instrument_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the instrument the action belongs to
-                    examples:
-                    - 1
-                    title: Instrument Id
-                  is_hidden:
-                    description: whether the action is hidden from action lists
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the action
-                    examples:
-                    - Example Action
-                    title: Name
-                  schema:
-                    anyOf:
-                    - additionalProperties: true
-                      type: object
-                    - type: 'null'
-                    description: the schema of the action
-                    examples:
-                    - properties:
-                        name:
-                          title:
-                            en: Name
-                          type: text
-                      required:
-                      - name
-                      title:
-                        en: Object Information
-                      type: object
-                    title: Schema
-                  type:
-                    deprecated: true
-                    description: a string representation of the action type
-                    enum:
-                    - sample
-                    - measurement
-                    - simulation
-                    - custom
-                    examples:
-                    - sample
-                    title: Type
-                    type: string
-                  type_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the action type
-                    examples:
-                    - 1
-                    title: Type Id
-                  user_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the user who created the action
-                    examples:
-                    - 1
-                    title: User Id
-                required:
-                - action_id
-                - instrument_id
-                - user_id
-                - type
-                - type_id
-                - name
-                - description
-                - is_hidden
-                - schema
-                title: ActionModel
-                type: object
+                $ref: '#/components/schemas/ActionModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -2085,45 +1865,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  description:
-                    additionalProperties:
-                      type: string
-                    description: the description of the basic group
-                    examples:
-                    - en: This is an example basic group.
-                    title: Description
-                    type: object
-                  group_id:
-                    description: the ID of the basic group
-                    examples:
-                    - 1
-                    title: Group Id
-                    type: integer
-                  member_users:
-                    description: the list of users who are members of the basic group
-                    examples:
-                    - - href: https://example.com/api/v2/users/1
-                        user_id: 1
-                    items:
-                      $ref: '#/components/schemas/UserRef'
-                    title: Member Users
-                    type: array
-                  name:
-                    additionalProperties:
-                      type: string
-                    description: the name of the basic group
-                    examples:
-                    - en: Example Basic Group
-                    title: Name
-                    type: object
-                required:
-                - group_id
-                - name
-                - description
-                - member_users
-                title: GroupModel
-                type: object
+                $ref: '#/components/schemas/GroupModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -2273,24 +2015,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  href:
-                    description: the URL of the API endpoint for the referenced user
-                    examples:
-                    - https://example.com/api/v2/users/1
-                    title: Href
-                    type: string
-                  user_id:
-                    description: the ID of the referenced user
-                    examples:
-                    - 1
-                    title: User Id
-                    type: integer
-                required:
-                - user_id
-                - href
-                title: UserRef
-                type: object
+                $ref: '#/components/schemas/UserRef'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -2333,83 +2058,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  component_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the federation component ID of the instrument
-                    examples:
-                    - 1
-                    title: Component Id
-                  description:
-                    description: the description of the instrument, shown on the instrument
-                      page
-                    examples:
-                    - This is an example instrument.
-                    title: Description
-                    type: string
-                  fed_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the federated ID of the instrument
-                    examples:
-                    - 1
-                    title: Fed Id
-                  instrument_id:
-                    description: the ID of the instrument
-                    examples:
-                    - 1
-                    title: Instrument Id
-                    type: integer
-                  instrument_scientists:
-                    description: the list of instrument scientists for the instrument
-                    examples:
-                    - - 1
-                    items:
-                      type: integer
-                    title: Instrument Scientists
-                    type: array
-                  is_hidden:
-                    description: whether the instrument is hidden from object lists
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                  location_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the location of the instrument
-                    examples:
-                    - 1
-                    title: Location Id
-                  name:
-                    description: the name of the instrument
-                    examples:
-                    - Example Instrument
-                    title: Name
-                    type: string
-                  short_description:
-                    description: the short description of the instrument, shown in
-                      instrument lists
-                    examples:
-                    - This is an example instrument.
-                    title: Short Description
-                    type: string
-                required:
-                - instrument_id
-                - name
-                - short_description
-                - description
-                - is_hidden
-                - instrument_scientists
-                - location_id
-                - fed_id
-                - component_id
-                title: InstrumentModel
-                type: object
+                $ref: '#/components/schemas/InstrumentModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -2476,24 +2125,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  category_id:
-                    description: the ID of the category
-                    examples:
-                    - 1
-                    title: Category Id
-                    type: integer
-                  title:
-                    description: the title of the category
-                    examples:
-                    - 1
-                    title: Title
-                    type: string
-                required:
-                - category_id
-                - title
-                title: InstrumentLogCategoryModel
-                type: object
+                $ref: '#/components/schemas/InstrumentLogCategoryModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -2660,42 +2292,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  author:
-                    description: the ID of the user who created the instrument log
-                      entry
-                    examples:
-                    - 1
-                    title: Author
-                    type: integer
-                  log_entry_id:
-                    description: the ID of the instrument log entry
-                    examples:
-                    - 1
-                    title: Log Entry Id
-                    type: integer
-                  versions:
-                    description: the versions of the instrument log entry
-                    examples:
-                    - - categories:
-                        - category_id: 1
-                          title: 1
-                        content: This is a log entry.
-                        content_is_markdown: false
-                        event_utc_datetime: '2026-01-02T03:04:05.678910'
-                        log_entry_id: 1
-                        utc_datetime: '2026-01-02 03:04:05'
-                        version_id: 1
-                    items:
-                      $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
-                    title: Versions
-                    type: array
-                required:
-                - log_entry_id
-                - author
-                - versions
-                title: InstrumentLogEntryModel
-                type: object
+                $ref: '#/components/schemas/InstrumentLogEntryModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -2788,42 +2385,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  base64_content:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the base64 encoded content of the attached file
-                    examples:
-                    - ZXhhbXBsZQ==
-                    title: Base64 Content
-                  file_attachment_id:
-                    description: the ID of the file attachment
-                    examples:
-                    - 1
-                    title: File Attachment Id
-                    type: integer
-                  file_name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the attached file
-                    examples:
-                    - example.txt
-                    title: File Name
-                  is_hidden:
-                    description: whether the file attachment is hidden
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                required:
-                - file_attachment_id
-                - file_name
-                - base64_content
-                - is_hidden
-                title: InstrumentLogFileAttachmentModel
-                type: object
+                $ref: '#/components/schemas/InstrumentLogFileAttachmentModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -2916,33 +2478,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  is_hidden:
-                    description: whether the object attachment is hidden
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                  object_attachment_id:
-                    description: the ID of the object attachment
-                    examples:
-                    - 1
-                    title: Object Attachment Id
-                    type: integer
-                  object_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the attached object
-                    examples:
-                    - 1
-                    title: Object Id
-                required:
-                - object_attachment_id
-                - object_id
-                - is_hidden
-                title: InstrumentLogObjectAttachmentModel
-                type: object
+                $ref: '#/components/schemas/InstrumentLogObjectAttachmentModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -3164,68 +2700,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  categories:
-                    description: the categories of the instrument log entry
-                    examples:
-                    - - category_id: 1
-                        title: 1
-                    items:
-                      $ref: '#/components/schemas/InstrumentLogCategoryModel'
-                    title: Categories
-                    type: array
-                  content:
-                    description: the content of the instrument log entry
-                    examples:
-                    - This is a log entry.
-                    title: Content
-                    type: string
-                  content_is_markdown:
-                    description: whether the content of the instrument log entry is
-                      formatted in Markdown
-                    examples:
-                    - false
-                    title: Content Is Markdown
-                    type: boolean
-                  event_utc_datetime:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the ISO formatted datetime in UTC of the event described
-                      in the instrument log entry
-                    examples:
-                    - '2026-01-02T03:04:05.678910'
-                    title: Event Utc Datetime
-                  log_entry_id:
-                    description: the ID of the instrument log entry the version belongs
-                      to
-                    examples:
-                    - 1
-                    title: Log Entry Id
-                    type: integer
-                  utc_datetime:
-                    description: the datetime in UTC when the instrument log entry
-                      version was created, formatted as YYYY-MM-DD HH:MM:SS
-                    examples:
-                    - '2026-01-02 03:04:05'
-                    title: Utc Datetime
-                    type: string
-                  version_id:
-                    description: the ID of the instrument log entry version
-                    examples:
-                    - 1
-                    title: Version Id
-                    type: integer
-                required:
-                - log_entry_id
-                - version_id
-                - utc_datetime
-                - content
-                - categories
-                - event_utc_datetime
-                - content_is_markdown
-                title: InstrumentLogEntryVersionModel
-                type: object
+                $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -3268,26 +2743,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  location_type_id:
-                    description: the ID of the location type
-                    examples:
-                    - 1
-                    title: Location Type Id
-                    type: integer
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the location type
-                    examples:
-                    - Example Location Type
-                    title: Name
-                required:
-                - location_type_id
-                - name
-                title: LocationTypeModel
-                type: object
+                $ref: '#/components/schemas/LocationTypeModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -3390,67 +2846,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  description:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the description of the location
-                    examples:
-                    - This is an example location.
-                    title: Description
-                  enable_object_assignments:
-                    description: whether objects may be assigned to the location
-                    examples:
-                    - true
-                    title: Enable Object Assignments
-                    type: boolean
-                  is_hidden:
-                    description: whether the location is hidden from location lists
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                  location_id:
-                    description: the ID of the location
-                    examples:
-                    - 1
-                    title: Location Id
-                    type: integer
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the location
-                    examples:
-                    - Example Location
-                    title: Name
-                  parent_location_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the parent location of the location
-                    examples:
-                    - 2
-                    title: Parent Location Id
-                  type_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the location type of the location
-                    examples:
-                    - -99
-                    title: Type Id
-                required:
-                - location_id
-                - name
-                - description
-                - parent_location_id
-                - type_id
-                - is_hidden
-                - enable_object_assignments
-                title: LocationModel
-                type: object
+                $ref: '#/components/schemas/LocationModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -3539,67 +2935,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  description:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the description of the location
-                    examples:
-                    - This is an example location.
-                    title: Description
-                  enable_object_assignments:
-                    description: whether objects may be assigned to the location
-                    examples:
-                    - true
-                    title: Enable Object Assignments
-                    type: boolean
-                  is_hidden:
-                    description: whether the location is hidden from location lists
-                    examples:
-                    - false
-                    title: Is Hidden
-                    type: boolean
-                  location_id:
-                    description: the ID of the location
-                    examples:
-                    - 1
-                    title: Location Id
-                    type: integer
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the location
-                    examples:
-                    - Example Location
-                    title: Name
-                  parent_location_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the parent location of the location
-                    examples:
-                    - 2
-                    title: Parent Location Id
-                  type_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the location type of the location
-                    examples:
-                    - -99
-                    title: Type Id
-                required:
-                - location_id
-                - name
-                - description
-                - parent_location_id
-                - type_id
-                - is_hidden
-                - enable_object_assignments
-                title: LocationModel
-                type: object
+                $ref: '#/components/schemas/LocationModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           $ref: '#/components/responses/BadRequestErrorModel'
@@ -4059,50 +3395,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  comment_id:
-                    description: the ID of the comment
-                    examples:
-                    - 1
-                    title: Comment Id
-                    type: integer
-                  content:
-                    description: the content of the comment
-                    examples:
-                    - This is a comment.
-                    title: Content
-                    type: string
-                  object_id:
-                    description: the ID of the object the comment was posted for
-                    examples:
-                    - 1
-                    title: Object Id
-                    type: integer
-                  user_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the user who posted the comment
-                    examples:
-                    - 1
-                    title: User Id
-                  utc_datetime:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the datetime in UTC when the comment was posted,
-                      formatted as YYYY-MM-DD HH:MM:SS.ffffff
-                    examples:
-                    - '2026-01-02 03:04:05.678910'
-                    title: Utc Datetime
-                required:
-                - object_id
-                - comment_id
-                - user_id
-                - utc_datetime
-                - content
-                title: CommentModel
-                type: object
+                $ref: '#/components/schemas/CommentModel'
           description: 'OK: Request fulfilled, document follows'
       summary: Get a comment.
       tags:
@@ -4354,67 +3647,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  description:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the description of the object location/responsible
-                      user assignment
-                    examples:
-                    - The object is stored on the example shelf.
-                    title: Description
-                  location_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the location the object is assigned to
-                    examples:
-                    - 1
-                    title: Location Id
-                  object_id:
-                    description: the ID of the object that is assigned to a location/responsible
-                      user
-                    examples:
-                    - 1
-                    title: Object Id
-                    type: integer
-                  responsible_user_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the responsible user the object is assigned
-                      to
-                    examples:
-                    - 1
-                    title: Responsible User Id
-                  user_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the user who assinged the object to a location/responsible
-                      user
-                    examples:
-                    - 1
-                    title: User Id
-                  utc_datetime:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the datetime in UTC when the object was assignment
-                      was created, formatted as YYYY-MM-DD HH:MM:SS
-                    examples:
-                    - '2026-01-02 03:04:05'
-                    title: Utc Datetime
-                required:
-                - object_id
-                - location_id
-                - responsible_user_id
-                - user_id
-                - description
-                - utc_datetime
-                title: ObjectLocationAssignmentModel
-                type: object
+                $ref: '#/components/schemas/ObjectLocationAssignmentModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -5704,59 +4937,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  description:
-                    additionalProperties:
-                      type: string
-                    description: the description of the project group
-                    examples:
-                    - en: This is an example project group.
-                    title: Description
-                    type: object
-                  member_groups:
-                    description: the list of basic groups who are members of the project
-                      group
-                    examples:
-                    - - group_id: 1
-                        href: https://example.com/api/v2/groups/1
-                        permissions: 1
-                    items:
-                      $ref: '#/components/schemas/ProjectMemberGroupRefModel'
-                    title: Member Groups
-                    type: array
-                  member_users:
-                    description: the list of users who are members of the project
-                      group
-                    examples:
-                    - - href: https://example.com/api/v2/users/1
-                        permissions: 1
-                        user_id: 1
-                    items:
-                      $ref: '#/components/schemas/ProjectMemberUserRefModel'
-                    title: Member Users
-                    type: array
-                  name:
-                    additionalProperties:
-                      type: string
-                    description: the name of the project group
-                    examples:
-                    - en: Example Project Group
-                    title: Name
-                    type: object
-                  project_id:
-                    description: the ID of the project group
-                    examples:
-                    - 1
-                    title: Project Id
-                    type: integer
-                required:
-                - project_id
-                - name
-                - description
-                - member_users
-                - member_groups
-                title: ProjectModel
-                type: object
+                $ref: '#/components/schemas/ProjectModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
@@ -5919,30 +5100,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  href:
-                    description: the URL of the API endpoint for the referenced user
-                    examples:
-                    - https://example.com/api/v2/users/1
-                    title: Href
-                    type: string
-                  permissions:
-                    $ref: '#/components/schemas/PermissionsModel'
-                    description: the permissions for the referenced user
-                    examples:
-                    - 1
-                  user_id:
-                    description: the ID of the referenced user
-                    examples:
-                    - 1
-                    title: User Id
-                    type: integer
-                required:
-                - user_id
-                - permissions
-                - href
-                title: ProjectMemberUserRefModel
-                type: object
+                $ref: '#/components/schemas/ProjectMemberUserRefModel'
           description: 'OK: Request fulfilled, document follows'
         '403':
           $ref: '#/components/responses/ForbiddenErrorModel'
@@ -6000,30 +5158,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  href:
-                    description: the URL of the API endpoint for the referenced user
-                    examples:
-                    - https://example.com/api/v2/users/1
-                    title: Href
-                    type: string
-                  permissions:
-                    $ref: '#/components/schemas/PermissionsModel'
-                    description: the permissions for the referenced user
-                    examples:
-                    - 1
-                  user_id:
-                    description: the ID of the referenced user
-                    examples:
-                    - 1
-                    title: User Id
-                    type: integer
-                required:
-                - user_id
-                - permissions
-                - href
-                title: ProjectMemberUserRefModel
-                type: object
+                $ref: '#/components/schemas/ProjectMemberUserRefModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           $ref: '#/components/responses/BadRequestErrorModel'
@@ -6099,93 +5234,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  affiliation:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the affiliation of the user
-                    examples:
-                    - Example Institute
-                    title: Affiliation
-                  email:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    default: null
-                    description: the email address of the user, only set when queried
-                      by administrators
-                    examples:
-                    - user@example.com
-                    title: Email
-                  is_active:
-                    anyOf:
-                    - type: boolean
-                    - type: 'null'
-                    default: null
-                    description: whether the user is active, only set when queried
-                      by administrators
-                    examples:
-                    - true
-                    title: Is Active
-                  is_hidden:
-                    anyOf:
-                    - type: boolean
-                    - type: 'null'
-                    default: null
-                    description: whether the user is hidden from user lists, only
-                      set when queried by administrators
-                    examples:
-                    - false
-                    title: Is Hidden
-                  is_readonly:
-                    anyOf:
-                    - type: boolean
-                    - type: 'null'
-                    default: null
-                    description: whether the user is readonly, only set when queried
-                      by administrators
-                    examples:
-                    - false
-                    title: Is Readonly
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the user
-                    examples:
-                    - Example User
-                    title: Name
-                  orcid:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the ORCID iD of the user
-                    examples:
-                    - 0000-0001-2345-6789
-                    title: Orcid
-                  role:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the role of the user
-                    examples:
-                    - Researcher
-                    title: Role
-                  user_id:
-                    description: the ID of the user
-                    examples:
-                    - 1
-                    title: User Id
-                    type: integer
-                required:
-                - user_id
-                - name
-                - orcid
-                - affiliation
-                - role
-                title: UserModel
-                type: object
+                $ref: '#/components/schemas/UserModel'
           description: 'OK: Request fulfilled, document follows'
       summary: Get the currently authenticated user.
       tags:
@@ -6209,93 +5258,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  affiliation:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the affiliation of the user
-                    examples:
-                    - Example Institute
-                    title: Affiliation
-                  email:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    default: null
-                    description: the email address of the user, only set when queried
-                      by administrators
-                    examples:
-                    - user@example.com
-                    title: Email
-                  is_active:
-                    anyOf:
-                    - type: boolean
-                    - type: 'null'
-                    default: null
-                    description: whether the user is active, only set when queried
-                      by administrators
-                    examples:
-                    - true
-                    title: Is Active
-                  is_hidden:
-                    anyOf:
-                    - type: boolean
-                    - type: 'null'
-                    default: null
-                    description: whether the user is hidden from user lists, only
-                      set when queried by administrators
-                    examples:
-                    - false
-                    title: Is Hidden
-                  is_readonly:
-                    anyOf:
-                    - type: boolean
-                    - type: 'null'
-                    default: null
-                    description: whether the user is readonly, only set when queried
-                      by administrators
-                    examples:
-                    - false
-                    title: Is Readonly
-                  name:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the name of the user
-                    examples:
-                    - Example User
-                    title: Name
-                  orcid:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the ORCID iD of the user
-                    examples:
-                    - 0000-0001-2345-6789
-                    title: Orcid
-                  role:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the role of the user
-                    examples:
-                    - Researcher
-                    title: Role
-                  user_id:
-                    description: the ID of the user
-                    examples:
-                    - 1
-                    title: User Id
-                    type: integer
-                required:
-                - user_id
-                - name
-                - orcid
-                - affiliation
-                - role
-                title: UserModel
-                type: object
+                $ref: '#/components/schemas/UserModel'
           description: 'OK: Request fulfilled, document follows'
         '404':
           $ref: '#/components/responses/NotFoundErrorModel'
