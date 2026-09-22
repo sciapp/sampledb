@@ -2,7 +2,7 @@
 """
 
 """
-
+import flask
 import requests
 import pytest
 
@@ -50,8 +50,16 @@ def action():
 
 
 def test_get_location(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/locations/1', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Location #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested location does not exist.",
+        "type": "http://localhost/api/v2/errors/LocationNotFound"
+    }
 
     location = sampledb.logic.locations.create_location(
         name={'en': "Example Location"},
@@ -62,6 +70,13 @@ def test_get_location(flask_server, auth, user):
     )
     r = requests.get(flask_server.base_url + 'api/v2/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 403
+    assert r.json() == {
+        "detail": f"User #{user.id} does not have sufficient permissions for location #{location.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "The user does not have sufficient permissions for the location.",
+        "type": "http://localhost/api/v2/errors/InsufficientLocationPermissions"
+    }
 
     sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v2/locations/{}'.format(location.id), auth=auth)
@@ -139,8 +154,17 @@ def test_get_locations(flask_server, auth, user):
 
 
 def test_get_location_assignment(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Object #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectNotFound"
+    }
+
     data = {
         'name': {
             '_type': 'text',
@@ -151,6 +175,13 @@ def test_get_location_assignment(flask_server, auth, user, action):
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/locations/0'.format(object.id), auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": f"Location assignment #0 for object #{object.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object location assignment does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectLocationAssignmentNotFound"
+    }
 
     location = sampledb.logic.locations.create_location(
         name={'en': "Example Location"},
@@ -174,8 +205,17 @@ def test_get_location_assignment(flask_server, auth, user, action):
 
 
 def test_get_location_assignments(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Object #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectNotFound"
+    }
+
     data = {
         'name': {
             '_type': 'text',
@@ -210,13 +250,23 @@ def test_get_location_assignments(flask_server, auth, user, action):
         }
     ]
 
+
 def test_create_location_assignment(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.post(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth, json={
         'location_id': 2,
         'responsible_user_id': user.id,
         'description': 'This is an example description',
     })
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Object #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectNotFound",
+    }
+
     data = {
         'name': {
             '_type': 'text',
@@ -230,6 +280,21 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'description': 'This is an example description',
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Object assignment should include a location or a responsible user",
+        "errors": [
+            {
+                "detail": "Object assignment should include a location or a responsible user",
+                "input": {
+                    "description": "This is an example description",
+                },
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
@@ -237,6 +302,22 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'location_id': 1
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Location should exist (location_id)",
+        "errors": [
+            {
+                "detail": "Location should exist (location_id)",
+                "input": {
+                    "description": "This is an example description",
+                    "location_id": 1,
+                },
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
@@ -244,6 +325,19 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id + 1
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "User should exist (responsible_user_id)",
+        "errors": [
+            {
+                "detail": "User should exist",
+                "input":  user.id + 1,
+                "json_pointer": "/responsible_user_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
@@ -311,6 +405,19 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id,
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Input should be {object.id} (object_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.id}",
+                "input": object.id + 1,
+                "json_pointer": "/object_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 4
 
     sampledb.logic.object_permissions.set_user_object_permissions(object.id, user.id, sampledb.models.Permissions.READ)
@@ -319,6 +426,12 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id,
     })
     assert r.status_code == 403
+    assert r.json() == {
+        "detail": f"User #{user.id} does not have sufficient permissions for object #{object.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "The user does not have sufficient permissions for the object.",
+        "type": "http://localhost/api/v2/errors/InsufficientObjectPermissions",}
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 4
     sampledb.logic.object_permissions.set_user_object_permissions(object.id, user.id, sampledb.models.Permissions.GRANT)
 
@@ -337,6 +450,13 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id,
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Location #{location.id} does not allow object assignments.",
+        "errors": [],
+        "status": 400,
+        "title": "The location does not allow object assignments.",
+        "type": "http://localhost/api/v2/errors/LocationDoesNotAllowObjectAssignments",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 4
     sampledb.logic.locations.update_location(
         location.id,
@@ -355,6 +475,13 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id,
     })
     assert r.status_code == 403
+    assert r.json() == {
+        "detail": f"User #{user.id} does not have sufficient permissions for location #{location.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "The user does not have sufficient permissions for the location.",
+        "type": "http://localhost/api/v2/errors/InsufficientLocationPermissions",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 4
     sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.READ)
 
@@ -377,12 +504,33 @@ def test_create_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id,
     })
     assert r.status_code == 400
+    assert r.json() == { 
+        "detail": f"Location #{location.id} has reached its maximum capacity for objects of this type. Object #{object.id} could not be assigned to it as that would exceed the maximum capacity.",
+        "errors": [],
+        "status": 400,
+        "title": "The location has reached its maximum capacity for object assignments and the assigning an additional object would exceed that capacity.",
+        "type": "http://localhost/api/v2/errors/LocationCapacityReached",
+    }
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 4
 
 
 def test_create_location(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 0
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
@@ -427,13 +575,27 @@ def test_create_location(flask_server, auth, user):
     assert location.parent_location_id == parent_location_id
     assert location.type_id == location_type.id
 
-    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
+    data = {
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id + 1,
         'parent_location_id': parent_location_id
-    })
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json=data)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Location type should exist (type_id)",
+        "errors": [
+            {
+                "detail": "Location type should exist (type_id)",
+                "input": data,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 2
 
     sampledb.logic.locations.update_location_type(
@@ -457,6 +619,13 @@ def test_create_location(flask_server, auth, user):
         'parent_location_id': parent_location_id
     })
     assert r.status_code == 403
+    assert r.json() == {
+        "detail": f"User #{user.id} is no administrator, but only administrators may use location type #{location_type.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only administrators may use the location type.",
+        "type": "http://localhost/api/v2/errors/OnlyAdminsMayUseLocationType",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 2
 
     sampledb.logic.locations.update_location_type(
@@ -480,6 +649,13 @@ def test_create_location(flask_server, auth, user):
         'parent_location_id': parent_location_id
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Location type #{location_type.id} does not allow having a parent location.",
+        "errors": [],
+        "status": 400,
+        "title": "The location type does not allow parent locations.",
+        "type": "http://localhost/api/v2/errors/LocationTypeDoesNotAllowParentLocations",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 2
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
@@ -501,7 +677,7 @@ def test_create_location(flask_server, auth, user):
         location_name_singular={'en': 'Container'},
         location_name_plural={'en': 'Containers'},
         admin_only=False,
-        enable_parent_location=False,
+        enable_parent_location=True,
         enable_sub_locations=False,
         enable_object_assignments=True,
         enable_responsible_users=True,
@@ -514,9 +690,16 @@ def test_create_location(flask_server, auth, user):
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
-        'parent_location_id': parent_location_id
+        'parent_location_id': location.id
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Parent location type #{location_type.id} does not allow having sub locations.",
+        "errors": [],
+        "status": 400,
+        "title": "The location type does not allow sub locations.",
+        "type": "http://localhost/api/v2/errors/LocationTypeDoesNotAllowSubLocations",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 3
 
     sampledb.logic.locations.update_location_type(
@@ -543,13 +726,27 @@ def test_create_location(flask_server, auth, user):
     assert r.status_code == 201
     assert len(sampledb.logic.locations.get_locations()) == 4
 
-    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
+    data = {
         'name': 'Example Location',
         'description': 'This is an example action.',
         'type_id': location_type.id,
         'parent_location_id': parent_location_id + 100
-    })
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json=data)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Location should exist (parent_location_id)",
+        "errors": [
+            {
+                "detail": "Location should exist (parent_location_id)",
+                "input": data,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 4
 
     sampledb.logic.location_permissions.set_user_location_permissions(parent_location_id, user.id, sampledb.models.Permissions.READ)
@@ -560,36 +757,27 @@ def test_create_location(flask_server, auth, user):
         'parent_location_id': parent_location_id
     })
     assert r.status_code == 403
-    assert len(sampledb.logic.locations.get_locations()) == 4
-    sampledb.logic.location_permissions.set_user_location_permissions(parent_location_id, user.id, sampledb.models.Permissions.WRITE)
-
-    sampledb.logic.locations.update_location_type(
-        location_type_id=sampledb.logic.locations.LocationType.LOCATION,
-        name={'en': 'Location'},
-        location_name_singular={'en': 'Location'},
-        location_name_plural={'en': 'Locations'},
-        admin_only=False,
-        enable_parent_location=True,
-        enable_sub_locations=False,
-        enable_object_assignments=True,
-        enable_responsible_users=True,
-        enable_instruments=True,
-        enable_capacities=True,
-        show_location_log=False,
-    )
-    r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
-        'type_id': location_type.id,
-        'parent_location_id': parent_location_id
-    })
-    assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"User #{user.id} does not have sufficient permissions for parent location #{parent_location_id}.",
+        "errors": [],
+        "status": 403,
+        "title": "The user does not have sufficient permissions for the location.",
+        "type": "http://localhost/api/v2/errors/InsufficientLocationPermissions",
+    }
     assert len(sampledb.logic.locations.get_locations()) == 4
 
 
 def test_update_location(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.put(flask_server.base_url + 'api/v2/locations/1', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Location #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested location does not exist.",
+        "type": "http://localhost/api/v2/errors/LocationNotFound",
+    }
 
     location = sampledb.logic.locations.create_location(
         name={'en': 'Example Location'},
@@ -602,10 +790,30 @@ def test_update_location(flask_server, auth, user):
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth)
     assert r.status_code == 400
+    assert r.json() == { 
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     location_json = requests.get(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth).json()
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=location_json)
     assert r.status_code == 403
+    assert r.json() == {
+        "detail": f"User #{user.id} does not have sufficient permissions for location #{location.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "The user does not have sufficient permissions for the location.",
+        "type": "http://localhost/api/v2/errors/InsufficientLocationPermissions"
+    }
 
     sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.WRITE)
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=location_json)
@@ -629,6 +837,19 @@ def test_update_location(flask_server, auth, user):
             assert r.status_code == 200
         else:
             assert r.status_code == 400
+            assert r.json() == { 
+                "detail": f"Field required ({key})",
+                "errors": [
+                    {
+                        "detail": "Field required",
+                        "input": None,
+                        "json_pointer": f"/{key}",
+                    },
+                ],
+                "status": 400,
+                "title": "Failed to validate request body data.",
+                "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed"
+            }
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
@@ -672,7 +893,7 @@ def test_update_location(flask_server, auth, user):
         type_id=sampledb.logic.locations.LocationType.LOCATION
     )
 
-    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
+    data = {
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -680,8 +901,22 @@ def test_update_location(flask_server, auth, user):
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
         'enable_object_assignments': True,
-    })
+    }
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=data)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Location should exist (parent_location_id)",
+        "errors": [
+            {
+                "detail": "Location should exist (parent_location_id)",
+                "input": data,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
@@ -693,6 +928,13 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 403
+    assert r.json() == {  
+        "detail": f"User #{user.id} does not have sufficient permissions for parent location #{parent_location.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "The user does not have sufficient permissions for the location.",
+        "type": "http://localhost/api/v2/errors/InsufficientLocationPermissions",
+    }
 
     sampledb.logic.location_permissions.set_user_location_permissions(parent_location.id, user.id, sampledb.models.Permissions.WRITE)
     sampledb.logic.locations.update_location_type(
@@ -719,6 +961,13 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Parent location type #{sampledb.logic.locations.LocationType.LOCATION} does not allow having sub locations.",
+        "errors": [],
+        "status": 400,
+        "title": "The location type does not allow sub locations.",
+        "type": "http://localhost/api/v2/errors/LocationTypeDoesNotAllowSubLocations",
+    }
 
     sampledb.logic.locations.update_location_type(
         location_type_id=sampledb.logic.locations.LocationType.LOCATION,
@@ -744,6 +993,13 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Location type #{sampledb.logic.locations.LocationType.LOCATION} does not allow having a parent location.",
+        "errors": [],
+        "status": 400,
+        "title": "The location type does not allow parent locations.",
+        "type": "http://localhost/api/v2/errors/LocationTypeDoesNotAllowParentLocations",
+    }
 
     sampledb.logic.locations.update_location_type(
         location_type_id=sampledb.logic.locations.LocationType.LOCATION,
@@ -773,7 +1029,7 @@ def test_update_location(flask_server, auth, user):
     location = sampledb.logic.locations.get_location(location.id)
     assert location.parent_location_id == parent_location.id
 
-    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
+    data = {
         'location_id': location.id,
         'name': 'Example Location 2',
         'description': 'This is an example location 2',
@@ -781,8 +1037,22 @@ def test_update_location(flask_server, auth, user):
         'type_id': sampledb.logic.locations.LocationType.LOCATION + 1,
         'is_hidden': False,
         'enable_object_assignments': True,
-    })
+    }
+    r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json=data)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Location type should exist (type_id)",
+        "errors": [
+            {
+                "detail": "Location type should exist (type_id)",
+                "input": data,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id + 1,
@@ -794,3 +1064,16 @@ def test_update_location(flask_server, auth, user):
         'enable_object_assignments': True,
     })
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Input should be {location.id} (location_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {location.id}",
+                "input": location.id + 1,
+                "json_pointer": "/location_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }

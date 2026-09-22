@@ -1,3 +1,4 @@
+import flask
 import requests
 import pytest
 
@@ -55,6 +56,7 @@ def object(user):
 
 
 def test_create_invalid_comment(flask_server, object, auth):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     comments = sampledb.logic.comments.get_comments_for_object(object.id)
     assert len(comments) == 0
 
@@ -62,12 +64,17 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/comments/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be an object",
-        "error_details": {
-            "msg": "Input should be an object",
-            "input": [],
-        }
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": [],
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -77,14 +84,17 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": f"Input should be {object.id} (object_id)",
-        "error_details": {
-            "object_id": {
-                "msg": f"Input should be {object.id}",
+        "detail": f"Input should be {object.id} (object_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.id}",
                 "input": object.id + 1,
-            }
-        }
+                "json_pointer": "/object_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -92,11 +102,17 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Field required (content)",
-        "error_details": {
-            "content": {"msg": "Field required"}
-        }
+        "detail": "Field required (content)",
+        "errors": [
+            {
+                "detail": "Field required",
+                "input": None,
+                "json_pointer": "/content",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -105,14 +121,17 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be a valid string (content)",
-        "error_details": {
-            "content": {
-                "msg": "Input should be a valid string",
+        "detail": "Input should be a valid string (content)",
+        "errors": [
+            {
+                "detail": "Input should be a valid string",
                 "input": None,
-            }
-        }
+                "json_pointer": "/content",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -121,14 +140,17 @@ def test_create_invalid_comment(flask_server, object, auth):
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/comments/', json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "String should have at least 1 character (content)",
-        "error_details": {
-            "content": {
-                "msg": "String should have at least 1 character",
+        "detail": "String should have at least 1 character (content)",
+        "errors": [
+            {
+                "detail": "String should have at least 1 character",
                 "input": "",
-            }
-        }
+                "json_pointer": "/content",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     comments = sampledb.logic.comments.get_comments_for_object(object.id)

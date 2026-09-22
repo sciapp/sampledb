@@ -1,15 +1,15 @@
 import base64
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from contextlib import suppress
 from itertools import groupby
 
-from pydantic import (AfterValidator, BaseModel, BeforeValidator, Field,
-                      TypeAdapter, ValidationError, ValidationInfo,
-                      model_validator)
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, ValidationInfo, model_validator, SerializerFunctionWrapHandler, WrapSerializer
 from pydantic_core import ErrorDetails, PydanticCustomError
 
 from ....logic import errors, users
 from ....logic.utils import parse_url
+from ....models import Permissions
 
 
 class _ErrorDict(typing.TypedDict):
@@ -56,15 +56,40 @@ class ValidatingError(ValueError):
             else:
                 msg = error_dict["msg"]
                 break
+        # TODO: refactor error handling specific to ObjectFiles
+        for prefix in [
+            ["database", "without_preview_image"],
+            ["database", "with_preview_image"],
+            ["local_reference"],
+            ["url"]
+        ]:
+            if len(loc) > len(prefix) and loc[:len(prefix)] == prefix:
+                loc = loc[len(prefix):]
+                break
         self.message = f"{msg} ({".".join(loc)})" if loc else msg
 
-    @property
-    def response(self) -> tuple[dict[str, typing.Any], int]:
-        return {
-            "error": "Bad Request",
-            "message": self.message,
-            "error_details": self.error_details
-        }, 400
+    def error_details_by_path(self) -> dict[Sequence[str | int], _ErrorDict]:
+        error_dict_by_path: dict[Sequence[str | int], _ErrorDict] = {}
+        e_queue: list[tuple[list[str | int], typing.Any]] = [([], self.error_details)]
+        while e_queue:
+            path, e = e_queue.pop(0)
+            if not isinstance(e, dict):
+                continue
+            if tuple(e.keys()) in [("msg", "input"), ("msg",)]:
+                for prefix in [
+                    ["database", "without_preview_image"],
+                    ["database", "with_preview_image"],
+                    ["local_reference"],
+                    ["url"]
+                ]:
+                    if len(path) > len(prefix) and path[:len(prefix)] == prefix:
+                        path = path[len(prefix):]
+                        break
+                error_dict_by_path[tuple(path)] = typing.cast(_ErrorDict, e)
+            else:
+                for key, value in e.items():
+                    e_queue.append((path + [key,], value))
+        return error_dict_by_path
 
 
 @typing.overload
@@ -208,3 +233,19 @@ def _user_exists(value: int) -> int:
 
 
 type UserId = typing.Annotated[int, AfterValidator(_user_exists)]
+
+
+def _permissions_validator(value: typing.Any) -> Permissions:
+    if isinstance(value, Permissions):
+        return value
+    if isinstance(value, str):
+        with suppress(ValueError):
+            return Permissions.from_name(value)
+    raise PydanticCustomError("enum", "Input should be 'none', 'read', 'write' or 'grant'")
+
+
+def _permissions_serializer(permissions: Permissions, handler: SerializerFunctionWrapHandler) -> str:
+    return permissions.name.lower()
+
+
+type PermissionsModel = typing.Annotated[Permissions, BeforeValidator(_permissions_validator), WrapSerializer(_permissions_serializer)]

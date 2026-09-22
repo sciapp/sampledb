@@ -2,9 +2,10 @@ import base64
 import typing
 from dataclasses import dataclass
 from functools import cached_property
+from http import HTTPStatus
 
 import flask
-from pydantic import AfterValidator, BaseModel, Field, Strict, Tag, model_validator
+from pydantic import AfterValidator, BaseModel, Field, Strict, Tag, field_validator, ValidationInfo, Discriminator
 from pydantic_core import PydanticCustomError
 
 from ...logic import errors
@@ -18,7 +19,7 @@ from ...models import Object, Permissions
 from ..utils import Resource
 from .authentication import object_permissions_required
 from .utils.validation import Base64Encoded, HexString, NonEmptyString, OptionalNotNone, Url, is_expected_from_validation_info, is_valid, generate_example
-from .utils.responses import ForbiddenErrorModel, NotFoundErrorModel, CreatedResponseModel, ReturnValue
+from .utils.responses import ErrorDetailsModel, CreatedResponseModel, ReturnValue
 from .utils.openapi import method
 
 
@@ -66,18 +67,28 @@ class _DatabaseFile(_BaseFile):
             binary_data=self.content,
         )
         assert info is not None, "algorithm is validated to be supported"
-        if self.hash is not None and self.hash.hexdigest != info.hexdigest:
+        return info
+
+    @field_validator('hash', mode="after")
+    @classmethod
+    def check_hash_info(cls, value: _Hash, info: ValidationInfo) -> _Hash:
+        expected_info = File.HashInfo.from_binary_data(
+            algorithm=value.algorithm,
+            binary_data=info.data.get('content', ''),
+        )
+        if expected_info is None:
+            raise PydanticCustomError(
+                "unexpected",
+                "Hash algorithm should be one of {supported_hash_algorithms}",
+                {"supported_hash_algorithms": SUPPORTED_HASH_ALGORITHMS},
+            )
+        if value.hexdigest != expected_info.hexdigest:
             raise PydanticCustomError(
                 "unexpected",
                 "Hash hexdigest should be {expected}",
-                {"expected": info.hexdigest},
+                {"expected": expected_info.hexdigest},
             )
-        return info
-
-    @model_validator(mode="after")
-    def check_hash_info(self) -> typing.Self:
-        self.hash_info  # pylint: disable=pointless-statement
-        return self
+        return value
 
 
 class _DatabaseFileWithPreview(_DatabaseFile):
@@ -110,7 +121,10 @@ class _UrlFile(_BaseFile):
     url: Url = Field(description="the URL for the file", examples=["https://example.com"])
 
 
-type _DatabaseFileUnion = typing.Annotated[_DatabaseFile, Tag("without_preview_image")] | typing.Annotated[_DatabaseFileWithPreview, Tag("with_preview_image")]
+type _DatabaseFileUnion = typing.Annotated[
+    typing.Annotated[_DatabaseFile, Tag("without_preview_image")] | typing.Annotated[_DatabaseFileWithPreview, Tag("with_preview_image")],
+    Field(discriminator=Discriminator(lambda v: 'with_preview_image' if isinstance(v, dict) and 'base64_preview_image' in v else 'without_preview_image')),
+]
 type _File = typing.Annotated[
     _DatabaseFileUnion | _LocalReferenceFile | _UrlFile,
     Field(discriminator="storage"),
@@ -171,6 +185,26 @@ def file_model_from_file(file_info: File, include_content: bool = True) -> Datab
     assert False
 
 
+class ObjectFileNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested file does not exist."
+
+
+class ObjectFileHiddenModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "The requested file has been hidden."
+
+
+class ObjectFilesNotEnabledModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "Adding files is not enabled for this object."
+
+
+class LocalReferencePathNotInWhitelistModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "The user is not authorized to add this path as a local_reference file."
+
+
 class ObjectFile(Resource):
     class PathModel(BaseModel):
         object_id: int = Field(description="the ID of an existing object", examples=[1])
@@ -178,7 +212,7 @@ class ObjectFile(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ReturnValue[DatabaseFileModel | UrlFileModel] | NotFoundErrorModel | ForbiddenErrorModel:
+    def get(self, path: PathModel) -> ReturnValue[DatabaseFileModel | UrlFileModel] | ObjectFileNotFoundModel | ObjectFileHiddenModel:
         """
         Get an object file.
         """
@@ -187,14 +221,12 @@ class ObjectFile(Resource):
             if file_info is None:
                 raise errors.FileDoesNotExistError()
         except errors.FileDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"file {path.file_id} of object {path.object_id} does not exist"
+            return ObjectFileNotFoundModel(
+                detail=f"File #{path.file_id} of object #{path.object_id} does not exist."
             )
         if file_info.is_hidden:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message=f"file {path.file_id} of object {path.object_id} has been hidden"
+            return ObjectFileHiddenModel(
+                detail=f"File #{path.file_id} of object #{path.object_id} has been hidden."
             )
         return ReturnValue(file_model_from_file(file_info=file_info))
 
@@ -217,17 +249,20 @@ class ObjectFiles(Resource):
 
     @object_permissions_required(Permissions.WRITE)
     @method(request_body_context_builder=ValidationContext.from_path)
-    def post(self, path: PathModel, request_body: _File) -> CreatedResponseModel | ForbiddenErrorModel:
+    def post(self, path: PathModel, request_body: _File) -> CreatedResponseModel | ObjectFilesNotEnabledModel | LocalReferencePathNotInWhitelistModel:
         """
         Create a new file for an object.
         """
         object = get_object(object_id=path.object_id)
         if object.action_id is not None:
             action = get_action(action_id=object.action_id)
-            if action.type is None or not action.type.enable_files:
-                return ForbiddenErrorModel(
-                    error="Forbidden",
-                    message="Adding files is not enabled for objects of this type"
+            if action.type is None:
+                return ObjectFilesNotEnabledModel(
+                    detail=f"Object #{object.object_id} was created with action #{action.id}, which does not have an action type. Adding files is not enabled for objects created with actions without a type.",
+                )
+            elif not action.type.enable_files:
+                return ObjectFilesNotEnabledModel(
+                    detail=f"Object #{object.object_id} was created with action #{action.id}, which is of action type #{action.type_id}. Adding files is not enabled for objects created with actions of that type.",
                 )
         if request_body.storage == "database":
             file = create_database_file(
@@ -251,9 +286,8 @@ class ObjectFiles(Resource):
                     ),
                 )
             except errors.UnauthorizedRequestError:
-                return ForbiddenErrorModel(
-                    error="Forbidden",
-                    message="user not authorized to add this path"
+                return LocalReferencePathNotInWhitelistModel(
+                    detail=f"User #{flask.g.user.id} is not authorized to add the path '{request_body.filepath}' as a local_reference file. There is no matching whitelist entry."
                 )
         else:
             assert request_body.storage == "url"

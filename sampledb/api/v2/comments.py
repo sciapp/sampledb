@@ -1,5 +1,6 @@
 import typing
 from dataclasses import dataclass
+from http import HTTPStatus
 
 import flask
 from pydantic import BaseModel, Strict, Field
@@ -10,7 +11,7 @@ from ...models import Permissions
 from ..utils import Resource
 from .authentication import object_permissions_required
 from .utils.validation import is_expected_from_validation_info, NonEmptyString
-from .utils.responses import CreatedResponseModel
+from .utils.responses import CreatedResponseModel, ErrorDetailsModel
 from .utils.openapi import method
 
 
@@ -32,6 +33,11 @@ class CommentModel(BaseModel):
         )
 
 
+class ObjectCommentNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested comment does not exist."
+
+
 class ObjectComment(Resource):
     class PathModel(BaseModel):
         object_id: int = Field(description="the ID of an existing object", examples=[1])
@@ -39,19 +45,16 @@ class ObjectComment(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> CommentModel:
+    def get(self, path: PathModel) -> CommentModel | ObjectCommentNotFoundModel:
         """
         Get a comment.
         """
         try:
             comment = get_comment_for_object(object_id=path.object_id, comment_id=path.comment_id)
         except errors.CommentDoesNotExistError:
-            return flask.abort(flask.Response(
-                response={
-                    "message": f"comment {path.comment_id} of object {path.object_id} does not exist"
-                },
-                status=404
-            ))
+            return ObjectCommentNotFoundModel(
+                detail=f"Comment #{path.comment_id} for object #{path.object_id} does not exist.",
+            )
         return CommentModel.from_comment(comment)
 
 

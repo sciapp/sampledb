@@ -2,10 +2,11 @@ import json
 import typing
 from dataclasses import dataclass
 from functools import cached_property
+from http import HTTPStatus
 
 import flask
 from pydantic import (AfterValidator, AliasChoices, BaseModel, BeforeValidator,
-                      Field, Strict, ValidationInfo, model_validator)
+                      Field, Strict, ValidationInfo, model_validator, field_validator)
 from pydantic_core import PydanticCustomError
 
 from ... import models
@@ -25,7 +26,7 @@ from ..utils import Resource
 from .actions import ActionModel
 from .users import UserModel
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, generate_example
-from .utils.responses import BadRequestErrorModel, CreatedResponseModel, FoundResponseModel, NotFoundErrorModel
+from .utils.responses import CreatedResponseModel, FoundResponseModel, ErrorDetailsModel, RequestBodyErrorDetailModel
 from .utils.openapi import method
 
 
@@ -137,6 +138,81 @@ class ObjectVersionModel(BaseModel):
     )
 
 
+class ObjectNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested object does not exist."
+
+
+class ObjectVersionNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested object version does not exist."
+
+
+class ObjectSearchFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "The object search failed."
+
+
+class CreatingObjectsNotSupportedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Creating an object is not supported."
+
+
+class EditingObjectNotSupportedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Editing the object is not supported."
+
+
+class CreatingObjectFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Creating an object failed."
+
+
+class EditingObjectFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Editing the object failed."
+
+
+class ObjectDataDiffFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Failed to apply the object data diff."
+
+
+class ObjectDataValidationFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Validation of the object data against its schema failed."
+
+    def __init__(self, request_body_data: typing.Any, validation_error: errors.ValidationError) -> None:
+        messages = validation_error.message.splitlines()
+        error_details = []
+        for message in messages:
+            message = message.strip()
+            if message.endswith(')') and ' (at ' in message:
+                detail, path = message.removesuffix(')').rsplit(' (at ', maxsplit=1)
+                input_data = request_body_data
+                for path_element in path.split('.'):
+                    try:
+                        if isinstance(input_data, list):
+                            input_data = input_data[int(path_element)]
+                        elif isinstance(input_data, dict):
+                            input_data = input_data[str(path_element)]
+                        else:
+                            input_data = None
+                            break
+                    except (KeyError, ValueError, TypeError):
+                        input_data = None
+                        break
+                error_details.append(RequestBodyErrorDetailModel(
+                    detail=detail,
+                    input=input_data,
+                    json_pointer="/data/" + path.replace(".", "/"),
+                ))
+        super().__init__(
+            detail="Validation of the object data against its schema failed:\n - " + "\n - ".join(messages),
+            errors=error_details
+        )
+
+
 class ObjectVersion(Resource):
     class PathModel(BaseModel):
         object_id: int = Field(description="the ID of an existing object", examples=[1])
@@ -149,16 +225,15 @@ class ObjectVersion(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel, query: QueryModel) -> ObjectVersionModel | NotFoundErrorModel:
+    def get(self, path: PathModel, query: QueryModel) -> ObjectVersionModel | ObjectVersionNotFoundModel:
         """
         Get an object version.
         """
         try:
             object = get_object(object_id=path.object_id, version_id=path.version_id)
         except errors.ObjectVersionDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"version {path.version_id} of object {path.object_id} does not exist"
+            return ObjectVersionNotFoundModel(
+                detail=f"Version #{path.version_id} of object #{path.object_id} does not exist."
             )
         object_version = ObjectVersionModel(
             object_id=object.object_id,
@@ -272,15 +347,20 @@ class ObjectVersions(Resource):
             except errors.ActionDoesNotExistError:
                 raise PydanticCustomError("no_such_action", "Action should exist (action_id)")
 
-        @model_validator(mode="after")
-        def check_action_and_schema(self, info: ValidationInfo[ObjectVersions.ValidationContext]) -> typing.Self:
-            if self.action_schema not in (None, info.context.object.schema, self.action.schema):
+        @field_validator("action_schema", mode="after")
+        @classmethod
+        def check_action_and_schema(cls, value: dict[str, typing.Any] | None, info: ValidationInfo[ObjectVersions.ValidationContext]) -> dict[str, typing.Any] | None:
+            try:
+                action = get_action(action_id=info.data["action_id"])
+            except errors.ActionDoesNotExistError:
+                return value
+            if value not in (None, info.context.object.schema, action.schema):
                 raise PydanticCustomError(
                     "unexpected",
-                    f"Schema should be {json.dumps(info.context.object.schema, indent=4)} or {json.dumps(self.action.schema, indent=4)}",
-                    {"expected": self.action.schema},
+                    f"Schema should be {json.dumps(info.context.object.schema, indent=4)} or {json.dumps(action.schema, indent=4)}",
+                    {"expected": value},
                 )
-            return self
+            return value
 
         @model_validator(mode="after")
         def check_data_specified(self) -> typing.Self:
@@ -290,15 +370,14 @@ class ObjectVersions(Resource):
 
     @object_permissions_required(Permissions.WRITE)
     @method(request_body_context_builder=ValidationContext.from_path)
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | EditingObjectNotSupportedModel | ObjectDataDiffFailedModel | ObjectDataValidationFailedModel | EditingObjectFailedModel:
         """
         Create a new object version.
         """
         object = get_object(object_id=path.object_id)
         if object.action_id is None:
-            return BadRequestErrorModel(
-                error="LogicError",
-                message="editing this object is not supported"
+            return EditingObjectNotSupportedModel(
+                detail=f"Object #{path.object_id} does not have an associated action. Editing objects without an action is not supported."
             )
         schema = object.schema if request_body.action_schema is None else request_body.action_schema
 
@@ -307,17 +386,15 @@ class ObjectVersions(Resource):
         try:
             if data_diff is not None:
                 if object.data is None or object.schema is None:
-                    return BadRequestErrorModel(
-                        error="LogicError",
-                        message="previous object version must contain data and schema"
+                    return ObjectDataDiffFailedModel(
+                        detail="The previous object version must contain data and schema to be able to have a diff applied to the object data."
                     )
                 data_from_diff = apply_diff(object.data, data_diff, object.schema)
                 if data is None:
                     data = data_from_diff
                 elif data_from_diff != data:
-                    return BadRequestErrorModel(
-                        error="Bad Request",
-                        message="data and data_diff are conflicting"
+                    return ObjectDataDiffFailedModel(
+                        detail="The data and the data diff are conflicting, as applying the diff does not result in the data given in the request body."
                     )
 
             update_object(
@@ -328,23 +405,17 @@ class ObjectVersions(Resource):
             )
 
         except errors.ValidationError as e:
-            messages = e.message.splitlines()
-            return BadRequestErrorModel(
-                error="Validation Error",
-                message="validation failed:\n - " + "\n - ".join(messages),
-                error_details={
-                    "paths": e.paths
-                }
+            return ObjectDataValidationFailedModel(
+                request_body_data=request_body.data,
+                validation_error=e
             )
         except errors.DiffMismatchError:
-            return BadRequestErrorModel(
-                error="Bad Request",
-                message="failed to apply diff"
+            return ObjectDataDiffFailedModel(
+                detail="Failed to apply the data diff to the current object data."
             )
         except Exception:
-            return BadRequestErrorModel(
-                error="LogicError",
-                message="failed to update object"
+            return EditingObjectFailedModel(
+                detail="Failed to update the object for an unknown reason."
             )
 
         object_version_url = flask.url_for(
@@ -486,7 +557,7 @@ class Objects(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> list[_ObjectModel] | BadRequestErrorModel:
+    def get(self, query: QueryModel) -> list[_ObjectModel] | ObjectSearchFailedModel:
         """
         List all (or some) objects.
 
@@ -533,9 +604,8 @@ class Objects(Resource):
             search_notes.append(('error', f"Error during search: {e}", 0, 0))
             objects = []
         if any(search_note[0] == 'error' for search_note in search_notes):
-            return BadRequestErrorModel(
-                error='Bad Request',
-                message='\n'.join(
+            return ObjectSearchFailedModel(
+                detail='\n'.join(
                     'Error: ' + search_note[1]
                     for search_note in search_notes
                     if search_note[0] == 'error'
@@ -586,20 +656,14 @@ class Objects(Resource):
 
     @multi_auth.login_required
     @method()
-    def post(self, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel:
+    def post(self, request_body: RequestBodyModel) -> CreatedResponseModel | CreatingObjectsNotSupportedModel | ObjectDataValidationFailedModel | CreatingObjectFailedModel:
         """
         Create a new object.
         """
-        if flask.g.user.is_readonly:
-            return BadRequestErrorModel(
-                error='ReadOnlyUserError',
-                message="user has been marked as read only"
-            )
         action = request_body.action
         if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
-            return BadRequestErrorModel(
-                error="LogicError",
-                message=f"creating objects with action {request_body.action_id} is disabled"
+            return CreatingObjectsNotSupportedModel(
+                detail=f"Creating objects with action #{request_body.action_id} is disabled."
             )
         try:
             object = create_object(
@@ -609,18 +673,13 @@ class Objects(Resource):
                 schema=action.schema,
             )
         except errors.ValidationError as e:
-            messages = e.message.splitlines()
-            return BadRequestErrorModel(
-                error="Validation Error",
-                message="validation failed:\n - " + "\n - ".join(messages),
-                error_details={
-                    "paths": e.paths
-                }
+            return ObjectDataValidationFailedModel(
+                request_body_data=request_body.data,
+                validation_error=e
             )
         except Exception:
-            return BadRequestErrorModel(
-                error="LogicError",
-                message="failed to create object"
+            return CreatingObjectFailedModel(
+                detail="Failed to create an object for an unknown reason."
             )
         object_version_url = flask.url_for(
             '.object_version',

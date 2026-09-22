@@ -1,3 +1,4 @@
+import flask
 import requests
 import pytest
 
@@ -67,6 +68,7 @@ def object_id(action, user):
 
 
 def test_get_user_object_permissions(flask_server, auth, user, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, user.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == "grant"
@@ -105,18 +107,22 @@ def test_get_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "User should exist (user_id)",
-        "error_details": {
-           "user_id": {
+        "detail": "User should exist (user_id)",
+        "errors": [
+            {
                 "input": other_user.id + 1,
-                "msg": "User should exist",
+                "detail": "User should exist",
+                "path_parameter": "user_id",
             },
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL path.",
+        "type": "http://localhost/api/v2/errors/PathValidationFailed",
     }
 
 
 def test_set_user_object_permissions(flask_server, auth, user, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="read", auth=auth)
     assert r.status_code == 200
@@ -137,41 +143,55 @@ def test_set_user_object_permissions(flask_server, auth, user, other_user, objec
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": "all",
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": "all",
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/",
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": {"permissions": "read"},
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": {"permissions": "read"},
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/",
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/users/{}'.format(object_id, other_user.id + 1), json="read", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "User should exist (user_id)",
-        "error_details": {
-            "user_id": {
+        "detail": "User should exist (user_id)",
+        "errors": [
+            {
                 "input": other_user.id + 1,
-                "msg": "User should exist",
+                "detail": "User should exist",
+                "path_parameter": "user_id",
             }
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL path.",
+        "type": "http://localhost/api/v2/errors/PathValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id, other_user.id, False, False, False) == sampledb.models.Permissions.NONE
 
 
 def test_get_group_object_permissions(flask_server, auth, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), auth=auth)
@@ -205,18 +225,22 @@ def test_get_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Group should exist (group_id)",
-        "error_details": {
-            "group_id": {
+        "detail": "Group should exist (group_id)",
+        "errors": [
+            {
                 "input": group_id + 1,
-                "msg": "Group should exist",
+                "detail": "Group should exist",
+                "path_parameter": "group_id",
             }
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL path.",
+        "type": "http://localhost/api/v2/errors/PathValidationFailed",
     }
 
 
 def test_set_group_object_permissions(flask_server, auth, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
@@ -239,41 +263,55 @@ def test_set_group_object_permissions(flask_server, auth, other_user, object_id)
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": "all",
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": "all",
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/",
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": {"permissions": "read"},
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": {"permissions": "read"},
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/",
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/groups/{}'.format(object_id, group_id + 1), json="read", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Group should exist (group_id)",
-        "error_details": {
-            "group_id": {
+        "detail": "Group should exist (group_id)",
+        "errors": [
+            {
                 "input": group_id + 1,
-                "msg": "Group should exist",
+                "detail": "Group should exist",
+                "path_parameter": "group_id",
             }
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL path.",
+        "type": "http://localhost/api/v2/errors/PathValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id, False).get(group_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
 
 
 def test_get_project_object_permissions(flask_server, auth, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), auth=auth)
@@ -297,18 +335,22 @@ def test_get_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Project should exist (project_id)",
-        "error_details": {
-            "project_id": {
+        "detail": "Project should exist (project_id)",
+        "errors": [
+            {
                 "input": project_id + 1,
-                "msg": "Project should exist",
+                "detail": "Project should exist",
+                "path_parameter": "project_id",
             }
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL path.",
+        "type": "http://localhost/api/v2/errors/PathValidationFailed",
     }
 
 
 def test_set_project_object_permissions(flask_server, auth, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
@@ -331,36 +373,49 @@ def test_set_project_object_permissions(flask_server, auth, other_user, object_i
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json="all", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": "all",
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": "all",
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id), json={"permissions": "read"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": {"permissions": "read"},
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": {"permissions": "read"},
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/projects/{}'.format(object_id, project_id + 1), json="read", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Project should exist (project_id)",
-        "error_details": {
-            "project_id": {
+        "detail": "Project should exist (project_id)",
+        "errors": [
+            {
                 "input": project_id + 1,
-                "msg": "Project should exist",
-            }
-        },
+                "detail": "Project should exist",
+                "path_parameter": "project_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL path.",
+        "type": "http://localhost/api/v2/errors/PathValidationFailed",
     }
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id, sampledb.models.Permissions.NONE) == sampledb.models.Permissions.NONE
 
@@ -455,6 +510,7 @@ def test_get_object_public(flask_server, auth, object_id):
 
 
 def test_set_object_public(flask_server, auth, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), json=True, auth=auth)
@@ -470,12 +526,17 @@ def test_set_object_public(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/public'.format(object_id), json="True", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be a valid boolean",
-        "error_details": {
-            "input": "True",
-            "msg": "Input should be a valid boolean",
-        },
+        "detail": "Input should be a valid boolean",
+        "errors": [
+            {
+                "input": "True",
+                "detail": "Input should be a valid boolean",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
@@ -492,6 +553,7 @@ def test_get_all_user_object_permissions(flask_server, auth, object_id):
 
 
 def test_set_all_user_object_permissions(flask_server, auth, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json="read", auth=auth)
@@ -507,28 +569,39 @@ def test_set_all_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json="write", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Permissions for authenticated users should be 'none' or 'read'",
-        "error_details": {
-            "input": "write",
-            "msg": "Permissions for authenticated users should be 'none' or 'read'",
-        },
+        "detail": "Permissions for authenticated users should be 'none' or 'read'",
+        "errors": [
+            {
+                "input": "write",
+                "detail": "Permissions for authenticated users should be 'none' or 'read'",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/authenticated_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": True,
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": True,
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id)
 
 
 def test_get_anonymous_user_object_permissions(flask_server, auth, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
@@ -543,14 +616,17 @@ def test_get_anonymous_user_object_permissions(flask_server, auth, object_id):
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), auth=auth)
     assert r.status_code == 400
-    assert r.json() == {
-        "error": "Bad Request",
-        "message": "anonymous users are disabled",
-        "error_details": None,
+    assert r.json() == {  
+        "detail": "Support for anonymous users has not been enabled.",
+        "errors": [],
+        "status": 400,
+        "title": "Support for anonymous users has not been enabled.",
+        "type": "http://localhost/api/v2/errors/AnonymousUsersDisabled"
     }
 
 
 def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = True
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
 
@@ -567,23 +643,34 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json="write", auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Permissions for anonymous users should be 'none' or 'read'",
-        "error_details": {
-            "input": "write",
-            "msg": "Permissions for anonymous users should be 'none' or 'read'",
-        },
+        "detail": "Permissions for anonymous users should be 'none' or 'read'",
+        "errors": [
+            {
+                "input": "write",
+                "detail": "Permissions for anonymous users should be 'none' or 'read'",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+
     }
 
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json=True, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be 'none', 'read', 'write' or 'grant'",
-        "error_details": {
-            "input": True,
-            "msg": "Input should be 'none', 'read', 'write' or 'grant'",
-        },
+        "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+        "errors": [
+            {
+                "input": True,
+                "detail": "Input should be 'none', 'read', 'write' or 'grant'",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
     assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
 
@@ -591,9 +678,11 @@ def test_set_anonymous_user_object_permissions(flask_server, auth, object_id):
     r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/anonymous_users'.format(object_id), json='read', auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "anonymous users are disabled",
-        "error_details": None
+        "detail": "Support for anonymous users has not been enabled.",
+        "errors": [],
+        "status": 400,
+        "title": "Support for anonymous users has not been enabled.",
+        "type": "http://localhost/api/v2/errors/AnonymousUsersDisabled",
     }
 
 
@@ -625,6 +714,7 @@ def test_get_all_object_permissions(flask_server, auth, user, other_user, object
 
 
 def test_set_object_permissions(flask_server, auth, user, other_user, object_id):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     # Apply perms for 2 out of 3 (users, groups, projects)
     # Stick with the first permission;
     # Remove (change) perm for second;
@@ -680,7 +770,7 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
             project_ids[2]: 'read',
         },
     }
-    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 200
 
     assert all([
@@ -705,7 +795,7 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
         'authenticated_users': 'none',
         'anonymous_users': 'none',
     }
-    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 200
     assert r.json()["authenticated_users"] == 'none'
     assert r.json()["anonymous_users"] == 'none'
@@ -714,36 +804,42 @@ def test_set_object_permissions(flask_server, auth, user, other_user, object_id)
         'authenticated_users': 'write',
         'anonymous_users': 'grant',
     }
-    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Permissions for authenticated users should be 'none' or 'read' (authenticated_users)",
-        "error_details": {
-            "authenticated_users": {
+        "detail": "Permissions for authenticated users should be 'none' or 'read' (authenticated_users)",
+        "errors": [
+            {
                 "input": "write",
-                "msg": "Permissions for authenticated users should be 'none' or 'read'",
+                "detail": "Permissions for authenticated users should be 'none' or 'read'",
+                "json_pointer": "/authenticated_users"
             },
-            "anonymous_users": {
+            {
                 "input": "grant",
-                "msg": "Permissions for anonymous users should be 'none' or 'read'",
+                "detail": "Permissions for anonymous users should be 'none' or 'read'",
+                "json_pointer": "/anonymous_users"
             },
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
-    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id+1), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/'.format(object_id+1), json=request_json, auth=auth)
     assert r.status_code == 404
 
     flask_server.app.config['ENABLE_ANONYMOUS_USERS'] = False
     request_json = {
         'anonymous_users': 'read',
     }
-    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/objects/{}/permissions/'.format(object_id), json=request_json, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "anonymous users are disabled",
-        "error_details": None
+        "detail": "Support for anonymous users has not been enabled.",
+        "errors": [],
+        "status": 400,
+        "title": "Support for anonymous users has not been enabled.",
+        "type": "http://localhost/api/v2/errors/AnonymousUsersDisabled"
     }
 
 

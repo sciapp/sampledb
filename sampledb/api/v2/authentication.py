@@ -1,5 +1,6 @@
 import typing
 from collections.abc import Callable
+from http import HTTPStatus
 
 import flask
 from werkzeug.exceptions import HTTPException
@@ -7,15 +8,15 @@ from werkzeug.exceptions import HTTPException
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 from pydantic import BaseModel, Field
 
+from . import objects
 from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, login_via_oidc_access_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
 from ...logic.users import User
 from ...models import Permissions
 from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
 from ..utils import Resource
-from .utils.openapi import method
+from .utils.openapi import method, RequestBodyValidationFailedModel, GenericOperationCallable, R
 from ..errors import handle_api_error
-from .utils.responses import BadRequestErrorModel
-
+from .utils.responses import ErrorDetailsModel, make_response
 
 http_basic_auth = HTTPBasicAuth()
 http_api_token_or_access_token_auth = HTTPTokenAuth(scheme='Bearer')
@@ -88,7 +89,12 @@ def auth_error(status: int) -> FlaskResponseT:
         return handle_api_error(None)
 
 
-def object_permissions_required(permissions: Permissions) -> Callable[[typing.Any], typing.Any]:
+class InsufficientObjectPermissionsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "The user does not have sufficient permissions for the object."
+
+
+def object_permissions_required(permissions: Permissions) -> Callable[[GenericOperationCallable[R]], GenericOperationCallable[R]]:
     """
     Only allow access to a route it the user has the required permissions.
 
@@ -97,12 +103,39 @@ def object_permissions_required(permissions: Permissions) -> Callable[[typing.An
 
     :param permissions: the required object permissions
     """
-    return object_permissions_required_generic(
-        required_object_permissions=permissions,
-        auth_extension=multi_auth,
-        user_id_callable=lambda: typing.cast(int, flask.g.user.id),
-        may_enable_anonymous_users=False
-    )
+    def decorator_impl(func: GenericOperationCallable[R]) -> GenericOperationCallable[R]:
+        assert func.openapi_method_info is not None
+        assert func.openapi_method_info.path_model is not None
+        assert 'object_id' in func.openapi_method_info.path_model.model_fields
+        if objects.ObjectNotFoundModel not in func.openapi_method_info.extra_error_details_models:
+            func.openapi_method_info.extra_error_details_models.append(objects.ObjectNotFoundModel)
+        if InsufficientObjectPermissionsModel not in func.openapi_method_info.extra_error_details_models:
+            func.openapi_method_info.extra_error_details_models.append(InsufficientObjectPermissionsModel)
+        if 'version_id' in func.openapi_method_info.path_model.model_fields and objects.ObjectVersionNotFoundModel not in func.openapi_method_info.extra_error_details_models:
+            func.openapi_method_info.extra_error_details_models.append(objects.ObjectVersionNotFoundModel)
+        wrapped = object_permissions_required_generic(
+            required_object_permissions=permissions,
+            auth_extension=multi_auth,
+            user_id_callable=lambda: typing.cast(int, flask.g.user.id),
+            on_unauthorized=lambda object_id: flask.abort(make_response(
+                result=InsufficientObjectPermissionsModel(detail=f"User #{flask.g.user.id} does not have sufficient permissions for object #{object_id}."),
+                default_status_code=HTTPStatus.FORBIDDEN,
+                return_type_hint=None
+            )),
+            on_object_not_found=lambda object_id: flask.abort(make_response(
+                result=objects.ObjectNotFoundModel(detail=f"Object #{object_id} does not exist."),
+                default_status_code=HTTPStatus.NOT_FOUND,
+                return_type_hint=None
+            )),
+            on_object_version_not_found=lambda object_id, version_id: flask.abort(make_response(
+                result=objects.ObjectVersionNotFoundModel(detail=f"Version #{version_id} of object #{object_id} does not exist."),
+                default_status_code=HTTPStatus.NOT_FOUND,
+                return_type_hint=None
+            )),
+            may_enable_anonymous_users=False
+        )(func)
+        return typing.cast(GenericOperationCallable[R], wrapped)
+    return decorator_impl
 
 
 class AccessTokenModel(BaseModel):
@@ -112,13 +145,18 @@ class AccessTokenModel(BaseModel):
     description: str | None = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
 
 
+class FailedToRefreshAPITokenModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Failed to refresh API token"
+
+
 class AccessTokens(Resource):
     class RequestBodyModel(BaseModel):
         description: str = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
 
     @multi_auth_for_access_tokens.login_required
-    @method(default_status_code=201)
-    def post(self, request_body: RequestBodyModel | None) -> BadRequestErrorModel | AccessTokenModel:
+    @method(default_status_code=201, allow_read_only=True)
+    def post(self, request_body: RequestBodyModel | None) -> AccessTokenModel | FailedToRefreshAPITokenModel | RequestBodyValidationFailedModel:
         """
         Create a new access token.
         """
@@ -126,9 +164,8 @@ class AccessTokens(Resource):
         if refresh_token:
             result = refresh_api_access_token(refresh_token)
             if result is None:
-                return BadRequestErrorModel(
-                    error="LogicError",
-                    message="failed to refresh API token"
+                return FailedToRefreshAPITokenModel(
+                    detail="Failed to refresh API token."
                 )
             return AccessTokenModel(
                 access_token=result["access_token"],
@@ -137,9 +174,8 @@ class AccessTokens(Resource):
                 description=result["description"]
             )
         if request_body is None:
-            return BadRequestErrorModel(
-                error="LogicError",
-                message="neither description nor refresh API token provided"
+            return RequestBodyValidationFailedModel(
+                detail="Neither description nor refresh API token were provided."
             )
         access_token = generate_api_access_token(user_id=flask.g.user.id, description=request_body.description)
         return AccessTokenModel(
