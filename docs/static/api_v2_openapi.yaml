@@ -1,23 +1,4 @@
 components:
-  responses:
-    BadRequestErrorModel:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BadRequestErrorModel'
-      description: 'Bad Request: Bad request syntax or unsupported method'
-    ForbiddenErrorModel:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ForbiddenErrorModel'
-      description: "Forbidden: Request forbidden \u2014 authorization will not help"
-    NotFoundErrorModel:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/NotFoundErrorModel'
-      description: 'Not Found: Nothing matches the given URI'
   schemas:
     ActionModel:
       properties:
@@ -148,36 +129,6 @@ components:
       - admin_only
       title: ActionTypeModel
       type: object
-    BadRequestErrorModel:
-      properties:
-        error:
-          description: the HTTP error phrase
-          examples:
-          - Bad Request
-          title: Error
-          type: string
-        error_details:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
-          default: null
-          description: the details of the error
-          examples:
-          - input: null
-            msg: Input should be an object
-          title: Error Details
-        message:
-          description: the error message
-          examples:
-          - Unable to perform operation
-          title: Message
-          type: string
-      required:
-      - error
-      - message
-      title: BadRequestErrorModel
-      type: object
     CommentModel:
       properties:
         comment_id:
@@ -294,24 +245,58 @@ components:
       - storage
       title: DatabaseFileModel
       type: object
-    ForbiddenErrorModel:
+    ErrorDetailsModel:
+      description: 'Error Details as per RFC 9457
+
+
+        Subclasses should define their own STATUS and TITLE class variables, which
+
+        will be used as defaults for status and title. type will be constructed
+
+        from the class name, with the suffix "Model" removed.'
       properties:
-        error:
-          description: the HTTP error phrase
+        detail:
+          description: a detailed description of the error
           examples:
-          - Bad Request
-          title: Error
+          - 'Operation #1 failed to demonstrate the ErrorDetailsModel.'
+          title: Detail
           type: string
-        message:
-          description: the error message
+        errors:
+          default: []
+          description: an array of specific errors related to a path parameter, query
+            parameter or the request body
           examples:
-          - Unable to perform operation
-          title: Message
+          - - detail: Field required.
+              input: invalid
+              path_parameter: id
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/PathErrorDetailModel'
+            - $ref: '#/components/schemas/QueryErrorDetailModel'
+            - $ref: '#/components/schemas/RequestBodyErrorDetailModel'
+          title: Errors
+          type: array
+        status:
+          description: the HTTP status code of the error
+          examples:
+          - 400
+          title: Status
+          type: integer
+        title:
+          description: the title of the error
+          examples:
+          - The operation failed for demo purposes.
+          title: Title
+          type: string
+        type:
+          description: the type of the error
+          examples:
+          - http://example.com/api/v2/errors/ErrorDetails
+          title: Type
           type: string
       required:
-      - error
-      - message
-      title: ForbiddenErrorModel
+      - detail
+      title: ErrorDetailsModel
       type: object
     GroupId:
       type: integer
@@ -722,25 +707,6 @@ components:
     NonEmptyString:
       minLength: 1
       type: string
-    NotFoundErrorModel:
-      properties:
-        error:
-          description: the HTTP error phrase
-          examples:
-          - Bad Request
-          title: Error
-          type: string
-        message:
-          description: the error message
-          examples:
-          - Unable to perform operation
-          title: Message
-          type: string
-      required:
-      - error
-      - message
-      title: NotFoundErrorModel
-      type: object
     ObjectLocationAssignmentModel:
       properties:
         description:
@@ -897,6 +863,32 @@ components:
       - object_id
       title: ObjectReferenceModel
       type: object
+    PathErrorDetailModel:
+      properties:
+        detail:
+          description: a detailed description for a specific error related to a path
+            parameter
+          examples:
+          - Field required.
+          title: Detail
+          type: string
+        input:
+          description: the input that caused validation to fail
+          examples:
+          - invalid
+          title: Input
+        path_parameter:
+          description: the name of the path parameter that is the source of error
+          examples:
+          - id
+          title: Path Parameter
+          type: string
+      required:
+      - detail
+      - path_parameter
+      - input
+      title: PathErrorDetailModel
+      type: object
     Permissions:
       enum:
       - 0
@@ -1010,6 +1002,59 @@ components:
       - member_users
       - member_groups
       title: ProjectModel
+      type: object
+    QueryErrorDetailModel:
+      properties:
+        detail:
+          description: a detailed description for a specific error related to a query
+            parameter
+          examples:
+          - Field required.
+          title: Detail
+          type: string
+        input:
+          description: the input that caused validation to fail
+          examples:
+          - invalid
+          title: Input
+        query_parameter:
+          description: the name of the query parameter that is the source of error
+          examples:
+          - q
+          title: Query Parameter
+          type: string
+      required:
+      - detail
+      - query_parameter
+      - input
+      title: QueryErrorDetailModel
+      type: object
+    RequestBodyErrorDetailModel:
+      properties:
+        detail:
+          description: a detailed description for a specific error related to the
+            request body
+          examples:
+          - Field required.
+          title: Detail
+          type: string
+        input:
+          description: the input that caused validation to fail
+          examples:
+          - invalid
+          title: Input
+        json_pointer:
+          description: the JSON Pointer to a specific request body property that is
+            the source of error
+          examples:
+          - /user_id
+          title: Json Pointer
+          type: string
+      required:
+      - detail
+      - json_pointer
+      - input
+      title: RequestBodyErrorDetailModel
       type: object
     Url:
       type: string
@@ -1221,7 +1266,7 @@ components:
       title: _DatabaseFile
       type: object
     _DatabaseFileUnion:
-      anyOf:
+      oneOf:
       - $ref: '#/components/schemas/_DatabaseFile'
       - $ref: '#/components/schemas/_DatabaseFileWithPreview'
     _DatabaseFileWithPreview:
@@ -1612,7 +1657,12 @@ paths:
                 type: object
           description: 'Created: Document created, URL follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to refresh API token Or: Failed to validate
+            request body data.'
       summary: Create a new access token.
       tags:
       - authentication
@@ -1652,8 +1702,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionTypeModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The action type does not exist.
       summary: Get an action type.
       tags:
       - action_types
@@ -1696,8 +1756,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The action does not exist.
       summary: Get an action.
       tags:
       - actions
@@ -1826,11 +1896,95 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Read-only users may not make changes via the API.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The action does not exist.
       summary: Update an action.
       tags:
       - actions
+  /errors/{error_name}:
+    get:
+      parameters:
+      - description: the name of the error type.
+        example: PathValidationFailed
+        in: path
+        name: error_name
+        required: true
+        schema:
+          description: the name of the error type.
+          examples:
+          - PathValidationFailed
+          title: Error Name
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  href:
+                    description: the URL of the error type.
+                    examples:
+                    - http://example.org/api/v2/errors/PathValidationFailed
+                    title: Href
+                    type: string
+                  name:
+                    description: the name of the error type.
+                    examples:
+                    - PathValidationFailed
+                    title: Name
+                    type: string
+                  status:
+                    description: the HTTP status code of the error type.
+                    examples:
+                    - 400
+                    title: Status
+                    type: integer
+                  title:
+                    description: the title of the error type.
+                    examples:
+                    - Failed to validate URL path.
+                    title: Title
+                    type: string
+                required:
+                - name
+                - status
+                - title
+                - href
+                title: ErrorTypeModel
+                type: object
+          description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested error does not exist.
+      summary: Get an error type.
+      tags:
+      - errors
   /groups/:
     get:
       parameters: []
@@ -1867,8 +2021,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/GroupModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested basic group does not exist.
       summary: Get a basic group.
       tags:
       - groups
@@ -1895,10 +2059,24 @@ paths:
                   $ref: '#/components/schemas/UserRef'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only administrators may manage basic groups.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested basic group does not exist.
       summary: List all member users of a basic group.
       tags:
       - groups
@@ -1943,11 +2121,25 @@ paths:
                     - https://example.com
                     type: string
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The user is already a member of this basic group.
+            Or: Failed to validate URL path. Or: Failed to validate request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage basic groups. Or: Read-only
+            users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested basic group does not exist.
       summary: Add a user to a basic group.
       tags:
       - groups
@@ -1979,10 +2171,26 @@ paths:
       responses:
         '204':
           description: 'No Content: Request fulfilled, nothing follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage basic groups. Or: Read-only
+            users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested basic group does not exist. Or: The
+            user is not a member of this basic group.'
       summary: Remove a user from a basic group.
       tags:
       - groups
@@ -2017,10 +2225,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserRef'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only administrators may manage basic groups.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested basic group does not exist. Or: The
+            user is not a member of this basic group.'
       summary: Get a member user of a basic group.
       tags:
       - groups
@@ -2060,8 +2283,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested instrument does not exist.
       summary: Get an instrument.
       tags:
       - instruments
@@ -2088,10 +2321,24 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogCategoryModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested instrument does not exist.
       summary: List all log categories for an instrument.
       tags:
       - instrument_log
@@ -2127,10 +2374,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentLogCategoryModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log category does not exist.'
       summary: Get an instrument log category.
       tags:
       - instrument_log
@@ -2157,10 +2419,24 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogEntryModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested instrument does not exist.
       summary: List all log entries for an instrument.
       tags:
       - instrument_log
@@ -2255,10 +2531,26 @@ paths:
                     examples:
                     - https://example.com
                     type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only instrument scientists may create instrument log
+            entries. Or: Read-only users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested instrument does not exist.
       summary: Create a new instrument log entry.
       tags:
       - instrument_log
@@ -2294,10 +2586,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentLogEntryModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist.'
       summary: Get an instrument log entry.
       tags:
       - instrument_log
@@ -2335,10 +2642,25 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogFileAttachmentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist.'
       summary: List all file attachments for an instrument log entry.
       tags:
       - instrument_log
@@ -2387,10 +2709,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentLogFileAttachmentModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist. Or: The requested instrument log
+            file attachment does not exist.'
       summary: Get a file attachment for an instrument log entry.
       tags:
       - instrument_log
@@ -2428,10 +2766,25 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogObjectAttachmentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist.'
       summary: List all object attachments for an instrument log entry.
       tags:
       - instrument_log
@@ -2480,10 +2833,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentLogObjectAttachmentModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist. Or: The requested instrument log
+            object attachment does not exist.'
       summary: Get an object attachment for an instrument log entry.
       tags:
       - instrument_log
@@ -2521,10 +2890,25 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist.'
       summary: List all versions of an instrument log entry.
       tags:
       - instrument_log
@@ -2652,10 +3036,27 @@ paths:
                     examples:
                     - https://example.com
                     type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only instrument scientists may view instrument log
+            entries. Or: Read-only users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist.'
       summary: Create a new version of an instrument log entry.
       tags:
       - instrument_log
@@ -2702,10 +3103,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only instrument scientists may view instrument log entries.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested instrument does not exist. Or: The requested
+            instrument log entry does not exist. Or: The requested instrument log
+            entry version does not exist.'
       summary: Get a version of an instrument log entry.
       tags:
       - instrument_log
@@ -2745,8 +3162,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/LocationTypeModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested location type does not exist.
       summary: Get a location type.
       tags:
       - locations
@@ -2821,9 +3248,22 @@ paths:
                     - https://example.com
                     type: string
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The location type does not allow sub locations. Or:
+            The location type does not allow parent locations. Or: Failed to validate
+            request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage locations. Or: The
+            user does not have sufficient permissions for the location. Or: Only administrators
+            may use the location type. Or: Read-only users may not make changes via
+            the API.'
       summary: Create a new location.
       tags:
       - locations
@@ -2848,10 +3288,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/LocationModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the location.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested location does not exist.
       summary: Get a location.
       tags:
       - locations
@@ -2938,9 +3392,21 @@ paths:
                 $ref: '#/components/schemas/LocationModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The location type does not allow sub locations. Or:
+            The location type does not allow parent locations. Or: Failed to validate
+            URL path. Or: Failed to validate request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage locations. Or: The
+            user does not have sufficient permissions for the location. Or: Read-only
+            users may not make changes via the API.'
       summary: Update a location.
       tags:
       - locations
@@ -2970,6 +3436,12 @@ paths:
                   $ref: '#/components/schemas/ObjectLogEntryModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all object log entries.
       tags:
       - object_log
@@ -3136,7 +3608,12 @@ paths:
                 type: array
           description: 'OK: Request fulfilled, document follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The object search failed. Or: Failed to validate URL
+            query parameters.'
       summary: List all (or some) objects.
       tags:
       - objects
@@ -3232,7 +3709,19 @@ paths:
                     - https://example.com
                     type: string
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Creating an object is not supported. Or: Validation
+            of the object data against its schema failed. Or: Creating an object failed.
+            Or: Failed to validate request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Read-only users may not make changes via the API.
       summary: Create a new object.
       tags:
       - objects
@@ -3252,8 +3741,20 @@ paths:
       responses:
         '204':
           description: 'No Content: Request fulfilled, nothing follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate request body data.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not manage object permissions.
+            Or: The user does not have sufficient permissions for the object. Or:
+            Read-only users may not make changes via the API.'
       summary: Copy permissions from one object to another..
       tags:
       - object_permissions
@@ -3283,6 +3784,24 @@ paths:
                     examples:
                     - https://example.com
                     type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get an object.
       tags:
       - objects
@@ -3309,6 +3828,24 @@ paths:
                   $ref: '#/components/schemas/CommentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get all comments for an object.
       tags:
       - comments
@@ -3362,6 +3899,26 @@ paths:
                     examples:
                     - https://example.com
                     type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Post a new comment for an object.
       tags:
       - comments
@@ -3397,6 +3954,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommentModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested comment does not exist. Or: The requested
+            object does not exist.'
       summary: Get a comment.
       tags:
       - comments
@@ -3425,6 +4001,24 @@ paths:
                   - $ref: '#/components/schemas/UrlFileModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: List all files for an object.
       tags:
       - files
@@ -3468,8 +4062,28 @@ paths:
                     examples:
                     - https://example.com
                     type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Adding files is not enabled for this object. Or: The
+            user is not authorized to add this path as a local_reference file. Or:
+            Read-only users may not make changes via the API. Or: The user does not
+            have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Create a new file for an object.
       tags:
       - files
@@ -3507,10 +4121,26 @@ paths:
                 - $ref: '#/components/schemas/DatabaseFileModel'
                 - $ref: '#/components/schemas/UrlFileModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested file has been hidden. Or: The user does
+            not have sufficient permissions for the object.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested file does not exist. Or: The requested
+            object does not exist.'
       summary: Get an object file.
       tags:
       - files
@@ -3537,8 +4167,24 @@ paths:
                   $ref: '#/components/schemas/ObjectLocationAssignmentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: List all object location assignments.
       tags:
       - locations
@@ -3611,9 +4257,28 @@ paths:
                     - https://example.com
                     type: string
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The location does not allow object assignments. Or:
+            The location has reached its maximum capacity for object assignments and
+            the assigning an additional object would exceed that capacity. Or: Failed
+            to validate URL path. Or: Failed to validate request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The user does not have sufficient permissions for
+            the location. Or: Read-only users may not make changes via the API. Or:
+            The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Create a new object location assignment.
       tags:
       - locations
@@ -3649,8 +4314,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/ObjectLocationAssignmentModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested object does not exist. Or: The requested
+            object location assignment does not exist.'
       summary: Get an object location assignment.
       tags:
       - locations
@@ -3720,8 +4402,24 @@ paths:
                 title: AllObjectPermissionsModel
                 type: object
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get all permissions for an object.
       tags:
       - object_permissions
@@ -3840,7 +4538,25 @@ paths:
                 type: object
           description: 'OK: Request fulfilled, document follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Support for anonymous users has not been enabled.
+            Or: Failed to validate URL path. Or: Failed to validate request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set new permissions for an object.
       tags:
       - object_permissions
@@ -3866,7 +4582,24 @@ paths:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Support for anonymous users has not been enabled.
+            Or: Failed to validate URL path.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get the object permissions for anonymous users.
       tags:
       - object_permissions
@@ -3897,7 +4630,25 @@ paths:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Support for anonymous users has not been enabled.
+            Or: Failed to validate URL path. Or: Failed to validate request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set the object permissions for anonymous users.
       tags:
       - object_permissions
@@ -3922,6 +4673,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get the object permissions for authenticated users.
       tags:
       - object_permissions
@@ -3951,6 +4720,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set the object permissions for authenticated users.
       tags:
       - object_permissions
@@ -3991,6 +4780,25 @@ paths:
                   $ref: '#/components/schemas/PermissionsModel'
                 type: object
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get the object permissions granted to basic groups.
       tags:
       - object_permissions
@@ -4039,8 +4847,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested basic group does not exist. Or: The
+            requested object does not exist.'
       summary: Get the object permissions for a basic group.
       tags:
       - object_permissions
@@ -4086,6 +4912,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set the object permissions for a basic group.
       tags:
       - object_permissions
@@ -4112,6 +4958,24 @@ paths:
                   $ref: '#/components/schemas/PermissionsModel'
                 type: object
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get the object permissions granted to project groups.
       tags:
       - object_permissions
@@ -4146,8 +5010,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested project group does not exist. Or: The
+            requested object does not exist.'
       summary: Get the object permissions for a project group.
       tags:
       - object_permissions
@@ -4193,6 +5074,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set the object permissions for a project group.
       tags:
       - object_permissions
@@ -4217,6 +5118,24 @@ paths:
               schema:
                 type: boolean
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get whether authenticated users have READ permissions.
       tags:
       - object_permissions
@@ -4246,6 +5165,26 @@ paths:
               schema:
                 type: boolean
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set whether authenticated users have READ permissions.
       tags:
       - object_permissions
@@ -4326,6 +5265,25 @@ paths:
                   $ref: '#/components/schemas/PermissionsModel'
                 type: object
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Get the object permissions granted to users.
       tags:
       - object_permissions
@@ -4414,8 +5372,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested user does not exist. Or: The requested
+            object does not exist.'
       summary: Get the object permissions for a user.
       tags:
       - object_permissions
@@ -4461,6 +5437,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permissions'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Set the object permissions for a user.
       tags:
       - object_permissions
@@ -4512,6 +5508,24 @@ paths:
                 title: RelatedObjectsModel
                 type: object
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: List references to related objects.
       tags:
       - objects
@@ -4657,7 +5671,27 @@ paths:
                     - https://example.com
                     type: string
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Editing the object is not supported. Or: Failed to
+            apply the object data diff. Or: Validation of the object data against
+            its schema failed. Or: Editing the object failed. Or: Failed to validate
+            URL path. Or: Failed to validate request body data.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Read-only users may not make changes via the API.
+            Or: The user does not have sufficient permissions for the object.'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested object does not exist.
       summary: Create a new object version.
       tags:
       - objects
@@ -4898,8 +5932,26 @@ paths:
                 title: ObjectVersionModel
                 type: object
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the object.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested object version does not exist. Or: The
+            requested object does not exist.'
       summary: Get an object version.
       tags:
       - objects
@@ -4939,8 +5991,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested project group does not exist.
       summary: Get a project group.
       tags:
       - projects
@@ -4967,10 +6029,24 @@ paths:
                   $ref: '#/components/schemas/ProjectMemberUserRefModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only administrators may manage project groups.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested project group does not exist.
       summary: List all member users of a project group.
       tags:
       - projects
@@ -5026,11 +6102,25 @@ paths:
                     - https://example.com
                     type: string
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The user is already a member of this project group.
+            Or: Failed to validate URL path. Or: Failed to validate request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage project groups. Or:
+            Read-only users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested project group does not exist.
       summary: Add a user to a project group.
       tags:
       - projects
@@ -5063,11 +6153,27 @@ paths:
         '204':
           description: 'No Content: Request fulfilled, nothing follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Cannot remove the only user with GRANT permissions
+            from a project group while there are still other members in the project
+            group. Or: Failed to validate URL path.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage project groups. Or:
+            Read-only users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested project group does not exist. Or: The
+            user is not a member of this project group.'
       summary: Remove a user from a project group.
       tags:
       - projects
@@ -5102,10 +6208,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectMemberUserRefModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Only administrators may manage project groups.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested project group does not exist. Or: The
+            user is not a member of this project group.'
       summary: Get a member user of a project group.
       tags:
       - projects
@@ -5161,11 +6282,27 @@ paths:
                 $ref: '#/components/schemas/ProjectMemberUserRefModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
-          $ref: '#/components/responses/BadRequestErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Cannot change the permissions for the only user with
+            GRANT permissions in a project group. Or: Failed to validate URL path.
+            Or: Failed to validate request body data.'
         '403':
-          $ref: '#/components/responses/ForbiddenErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: Only administrators may manage project groups. Or:
+            Read-only users may not make changes via the API.'
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: 'Either: The requested project group does not exist. Or: The
+            user is not a member of this project group.'
       summary: Set the permissions of a member user of a project group.
       tags:
       - projects
@@ -5223,6 +6360,12 @@ paths:
                   $ref: '#/components/schemas/UserModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all users.
       tags:
       - users
@@ -5260,8 +6403,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserModel'
           description: 'OK: Request fulfilled, document follows'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL path.
         '404':
-          $ref: '#/components/responses/NotFoundErrorModel'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The requested user does not exist.
       summary: Get a user.
       tags:
       - users

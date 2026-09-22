@@ -1,4 +1,5 @@
 import typing
+from http import HTTPStatus
 
 import flask
 from pydantic import BaseModel, Field
@@ -6,7 +7,7 @@ from pydantic import BaseModel, Field
 from .authentication import multi_auth
 from ..utils import Resource
 from ...logic import errors, users
-from .utils.responses import NotFoundErrorModel
+from .utils.responses import ErrorDetailsModel
 from .utils.openapi import method
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -38,22 +39,26 @@ class UserModel(BaseModel):
         )
 
 
+class UserNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested user does not exist."
+
+
 class User(Resource):
     class PathModel(BaseModel):
         user_id: int = Field(description="the ID of an existing user", examples=[1])
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> UserModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> UserModel | UserNotFoundModel:
         """
         Get a user.
         """
         try:
             user = users.get_user(user_id=path.user_id)
         except errors.UserDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"user {path.user_id} does not exist",
+            return UserNotFoundModel(
+                detail=f"User #{path.user_id} does not exist.",
             )
         return UserModel.from_user(user)
 

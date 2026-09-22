@@ -6,6 +6,7 @@ from .actions import Action, Actions
 from .action_types import ActionType, ActionTypes
 from .authentication import AccessTokens
 from .comments import ObjectComment, ObjectComments
+from .errors import Error
 from .files import ObjectFile, ObjectFiles
 from .instruments import Instrument, Instruments
 from .instrument_log import InstrumentLogEntry, InstrumentLogEntries, InstrumentLogEntryVersions, InstrumentLogEntryVersion, InstrumentLogEntryFileAttachment, InstrumentLogEntryFileAttachments, InstrumentLogEntryObjectAttachment, InstrumentLogEntryObjectAttachments, InstrumentLogCategory, InstrumentLogCategories
@@ -29,6 +30,7 @@ api.add_url_rule('/api/v2/actions/<int:action_id>', endpoint='action', view_func
 api.add_url_rule('/api/v2/action_types/', endpoint='action_types', view_func=ActionTypes.as_view('action_types'))
 api.add_url_rule('/api/v2/action_types/<int(signed=True):type_id>', endpoint='action_type', view_func=ActionType.as_view('action_type'))
 api.add_url_rule('/api/v2/access_tokens/', endpoint='access_tokens', view_func=AccessTokens.as_view('access_tokens'))
+api.add_url_rule('/api/v2/errors/<error_name>', endpoint='error', view_func=Error.as_view('error'))
 api.add_url_rule('/api/v2/objects/<int:object_id>/comments/', endpoint='object_comments', view_func=ObjectComments.as_view('object_comments'))
 api.add_url_rule('/api/v2/objects/<int:object_id>/comments/<int:comment_id>', endpoint='object_comment', view_func=ObjectComment.as_view('object_comment'))
 api.add_url_rule('/api/v2/instruments/', endpoint='instruments', view_func=Instruments.as_view('instruments'))

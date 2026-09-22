@@ -1,6 +1,7 @@
 import json
 import typing
 from dataclasses import dataclass
+from http import HTTPStatus
 
 import flask
 from pydantic import AfterValidator, Field, Strict, ValidationInfo, BaseModel
@@ -18,7 +19,7 @@ from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info
-from .utils.responses import NotFoundErrorModel
+from .utils.responses import ErrorDetailsModel
 from .utils.openapi import method
 
 
@@ -70,6 +71,11 @@ class ActionModel(BaseModel):
             is_hidden=action.is_hidden,
             schema=action.schema
         )
+
+
+class ActionNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The action does not exist."
 
 
 class Action(Resource):
@@ -143,7 +149,7 @@ class Action(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> ActionModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> ActionModel | ActionNotFoundModel:
         """
         Get an action.
         """
@@ -152,9 +158,8 @@ class Action(Resource):
                 action_id=path.action_id
             )
         except errors.ActionDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"action {path.action_id} does not exist"
+            return ActionNotFoundModel(
+                detail=f"Action #{path.action_id} does not exist."
             )
         if Permissions.READ not in get_user_action_permissions(action_id=path.action_id, user_id=flask.g.user.id):
             return flask.abort(403)
@@ -162,7 +167,7 @@ class Action(Resource):
 
     @multi_auth.login_required
     @method(request_body_context_builder=ValidationContext.from_path_model)
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> ActionModel | NotFoundErrorModel:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> ActionModel | ActionNotFoundModel:
         """
         Update an action.
         """
@@ -171,9 +176,8 @@ class Action(Resource):
                 action_id=path.action_id
             )
         except errors.ActionDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"action {path.action_id} does not exist"
+            return ActionNotFoundModel(
+                detail=f"Action #{path.action_id} does not exist."
             )
         if Permissions.WRITE not in get_user_action_permissions(action_id=path.action_id, user_id=flask.g.user.id):
             return flask.abort(403)

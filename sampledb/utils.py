@@ -40,6 +40,8 @@ def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
         user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.id if flask_login.current_user else None,
+        on_object_not_found: typing.Callable[[int], FlaskResponseT] = lambda object_id: flask.abort(404),
+        on_object_version_not_found: typing.Callable[[int, int], FlaskResponseT] = lambda object_id, version_id: flask.abort(404),
         on_unauthorized: typing.Callable[[int], FlaskResponseT] = lambda object_id: flask.abort(403),
         may_enable_anonymous_users: bool = True
 ) -> typing.Callable[[typing.Any], typing.Any]:
@@ -64,9 +66,9 @@ def object_permissions_required(
                 else:
                     logic.objects.check_object_version_exists(object_id, version_id)
             except logic.errors.ObjectDoesNotExistError:
-                return flask.abort(404)
+                return on_object_not_found(object_id)
             except logic.errors.ObjectVersionDoesNotExistError:
-                return flask.abort(404)
+                return on_object_version_not_found(object_id, typing.cast(int, version_id))
             user_id = user_id_callable()
             if user_id is None:
                 if may_enable_anonymous_users and flask.current_app.config['ENABLE_ANONYMOUS_USERS']:

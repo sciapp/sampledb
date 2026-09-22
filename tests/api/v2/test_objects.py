@@ -1,5 +1,6 @@
 import sys
 
+import flask
 import requests
 import pytest
 import json
@@ -124,8 +125,17 @@ def other_action():
 
 
 def test_get_object_version(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/objects/1/versions/0', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Object #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectNotFound",
+    }
+
     data = {
         'name': {
             '_type': 'text',
@@ -150,8 +160,15 @@ def test_get_object_version(flask_server, auth, user, action):
         "action": None,
         "data_diff": None,
     }
-    r = requests.get(flask_server.base_url + 'api/v2/objects/1/versions/1', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.object_id}/versions/1', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": f"Version #1 of object #{object.object_id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object version does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectVersionNotFound",
+    }
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?embed_user=1'.format(object.object_id, object.version_id), auth=auth)
     assert r.status_code == 200
@@ -424,6 +441,7 @@ def test_get_object(flask_server, auth, user, action):
 
 
 def test_post_object_version(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/objects/1', auth=auth)
     assert r.status_code == 404
     data = {
@@ -437,30 +455,52 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "error_details": {
-            "input": None,
-            "msg": "Input should be an object",
-        },
-        "message": "Input should be an object"
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     object_json = []
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "error_details": {
-            "input": [],
-            "msg": "Input should be an object",
-        },
-        "message": "Input should be an object"
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": [],
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     object_json = {'unknown': 1}
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Extra inputs are not permitted (unknown)"
+    assert r.json() == {
+        "detail": "Extra inputs are not permitted (unknown)",
+        "errors": [
+            {
+                "detail": "Extra inputs are not permitted",
+                "input": 1,
+                "json_pointer": "/unknown",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     object_json = {
         'data': {
@@ -472,7 +512,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -481,7 +521,19 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json = {}
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "At least one required: data, data_diff"
+    assert r.json() == {
+        "detail": "At least one required: data, data_diff",
+        "errors": [
+            {
+                "detail": "At least one required: data, data_diff",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     object_json = {
         'object_id': object.object_id,
@@ -494,7 +546,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -518,7 +570,13 @@ def test_post_object_version(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'failed to apply diff'
+    assert r.json() == {
+        "detail": "Failed to apply the data diff to the current object data.",
+        "errors": [],
+        "status": 400,
+        "title": "Failed to apply the object data diff.",
+        "type": "http://localhost/api/v2/errors/ObjectDataDiffFailed",
+    }
 
     object_json = {
         'object_id': object.object_id,
@@ -547,7 +605,7 @@ def test_post_object_version(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == result_object_json['data']
@@ -577,7 +635,13 @@ def test_post_object_version(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'data and data_diff are conflicting'
+    assert r.json() == {
+        "detail": "The data and the data diff are conflicting, as applying the diff does not result in the data given in the request body.",
+        "errors": [],
+        "status": 400,
+        "title": "Failed to apply the object data diff.",
+        "type": "http://localhost/api/v2/errors/ObjectDataDiffFailed",
+    }
 
     object_json = {
         'object_id': object.object_id,
@@ -603,7 +667,7 @@ def test_post_object_version(flask_server, auth, user, action):
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -620,7 +684,19 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Input should be {} (object_id)".format(object.object_id)
+    assert r.json() == {
+        "detail": f"Input should be {object.object_id} (object_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.object_id}",
+                "input": object_json['object_id'],
+                "json_pointer": "/object_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     object_json = {
         'version_id': object.version_id + 1,
@@ -633,7 +709,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -650,7 +726,19 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Input should be {} (version_id)".format(object.version_id+1)
+    assert r.json() == {
+        "detail": f"Input should be {object.version_id + 1} (version_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.version_id + 1}",
+                "input": object_json['version_id'],
+                "json_pointer": "/version_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     object_json = {
         'action_id': object.action_id,
@@ -663,7 +751,7 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -680,7 +768,19 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Input should be {} (action_id)".format(object.action_id)
+    assert r.json() == {
+        "detail": f"Input should be {object.action_id} (action_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.action_id}",
+                "input": object_json['action_id'],
+                "json_pointer": "/action_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     new_schema = {
         'title': 'Example Object',
@@ -712,7 +812,19 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'].startswith("Schema should be")
+    assert r.json() == {
+        "detail": f"Schema should be {json.dumps(object.schema, indent=4)} or {json.dumps(action.schema, indent=4)} (schema)",
+        "errors": [
+            {
+                "detail": f"Schema should be {json.dumps(object.schema, indent=4)} or {json.dumps(action.schema, indent=4)}",
+                "input": object_json["schema"],
+                "json_pointer": "/schema",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
 
     sampledb.logic.actions.update_action(
         action_id=action.id,
@@ -761,10 +873,21 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == """validation failed:
- - unexpected keys in schema: {'value'} (at name)"""
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - unexpected keys in schema: {'value'} (at name)",
+        "errors": [
+            {
+                "detail": "unexpected keys in schema: {'value'}",
+                "input": object_json["data"]["name"],
+                "json_pointer": "/data/name",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
 
-    r = requests.get(flask_server.base_url + 'api/v2/objects/{}'.format(object.object_id), auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.object_id}/versions/{object.version_id}', auth=auth, allow_redirects=False)
     assert r.status_code == 200
     object_json = r.json()
     # remove keys that must not be copied
@@ -961,6 +1084,7 @@ def test_get_objects_with_name_only(flask_server, auth, user):
 
 
 def test_create_object(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     object_json = {
         'action_id': action.id,
         'data': {
@@ -975,7 +1099,7 @@ def test_create_object(flask_server, auth, user, action):
     objects = sampledb.logic.objects.get_objects()
     assert len(objects) == 1
     object = objects[0]
-    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id)
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id)
     assert object.version_id == 0
     assert object.action_id == action.id
     assert object.schema == action.schema
@@ -984,17 +1108,22 @@ def test_create_object(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "error_details": {
-            "input": None,
-            "msg": "Input should be an object",
-        },
-        "message": "Input should be an object"
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "input": None,
+                "detail": "Input should be an object",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     r = requests.post(flask_server.base_url + 'api/v2/objects/', json=[], auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'Input should be an object'
+    assert r.json()['detail'] == 'Input should be an object'
 
     object_json = {
         'action_id': action.id,
@@ -1008,7 +1137,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Extra inputs are not permitted (user_id)"
+    assert r.json()['detail'] == "Extra inputs are not permitted (user_id)"
 
     object_json = {
         'object_id': 1,
@@ -1022,7 +1151,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Extra inputs are not permitted (object_id)"
+    assert r.json()['detail'] == "Extra inputs are not permitted (object_id)"
 
     object_json = {
         'version_id': 0,
@@ -1049,7 +1178,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Input should be 0 (version_id)"
+    assert r.json()['detail'] == "Input should be 0 (version_id)"
 
     object_json = {
         'data': {
@@ -1061,7 +1190,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Field required (action_id)"
+    assert r.json()['detail'] == "Field required (action_id)"
 
     object_json = {
         'action_id': "Create other Sample",
@@ -1074,7 +1203,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Input should be a valid integer (action_id)"
+    assert r.json()['detail'] == "Input should be a valid integer (action_id)"
 
     object_json = {
         'action_id': action.id + 1,
@@ -1087,7 +1216,7 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Action should exist (action_id)"
+    assert r.json()['detail'] == "Action should exist (action_id)"
 
     object_json = {
         'action_id': action.id,
@@ -1119,14 +1248,14 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == f"Schema should be {json.dumps(action.schema, indent=4)}"
+    assert r.json()['detail'] == f"Schema should be {json.dumps(action.schema, indent=4)}"
 
     object_json = {
         'action_id': action.id
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == "Field required (data)"
+    assert r.json()['detail'] == "Field required (data)"
 
     object_json = {
         'action_id': action.id,
@@ -1139,8 +1268,20 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == """validation failed:
- - unexpected keys in schema: {'value'} (at name)"""
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - unexpected keys in schema: {'value'} (at name)",
+        "errors": [
+            {
+                "detail": "unexpected keys in schema: {'value'}",
+                "input": object_json['data']['name'],
+                "json_pointer": "/data/name",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
+
     object_json = {
         'action_id': action.id,
         'data': {
@@ -1156,12 +1297,28 @@ def test_create_object(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == """validation failed:
- - unexpected keys in schema: {'value'} (at name)
- - unknown property "test" (at test)"""
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - unexpected keys in schema: {'value'} (at name)\n - unknown property \"test\" (at test)",
+        "errors": [
+            {
+                "detail": "unexpected keys in schema: {'value'}",
+                "input": object_json['data']['name'],
+                "json_pointer": "/data/name",
+            },
+            {
+                "detail": "unknown property \"test\"",
+                "input": object_json['data']['test'],
+                "json_pointer": "/data/test",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
 
 
 def test_search_objects(flask_server, auth, user, other_user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     data = {
         'name': {
             '_type': 'text',
@@ -1224,9 +1381,11 @@ def test_search_objects(flask_server, auth, user, other_user, action):
     })
     assert r.status_code == 400
     assert r.json() == {
-        'error': 'Bad Request',
-        'message': 'Error: Unfinished text',
-        'error_details': None,
+        "detail": "Error: Unfinished text",
+        "errors": [],
+        "status": 400,
+        "title": "The object search failed.",
+        "type": "http://localhost/api/v2/errors/ObjectSearchFailed",
     }
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
         'q': 'example'
@@ -1753,6 +1912,7 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
     ]
 
 def test_create_object_with_file_invalid_reference(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     object_json = {
         'action_id': action.id,
         'data': {
@@ -1768,6 +1928,19 @@ def test_create_object_with_file_invalid_reference(flask_server, auth, user, act
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - file does not exist (at file)",
+        "errors": [
+            {
+                "detail": "file does not exist",
+                "input": object_json['data']['file'],
+                "json_pointer": "/data/file",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
     assert not sampledb.logic.objects.get_objects()
 
 
@@ -1813,6 +1986,7 @@ def test_update_object_with_file_reference(flask_server, auth, user, action):
 
 
 def test_create_object_with_missing_required(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     object_json = {
         'action_id': action.id,
         'data': {
@@ -1821,11 +1995,17 @@ def test_create_object_with_missing_required(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        'error': 'Validation Error',
-        'message': 'validation failed:\n - missing required property "name" (at name)',
-        'error_details': {
-            'paths': [['name']]
-        }
+        "detail": "Validation of the object data against its schema failed:\n - missing required property \"name\" (at name)",
+        "errors": [
+            {
+                "detail": "missing required property \"name\"",
+                "input": None,
+                "json_pointer": "/data/name",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
     }
 
 def test_get_objects_by_ids(flask_server, auth, user, other_user, action):

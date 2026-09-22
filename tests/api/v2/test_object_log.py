@@ -2,7 +2,7 @@
 """
 
 """
-
+import flask
 import requests
 import pytest
 
@@ -81,6 +81,7 @@ def object(user, action):
 
 
 def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, action, app):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', auth=auth2)
     entries = r.json()
     assert entries == []  # user2 has no read access
@@ -97,14 +98,17 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': "invalid"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "error_details": {
-            "after_id": {
+        "detail": "Input should be a valid integer, unable to parse string as an integer (after_id)",
+        "errors": [
+            {
+                "detail": "Input should be a valid integer, unable to parse string as an integer",
                 "input": "invalid",
-                "msg": "Input should be a valid integer, unable to parse string as an integer",
-           },
-       },
-       "message": "Input should be a valid integer, unable to parse string as an integer (after_id)",
+                "query_parameter": "after_id"
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed"
     }
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': local_entry.id}, auth=auth)
     entries = r.json()

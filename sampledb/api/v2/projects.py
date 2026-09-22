@@ -1,4 +1,5 @@
 import typing
+from http import HTTPStatus
 
 import flask
 from pydantic import BaseModel, Field
@@ -7,10 +8,9 @@ from ...logic import errors, projects
 from ...models import Permissions
 from ..utils import Resource
 from .authentication import multi_auth
-from .utils.validation import UserId, generate_example
-from .utils.responses import NotFoundErrorModel, ForbiddenErrorModel, CreatedResponseModel, BadRequestErrorModel, NoContentModel
+from .utils.validation import UserId, generate_example, PermissionsModel
+from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel
 from .utils.openapi import method
-from .object_permissions import PermissionsModel
 
 
 class ProjectMemberUserRefModel(BaseModel):
@@ -75,6 +75,36 @@ class ProjectModel(BaseModel):
         )
 
 
+class ProjectNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested project group does not exist."
+
+
+class OnlyAdminsMayManageProjectsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "Only administrators may manage project groups."
+
+
+class UserAlreadyIsProjectMemberModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "The user is already a member of this project group."
+
+
+class UserIsNoProjectMemberModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The user is not a member of this project group."
+
+
+class CannotRemoveOnlyGrantUserFromProjectModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Cannot remove the only user with GRANT permissions from a project group while there are still other members in the project group."
+
+
+class CannotChangePermissionsOfOnlyGrantUserInProjectModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Cannot change the permissions for the only user with GRANT permissions in a project group."
+
+
 class Projects(Resource):
     @multi_auth.login_required
     @method()
@@ -94,16 +124,15 @@ class Project(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> ProjectModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> ProjectModel | ProjectNotFoundModel:
         """
         Get a project group.
         """
         try:
             project = projects.get_project(project_id=path.project_id)
         except errors.ProjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"project {path.project_id} does not exist"
+            return ProjectNotFoundModel(
+                detail=f"Project group #{path.project_id} does not exist."
             )
         return ProjectModel.from_project(project)
 
@@ -118,21 +147,19 @@ class ProjectMemberUsers(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[ProjectMemberUserRefModel] | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[ProjectMemberUserRefModel] | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel:
         """
         List all member users of a project group.
         """
         if not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Only admins may manage projects"
+            return OnlyAdminsMayManageProjectsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage project groups."
             )
         try:
             project_permissions_by_member_id = projects.get_project_member_user_ids_and_permissions(project_id=path.project_id, include_groups=False)
         except errors.ProjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"project {path.project_id} does not exist"
+            return ProjectNotFoundModel(
+                detail=f"Project group #{path.project_id} does not exist."
             )
         return [
             ProjectMemberUserRefModel.from_user_id_and_permissions(user_id, project_permissions_by_member_id[user_id])
@@ -141,33 +168,25 @@ class ProjectMemberUsers(Resource):
 
     @multi_auth.login_required
     @method()
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel | ForbiddenErrorModel | NotFoundErrorModel:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel | UserAlreadyIsProjectMemberModel:
         """
         Add a user to a project group.
         """
         if not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Only admins may manage projects"
-            )
-        if flask.g.user.is_readonly:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Read-only users may not manage projects"
+            return OnlyAdminsMayManageProjectsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage project groups."
             )
         try:
             projects.get_project(project_id=path.project_id)
         except errors.ProjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"project {path.project_id} does not exist"
+            return ProjectNotFoundModel(
+                detail=f"Project group #{path.project_id} does not exist."
             )
         user_id = request_body.user_id
         current_permissions = projects.get_user_project_permissions(project_id=path.project_id, user_id=user_id, include_groups=False)
         if current_permissions != Permissions.NONE:
-            return BadRequestErrorModel(
-                error="Bad Request",
-                message="user is already a member of this project"
+            return UserAlreadyIsProjectMemberModel(
+                detail=f"User {user_id} is already a member of project group #{path.project_id}."
             )
         permissions = {
             'read': Permissions.READ,
@@ -194,56 +213,45 @@ class ProjectMemberUser(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> ProjectMemberUserRefModel | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> ProjectMemberUserRefModel | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel | UserIsNoProjectMemberModel:
         """
         Get a member user of a project group.
         """
         if not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Only admins may manage projects"
+            return OnlyAdminsMayManageProjectsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage project groups."
             )
         try:
             permissions = projects.get_user_project_permissions(project_id=path.project_id, user_id=path.user_id, include_groups=False)
         except errors.ProjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"project {path.project_id} does not exist"
+            return ProjectNotFoundModel(
+                detail=f"Project group #{path.project_id} does not exist."
             )
         if permissions == Permissions.NONE:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message="user is not a member of this project"
+            return UserIsNoProjectMemberModel(
+                detail=f"User #{path.user_id} is not a member of project group #{path.project_id}."
             )
         return ProjectMemberUserRefModel.from_user_id_and_permissions(path.user_id, permissions)
 
     @multi_auth.login_required
     @method()
-    def put(self, path: PathModel, request_body: RequestBodyModel) -> ProjectMemberUserRefModel | BadRequestErrorModel | ForbiddenErrorModel | NotFoundErrorModel:
+    def put(self, path: PathModel, request_body: RequestBodyModel) -> ProjectMemberUserRefModel | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel | UserIsNoProjectMemberModel | CannotChangePermissionsOfOnlyGrantUserInProjectModel:
         """
         Set the permissions of a member user of a project group.
         """
         if not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Only admins may manage projects"
-            )
-        if flask.g.user.is_readonly:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Read-only users may not manage projects"
+            return OnlyAdminsMayManageProjectsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage project groups."
             )
         try:
             current_permissions = projects.get_user_project_permissions(project_id=path.project_id, user_id=path.user_id, include_groups=False)
         except errors.ProjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"project {path.project_id} does not exist"
+            return ProjectNotFoundModel(
+                detail=f"Project group #{path.project_id} does not exist."
             )
         if current_permissions == Permissions.NONE:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message="user is not a member of this project"
+            return UserIsNoProjectMemberModel(
+                detail=f"User #{path.user_id} is not a member of project group #{path.project_id}."
             )
         permissions = {
             'read': Permissions.READ,
@@ -253,45 +261,35 @@ class ProjectMemberUser(Resource):
         try:
             projects.update_user_project_permissions(project_id=path.project_id, user_id=path.user_id, permissions=permissions)
         except errors.NoMemberWithGrantPermissionsForProjectError:
-            return BadRequestErrorModel(
-                error="Bad Request",
-                message="cannot change permissions for the only user with grant permissions for a project"
+            return CannotChangePermissionsOfOnlyGrantUserInProjectModel(
+                detail=f"User #{path.user_id} is the only user with GRANT permissions for project group #{path.project_id}."
             )
         return ProjectMemberUserRefModel.from_user_id_and_permissions(path.user_id, permissions)
 
     @multi_auth.login_required
     @method()
-    def delete(self, path: PathModel) -> NoContentModel | BadRequestErrorModel | ForbiddenErrorModel | NotFoundErrorModel:
+    def delete(self, path: PathModel) -> NoContentModel | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel | UserIsNoProjectMemberModel | CannotRemoveOnlyGrantUserFromProjectModel:
         """
         Remove a user from a project group.
         """
         if not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Only admins may manage projects"
-            )
-        if flask.g.user.is_readonly:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="Read-only users may not manage projects"
+            return OnlyAdminsMayManageProjectsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage project groups."
             )
         try:
             current_permissions = projects.get_user_project_permissions(project_id=path.project_id, user_id=path.user_id, include_groups=False)
         except errors.ProjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message=f"project {path.project_id} does not exist"
+            return ProjectNotFoundModel(
+                detail=f"Project group #{path.project_id} does not exist."
             )
         if current_permissions == Permissions.NONE:
-            return NotFoundErrorModel(
-                error="Not Found",
-                message="user is not a member of this project"
+            return UserIsNoProjectMemberModel(
+                detail=f"User #{path.user_id} is not a member of project group #{path.project_id}."
             )
         try:
             projects.remove_user_from_project(path.project_id, path.user_id)
         except errors.NoMemberWithGrantPermissionsForProjectError:
-            return BadRequestErrorModel(
-                error="Bad Request",
-                message="cannot remove the only user with grant permissions for a project as long as there are other users"
+            return CannotRemoveOnlyGrantUserFromProjectModel(
+                detail=f"User #{path.user_id} is the only user with GRANT permissions for project group #{path.project_id} and there are still other members in the project group."
             )
         return NoContentModel()

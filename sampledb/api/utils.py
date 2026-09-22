@@ -85,7 +85,8 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
 def make_json_response(
         obj: typing.Any,
         status: int = 200,
-        headers: typing.Optional[typing.Dict[str, typing.Any]] = None
+        headers: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        mimetype: str | None = None
 ) -> werkzeug.Response:
     if headers is None:
         headers = {}
@@ -100,7 +101,7 @@ def make_json_response(
 
     return typing.cast(werkzeug.Response, flask.current_app.response_class(
         response=f"{json.dumps(obj=obj, indent=indent, separators=separators)}\n",
-        mimetype=getattr(flask.current_app.json, 'mimetype', 'application/json'),
+        mimetype=mimetype or getattr(flask.current_app.json, 'mimetype', 'application/json'),
         status=status,
         headers=headers
     ))

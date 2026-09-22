@@ -3,18 +3,18 @@ import inspect
 import json
 import re
 import typing
-import http
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
+from http import HTTPStatus
 
 import flask
 import pydantic.json_schema
 import yaml
 from pydantic import BaseModel
 
-from ...utils import Resource, ResponseData, make_json_response
+from ...utils import Resource, ResponseData
 from .validation import validate, ValidatingError
-from .responses import make_response, ResourceMethodResult, ReturnValue, RedirectResponseModel, ErrorModel, NoContentModel
+from .responses import make_response, ResourceMethodResult, ReturnValue, RedirectResponseModel, ErrorDetailsModel, NoContentModel, PathErrorDetailModel, QueryErrorDetailModel, RequestBodyErrorDetailModel
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -24,44 +24,61 @@ class OpenAPIMethodInformation:
     query_model: type[BaseModel] | None
     request_body_model: type | None
     return_type_hint: type | None
+    extra_error_details_models: list[type[ErrorDetailsModel]]
 
 
 class GenericOperationCallable[R: Resource](typing.Protocol):
-    def __call__(self_, self: R, **kwargs: typing.Any) -> ResponseData:
+    openapi_method_info: OpenAPIMethodInformation
+
+    def __call__(_, self: R, **kwargs: typing.Any) -> ResponseData:
         ...
 
 
 class BareCallable[R: Resource](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R) -> ResourceMethodResult:
         ...
 
 
 class PathCallable[R: Resource, PM: BaseModel](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R, path: PM) -> ResourceMethodResult:
         ...
 
 
 class QueryCallable[R: Resource, QM: BaseModel](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R, query: QM) -> ResourceMethodResult:
         ...
 
 
 class RequestBodyCallable[R: Resource, ReqM](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R, request_body: ReqM) -> ResourceMethodResult:
         ...
 
 
 class PathQueryCallable[R: Resource, PM: BaseModel, QM: BaseModel](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R, path: PM, query: QM) -> ResourceMethodResult:
         ...
 
 
 class PathRequestBodyCallable[R: Resource, PM: BaseModel, ReqM](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R, path: PM, request_body: ReqM) -> ResourceMethodResult:
         ...
 
 
 class PathQueryRequestBodyCallable[R: Resource, PM: BaseModel, QM: BaseModel, ReqM](typing.Protocol):
+    __name__: str
+
     def __call__(self_, self: R, path: PM, query: QM, request_body: ReqM) -> ResourceMethodResult:
         ...
 
@@ -72,10 +89,31 @@ QM = typing.TypeVar('QM', bound=BaseModel)
 ReqM = typing.TypeVar('ReqM')  # , bound=BaseModel)
 
 
+class PathValidationFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Failed to validate URL path."
+
+
+class QueryValidationFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Failed to validate URL query parameters."
+
+
+class RequestBodyValidationFailedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "Failed to validate request body data."
+
+
+class MethodNotAllowedForReadOnlyUsersModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "Read-only users may not make changes via the API."
+
+
 def method(
         *,
         default_status_code: int = 200,
-        request_body_context_builder: Callable[[PM], typing.Any] | None = None
+        request_body_context_builder: Callable[[PM], typing.Any] | None = None,
+        allow_read_only: bool = False
 ) -> Callable[
     [
         BareCallable[R] |
@@ -99,14 +137,23 @@ def method(
                 PathQueryRequestBodyCallable[R, PM, QM, ReqM]
             )
     ) -> GenericOperationCallable[R]:
+        extra_error_details_models: list[type[ErrorDetailsModel]] = []
+        if not (allow_read_only or func.__name__ == 'get'):
+            extra_error_details_models.append(MethodNotAllowedForReadOnlyUsersModel)
         type_hints = typing.get_type_hints(func)
         path_model: type[PM] | None = type_hints.get('path')
         assert path_model is None or issubclass(path_model, BaseModel)
+        if path_model is not None:
+            extra_error_details_models.append(PathValidationFailedModel)
         query_model: type[QM] | None = type_hints.get('query')
         assert query_model is None or issubclass(query_model, BaseModel)
+        if query_model is not None:
+            extra_error_details_models.append(QueryValidationFailedModel)
         request_body_model: type[ReqM] | None = type_hints.get('request_body')
         if isinstance(request_body_model, typing.TypeAliasType):
             request_body_model = request_body_model.__value__
+        if request_body_model is not None:
+            extra_error_details_models.append(RequestBodyValidationFailedModel)
         # no assert for request_body_model to be BaseModel or None, as various other inputs currently exist, e.g. for permissions
         return_type_hint: type | None = type_hints.get('return')
         assert return_type_hint is not None
@@ -118,14 +165,37 @@ def method(
 
         @functools.wraps(func)
         def method_impl(self: R, **kwargs: typing.Any) -> ResponseData:
+            if flask.g.user.is_readonly and not (allow_read_only or func.__name__ == 'get'):
+                return make_response(
+                    result=MethodNotAllowedForReadOnlyUsersModel(detail=f"The {func.__name__.upper()} method for this resource is used to make changes, however user #{flask.g.user.id} is set read-only, and read-only users may not make any changes via the API."),
+                    default_status_code=HTTPStatus.FORBIDDEN,
+                    return_type_hint=None
+                )
             new_kwargs: KWArgsDict = {}
-            try:
-                if path_model is not None:
+            if path_model is not None:
+                try:
                     new_kwargs['path'] = validate(
                         path_model,
                         kwargs
                     )
-                if query_model is not None:
+                except ValidatingError as e:
+                    return make_response(
+                        result=PathValidationFailedModel(
+                            detail=e.message,
+                            errors=[
+                                PathErrorDetailModel(
+                                    path_parameter=str(path[0]),
+                                    detail=error_dict["msg"],
+                                    input=error_dict.get("input"),
+                                )
+                                for path, error_dict in e.error_details_by_path().items()
+                            ],
+                        ),
+                        default_status_code=default_status_code,
+                        return_type_hint=return_type_hint,
+                    )
+            if query_model is not None:
+                try:
                     new_kwargs['query'] = validate(
                         query_model,
                         {
@@ -133,30 +203,45 @@ def method(
                             for key, values in flask.request.args.lists()
                         }
                     )
-                if request_body_model is not None:
+                except ValidatingError as e:
+                    return make_response(
+                        result=QueryValidationFailedModel(
+                            detail=e.message,
+                            errors=[
+                                QueryErrorDetailModel(
+                                    query_parameter=str(path[0]),
+                                    detail=error_dict["msg"],
+                                    input=error_dict.get("input"),
+                                )
+                                for path, error_dict in e.error_details_by_path().items()
+                            ],
+                        ),
+                        default_status_code=default_status_code,
+                        return_type_hint=return_type_hint,
+                    )
+            if request_body_model is not None:
+                try:
                     new_kwargs['request_body'] = validate(
                         request_body_model,
                         flask.request.get_json(force=True) if flask.request.content_length else None,
                         context=request_body_context_builder(new_kwargs['path']) if request_body_context_builder is not None else None
                     )
-            except ValidatingError as e:
-                # TODO: refactor special error handling for ObjectFiles
-                msg, _, loc = e.message.rpartition(" (")
-                if not msg:
-                    return make_json_response(
-                        e.response[0],
-                        status=e.response[1]
+                except ValidatingError as e:
+                    return make_response(
+                        result=RequestBodyValidationFailedModel(
+                            detail=e.message,
+                            errors=[
+                                RequestBodyErrorDetailModel(
+                                    json_pointer="/" + "/".join(str(path_element) for path_element in path),
+                                    detail=error_dict["msg"],
+                                    input=error_dict.get("input"),
+                                )
+                                for path, error_dict in e.error_details_by_path().items()
+                            ],
+                        ),
+                        default_status_code=default_status_code,
+                        return_type_hint=return_type_hint,
                     )
-                assert loc.endswith(")")
-                loc = loc[:-1]
-                for prefix in "database.without_preview_image.", "database.with_preview_image.", "local_reference.", "url.":
-                    if loc.startswith(prefix):
-                        e.message = f"{msg} ({loc.removeprefix(prefix)})"
-                        break
-                return make_json_response(
-                    e.response[0],
-                    status=e.response[1]
-                )
             return make_response(
                 result=func(self, **new_kwargs),  # type: ignore[misc]
                 default_status_code=default_status_code,
@@ -168,16 +253,17 @@ def method(
             path_model=path_model,
             query_model=query_model,
             request_body_model=request_body_model,
+            extra_error_details_models=extra_error_details_models,
             return_type_hint=return_type_hint
         )
-        return method_impl
+        return method_impl  # type: ignore[return-value]
     return method_decorator_impl
 
 
 def _generate_description_by_status_code(
         status_code: int
 ) -> str:
-    status = http.HTTPStatus(status_code)
+    status = HTTPStatus(status_code)
     return f"{status.phrase}: {status.description.replace('--', '—')}"
 
 
@@ -199,7 +285,6 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
         ],
         "components": {
             "schemas": {},
-            "responses": {},
             "securitySchemes": {
                 "basicAuth": {
                     "type": "http",
@@ -227,7 +312,7 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
         if rule.endpoint == 'api_v2.errors':
             continue
         rule_path = rule_path.removeprefix('/api/v2')
-        rule_path = re.sub(r'<[^:>]+:([^>]+)>', r'{\1}', rule_path)
+        rule_path = re.sub(r'<([^:>]+:)?([^>]+)>', r'{\2}', rule_path)
         view_function = flask.current_app.view_functions.get(rule.endpoint)
         assert view_function is not None
         resource_class = Resource.view_function_map.get(view_function)
@@ -341,37 +426,50 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
                     return_type_options = list(typing.get_args(return_type_hint))
                 else:
                     return_type_options = [return_type_hint]
-                for return_type_option in return_type_options:
-                    if inspect.isclass(return_type_option) and issubclass(return_type_option, ErrorModel):
-                        assert str(return_type_option.STATUS_CODE) not in spec_dict["paths"][rule_path][method]["responses"]
-                        return_type_option_json_schema = return_type_option.model_json_schema(by_alias=True, ref_template="#/components/schemas/{model}")
-                        if '$defs' in return_type_option_json_schema:
-                            for defs_key in return_type_option_json_schema['$defs']:
-                                if defs_key in spec_dict["components"]["schemas"]:
-                                    assert spec_dict["components"]["schemas"][defs_key] == return_type_option_json_schema['$defs'][defs_key]
-                                spec_dict["components"]["schemas"][defs_key] = return_type_option_json_schema['$defs'][defs_key]
-                            del return_type_option_json_schema['$defs']
-                        if return_type_option_json_schema['title'] in spec_dict["components"]["schemas"]:
-                            assert spec_dict["components"]["schemas"][return_type_option_json_schema['title']] == return_type_option_json_schema
-                        spec_dict["components"]["schemas"][return_type_option_json_schema['title']] = return_type_option_json_schema
-                        assert return_type_option_json_schema['title'].endswith('Model')
-                        response_title = return_type_option_json_schema['title'].removeprefix('Model')
-                        response = {
-                            "description": _generate_description_by_status_code(return_type_option.STATUS_CODE),
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "$ref": f"#/components/schemas/{return_type_option_json_schema['title']}"
+                error_descriptions_per_status_code: dict[int, list[str]] = {}
+                for return_type_option in return_type_options + method_info.extra_error_details_models:
+                    if inspect.isclass(return_type_option) and issubclass(return_type_option, ErrorDetailsModel):
+                        base_error_details_model_json_schema = ErrorDetailsModel.model_json_schema(ref_template="#/components/schemas/{model}")
+                        specific_error_details_model_json_schema = return_type_option.model_json_schema(ref_template="#/components/schemas/{model}")
+                        for key in set(base_error_details_model_json_schema.keys()).union(set(specific_error_details_model_json_schema.keys())):
+                            if key == 'title':
+                                continue
+                            if key == 'description':
+                                assert specific_error_details_model_json_schema.get(key) is None
+                                continue
+                            assert base_error_details_model_json_schema.get(key) == specific_error_details_model_json_schema.get(key)
+                        if return_type_option.STATUS not in error_descriptions_per_status_code:
+                            error_descriptions_per_status_code[return_type_option.STATUS] = []
+                        if return_type_option.TITLE not in error_descriptions_per_status_code[return_type_option.STATUS]:
+                            error_descriptions_per_status_code[return_type_option.STATUS].append(return_type_option.TITLE)
+                        if str(return_type_option.STATUS) not in spec_dict["paths"][rule_path][method]["responses"]:
+                            return_type_option_json_schema = base_error_details_model_json_schema
+                            if '$defs' in return_type_option_json_schema:
+                                for defs_key in return_type_option_json_schema['$defs']:
+                                    if defs_key in spec_dict["components"]["schemas"]:
+                                        assert spec_dict["components"]["schemas"][defs_key] == return_type_option_json_schema['$defs'][defs_key]
+                                    spec_dict["components"]["schemas"][defs_key] = return_type_option_json_schema['$defs'][defs_key]
+                                del return_type_option_json_schema['$defs']
+                            if return_type_option_json_schema['title'] in spec_dict["components"]["schemas"]:
+                                assert spec_dict["components"]["schemas"][return_type_option_json_schema['title']] == return_type_option_json_schema
+                            spec_dict["components"]["schemas"][return_type_option_json_schema['title']] = return_type_option_json_schema
+                            assert return_type_option_json_schema['title'].endswith('Model')
+                            response = {
+                                "description": error_descriptions_per_status_code[return_type_option.STATUS][0],
+                                "content": {
+                                    "application/problem+json": {
+                                        "schema": {
+                                            "$ref": f"#/components/schemas/{return_type_option_json_schema['title']}"
+                                        }
                                     }
                                 }
                             }
-                        }
-                        if response_title in spec_dict["components"]["responses"]:
-                            assert spec_dict["components"]["responses"][response_title] == response, str((response, spec_dict["components"]["responses"][response_title]))
-                        spec_dict["components"]["responses"][response_title] = response
-                        spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS_CODE)] = {
-                            "$ref": f"#/components/responses/{response_title}"
-                        }
+                            spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS)] = response
+                        else:
+                            if len(error_descriptions_per_status_code[return_type_option.STATUS]) > 1:
+                                spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS)]["description"] = 'Either: ' + ' Or: '.join(error_descriptions_per_status_code[return_type_option.STATUS])
+                            else:
+                                spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS)]["description"] = error_descriptions_per_status_code[return_type_option.STATUS][0]
                     elif inspect.isclass(return_type_option) and issubclass(return_type_option, RedirectResponseModel):
                         assert str(return_type_option.STATUS_CODE) not in spec_dict["paths"][rule_path][method]["responses"]
                         spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS_CODE)] = {

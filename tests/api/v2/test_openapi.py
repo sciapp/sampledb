@@ -28,7 +28,10 @@ def test_openapi_spec_all_paths(flask_server, spec_dict):
             while '<' in rule_path:
                 rule_path_left, rule_path_right = rule_path.split('<', 1)
                 rule_path_parameter, rule_path_right = rule_path_right.split('>', 1)
-                rule_path_parameter_name = rule_path_parameter.split(':', 1)[1]
+                if ':' in rule_path_parameter:
+                    rule_path_parameter_name = rule_path_parameter.split(':', 1)[1]
+                else:
+                    rule_path_parameter_name = rule_path_parameter
                 rule_path = rule_path_left + '{' + rule_path_parameter_name + '}' + rule_path_right
             assert rule_path in spec_dict['paths']
             path_spec = spec_dict['paths'][rule_path]
