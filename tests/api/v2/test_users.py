@@ -2,7 +2,7 @@
 """
 
 """
-
+import flask
 import requests
 import pytest
 
@@ -38,8 +38,16 @@ def users(user):
 
 
 def test_get_user(flask_server, auth, user):
-    r = requests.get(flask_server.base_url + 'api/v2/users/10', auth=auth)
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + f'api/v2/users/{user.id + 1}', auth=auth)
     assert r.status_code == 404
+    assert r.json() == {
+        "detail": f"User #{user.id + 1} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested user does not exist.",
+        "type": "http://localhost/api/v2/errors/UserNotFound",
+    }
 
     r = requests.get(flask_server.base_url + 'api/v2/users/{}'.format(user.id), auth=auth)
     assert r.status_code == 200

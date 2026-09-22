@@ -53,3 +53,26 @@ def test_errors(flask_server, auth, user):
         assert r.json() == {
             'message': message
         }
+
+
+def test_error_routes(flask_server, auth):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/errors/UnknownError', auth=auth)
+    assert r.status_code == 404
+    assert r.json() == {
+        "detail": "The error 'UnknownError' does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested error does not exist.",
+        "type": "http://localhost/api/v2/errors/ErrorNotFound",
+    }
+    assert r.headers["Content-Type"] == "application/problem+json"
+    error_url = r.json()['type']
+    r = requests.get(error_url.replace('http://localhost/', flask_server.base_url), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == {
+        "href": "http://localhost/api/v2/errors/ErrorNotFound",
+        "name": "ErrorNotFound",
+        "status": 404,
+        "title": "The requested error does not exist.",
+    }

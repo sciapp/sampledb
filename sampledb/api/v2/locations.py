@@ -1,18 +1,19 @@
-import json
 import typing
 from dataclasses import dataclass
 from functools import cached_property
+from http import HTTPStatus
 
 import flask
 from pydantic import BaseModel, Strict, model_validator, Field
 from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth, object_permissions_required
+from .objects import ObjectNotFoundModel
 from ..utils import Resource
 from ...logic import errors, locations, location_permissions, utils
 from ...models import Permissions
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, UserId, is_expected_from_validation_info, populate_missing_or_expect_from_validation_info
-from .utils.responses import NotFoundErrorModel, ForbiddenErrorModel, BadRequestErrorModel, CreatedResponseModel
+from .utils.responses import CreatedResponseModel, ErrorDetailsModel, make_response
 from .utils.openapi import method
 
 
@@ -32,7 +33,7 @@ def _get_location(location_id: int | None, loc: str) -> locations.Location | Non
     try:
         return locations.get_location(location_id)
     except errors.LocationDoesNotExistError:
-        raise PydanticCustomError("no_suck_location", f"Location should exist ({loc})")
+        raise PydanticCustomError("no_such_location", f"Location should exist ({loc})")
 
 
 @typing.overload
@@ -138,6 +139,56 @@ class LocationModel(BaseModel):
         )
 
 
+class LocationNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested location does not exist."
+
+
+class LocationTypeNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested location type does not exist."
+
+
+class InsufficientLocationPermissionsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "The user does not have sufficient permissions for the location."
+
+
+class OnlyAdminsMayManageLocationsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "Only administrators may manage locations."
+
+
+class LocationTypeDoesNotAllowSubLocationsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "The location type does not allow sub locations."
+
+
+class LocationTypeDoesNotAllowParentLocationsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "The location type does not allow parent locations."
+
+
+class OnlyAdminsMayUseLocationTypeModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.FORBIDDEN
+    TITLE: typing.ClassVar[str] = "Only administrators may use the location type."
+
+
+class LocationDoesNotAllowObjectAssignmentsModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "The location does not allow object assignments."
+
+
+class LocationCapacityReachedModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.BAD_REQUEST
+    TITLE: typing.ClassVar[str] = "The location has reached its maximum capacity for object assignments and the assigning an additional object would exceed that capacity."
+
+
+class ObjectLocationAssignmentNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested object location assignment does not exist."
+
+
 class Location(Resource):
     class PathModel(BaseModel):
         location_id: int = Field(description="the ID of an existing location", examples=[1])
@@ -151,7 +202,11 @@ class Location(Resource):
             try:
                 location = locations.get_location(path.location_id)
             except errors.LocationDoesNotExistError:
-                flask.abort(flask.Response(json.dumps({"msg": "location does not exist"}), status=404, mimetype='application/json'))
+                flask.abort(make_response(
+                    result=LocationNotFoundModel(detail=f"Location #{path.location_id} does not exist."),
+                    default_status_code=HTTPStatus.NOT_FOUND,
+                    return_type_hint=None
+                ))
             return cls(
                 location=location
             )
@@ -171,16 +226,15 @@ class Location(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> LocationModel | ForbiddenErrorModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> LocationModel | LocationNotFoundModel | InsufficientLocationPermissionsModel:
         """
         Get a location.
         """
         try:
             location = locations.get_location(location_id=path.location_id)
         except errors.LocationDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"location {path.location_id} does not exist"
+            return LocationNotFoundModel(
+                detail=f"Location #{path.location_id} does not exist."
             )
         permissions = location_permissions.location_permissions.get_permissions_for_user(
             resource_id=path.location_id,
@@ -192,43 +246,37 @@ class Location(Resource):
             limit_readonly_users=True
         )
         if Permissions.READ not in permissions:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="insufficient permissions for location"
+            return InsufficientLocationPermissionsModel(
+                detail=f"User #{flask.g.user.id} does not have sufficient permissions for location #{path.location_id}.",
             )
         return LocationModel.from_location(location)
 
     @multi_auth.login_required
     @method(request_body_context_builder=ValidationContext.from_path_model)
-    def put(self, path: PathModel, request_body: RequestBodyModel) -> LocationModel | BadRequestErrorModel | ForbiddenErrorModel:
+    def put(self, path: PathModel, request_body: RequestBodyModel) -> LocationModel | OnlyAdminsMayManageLocationsModel | InsufficientLocationPermissionsModel | LocationTypeDoesNotAllowSubLocationsModel | LocationTypeDoesNotAllowParentLocationsModel:
         """
         Update a location.
         """
         if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="only administrators may manage locations"
+            return OnlyAdminsMayManageLocationsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage locations."
             )
         if Permissions.WRITE not in location_permissions.get_user_location_permissions(path.location_id, flask.g.user.id):
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="insufficient permissions for location"
+            return InsufficientLocationPermissionsModel(
+                detail=f"User #{flask.g.user.id} does not have sufficient permissions for location #{path.location_id}.",
             )
         if request_body.parent_location is not None:
             if Permissions.WRITE not in location_permissions.get_user_location_permissions(request_body.parent_location.id, flask.g.user.id):
-                return ForbiddenErrorModel(
-                    error="Forbidden",
-                    message="insufficient permissions for parent location"
+                return InsufficientLocationPermissionsModel(
+                    detail=f"User #{flask.g.user.id} does not have sufficient permissions for parent location #{request_body.parent_location.id}.",
                 )
             if not request_body.parent_location.type.enable_sub_locations:
-                return BadRequestErrorModel(
-                    error="Bad Request",
-                    message="parent location type does not allow having sub locations"
+                return LocationTypeDoesNotAllowSubLocationsModel(
+                    detail=f"Parent location type #{request_body.parent_location.type.id} does not allow having sub locations."
                 )
         if not request_body.type.enable_parent_location and request_body.parent_location is not None:
-            return BadRequestErrorModel(
-                error="Bad Request",
-                message="location type does not allow having a parent location"
+            return LocationTypeDoesNotAllowParentLocationsModel(
+                detail=f"Location type #{request_body.type.id} does not allow having a parent location."
             )
         locations.update_location(
             location_id=path.location_id,
@@ -271,36 +319,31 @@ class Locations(Resource):
 
     @multi_auth.login_required
     @method()
-    def post(self, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel | ForbiddenErrorModel:
+    def post(self, request_body: RequestBodyModel) -> CreatedResponseModel | OnlyAdminsMayManageLocationsModel | InsufficientLocationPermissionsModel | LocationTypeDoesNotAllowSubLocationsModel | OnlyAdminsMayUseLocationTypeModel | LocationTypeDoesNotAllowParentLocationsModel:
         """
         Create a new location.
         """
         if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask.g.user.is_admin:
-            return ForbiddenErrorModel(
-                error="Forbidden",
-                message="only administrators may manage locations"
+            return OnlyAdminsMayManageLocationsModel(
+                detail=f"User #{flask.g.user.id} is no administrator, but only administrators may manage locations."
             )
         if parent_location := request_body.parent_location:
             if Permissions.WRITE not in location_permissions.get_user_location_permissions(parent_location.id, flask.g.user.id):
-                return ForbiddenErrorModel(
-                    error="Forbidden",
-                    message="insufficient permissions for parent location"
+                return InsufficientLocationPermissionsModel(
+                    detail=f"User #{flask.g.user.id} does not have sufficient permissions for parent location #{parent_location.id}.",
                 )
             if not parent_location.type.enable_sub_locations:
-                return BadRequestErrorModel(
-                    error="Bad Request",
-                    message="parent location type does not allow having sub locations"
+                return LocationTypeDoesNotAllowSubLocationsModel(
+                    detail=f"Parent location type #{parent_location.type.id} does not allow having sub locations."
                 )
         if location_type := request_body.type:
             if location_type.admin_only and not flask.g.user.is_admin:
-                return ForbiddenErrorModel(
-                    error="Forbidden",
-                    message="location type may only be used by administrators"
+                return OnlyAdminsMayUseLocationTypeModel(
+                    detail=f"User #{flask.g.user.id} is no administrator, but only administrators may use location type #{location_type.id}."
                 )
             if not location_type.enable_parent_location and request_body.parent_location is not None:
-                return BadRequestErrorModel(
-                    error="Bad Request",
-                    message="location type does not allow having a parent location"
+                return LocationTypeDoesNotAllowParentLocationsModel(
+                    detail=f"Location type #{location_type.id} does not allow having a parent location."
                 )
         location = locations.create_location(
             name={'en': request_body.name},
@@ -308,6 +351,11 @@ class Locations(Resource):
             parent_location_id=None if request_body.parent_location is None else request_body.parent_location.id,
             user_id=flask.g.user.id,
             type_id=locations.LocationType.LOCATION if request_body.type is None else request_body.type.id
+        )
+        location_permissions.set_user_location_permissions(
+            location_id=location.id,
+            user_id=flask.g.user.id,
+            permissions=Permissions.GRANT
         )
         return CreatedResponseModel(
             location=flask.url_for('.location', location_id=location.id)
@@ -320,16 +368,15 @@ class LocationType(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> LocationTypeModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> LocationTypeModel | LocationTypeNotFoundModel:
         """
         Get a location type.
         """
         try:
             location_type = locations.get_location_type(location_type_id=path.location_type_id)
         except errors.LocationTypeDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"location type {path.location_type_id} does not exist"
+            return LocationTypeNotFoundModel(
+                detail=f"Location type #{path.location_type_id} does not exist."
             )
         return LocationTypeModel.from_location_type(location_type)
 
@@ -354,21 +401,19 @@ class ObjectLocationAssignment(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> ObjectLocationAssignmentModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> ObjectLocationAssignmentModel | ObjectNotFoundModel | ObjectLocationAssignmentNotFoundModel:
         """
         Get an object location assignment.
         """
         try:
             object_location_assignments = locations.get_object_location_assignments(object_id=path.object_id)
         except errors.ObjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"object {path.object_id} does not exist"
+            return ObjectNotFoundModel(
+                detail=f"Object #{path.object_id} does not exist."
             )
         if path.object_location_assignment_index < 0 or path.object_location_assignment_index >= len(object_location_assignments):
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"location assignment {path.object_location_assignment_index} for object {path.object_id} does not exist"
+            return ObjectLocationAssignmentNotFoundModel(
+                detail=f"Location assignment #{path.object_location_assignment_index} for object #{path.object_id} does not exist."
             )
         return ObjectLocationAssignmentModel.from_object_location_assignment(object_location_assignments[path.object_location_assignment_index])
 
@@ -406,7 +451,7 @@ class ObjectLocationAssignments(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> list[ObjectLocationAssignmentModel] | NotFoundErrorModel:
+    def get(self, path: PathModel) -> list[ObjectLocationAssignmentModel] | ObjectNotFoundModel:
         """
         List all object location assignments.
         """
@@ -416,27 +461,24 @@ class ObjectLocationAssignments(Resource):
                 for object_location_assignment in locations.get_object_location_assignments(path.object_id)
             ]
         except errors.ObjectDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"object {path.object_id} does not exist"
+            return ObjectNotFoundModel(
+                detail=f"Object #{path.object_id} does not exist."
             )
 
     @object_permissions_required(Permissions.WRITE)
     @method(request_body_context_builder=ValidationContext.from_path)
-    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | BadRequestErrorModel | ForbiddenErrorModel:
+    def post(self, path: PathModel, request_body: RequestBodyModel) -> CreatedResponseModel | InsufficientLocationPermissionsModel | LocationDoesNotAllowObjectAssignmentsModel | LocationCapacityReachedModel:
         """
         Create a new object location assignment.
         """
         if location := request_body.location:
             if Permissions.READ not in location_permissions.get_user_location_permissions(location.id, flask.g.user.id):
-                return ForbiddenErrorModel(
-                    error="Forbidden",
-                    message="no permissions for location"
+                return InsufficientLocationPermissionsModel(
+                    detail=f"User #{flask.g.user.id} does not have sufficient permissions for location #{location.id}.",
                 )
             if not location.enable_object_assignments or not location.type.enable_object_assignments:
-                return BadRequestErrorModel(
-                    error="Bad Request",
-                    message="location does not allow object assignments"
+                return LocationDoesNotAllowObjectAssignmentsModel(
+                    detail=f"Location #{location.id} does not allow object assignments."
                 )
         try:
             locations.assign_location_to_object(
@@ -447,9 +489,8 @@ class ObjectLocationAssignments(Resource):
                 description={'en': request_body.description}
             )
         except errors.ExceedingLocationCapacityError:
-            return BadRequestErrorModel(
-                error="Bad Request",
-                message="capacity of location exceeded"
+            return LocationCapacityReachedModel(
+                detail=f"Location #{request_body.location_id} has reached its maximum capacity for objects of this type. Object #{path.object_id} could not be assigned to it as that would exceed the maximum capacity."
             )
         object_location_assignment = locations.get_object_location_assignments(path.object_id)[-1]
         return CreatedResponseModel(

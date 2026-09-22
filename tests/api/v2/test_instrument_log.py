@@ -1,6 +1,7 @@
 import base64
 import datetime
 
+import flask
 import requests
 import pytest
 
@@ -29,11 +30,15 @@ def user(auth_user):
 
 
 def test_get_instrument_log_entries(flask_server, auth, user, app):
-    r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries', auth=auth)
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -43,11 +48,14 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
         name="Example Instrument",
         description="This is an example instrument"
     )
-    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -55,7 +63,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
         users_can_view_log_entries=True
     )
 
-    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -66,7 +74,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
         category_ids=()
     )
 
-    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
@@ -108,7 +116,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
     )
 
 
-    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries', auth=auth)
+    r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth)
     assert r.status_code == 200
     assert len(r.json()) == 2
     assert r.json()[1] == {
@@ -148,19 +156,26 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
 
 
 def test_get_instrument_log_entry(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1', auth=auth)
     assert r.status_code == 404
-    assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+    assert r.json() == { 
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -171,8 +186,11 @@ def test_get_instrument_log_entry(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry 1 for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -207,17 +225,24 @@ def test_get_instrument_log_entry(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument2.id}/log_entries/{log_entry.id}', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry {log_entry.id} for instrument {instrument2.id} does not exist"
+        "detail": f"Log entry #{log_entry.id} for instrument #{instrument2.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
 
 def test_instrument_log_file_attachments(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/file_attachments/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -225,8 +250,11 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/file_attachments/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -237,8 +265,11 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/file_attachments/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry 1 for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -278,17 +309,24 @@ def test_instrument_log_file_attachments(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{other_instrument.id}/log_entries/{log_entry.id}/file_attachments/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry {log_entry.id} for instrument {other_instrument.id} does not exist"
+        "detail": f"Log entry #{log_entry.id} for instrument #{other_instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
 
 def test_instrument_log_file_attachment(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/file_attachments/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -296,8 +334,11 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/file_attachments/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -308,8 +349,11 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/file_attachments/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry 1 for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -322,8 +366,11 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/file_attachments/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"file attachment 1 for log entry {log_entry.id} for instrument {instrument.id} does not exist"
+        "detail": f"File attachment #1 for log entry #{log_entry.id} for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log file attachment does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogFileAttachmentNotFound",
     }
 
     sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
@@ -357,24 +404,34 @@ def test_instrument_log_file_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{other_log_entry.id}/file_attachments/{file_attachment.id}', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry {other_log_entry.id} for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #{other_log_entry.id} for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{other_instrument.id}/log_entries/{other_log_entry.id}/file_attachments/{file_attachment.id}', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"file attachment {file_attachment.id} for log entry {other_log_entry.id} for instrument {other_instrument.id} does not exist"
+        "detail": f"File attachment #{file_attachment.id} for log entry #{other_log_entry.id} for instrument #{other_instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log file attachment does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogFileAttachmentNotFound",
     }
 
 
 def test_instrument_log_object_attachments(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/object_attachments/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -382,8 +439,11 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/object_attachments/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -394,8 +454,11 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/object_attachments/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry 1 for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -459,17 +522,24 @@ def test_instrument_log_object_attachments(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{other_instrument.id}/log_entries/{log_entry.id}/object_attachments/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry {log_entry.id} for instrument {other_instrument.id} does not exist"
+        "detail": f"Log entry #{log_entry.id} for instrument #{other_instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
 
 def test_instrument_log_object_attachment(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/object_attachments/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": 'instrument 1 does not exist'
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -477,8 +547,11 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/object_attachments/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -489,8 +562,11 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/object_attachments/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry 1 for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -503,8 +579,11 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/object_attachments/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"object attachment 1 for log entry {log_entry.id} for instrument {instrument.id} does not exist"
+        "detail": f"Object attachment #1 for log entry #{log_entry.id} for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log object attachment does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogObjectAttachmentNotFound",
     }
 
     action = sampledb.logic.actions.create_action(
@@ -562,19 +641,26 @@ def test_instrument_log_object_attachment(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{other_log_entry.id}/object_attachments/{object_attachment.id}', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log entry {other_log_entry.id} for instrument {instrument.id} does not exist"
+        "detail": f"Log entry #{other_log_entry.id} for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{other_instrument.id}/log_entries/{other_log_entry.id}/object_attachments/{object_attachment.id}', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"object attachment {object_attachment.id} for log entry {other_log_entry.id} for instrument {other_instrument.id} does not exist"
+        "detail": f"Object attachment #{object_attachment.id} for log entry #{other_log_entry.id} for instrument #{other_instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log object attachment does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogObjectAttachmentNotFound",
     }
 
 
 def test_create_instrument_log_entry(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     data = {
         'content': "Example Log Entry Text",
         'content_is_markdown': True,
@@ -595,8 +681,11 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     r = requests.post(flask_server.base_url + 'api/v2/instruments/1/log_entries/', auth=auth, json=data)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -608,26 +697,27 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Category ID does not exist, instrument has no log categories (category_ids.0)",
-        "error_details": {
-            "category_ids": {
-                "0": {
-                    "msg": "Category ID does not exist, instrument has no log categories",
-                    "input": 1,
-                },
-                "1": {
-                    "msg": "Category ID does not exist, instrument has no log categories",
-                    "input": 7,
-                },
+        "detail": "Category ID does not exist, instrument has no log categories (category_ids.0)",
+        "errors": [
+            {
+                "detail": "Category ID does not exist, instrument has no log categories",
+                "input": 1,
+                "json_pointer": "/category_ids/0"
             },
-            "object_attachments": {
-                "0": {
-                    "msg": "Object should exist",
-                    "input": {"object_id": 1},
-                },
+            {
+                "detail": "Category ID does not exist, instrument has no log categories",
+                "input": 7,
+                "json_pointer": "/category_ids/1"
             },
-        },
+            {
+                "detail": "Object should exist",
+                "input": {"object_id": 1},
+                "json_pointer": "/object_attachments/0"
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
@@ -895,25 +985,35 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        'message': f"log entries for instrument {instrument.id} can only be created by instrument scientists"
+        "detail": f"Only instrument scientists may create log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may create instrument log entries.",
+        "type": "http://localhost/api/v2/errors/CreatingInstrumentLogEntriesForbidden",
     }
 
 
 def test_instrument_log_categories(flask_server, auth, user, app):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_categories/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_categories/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log categories for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -942,11 +1042,15 @@ def test_instrument_log_categories(flask_server, auth, user, app):
 
 
 def test_instrument_log_category(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_categories/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -954,8 +1058,11 @@ def test_instrument_log_category(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_categories/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log categories for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -966,8 +1073,11 @@ def test_instrument_log_category(flask_server, auth, user):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_categories/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": f"log category 1 for instrument {instrument.id} does not exist"
+        "detail": f"Log category #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log category does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogCategoryNotFound",
     }
 
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
@@ -985,11 +1095,15 @@ def test_instrument_log_category(flask_server, auth, user):
 
 
 def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/versions/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -1002,8 +1116,11 @@ def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/versions/', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -1014,8 +1131,11 @@ def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/versions/', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "log entry 1 for instrument 1 does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -1096,11 +1216,15 @@ def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
 
 
 def test_get_instrument_log_entry_version(flask_server, auth, user, app):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/versions/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -1113,8 +1237,11 @@ def test_get_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/versions/1', auth=auth)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }
 
     sampledb.logic.instruments.update_instrument(
@@ -1125,8 +1252,11 @@ def test_get_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/versions/1', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "log entry 1 for instrument 1 does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -1151,12 +1281,16 @@ def test_get_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/2', auth=auth)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "version 2 for log entry 1 for instrument 1 does not exist"
+        "detail": f"Version #2 for log entry #{log_entry.id} for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry version does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryVersionNotFound",
     }
 
 
 def test_post_instrument_log_entry_version(flask_server, auth, user, app):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     data = {
         'version_id': 2,
         'log_entry_id': 1,
@@ -1170,8 +1304,11 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.post(flask_server.base_url + 'api/v2/instruments/1/log_entries/1/versions/', auth=auth, json=data)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "instrument 1 does not exist"
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
     }
 
     instrument = sampledb.logic.instruments.create_instrument()
@@ -1189,8 +1326,11 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/versions/', auth=auth, json=data)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message" : "log entry 1 for instrument 1 does not exist"
+        "detail": f"Log entry #1 for instrument #{instrument.id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument log entry does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentLogEntryNotFound",
     }
 
     log_entry = sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -1203,12 +1343,17 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/', auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "error_details": {
-            "input": None,
-            "msg": "Input should be an object",
-        },
-        "message": "Input should be an object"
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     category = sampledb.logic.instrument_log_entries.create_instrument_log_category(
@@ -1379,7 +1524,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
         r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/', auth=auth, json=data)
         assert r.content == b''
         assert r.status_code == 201
-        assert r.headers['Location'] == flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/{data['version_id']}'
+        assert r.headers['Location'] == f'http://localhost/api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/{data['version_id']}'
         log_entry = sampledb.logic.instrument_log_entries.get_instrument_log_entry(log_entry.id)
         assert log_entry.versions[-1].version_id == data['version_id']
         assert log_entry.versions[-1].content == data['content']
@@ -1762,7 +1907,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
     ]:
         r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/', auth=auth, json=data)
         assert r.status_code == 400
-        assert r.json()["message"] == expected_message
+        assert r.json()["detail"] == expected_message
 
     data =  {
         'version_id': next_version_id,
@@ -1781,6 +1926,9 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/1/versions/', auth=auth, json=data)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": f"log entries for instrument {instrument.id} can only be accessed by instrument scientists"
+        "detail": f"Only instrument scientists may view log entries for instrument #{instrument.id}.",
+        "errors": [],
+        "status": 403,
+        "title": "Only instrument scientists may view instrument log entries.",
+        "type": "http://localhost/api/v2/errors/ViewingInstrumentLogEntriesForbidden",
     }

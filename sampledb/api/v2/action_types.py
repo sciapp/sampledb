@@ -1,4 +1,5 @@
 import typing
+from http import HTTPStatus
 
 from pydantic import BaseModel, Field
 
@@ -6,7 +7,7 @@ from .authentication import multi_auth
 from ..utils import Resource
 from ...logic.action_types import get_action_types, get_action_type
 from ...logic import errors, utils, action_types
-from .utils.responses import NotFoundErrorModel
+from .utils.responses import ErrorDetailsModel
 from .utils.openapi import method
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -36,13 +37,18 @@ class ActionTypeModel(BaseModel):
         )
 
 
+class ActionTypeNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The action type does not exist."
+
+
 class ActionType(Resource):
     class PathModel(BaseModel):
         type_id: int = Field(description="the ID of an existing action type", examples=[1])
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> ActionTypeModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> ActionTypeModel | ActionTypeNotFoundModel:
         """
         Get an action type.
         """
@@ -51,9 +57,8 @@ class ActionType(Resource):
                 action_type_id=path.type_id
             )
         except errors.ActionTypeDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"action type {path.type_id} does not exist"
+            return ActionTypeNotFoundModel(
+                detail=f"Action type #{path.type_id} does not exist."
             )
         return ActionTypeModel.from_action_type(action_type)
 

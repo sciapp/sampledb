@@ -1,10 +1,11 @@
 import typing
+from http import HTTPStatus
 
 import flask
 from pydantic import BaseModel, Field
 
 from .authentication import multi_auth
-from .utils.responses import NotFoundErrorModel
+from .utils.responses import ErrorDetailsModel
 from .utils.openapi import method
 from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
@@ -39,29 +40,32 @@ class InstrumentModel(BaseModel):
         )
 
 
+class InstrumentNotFoundModel(ErrorDetailsModel):
+    STATUS: typing.ClassVar[int] = HTTPStatus.NOT_FOUND
+    TITLE: typing.ClassVar[str] = "The requested instrument does not exist."
+
+
 class Instrument(Resource):
     class PathModel(BaseModel):
         instrument_id: int = Field(description="the ID of an existing instrument", examples=[1])
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> InstrumentModel | NotFoundErrorModel:
+    def get(self, path: PathModel) -> InstrumentModel | InstrumentNotFoundModel:
         """
         Get an instrument.
         """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"instrument {path.instrument_id} does not exist"
+            return InstrumentNotFoundModel(
+                detail=f"Instrument #{path.instrument_id} does not exist."
             )
         try:
             instrument = get_instrument(
                 instrument_id=path.instrument_id
             )
         except errors.InstrumentDoesNotExistError:
-            return NotFoundErrorModel(
-                error="NotFound",
-                message=f"instrument {path.instrument_id} does not exist"
+            return InstrumentNotFoundModel(
+                detail=f"Instrument #{path.instrument_id} does not exist."
             )
         return InstrumentModel.from_instrument(instrument)
 

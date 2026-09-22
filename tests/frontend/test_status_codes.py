@@ -75,6 +75,7 @@ def test_status_codes(flask_server, user, driver):
         )
         component_id = component.id
         token = "invalid"
+        error_name = "ErrorNotFound"
         static_file_name = 'css/custom.css'
         action_type_id = sampledb.models.ActionType.SAMPLE_CREATION
         action_id = sampledb.logic.actions.create_action(
@@ -380,6 +381,7 @@ def test_status_codes(flask_server, user, driver):
         'api/v2/actions/': 200,
         f'api/v2/actions/{action_id}': 200,
         f'api/v2/actions/{other_action_id}': 200,
+        f'api/v2/errors/{error_name}': 200,
         'api/v2/instruments/': 200,
         f'api/v2/instruments/{instrument_id}': 200,
         f'api/v2/instruments/{instrument_id}/log_categories/': 200,
@@ -613,6 +615,7 @@ def test_status_codes(flask_server, user, driver):
         'instrument_id': instrument_id,
         'log_entry_id': instrument_log_entry_id,
         'log_entry_version_id': 1,
+        'error_name': error_name,
         'file_attachment_id': instrument_log_file_attachment_id,
         'object_attachment_id': instrument_log_object_attachment_id,
         'user_id': user_id,

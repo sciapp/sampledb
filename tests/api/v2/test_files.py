@@ -2,6 +2,7 @@ import base64
 import hashlib
 import io
 
+import flask
 import requests
 import pytest
 from PIL import Image
@@ -60,6 +61,7 @@ def object(user):
 
 
 def test_create_invalid_file(flask_server, object, auth):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
@@ -67,53 +69,53 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input should be an object",
-        "error_details": {
-            "msg": "Input should be an object",
-            "input": [],
-        },
+       "detail": "Input should be an object",
+       "errors": [
+           {
+               "detail": "Input should be an object",
+               "input": [],
+               "json_pointer": "/",
+           },
+       ],
+       "status": 400,
+       "title": "Failed to validate request body data.",
+       "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
         'object_id': object.id+1,
         'storage': 'database',
-        'url': 'https://iffsamples.fz-juelich.de'
+        'url': 'https://example.org'
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": f"Input should be {object.object_id} (object_id)",
-        "error_details": {
-            "database": {
-                "without_preview_image": {
-                    "object_id": {
-                        "msg": f"Input should be {object.object_id}",
-                        "input": object.id + 1,
-                    },
-                    "original_file_name": {"msg": "Field required"},
-                    "base64_content": {"msg": "Field required"},
-                    "url": {
-                        "msg": "Extra inputs are not permitted",
-                        "input": "https://iffsamples.fz-juelich.de",
-                    },
-                },
-                "with_preview_image": {
-                    "object_id": {
-                        "msg": f"Input should be {object.object_id}",
-                        "input": object.id + 1,
-                    },
-                    "original_file_name": {"msg": "Field required"},
-                    "base64_content": {"msg": "Field required"},
-                    "base64_preview_image": {"msg": "Field required"},
-                    "url": {
-                        "msg": "Extra inputs are not permitted",
-                        "input": "https://iffsamples.fz-juelich.de",
-                    },
-                },
+        "detail": f"Input should be {object.object_id} (object_id)",
+        "errors": [
+            {
+                "detail": "Input should be 1",
+                "input": 2,
+                "json_pointer": "/object_id",
             },
-        },
+            {
+                "detail": "Field required",
+                "input": None,
+                "json_pointer": "/original_file_name",
+            },
+            {
+                "detail": "Field required",
+                "input": None,
+                "json_pointer": "/base64_content",
+            },
+            {
+                "detail": "Extra inputs are not permitted",
+                "input": "https://example.org",
+                "json_pointer": "/url",
+            }
+        ],
+       "status": 400,
+       "title": "Failed to validate request body data.",
+       "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -121,12 +123,17 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Unable to extract tag using discriminator 'storage'",
-        "error_details": {
-            "msg": "Unable to extract tag using discriminator 'storage'",
-            "input": data,
-        },
+        "detail": "Unable to extract tag using discriminator 'storage'",
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+        "errors": [
+            {
+                "detail": "Unable to extract tag using discriminator 'storage'",
+                "input": {},
+                "json_pointer": "/"
+            }
+        ]
     }
 
     data = {
@@ -135,12 +142,19 @@ def test_create_invalid_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
-        "error_details": {
-            "msg": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
-            "input": data,
-        },
+        "detail": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+        "errors": [
+            {
+               "detail": "Input tag 'local' found using 'storage' does not match any of the expected tags: 'database', 'local_reference', 'url'",
+               "input": {
+                   "storage": "local",
+               },
+               "json_pointer": "/"
+            }
+        ]
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)
@@ -152,38 +166,44 @@ def test_create_url_file(flask_server, object, auth):
     assert len(files) == 0
     data = {
         'storage': 'url',
-        'url': 'https://iffsamples.fz-juelich.de'
+        'url': 'https://example.org'
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 1
     assert files[0].storage == 'url'
-    assert files[0].data['url'] == 'https://iffsamples.fz-juelich.de'
+    assert files[0].data['url'] == 'https://example.org'
 
 
 def test_create_invalid_url_file(flask_server, object, auth):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
     data = {
         'storage': 'url',
-        'address': 'https://iffsamples.fz-juelich.de'
+        'address': 'https://example.org'
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Field required (url)",
-        "error_details": {
-            "url": {
-                "url": {"msg": "Field required"},
-                "address": {
-                    "msg": "Extra inputs are not permitted",
-                    "input": "https://iffsamples.fz-juelich.de",
-                },
+        "detail": "Field required (url)",
+        "errors": [
+            {
+                "detail": "Field required",
+                "json_pointer": "/url",
+                "input": None
             },
-        },
+            {
+                "detail": "Extra inputs are not permitted",
+                "json_pointer": "/address",
+                "input": "https://example.org"
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -192,9 +212,17 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "Field required (url)",
-        "error_details": {"url": {"url": {"msg": "Field required"}}},
+        "detail": "Field required (url)",
+        "errors": [
+            {
+                "detail": "Field required",
+                "json_pointer": "/url",
+                "input": None
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     data = {
@@ -204,27 +232,69 @@ def test_create_invalid_url_file(flask_server, object, auth):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "error": "Bad Request",
-        "message": "String should be a valid URL (url)",
-        "error_details": {
-            "url": {
-                "url": {
-                    "msg": "String should be a valid URL",
-                    "input": "test.txt",
-                },
+        "detail": "String should be a valid URL (url)",
+        "errors": [
+            {
+                "detail": "String should be a valid URL",
+                "json_pointer": "/url",
+                "input": "test.txt"
             },
-        },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
 
+def test_create_url_file_with_files_disabled(flask_server, object, auth):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    data = {
+        'storage': 'url',
+        'url': 'https://example.org'
+    }
+    action_type = sampledb.logic.action_types.get_action_type(sampledb.logic.action_types.ActionType.SAMPLE_CREATION)
+    sampledb.logic.action_types.update_action_type(
+        action_type_id=action_type.id,
+        admin_only=action_type.admin_only,
+        show_on_frontpage=action_type.show_on_frontpage,
+        show_in_navbar=action_type.show_in_navbar,
+        show_in_object_filters=action_type.show_in_object_filters,
+        enable_labels=action_type.enable_labels,
+        enable_files=False,
+        enable_locations=action_type.enable_locations,
+        enable_publications=action_type.enable_publications,
+        enable_comments=action_type.enable_comments,
+        enable_activity_log=action_type.enable_activity_log,
+        enable_related_objects=action_type.enable_related_objects,
+        enable_project_link=action_type.enable_project_link,
+        enable_instrument_link=action_type.enable_instrument_link,
+        disable_create_objects=action_type.disable_create_objects,
+        is_template=action_type.is_template,
+        usable_in_action_type_ids=[at.id for at in action_type.usable_in_action_types],
+        scicat_export_type=action_type.scicat_export_type,
+    )
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 403
+    assert r.json() == {
+        "status": 403,
+        "title": "Adding files is not enabled for this object.",
+        "type": "http://localhost/api/v2/errors/ObjectFilesNotEnabled",
+        "detail": f"Object #{object.object_id} was created with action #{object.action_id}, which is of action type #{action_type.id}. Adding files is not enabled for objects created with actions of that type.",
+        "errors": []
+    }
+    assert not sampledb.logic.files.get_files_for_object(object.id)
+
+
 def test_get_url_file(flask_server, object, auth, user):
     sampledb.logic.files.create_url_file(
         object_id=object.id,
         user_id=user.id,
-        url='https://iffsamples.fz-juelich.de'
+        url='https://example.org'
     )
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 200
@@ -232,7 +302,7 @@ def test_get_url_file(flask_server, object, auth, user):
         'object_id': object.id,
         'file_id': 0,
         'storage': 'url',
-        'url': 'https://iffsamples.fz-juelich.de'
+        'url': 'https://example.org'
     }
 
 
@@ -285,6 +355,7 @@ def test_create_database_file_with_hash(flask_server, object, auth):
 
 
 def test_create_database_file_with_invalid_hash(flask_server, object, auth):
+    flask.current_app.config['SERVER_NAME'] = 'localhost'
     for i, algorithm in enumerate(['sha256', 'sha512']):
         files = sampledb.logic.files.get_files_for_object(object.id)
         assert len(files) == 0
@@ -295,11 +366,25 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
             'base64_content': base64.b64encode(f'test{i}'.encode('utf8')).decode('utf8'),
             'hash': {
                 'algorithm': algorithm,
-                'hexdigest': getattr(hashlib, algorithm)(f'test'.encode('utf8')).hexdigest()
+                'hexdigest': getattr(hashlib, algorithm)('test'.encode('utf8')).hexdigest()
             }
         }
+        expected_hash = getattr(hashlib, algorithm)(f'test{i}'.encode('utf8')).hexdigest()
         r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
         assert r.status_code == 400
+        assert r.json() == {
+            "detail": f"Hash hexdigest should be {expected_hash} (hash)",
+            "errors": [
+                {
+                    "detail": f"Hash hexdigest should be {expected_hash}",
+                    "json_pointer": "/hash",
+                    "input": data['hash']
+                }
+            ],
+            "status": 400,
+            "title": "Failed to validate request body data.",
+            "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+        }
         files = sampledb.logic.files.get_files_for_object(object.id)
         assert len(files) == 0
 
@@ -311,6 +396,19 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail":  "Input should be an object (hash)",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "json_pointer": "/hash",
+                "input": data['hash']
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
@@ -324,6 +422,19 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail":  "Field required (hash.algorithm)",
+        "errors": [
+            {
+                "detail": "Field required",
+                "json_pointer": "/hash/algorithm",
+                "input": None
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
@@ -338,6 +449,46 @@ def test_create_database_file_with_invalid_hash(flask_server, object, auth):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
+    assert r.json() == {
+        "detail":  "String should be exclusively lowercase hex characters (hash.hexdigest)",
+        "errors": [
+            {
+                "detail": "String should be exclusively lowercase hex characters",
+                "json_pointer": "/hash/hexdigest",
+                "input": data['hash']['hexdigest']
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+
+    data = {
+        'storage': 'database',
+        'original_file_name': 'test.txt',
+        'base64_content': base64.b64encode(f'test'.encode('utf8')).decode('utf8'),
+        'hash': {
+            'algorithm': 'md5',
+            'hexdigest': hashlib.md5(f'test'.encode('utf8')).hexdigest()
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail":  "Algorithm should be one of: sha256, sha512 (hash.algorithm)",
+        "errors": [
+            {
+                "detail": "Algorithm should be one of: sha256, sha512",
+                "json_pointer": "/hash/algorithm",
+                "input": "md5"
+            }
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
@@ -426,7 +577,7 @@ def test_get_files(flask_server, object, auth, user):
     sampledb.logic.files.create_url_file(
         object_id=object.id,
         user_id=user.id,
-        url='https://iffsamples.fz-juelich.de'
+        url='https://example.org'
     )
     sampledb.logic.files.create_database_file(
         object_id=object.id,
@@ -441,7 +592,7 @@ def test_get_files(flask_server, object, auth, user):
             'object_id': object.id,
             'file_id': 0,
             'storage': 'url',
-            'url': 'https://iffsamples.fz-juelich.de'
+            'url': 'https://example.org'
         },
         {
             'object_id': object.id,
@@ -460,6 +611,7 @@ def test_get_files(flask_server, object, auth, user):
 
 
 def test_get_hidden_file(flask_server, object, auth, user):
+    flask.current_app.config['SERVER_NAME'] = 'localhost'
     sampledb.logic.files.create_database_file(
         object_id=object.id,
         user_id=user.id,
@@ -475,17 +627,24 @@ def test_get_hidden_file(flask_server, object, auth, user):
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 403
     assert r.json() == {
-        "error": "Forbidden",
-        "message": "file {} of object {} has been hidden".format(0, object.object_id)
+        "status": 403,
+        "title": "The requested file has been hidden.",
+        "type": "http://localhost/api/v2/errors/ObjectFileHidden",
+        "detail": f"File #{0} of object #{object.object_id} has been hidden.",
+        "errors": []
     }
 
 
 def test_get_nonexistent_file(flask_server, object, auth, user):
+    flask.current_app.config['SERVER_NAME'] = 'localhost'
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 404
     assert r.json() == {
-        "error": "Not Found",
-        "message": "file {} of object {} does not exist".format(0, object.object_id)
+        "status": 404,
+        "title": "The requested file does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectFileNotFound",
+        "detail": f"File #{0} of object #{object.object_id} does not exist.",
+        "errors": []
     }
 
 
@@ -529,6 +688,7 @@ def test_create_local_reference_file(flask_server, object, auth, user):
 
 
 def test_create_local_reference_file_without_permissions(flask_server, object, auth, user):
+    flask.current_app.config['SERVER_NAME'] = 'localhost'
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     data = {
@@ -537,6 +697,13 @@ def test_create_local_reference_file_without_permissions(flask_server, object, a
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
+    assert r.json() == {
+        "status": 403,
+        "title": "The user is not authorized to add this path as a local_reference file.",
+        "type": "http://localhost/api/v2/errors/LocalReferencePathNotInWhitelist",
+        "detail": f"User #{user.id} is not authorized to add the path '/example/example.txt' as a local_reference file. There is no matching whitelist entry.",
+        "errors": []
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
@@ -544,6 +711,13 @@ def test_create_local_reference_file_without_permissions(flask_server, object, a
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
+    assert r.json() == {
+        "status": 403,
+        "title": "The user is not authorized to add this path as a local_reference file.",
+        "type": "http://localhost/api/v2/errors/LocalReferencePathNotInWhitelist",
+        "detail": f"User #{user.id} is not authorized to add the path '/example/example.txt' as a local_reference file. There is no matching whitelist entry.",
+        "errors": []
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
@@ -551,6 +725,13 @@ def test_create_local_reference_file_without_permissions(flask_server, object, a
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
+    assert r.json() == {
+        "status": 403,
+        "title": "The user is not authorized to add this path as a local_reference file.",
+        "type": "http://localhost/api/v2/errors/LocalReferencePathNotInWhitelist",
+        "detail": f"User #{user.id} is not authorized to add the path '/example/example.txt' as a local_reference file. There is no matching whitelist entry.",
+        "errors": []
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
@@ -558,5 +739,12 @@ def test_create_local_reference_file_without_permissions(flask_server, object, a
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 403
+    assert r.json() == {
+        "status": 403,
+        "title": "The user is not authorized to add this path as a local_reference file.",
+        "type": "http://localhost/api/v2/errors/LocalReferencePathNotInWhitelist",
+        "detail": f"User #{user.id} is not authorized to add the path '/example/example.txt' as a local_reference file. There is no matching whitelist entry.",
+        "errors": []
+    }
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
