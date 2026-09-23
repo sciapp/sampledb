@@ -10,8 +10,6 @@ from ...logic import errors, users
 from .utils.responses import ErrorDetailsModel
 from .utils.openapi import method
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 class UserModel(BaseModel):
     user_id: int = Field(description="the ID of the user", examples=[1])
