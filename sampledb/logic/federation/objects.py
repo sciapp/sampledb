@@ -25,6 +25,7 @@ from ..objects import get_fed_object, get_object, update_object_version, insert_
 from ..object_log import create_object, edit_object
 from ..projects import get_project
 from ..users import get_user, check_user_exists
+from ..utils import parse_url
 from .. import errors, fed_logs, languages, markdown_to_html
 from ...models import Permissions, Object
 from ...models.file_log import FileLogEntry, FileLogEntryType
@@ -445,6 +446,12 @@ def shared_object_preprocessor(
             files = get_files_for_object(object_id)
             result['files'] = []
             for file in files:
+                if not file.is_hidden and file.storage == 'url':
+                    # do not share custom regexp link; share is_hidden information anyways if hidden
+                    try:
+                        parse_url(file.data['url'], max_length=2048, allowed_regexes=())
+                    except (errors.InvalidURLError, errors.URLTooLongError, errors.InvalidIPAddressError, errors.InvalidPortNumberError):
+                        continue
                 if file.component_id is None:
                     res_file = {
                         'file_id': file.id,

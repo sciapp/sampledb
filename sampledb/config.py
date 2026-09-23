@@ -13,6 +13,7 @@ import copy
 import io
 import json
 import os
+import re
 import sys
 import typing
 
@@ -79,6 +80,7 @@ def parse_configuration_values() -> None:
         'SHARED_DEVICE_SIGN_OUT_MINUTES',
         'MIN_NUM_TEXT_CHOICES_FOR_SEARCH',
         'PDFEXPORT_LOGO_WIDTH',
+        'FILE_URL_MAX_LENGTH',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -95,6 +97,7 @@ def parse_configuration_values() -> None:
         'LABEL_PAPER_FORMATS',
         'DEFAULT_NOTIFICATION_MODES',
         'EXTERNAL_LINKS',
+        'FILE_URL_ALLOWED_REGEXES',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
@@ -276,6 +279,29 @@ def is_default_notification_modes_valid() -> bool:
         if value not in valid_modes:
             print(ansi_color(f'DEFAULT_NOTIFICATION_MODES values must be one of {valid_modes!r}, but got {value!r}.\n', color=31))
             return False
+    return True
+
+
+def are_file_url_allowed_regexes_valid() -> bool:
+    if not isinstance(FILE_URL_ALLOWED_REGEXES, list):
+        print(ansi_color(f'FILE_URL_ALLOWED_REGEXES must be a list, but got {FILE_URL_ALLOWED_REGEXES!r}.\n', color=31))
+        return False
+    for regex in FILE_URL_ALLOWED_REGEXES:
+        if not isinstance(regex, str):
+            print(ansi_color(f'FILE_URL_ALLOWED_REGEXES entries must be strings, but got {regex!r}.\n', color=31))
+            return False
+        try:
+            re.compile(regex)
+        except re.error:
+            print(ansi_color(f'FILE_URL_ALLOWED_REGEXES entry {regex!r} is not a valid regular expression.\n', color=31))
+            return False
+    return True
+
+
+def is_file_url_max_length_valid() -> bool:
+    if not isinstance(FILE_URL_MAX_LENGTH, int) or FILE_URL_MAX_LENGTH < 0:
+        print(ansi_color(f'FILE_URL_MAX_LENGTH must be a non-negative integer, but got {FILE_URL_MAX_LENGTH!r}.\n', color=31))
+        return False
     return True
 
 
@@ -822,6 +848,14 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not are_file_url_allowed_regexes_valid():
+        can_run = False
+        show_config_info = True
+
+    if not is_file_url_max_length_valid():
+        can_run = False
+        show_config_info = True
+
     if not parse_and_convert_external_links(config):
         can_run = False
         show_config_info = True
@@ -1049,6 +1083,9 @@ DISABLE_TOPICS = False
 MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
 
 DEFAULT_NOTIFICATION_MODES = None
+
+FILE_URL_ALLOWED_REGEXES: typing.List[str] = []
+FILE_URL_MAX_LENGTH = 2048
 
 
 class LinkConfig(typing.TypedDict):

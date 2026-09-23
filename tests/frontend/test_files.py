@@ -165,6 +165,65 @@ def test_upload_files(flask_server, user):
     assert file2.open().read().decode('utf-8') == 'Second Example Content'
 
 
+@pytest.mark.parametrize('url', [
+    'file:///X:/Projects/Projecta/foo/bar/' + 'a' * 2050 + '.ppt',
+    'file://iffw2k.kfa-juelich.de/dfsbaum/Projects/folder',
+    r'\\iffw2k.kfa-juelich.de\dfsbaum\Projects\folder',
+    'X:/Projects/Projecta/folder'
+])
+def test_post_link_with_allowed_file_url_regex(flask_server, user, url):
+    flask_server.app.config['FILE_URL_ALLOWED_REGEXES'] = [
+        r'^file:///[Xx]:/.+$',
+        r'^[Xx]:[\\/].+$',
+        r'^file://iffw2k\.kfa-juelich\.de/.+$',
+        r'^\\\\iffw2k\.kfa-juelich\.de\\.+$'
+    ]
+    flask_server.app.config['FILE_URL_MAX_LENGTH'] = 0
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example Object'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    link_form = document.find('form', {'action': '/objects/{}/files/'.format(object.id), 'enctype': None})
+    csrf_token = link_form.find('input', {'name': 'csrf_token'})['value']
+
+    r = session.post(flask_server.base_url + 'objects/{}/files/'.format(object.id), data={
+        'csrf_token': csrf_token,
+        'url': url
+    })
+    assert r.status_code == 200
+
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 1
+    assert files[0].url == url
+
+
 def test_update_file_information(flask_server, user):
     schema = {
         'title': 'Example Object',
@@ -275,6 +334,60 @@ def test_update_url_file_information(flask_server, user):
     file = sampledb.logic.files.get_file_for_object(object.id, 0)
     assert file.title == 'Title'
     assert file.url == 'http://example.com/'
+    assert file.description == 'Description'
+
+
+def test_update_url_file_information_with_allowed_file_url_regex(flask_server, user):
+    flask_server.app.config['FILE_URL_ALLOWED_REGEXES'] = [
+        r'^file:///[Xx]:/.+$',
+        r'^[Xx]:[\\/].+$'
+    ]
+    schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        }, 'required': ['name']
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Example Action',
+        description=''
+    )
+    object = sampledb.logic.objects.create_object(
+        data={'name': {'_type': 'text', 'text': 'Example Object'}},
+        user_id=user.id,
+        action_id=action.id
+    )
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+
+    sampledb.logic.files.create_url_file(object.id, user.id, 'http://example.com/example')
+
+    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    file_form = document.find('form', {'action': '/objects/{}/files/0'.format(object.id)})
+    csrf_token = file_form.find('input', {'name': 'csrf_token'})['value']
+    r = session.post(flask_server.base_url + 'objects/{}/files/0'.format(object.id), data={
+        'csrf_token': csrf_token,
+        'title': '',
+        'url': 'X:\\Projects\\Projecta\\foo\\bar\\bla.ppt',
+        'description': 'Description'
+    })
+    assert r.status_code == 200
+
+    file = sampledb.logic.files.get_file_for_object(object.id, 0)
+    assert file.title == 'http://example.com/example'
+    assert file.url == 'X:\\Projects\\Projecta\\foo\\bar\\bla.ppt'
     assert file.description == 'Description'
 
 

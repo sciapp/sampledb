@@ -14,12 +14,11 @@ from ...logic import errors
 from ...models import Permissions, User
 from ...logic.publications import simplify_doi
 from ...logic.errors import InvalidDOIError
-from ...logic.utils import get_translated_text
+from ...logic.utils import get_translated_text, parse_url
 from ...logic.groups import get_groups
 from ...logic.users import get_users
 from ...logic.projects import get_projects
 from ..validators import ObjectIdValidator
-from ...logic.utils import parse_url
 
 
 class ObjectForm(FlaskForm):
