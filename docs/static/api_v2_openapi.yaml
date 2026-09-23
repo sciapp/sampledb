@@ -6418,3 +6418,34 @@ paths:
       summary: Get a user.
       tags:
       - users
+tags:
+- description: Action Types
+  name: action_types
+- description: Actions
+  name: actions
+- description: Authentication
+  name: authentication
+- description: Object Comments
+  name: comments
+- description: Error Types for the API
+  name: errors
+- description: Object Files
+  name: files
+- description: Basic Groups
+  name: groups
+- description: Instrument Log
+  name: instrument_log
+- description: Instruments
+  name: instruments
+- description: Locations, Location Types and Object Location Assignments
+  name: locations
+- description: Object Log
+  name: object_log
+- description: Object Permissions
+  name: object_permissions
+- description: Objects, Object Versions and Object Relationships
+  name: objects
+- description: Project Groups
+  name: projects
+- description: Users
+  name: users

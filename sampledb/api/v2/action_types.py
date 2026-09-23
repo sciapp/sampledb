@@ -10,8 +10,6 @@ from ...logic import errors, utils, action_types
 from .utils.responses import ErrorDetailsModel
 from .utils.openapi import method
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 class ActionTypeModel(BaseModel):
     type_id: int = Field(description="the ID of the action type", examples=[1])

@@ -11,8 +11,6 @@ from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
 from ...logic import errors, utils, instruments
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
 
 class InstrumentModel(BaseModel):
     instrument_id: int = Field(description="the ID of the instrument", examples=[1])
