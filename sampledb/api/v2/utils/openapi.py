@@ -302,6 +302,36 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
             }, {
                 "bearerAuth": []
             }
+        ],
+        "tags": [
+            {
+                "name": "objects",
+                "description": "Objects, Object Versions and Object Relationships",
+            },
+            {
+                "name": "locations",
+                "description": "Locations, Location Types and Object Location Assignments",
+            },
+            {
+                "name": "errors",
+                "description": "Error Types for the API",
+            },
+            {
+                "name": "comments",
+                "description": "Object Comments",
+            },
+            {
+                "name": "files",
+                "description": "Object Files",
+            },
+            {
+                "name": "groups",
+                "description": "Basic Groups",
+            },
+            {
+                "name": "projects",
+                "description": "Project Groups",
+            },
         ]
     }
     for rule in flask.current_app.url_map.iter_rules():
@@ -331,10 +361,18 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
             assert isinstance(method_info, OpenAPIMethodInformation)
             if rule_path not in spec_dict["paths"]:
                 spec_dict["paths"][rule_path] = {}
+            tag_name = resource_method.__module__.rsplit('.', 1)[-1]
+            if not any(tag['name'] == tag_name for tag in spec_dict["tags"]):
+                tag_description = tag_name.replace('_', ' ').title()
+                spec_dict["tags"].append({
+                    "name": tag_name,
+                    "description": tag_description,
+                })
+                spec_dict["tags"].sort(key=lambda value: value["name"])
             spec_dict["paths"][rule_path][method] = {
                 "parameters": [],
                 "responses": {},
-                "tags": [resource_method.__module__.rsplit('.', 1)[-1]],
+                "tags": [tag_name],
             }
             assert resource_method.__doc__ is not None and resource_method.__doc__.strip(), f"{resource_method} must have a docstring"
             if resource_method.__doc__ is not None:
