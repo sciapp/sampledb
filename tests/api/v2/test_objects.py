@@ -438,6 +438,10 @@ def test_get_object(flask_server, auth, user, action):
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 302
     assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id)
+    assert r.json() == {
+        "location": f"{flask_server.base_url}api/v2/objects/{object.object_id}/versions/{object.version_id}",
+        "status": 302
+    }
 
 
 def test_post_object_version(flask_server, auth, user, action):
@@ -513,6 +517,10 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -547,6 +555,10 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -606,6 +618,10 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == result_object_json['data']
@@ -668,6 +684,10 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -752,6 +772,10 @@ def test_post_object_version(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.data == object_json['data']
@@ -832,6 +856,10 @@ def test_post_object_version(flask_server, auth, user, action):
     )
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.schema == object_json['schema']
@@ -853,6 +881,10 @@ def test_post_object_version(flask_server, auth, user, action):
     }
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
     assert new_object.version_id == object.version_id + 1
     assert new_object.schema == object_json['schema']
@@ -899,7 +931,10 @@ def test_post_object_version(flask_server, auth, user, action):
     # update version_id
     object_json['version_id'] += 1
     r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
-    assert r.content == b''
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
     assert r.status_code == 201
 
 
