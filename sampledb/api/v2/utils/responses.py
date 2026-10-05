@@ -16,17 +16,29 @@ class NoContentModel(BaseModel):
 
 
 class RedirectResponseModel(BaseModel):
-    STATUS_CODE: typing.ClassVar[int]
+    STATUS: typing.ClassVar[int] = HTTPStatus.FOUND
 
     location: str = Field(description="the URL to redirect to", examples=["https://example.com"])
+    status: int = Field(
+        description="the HTTP status code of the redirect",
+        examples=[302],
+        default_factory=lambda: RedirectResponseModel.STATUS,
+        validate_default=True
+    )
+
+    @field_validator('status', mode='before')
+    @classmethod
+    def set_status(cls, value: int) -> int:
+        assert value in (RedirectResponseModel.STATUS, cls.STATUS)
+        return cls.STATUS
 
 
 class CreatedResponseModel(RedirectResponseModel):
-    STATUS_CODE: typing.ClassVar[int] = HTTPStatus.CREATED
+    STATUS: typing.ClassVar[int] = HTTPStatus.CREATED
 
 
 class FoundResponseModel(RedirectResponseModel):
-    STATUS_CODE: typing.ClassVar[int] = HTTPStatus.FOUND
+    STATUS: typing.ClassVar[int] = HTTPStatus.FOUND
 
 
 class PathErrorDetailModel(BaseModel):
@@ -156,9 +168,9 @@ def make_response(
             mimetype='application/problem+json',
         )
     if isinstance(result, RedirectResponseModel):
-        return flask.current_app.response_class(
-            b"",
-            status=result.STATUS_CODE,
+        return make_json_response(
+            result.model_dump(by_alias=True),
+            status=result.STATUS,
             headers={
                 "Location": result.location
             }

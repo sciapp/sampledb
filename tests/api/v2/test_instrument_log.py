@@ -1522,7 +1522,10 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
         file_attachments_before = log_entry.file_attachments
         object_attachments_before = log_entry.object_attachments
         r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/', auth=auth, json=data)
-        assert r.content == b''
+        assert r.json() == {
+            "location": f"http://localhost/api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/{data["version_id"]}",
+            "status": 201
+        }
         assert r.status_code == 201
         assert r.headers['Location'] == f'http://localhost/api/v2/instruments/{instrument.id}/log_entries/{log_entry.id}/versions/{data['version_id']}'
         log_entry = sampledb.logic.instrument_log_entries.get_instrument_log_entry(log_entry.id)

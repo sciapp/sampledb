@@ -174,6 +174,24 @@ components:
       - content
       title: CommentModel
       type: object
+    CreatedResponseModel:
+      properties:
+        location:
+          description: the URL to redirect to
+          examples:
+          - https://example.com
+          title: Location
+          type: string
+        status:
+          description: the HTTP status code of the redirect
+          examples:
+          - 302
+          title: Status
+          type: integer
+      required:
+      - location
+      title: CreatedResponseModel
+      type: object
     DatabaseFileModel:
       properties:
         base64_content:
@@ -297,6 +315,24 @@ components:
       required:
       - detail
       title: ErrorDetailsModel
+      type: object
+    FoundResponseModel:
+      properties:
+        location:
+          description: the URL to redirect to
+          examples:
+          - https://example.com
+          title: Location
+          type: string
+        status:
+          description: the HTTP status code of the redirect
+          examples:
+          - 302
+          title: Status
+          type: integer
+      required:
+      - location
+      title: FoundResponseModel
       type: object
     GroupId:
       type: integer
@@ -2110,6 +2146,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -2521,6 +2561,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -3026,6 +3070,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -3237,6 +3285,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -3698,6 +3750,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -3774,6 +3830,10 @@ paths:
           type: integer
       responses:
         '302':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoundResponseModel'
           description: "Found: Object moved temporarily \u2014 see URI list"
           headers:
             Location:
@@ -3889,6 +3949,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -4052,6 +4116,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -4246,6 +4314,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -5660,6 +5732,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
@@ -6091,6 +6167,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedResponseModel'
           description: 'Created: Document created, URL follows'
           headers:
             Location:
