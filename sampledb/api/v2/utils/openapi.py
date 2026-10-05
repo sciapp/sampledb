@@ -509,9 +509,27 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
                             else:
                                 spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS)]["description"] = error_descriptions_per_status_code[return_type_option.STATUS][0]
                     elif inspect.isclass(return_type_option) and issubclass(return_type_option, RedirectResponseModel):
-                        assert str(return_type_option.STATUS_CODE) not in spec_dict["paths"][rule_path][method]["responses"]
-                        spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS_CODE)] = {
-                            "description": _generate_description_by_status_code(return_type_option.STATUS_CODE),
+                        assert str(return_type_option.STATUS) not in spec_dict["paths"][rule_path][method]["responses"]
+                        return_type_option_json_schema = return_type_option.model_json_schema(ref_template="#/components/schemas/{model}")
+                        if '$defs' in return_type_option_json_schema:
+                            for defs_key in return_type_option_json_schema['$defs']:
+                                if defs_key in spec_dict["components"]["schemas"]:
+                                    assert spec_dict["components"]["schemas"][defs_key] == return_type_option_json_schema['$defs'][defs_key]
+                                spec_dict["components"]["schemas"][defs_key] = return_type_option_json_schema['$defs'][defs_key]
+                            del return_type_option_json_schema['$defs']
+                        if return_type_option_json_schema['title'] in spec_dict["components"]["schemas"]:
+                            assert spec_dict["components"]["schemas"][return_type_option_json_schema['title']] == return_type_option_json_schema
+                        spec_dict["components"]["schemas"][return_type_option_json_schema['title']] = return_type_option_json_schema
+                        assert return_type_option_json_schema['title'].endswith('Model')
+                        spec_dict["paths"][rule_path][method]["responses"][str(return_type_option.STATUS)] = {
+                            "description": _generate_description_by_status_code(return_type_option.STATUS),
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": f"#/components/schemas/{return_type_option_json_schema['title']}"
+                                    }
+                                }
+                            },
                             "headers": {
                                 "Location": {
                                     "content": {
