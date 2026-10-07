@@ -289,8 +289,8 @@
       </form>
     </div>
     {% endif %}
-  {% if object.action_id in config["OBJECT_LINKS_BY_ACTION_ID"] or '*' in config["OBJECT_LINKS_BY_ACTION_ID"] %}
-    {% for links_config in merge_external_links(("OBJECT_LINKS_BY_ACTION_ID", "*"), ("OBJECT_LINKS_BY_ACTION_ID", object.action_id)) %}
+  {% if object.action_id in config["OBJECT_LINKS_BY_ACTION_ID"] or '*' in config["OBJECT_LINKS_BY_ACTION_ID"] or (action.type_id if action is not none else -100) in config["OBJECT_LINKS_BY_ACTION_TYPE_ID"] or '*' in config["OBJECT_LINKS_BY_ACTION_TYPE_ID"] %}
+    {% for links_config in merge_external_links(("OBJECT_LINKS_BY_ACTION_ID", "*"), ("OBJECT_LINKS_BY_ACTION_ID", object.action_id), ("OBJECT_LINKS_BY_ACTION_TYPE_ID", "*"), ("OBJECT_LINKS_BY_ACTION_TYPE_ID", action.type_id if action is not none else -100)) %}
       <div class="form-group">
         <div class="btn-group">
           <button class="btn btn-primary dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

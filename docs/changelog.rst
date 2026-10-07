@@ -16,6 +16,7 @@ Currently in development.
 - Added buttons for multiple object interactions to related objects tree
 - Added filtering by object IDs and related_user_id to HTTP API objects endpoint
 - Added tree picker to location form
+- Added action type ID as filter for external links
 - Improved .eln file support
 - Added miscellaneous OIDC improvements
 - Added location filter for instrument list

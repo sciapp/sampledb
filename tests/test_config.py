@@ -153,7 +153,9 @@ def test_parse_and_convert_external_links():
 
     for applies_to_key, config_key in {
         'objects_by_action_id': 'OBJECT_LINKS_BY_ACTION_ID',
+        'objects_by_action_type_id': 'OBJECT_LINKS_BY_ACTION_TYPE_ID',
         'actions_by_action_id': 'ACTION_LINKS_BY_ACTION_ID',
+        'actions_by_action_type_id': 'ACTION_LINKS_BY_ACTION_TYPE_ID',
         'instruments_by_instrument_id': 'INSTRUMENT_LINKS_BY_INSTRUMENT_ID',
         'topics_by_topic_id': 'TOPIC_LINKS_BY_TOPIC_ID',
         'locations_by_location_id': 'LOCATION_LINKS_BY_LOCATION_ID',
@@ -169,7 +171,9 @@ def test_parse_and_convert_external_links():
 
         for other_config_key in [
             'OBJECT_LINKS_BY_ACTION_ID',
+            'OBJECT_LINKS_BY_ACTION_TYPE_ID',
             'ACTION_LINKS_BY_ACTION_ID',
+            'ACTION_LINKS_BY_ACTION_TYPE_ID',
             'INSTRUMENT_LINKS_BY_INSTRUMENT_ID',
             'TOPIC_LINKS_BY_TOPIC_ID',
             'LOCATION_LINKS_BY_LOCATION_ID',
