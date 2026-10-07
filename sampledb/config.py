@@ -284,7 +284,9 @@ def parse_and_convert_external_links(
 ) -> bool:
     for config_name in [
         'OBJECT_LINKS_BY_ACTION_ID',
+        'OBJECT_LINKS_BY_ACTION_TYPE_ID',
         'ACTION_LINKS_BY_ACTION_ID',
+        'ACTION_LINKS_BY_ACTION_TYPE_ID',
         'INSTRUMENT_LINKS_BY_INSTRUMENT_ID',
         'TOPIC_LINKS_BY_TOPIC_ID',
         'LOCATION_LINKS_BY_LOCATION_ID',
@@ -375,7 +377,9 @@ def parse_and_convert_external_links(
             return False
         config_value_by_applies_to_key = {
             'objects_by_action_id': (config['OBJECT_LINKS_BY_ACTION_ID'], 'object'),
+            'objects_by_action_type_id': (config['OBJECT_LINKS_BY_ACTION_TYPE_ID'], 'object'),
             'actions_by_action_id': (config['ACTION_LINKS_BY_ACTION_ID'], 'action'),
+            'actions_by_action_type_id': (config['ACTION_LINKS_BY_ACTION_TYPE_ID'], 'action'),
             'instruments_by_instrument_id': (config['INSTRUMENT_LINKS_BY_INSTRUMENT_ID'], 'instrument'),
             'topics_by_topic_id': (config['TOPIC_LINKS_BY_TOPIC_ID'], 'topic'),
             'locations_by_location_id': (config['LOCATION_LINKS_BY_LOCATION_ID'], 'location'),

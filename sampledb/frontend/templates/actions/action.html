@@ -69,8 +69,8 @@
       <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _("Create a new custom action based on the settings for this action.") }} ">{{ _("Use as Template") }}</a>
     {% endif %}
   {% endif %}
-  {% if action.id in config["ACTION_LINKS_BY_ACTION_ID"] or '*' in config["ACTION_LINKS_BY_ACTION_ID"] %}
-    {% for links_config in merge_external_links(("ACTION_LINKS_BY_ACTION_ID", "*"), ("ACTION_LINKS_BY_ACTION_ID", action.id)) %}
+  {% if action.id in config["ACTION_LINKS_BY_ACTION_ID"] or '*' in config["ACTION_LINKS_BY_ACTION_ID"] or action.type_id in config["ACTION_LINKS_BY_ACTION_TYPE_ID"] or '*' in config["ACTION_LINKS_BY_ACTION_TYPE_ID"] %}
+    {% for links_config in merge_external_links(("ACTION_LINKS_BY_ACTION_ID", "*"), ("ACTION_LINKS_BY_ACTION_ID", action.id), ("ACTION_LINKS_BY_ACTION_TYPE_ID", "*"), ("ACTION_LINKS_BY_ACTION_TYPE_ID", action.type_id)) %}
       <span class="btn-group" style="margin-bottom: -2px">
         <button class="btn btn-default dropdown-toggle" type="button" id="linksDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <i class="fa {{ links_config.icon }}" aria-hidden="true"></i> {{ links_config.label | get_translated_text }} <span class="caret"></span>
