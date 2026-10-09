@@ -62,6 +62,7 @@ class DefaultShare:
             component=Component.from_database(default_share.component),
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class ObjectImportSpecification:
     """
@@ -379,6 +380,7 @@ def delete_default_share(
         raise errors.ShareDoesNotExistError()
     db.session.delete(share)
     db.session.commit()
+
 
 def add_object_import_specification(object_id: int, access_policy: dict[str, typing.Any]) -> ObjectImportSpecification:
     object = get_object(object_id)
