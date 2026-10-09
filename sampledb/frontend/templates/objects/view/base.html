@@ -81,7 +81,12 @@
     {% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}{% if name %}: {% endif %}{% endif %}{{ name | get_translated_text(default='—') }}
     {{ import_information_symbol(object) }}
     {% if object_has_conflicts %}
-      <i class="fa fa-warning"></i>
+      {% if user_may_edit %}
+        {% set tooltip_title = _('Two differing object versions exist for this object.') %}
+      {% else %}
+        {% set tooltip_title = _('Two differing object versions exist for this object.') + ' ' + _('Ask someone with write permission to solve this conflict.') %}
+      {% endif %}
+      <span><i class="fa fa-warning" aria-hidden="true" title="{{ tooltip_title }}" data-toggle="tooltip" data-placement="top"></i></span>
     {% endif %}
   </h1>
   <h2 id="information">{{ _('Information') }}</h2>
