@@ -27,7 +27,9 @@
   {% if components %}
   <ul id="components_list">
     {% for component in components %}
-    <li><a href="{{ url_for('.component', component_id=component.id) }}">{{ component.get_name() }}</a> {% if component.address is not none %}(<a href="{{ component.address }}">{{ component.address }}</a>){% endif %} {% if component.fed_login_available and config["ENABLE_FEDERATED_LOGIN"] %}<span data-toggle="tooltip" title="{{ _('Federated Login is available') }}"><i class="fa fa-sign-in" data-placement="top" aria-hidden="true"></i></span>{% endif %}</li>
+      {% if not component.is_hidden %}
+        <li><a href="{{ url_for('.component', component_id=component.id) }}">{{ component.get_name() }}</a> {% if component.address is not none %}(<a href="{{ component.address }}">{{ component.address }}</a>){% endif %} {% if component.fed_login_available and config["ENABLE_FEDERATED_LOGIN"] %}<span data-toggle="tooltip" title="{{ _('Federated Login is available') }}"><i class="fa fa-sign-in" data-placement="top" aria-hidden="true"></i></span>{% endif %}</li>
+      {% endif %}
     {% endfor %}
   </ul>
   {% if nodes and edges %}

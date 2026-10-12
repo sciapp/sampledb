@@ -592,21 +592,21 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     }
     bidirectional_sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
 
-    component = sampledb.logic.components.add_component(address=None, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example component', description='')#
+    component = sampledb.logic.components.add_component(address=None, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example component', description='')
     object_permissions_data = sampledb.logic.federation.objects.ObjectPermissionsData(
         users={user.id: sampledb.models.Permissions.READ},
         groups={}, projects={}, all_users=sampledb.models.Permissions.NONE
     )
     object_version_data = sampledb.logic.federation.objects.ObjectVersionData(
-        fed_version_id=0, user=None, data=None, schema=None, utc_datetime=None, import_notes=[]
+        fed_version_id=0, version_component_id=None, user=None, data=None, schema=None, utc_datetime=None, import_notes=[], hash_data=None, hash_metadata=None
     )
     object_data = sampledb.logic.federation.objects.ObjectData(
         fed_object_id=1, component_id=component.id,
         action=None, versions=[object_version_data], comments=[], files=[], object_location_assignments=[],
-        permissions=object_permissions_data, sharing_user=None
+        permissions=object_permissions_data, sharing_user=None,
     )
     import_status = {}
-    fed_no_data_sample = sampledb.logic.federation.objects.import_object(object_data, component, import_status=import_status)
+    fed_no_data_sample, changes = sampledb.logic.federation.objects.import_object(object_data, component, import_status=import_status)
 
     data = {
         'name': {

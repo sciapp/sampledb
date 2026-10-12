@@ -71,6 +71,8 @@ class FedObjectLogEntryType(enum.Enum):
     UPDATE_OBJECT_POLICY = 5
     CREATE_REF_OBJECT = 6
     REMOTE_IMPORT_OBJECT = 7
+    CREATE_VERSION_CONFLICT = 8
+    SOLVE_VERSION_CONFLICT = 9
 
 
 class FedObjectLogEntry(Model):

@@ -1,13 +1,46 @@
-{% if schema['units'] in ("1", "") %}
-  <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
-    {% if id_prefix+'_magnitude' in form_data %}
-      value="{{ form_data[id_prefix+'_magnitude'] }}"
-    {% elif data is not none and "magnitude_in_base_units" in data %}
-      value="{{ data.magnitude_in_base_units | babel_format_number }}"
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+    {% set conflicting = 'imported' in data %}
+    {% if conflicting%}
+      {% set imported_data = data['imported']%}
+      {% set local_data = data['local'] %}
+      {% set data = data['local'] %}
     {% endif %}
-  />
+{% endif %}
+
+{% if schema['units'] in ("1", "") %}
+  {% if conflicting %}
+  {% set conflicting_component = get_component(conflict_component_id) %}
+  <div class="input-group has-conflict">
+  {% endif %}
+  <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+      {% if id_prefix+'_magnitude' in form_data %}
+        value="{{ form_data[id_prefix+'_magnitude'] }}"
+      {% elif data is not none and "magnitude_in_base_units" in data %}
+        value="{{ data.magnitude_in_base_units | babel_format_number }}"
+      {% endif %}
+    />
+  {% if conflicting %}
+    <div
+      class="input-group-btn"
+      data-field-type="quantity"
+      data-reference-field="input[name='{{ id_prefix }}_magnitude']"
+      data-conflict="true"
+      data-content-local="{{ local_data.magnitude_in_base_units | babel_format_number | base64encode }}"
+      data-content-imported="{{ imported_data.magnitude_in_base_units | babel_format_number | base64encode }}"
+    >
+      <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><span class="caret"></span></button>
+      <ul class="dropdown-menu dropdown-menu-right">
+        <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _("Local Version") }}</button></li>
+        <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _("Imported Version") }}</button></li>
+      </ul>
+    </div>
+  </div>
+  {% endif %}
 {% else %}
-  <div class="input-group">
+  <div class="input-group {% if conflicting %}has-conflict conflict-field-resizing {%- endif -%}">
     <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
       placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
       {% if id_prefix+'_magnitude' in form_data %}
@@ -25,7 +58,7 @@
           value="{{ unit }}"
         {% endif %}
       />
-      <span class="input-group-addon" style="{% if not container_style %}min-width: 100px;{% endif %} text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}</span>
+      <span class="input-group-addon {% if conflicting %} conflict-center-item conflict-dropdown {% endif %}" style="{% if not container_style %}min-width: 100px;{% endif %} text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}</span>
     {% else %}
       {% if id_prefix + '_units' in form_data %}
         {% set selected_unit = form_data[id_prefix + '_units'] %}
@@ -34,7 +67,7 @@
       {% else %}
         {% set selected_unit = schema['units'][0] %}
       {% endif %}
-      <select {% if is_template %} class="template-select" data-template-class="selectpicker" {% else %} class="selectpicker" {% endif %} name="{{ id_prefix }}_units" data-style="btn-default unit-selectpicker">
+      <select {% if is_template %} class="template-select" data-template-class="selectpicker" {% else %} class="selectpicker {% if conflicting %} conflict-center-item {% endif %}" {% endif %} name="{{ id_prefix }}_units" data-style="btn-default unit-selectpicker">
         {% for unit in schema['units'] %}
           <option value="{{ unit }}" {% if unit == selected_unit %}selected="selected"{% endif %}>{{ unit | prettify_units }}</option>
         {% endfor %}
@@ -43,7 +76,28 @@
         {% endif %}
       </select>
     {% endif %}
-  </div>
+    {% if conflicting %}
+      <div
+        class="input-group-btn"
+        data-field-type="quantity"
+        data-reference-field="input[name='{{ id_prefix }}_magnitude']"
+        data-conflict="true"
+        data-content-local="{% if (local_data | to_datatype).units in ('min', 'h') %}{{ local_data.magnitude_in_base_units | format_time((local_data | to_datatype).units, schema.get('display_digits')) | base64encode }}{% else %}{{ (local_data | to_datatype).magnitude | babel_format_number | base64encode }}{% endif %}"
+        data-content-imported="{% if (imported_data | to_datatype).units in ('min', 'h') %}{{ imported_data.magnitude_in_base_units | format_time((imported_data | to_datatype).units, schema.get('display_digits')) | base64encode }}{% else %}{{ (imported_data | to_datatype).magnitude | babel_format_number | base64encode }}{% endif %}"
+        {% if schema['units'] is not string and schema['units'] | length > 1 %}
+          data-unit-local="{{ (local_data | to_datatype).units | base64encode }}"
+          data-unit-imported="{{ (imported_data | to_datatype).units | base64encode }}"
+          data-unit-field="select[name='{{ id_prefix }}_units']"
+        {% endif %}
+      >
+        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><span class="caret"></span></button>
+        <ul class="dropdown-menu dropdown-menu-right">
+          <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _("Local Version") }}</button></li>
+          <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _("Imported Version") }}</button></li>
+        </ul>
+      </div>
+    {% endif %}
+    </div>
 {% endif %}
 
 {% if template_mode != 'inline_edit' and 'calculation' in schema %}

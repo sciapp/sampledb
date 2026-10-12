@@ -6,7 +6,7 @@ import flask
 from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_utc_datetime, _get_str, _get_dict
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
-from ..files import get_mutable_file, create_fed_file, hide_file, File
+from ..files import get_file, get_mutable_file, create_fed_file, hide_file, File
 from ..components import Component
 from .. import errors, fed_logs, object_log
 from ..utils import parse_url
@@ -30,13 +30,20 @@ class FileData(typing.TypedDict):
 
 
 def parse_file(
-        file_data: typing.Dict[str, typing.Any]
-) -> FileData:
+        file_data: typing.Dict[str, typing.Any],
+        object_id: typing.Optional[int],
+) -> typing.Optional[FileData]:
     uuid = _get_uuid(file_data.get('component_uuid'))
-    if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local data')
     fed_id = _get_id(file_data.get('file_id'), min=0)
+    if uuid == flask.current_app.config['FEDERATION_UUID']:
+        # do not allow changes from federation but reference must exist
+        if object_id is None:
+            raise errors.InvalidDataExportError(f'Object id is missing for local file #{fed_id}')
+        try:
+            get_file(file_id=fed_id, object_id=object_id)
+        except errors.FileDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local file {fed_id} for object {object_id} does not exist')
+        return None
     data = _get_dict(file_data.get('data'))
 
     if data:
@@ -92,24 +99,27 @@ def import_file(
         file_data: FileData,
         object: Object,
         component: Component
-) -> File:
+) -> tuple[File, bool]:
     component_id = _get_or_create_component_id(file_data['component_uuid'])
     user_id = _get_or_create_user_id(file_data['user'])
+    changes = False
 
     try:
         db_file = get_mutable_file(file_data['fed_id'], object.id, component_id)
-        if db_file.user_id != user_id or db_file.data != file_data['data'] or db_file.utc_datetime != file_data['utc_datetime']:
+        if component_id is not None and (db_file.user_id != user_id or db_file.data != file_data['data'] or db_file.utc_datetime != file_data['utc_datetime']):
             db_file.user_id = user_id
             db_file.data = file_data['data']
             db_file.utc_datetime = file_data['utc_datetime']
             db.session.commit()
-            fed_logs.update_file(db_file.id, object.object_id, component.id)
+            fed_logs.update_file(db_file.id, object.object_id, component_id, component.id)
+            changes = True
     except errors.FileDoesNotExistError:
         assert component_id is not None
-        db_file = create_fed_file(object.object_id, user_id, file_data['data'], None, file_data['utc_datetime'], file_data['fed_id'], component_id)
-        fed_logs.import_file(db_file.id, db_file.object_id, component.id)
+        db_file = create_fed_file(object.object_id, user_id, file_data['data'], None, file_data['utc_datetime'], file_data['fed_id'], component_id, component.id)
+        fed_logs.import_file(db_file.id, db_file.object_id, component_id, component.id)
         if user_id is not None:
-            object_log.upload_file(user_id=user_id, object_id=object.object_id, file_id=db_file.id, utc_datetime=file_data['utc_datetime'], is_imported=True)
+            object_log.upload_file(user_id=user_id, object_id=object.object_id, file_id=db_file.id, utc_datetime=file_data['utc_datetime'], is_imported=True, imported_from_component_id=component.id)
+        changes = True
 
     file = File.from_database(db_file)
     if file_data['hide'] is not None and not file.is_hidden:
@@ -119,14 +129,18 @@ def import_file(
             file_id=file.id,
             user_id=hide_user,
             reason=file_data['hide']['reason'],
-            utc_datetime=file_data['hide']['utc_datetime']
+            utc_datetime=file_data['hide']['utc_datetime'],
+            imported_from_component_id=component.id
         )
-    return file
+        changes = True
+    return file, changes
 
 
 def parse_import_file(
         file_data: typing.Dict[str, typing.Any],
         object: Object,
         component: Component
-) -> File:
-    return import_file(parse_file(file_data), object, component)
+) -> tuple[File, bool]:
+    if parsed_file := parse_file(file_data, object.id):
+        return import_file(parsed_file, object, component)
+    return get_file(file_data['file_id'], object_id=object.id), False

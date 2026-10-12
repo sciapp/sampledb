@@ -22,12 +22,15 @@ class CommentData(typing.TypedDict):
 
 def parse_comment(
         comment_data: typing.Dict[str, typing.Any]
-) -> CommentData:
+) -> typing.Optional[CommentData]:
     uuid = _get_uuid(comment_data.get('component_uuid'))
     fed_id = _get_id(comment_data.get('comment_id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError(f'Invalid update for local comment #{fed_id}')
+        try:
+            get_comment(comment_id=fed_id)
+        except errors.CommentDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local comment {fed_id} does not exist')
+        return None
     return CommentData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -41,12 +44,13 @@ def import_comment(
         comment_data: CommentData,
         object: Object,
         component: Component
-) -> Comment:
+) -> tuple[Comment, bool]:
     component_id = _get_or_create_component_id(comment_data['component_uuid'])
     assert component_id is not None
     # component_id will only be None if this would import a local comment
 
     user_id = _get_or_create_user_id(comment_data['user'])
+    changes = False
     try:
         comment = get_comment(comment_data['fed_id'], component_id)
 
@@ -57,7 +61,8 @@ def import_comment(
                 content=comment_data['content'],
                 utc_datetime=comment_data['utc_datetime']
             )
-            fed_logs.update_comment(comment.id, component.id)
+            fed_logs.update_comment(comment.id, component_id, component.id)
+            changes = True
     except errors.CommentDoesNotExistError:
         assert component_id is not None
         comment = get_comment(create_comment(
@@ -66,17 +71,21 @@ def import_comment(
             content=comment_data['content'],
             utc_datetime=comment_data['utc_datetime'],
             fed_id=comment_data['fed_id'],
-            component_id=component_id
+            component_id=component_id,
+            imported_from_component_id=component.id,
         ))
-        fed_logs.import_comment(comment.id, component.id)
+        fed_logs.import_comment(comment.id, component_id, imported_from_component_id=component.id)
         if user_id is not None:
-            object_log.post_comment(user_id=user_id, object_id=comment.object_id, comment_id=comment.id, utc_datetime=comment_data['utc_datetime'], is_imported=True)
-    return comment
+            object_log.post_comment(user_id=user_id, object_id=comment.object_id, comment_id=comment.id, utc_datetime=comment_data['utc_datetime'], is_imported=True, imported_from_component_id=component.id)
+        changes = True
+    return comment, changes
 
 
 def parse_import_comment(
         comment_data: typing.Dict[str, typing.Any],
         object: Object,
         component: Component
-) -> Comment:
-    return import_comment(parse_comment(comment_data), object, component)
+) -> tuple[Comment, bool]:
+    if parsed_comment := parse_comment(comment_data):
+        return import_comment(parsed_comment, object, component)
+    return get_comment(comment_id=comment_data['comment_id']), False
