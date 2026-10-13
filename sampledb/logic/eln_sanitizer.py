@@ -30,6 +30,7 @@ WHITELIST_CSS_AT_RULES = {
 WHITELIST_TAGS = {
     "p", "a", "div", "article", "section", "nav", "span", "meta", "title", "h1", "h2", "h3", "h4", "h5", "html", "body", "head", "header",
     "main", "footer", "table", "tbody", "tr", "td", "th", "colgroup", "col", "ul", "ol", "li", "br", "hr", "summary", "details", "img", "input",
+    "sup", "sub",
 }
 
 WHITELIST_ATTRIBUTES = {
@@ -266,9 +267,9 @@ class ELNSanitizer:
         bracket_block.content = result
 
     def _css_sanitize_function(self, function_block: tinycss2.ast.FunctionBlock) -> bool:
-        if function_block.type in WHITELIST_CSS_FUNCTIONS:
+        if function_block.name in WHITELIST_CSS_FUNCTIONS:
             return True
-        elif function_block.type == 'url':
+        elif function_block.name == 'url':
             if not isinstance(function_block.arguments[0], tinycss2.ast.StringToken):
                 return False
             self._css_sanitize_url_string_token(function_block.arguments[0])
