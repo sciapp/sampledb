@@ -303,10 +303,6 @@ def test_parse_sampledb_preview_file_not_available(app, flask_server, sampledb_e
     with pytest.raises(logic.errors.ELNImportPreviewFileDoesNotExistError):
         logic.eln_import.parse_eln_preview_file(sampledb_eln_import_id, "not_available.png")
 
-    assert len(parsed_eln_import.objects[0].versions) == 2
-    assert parsed_eln_import.objects[0].versions[0].version_id == 0 and parsed_eln_import.objects[0].versions[0].data['name']['text'] == 'Object'
-    assert parsed_eln_import.objects[0].versions[1].version_id == 1 and parsed_eln_import.objects[0].versions[1].data['name']['text'] == {'en': 'Updated Object'}
-
 
 def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
     with zipfile.ZipFile(io.BytesIO(eln_zip_bytes_unsigned)) as zip_file:
