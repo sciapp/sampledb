@@ -298,9 +298,10 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             script_sources = [
                 "'unsafe-inline'"
             ]
-        elif flask.request.endpoint == 'frontend.eln_preview' and response.status_code != 404:
+        elif flask.request.endpoint == 'frontend.eln_preview_content' and response.status_code != 404:
             script_sources = ["'none'"]
             image_sources = ["'self'"]
+
         content_security_policy = f"base-uri '{base_uri}'; default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; object-src 'none'; report-uri /csp-violation-report"
         if app.config.get('TESTING', True):
             response.headers["Content-Security-Policy-Report-Only"] = content_security_policy
@@ -310,7 +311,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     @app.after_request
     def set_eln_preview_headers(response: flask.Response) -> flask.Response:
-        if flask.request.endpoint == 'frontend.eln_preview':
+        if flask.request.endpoint == 'frontend.eln_preview_content':
             response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
 

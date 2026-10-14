@@ -323,8 +323,8 @@ class ELNSanitizer:
             return None
 
         if normalized_fullpath.startswith("ro-crate-preview.html"):
-            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
+            return f"{flask.url_for("frontend.eln_preview_content", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
         elif normalized_fullpath.startswith("ro-crate-preview_files/"):
             subpath = normalized_fullpath[len("ro-crate-preview_files/"):]
-            return flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
+            return flask.url_for("frontend.eln_preview_content", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
         return None
