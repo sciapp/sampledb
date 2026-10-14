@@ -238,39 +238,24 @@ def update_sanitized_eln_preview() -> None:
         eln_imports.ELNImportPreviewFile.sanitizer_version < ELNSanitizer.SANITIZER_VERSION
     ).order_by(eln_imports.ELNImportPreviewFile.eln_import_id.asc()).all()
 
-    current_eln_import_id = 0
-    current_eln_import: typing.Optional[eln_imports.ELNImport] = None
-    valid_preview_files: list[str] = []
-    for preview_file in preview_files:
-        if current_eln_import_id != preview_file.eln_import_id:
-            current_eln_import_id = preview_file.eln_import_id
-            current_eln_import = eln_imports.ELNImport.query.filter_by(id=current_eln_import_id).first()
-            if current_eln_import is None:
-                raise errors.ELNImportDoesNotExistError()
-            with zipfile.ZipFile(io.BytesIO(current_eln_import.binary_data)) as zip_file:
-                member_names, root_path_name = _get_member_names_and_root_path_from_archive(zip_file)
-                valid_preview_files = _find_valid_preview_files(member_names, root_path_name)
+    eln_files_by_import: dict[int, list[eln_imports.ELNImportPreviewFile]] = {}
+    for pf in preview_files:
+        files: list[eln_imports.ELNImportPreviewFile] = eln_files_by_import.get(pf.eln_import_id, [])
+        files.append(pf)
+        eln_files_by_import[pf.eln_import_id] = files
 
-        _update_sanitizer_version(preview_file, valid_preview_files)
+    for eln_import_id in eln_files_by_import.keys():
+        files_to_import, _ = parse_eln_preview(eln_import_id)
+        for file in files_to_import:
+            db.session.merge(eln_imports.ELNImportPreviewFile(
+                filepath=file.filepath,
+                eln_import_id=eln_import_id,
+                binary_data=file.content,
+                sanitized_binary_data=file.sanitized_content,
+                sanitizer_version=ELNSanitizer.SANITIZER_VERSION,
+                mime_type=file.mime_type,
+            ))
 
-
-def _update_sanitizer_version(
-    result: eln_imports.ELNImportPreviewFile,
-    valid_preview_files: list[str],
-) -> None:
-    root_dir = os.path.dirname(result.filepath)
-    result.sanitizer_version = ELNSanitizer.SANITIZER_VERSION
-    sanitizer = ELNSanitizer(
-        eln_import_id=result.eln_import_id,
-        root_path=root_dir,
-        referenced_files=[],
-        valid_preview_files=valid_preview_files,
-    )
-    result.sanitized_binary_data = sanitizer.sanitize(
-        result.binary_data.decode('utf-8'),
-        result.mime_type,
-    ).encode()
-    db.session.add(result)
     db.session.commit()
 
 
