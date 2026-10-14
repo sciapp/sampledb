@@ -39,6 +39,7 @@ WHITELIST_ATTRIBUTES = {
 
 
 class ELNSanitizer:
+
     # Simple versioning for the sanitizer. It should be increased when changes were made to the sanitizer.
     # The version is used to detect changes to the sanitizer and update the sanitized content of files in the database.
     SANITIZER_VERSION = 1
@@ -129,9 +130,9 @@ class ELNSanitizer:
 
     def _sanitize_html_attrib_style(self, tag: Tag) -> None:
         """
-        Sanitizes css content of a style attribute.
+        Sanitizes css content of the style attribute of a given tag.
 
-        :return: Function that performs the sanitization of css attributes for a given tag.
+        :param tag: Tag whose style attribute should be sanitized
         """
         style_content = tag["style"]
         style_parsed = tinycss2.parse_blocks_contents(style_content)
@@ -166,10 +167,10 @@ class ELNSanitizer:
 
     def _sanitize_css_stylesheet(self, css_content: str) -> str:
         """
-        Parses and sanitizes a css stylesheet (css file content or content of <style>-tags).
+        Parses and sanitizes a css stylesheet (CSS file content or content of <style>-tags).
 
         :param css_content: CSS string that should be sanitized.
-        :return: Sanitized css string
+        :return: Sanitized CSS string
         """
         parsed_rules = tinycss2.parse_stylesheet(css_content, skip_whitespace=True, skip_comments=True)
         sanitized_rules = self._css_sanitize_rules(parsed_rules)
@@ -309,7 +310,7 @@ class ELNSanitizer:
 
     def _transform_url_to_preview_url(self, normalized_fullpath: str) -> typing.Optional[str]:
         """
-        Transform the path to a given preview file within the eln archive into the required schema used by SampleDB.
+        Transform the path to a given preview file within the eln archive into the schema of the endpoint.
 
         :param normalized_fullpath: Path to the preview file.
         :return: URL to the specified file or none if it is not a valid path to a preview file.
