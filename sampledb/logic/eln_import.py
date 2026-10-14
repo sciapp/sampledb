@@ -533,7 +533,6 @@ def import_eln_file(
                 utc_datetime=comment_info.date_created,
                 is_imported=True
             )
-
     for eln_object_id, eln_object_part_ids in parsed_data.object_parts_relationships.items():
         if eln_object_id not in imported_object_ids_by_eln_object_id:
             continue
@@ -586,7 +585,7 @@ def import_eln_file(
         )
 
     if import_preview:
-        eln_preview, ignored_files = parse_eln_preview(eln_import_id)
+        eln_preview, _ = parse_eln_preview(eln_import_id)
         for preview_file in eln_preview:
             db.session.add(eln_imports.ELNImportPreviewFile(
                 filepath=preview_file.filepath,
@@ -1415,6 +1414,12 @@ def _find_valid_preview_files(member_names: dict[str, str], root_path_name: str)
 def parse_eln_preview(
     eln_import_id: int
 ) -> tuple[list[ParsedELNPreviewFile], list[str]]:
+    """
+    Parses the RO-crate preview files of the given ELN import.
+
+    :param eln_import_id: the ID of the ELN import
+    :return: the list of parsed preview files and the list of ignored files (e.g., because of unallowed mime type)
+    """
     preview_files: list[ParsedELNPreviewFile] = []
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
     ignored_files: list[str] = []
@@ -1458,7 +1463,6 @@ def parse_eln_preview(
                         ), files)
                 except Exception:
                     raise errors.InvalidELNFileError(f"{path} must be a UTF-8 encoded text file")
-                return None, []
 
             if os.path.normpath(f"{root_path_name}/ro-crate-preview.html") not in member_names:
                 return [], []
@@ -1482,6 +1486,7 @@ def parse_eln_preview(
                             preview_files.append(parsed_preview_file)
                             imported_files.add(filename)
                             referenced_files.update(set(files) - imported_files)
+
     except zipfile.BadZipfile:
         raise errors.InvalidELNFileError(".eln file must be valid .zip file")
     except Exception as e:
@@ -1495,7 +1500,7 @@ def parse_eln_preview_file(
     subpath: typing.Optional[str]
 ) -> ParsedELNPreviewFile:
     """
-    Parses the preview file of the given ELN import and returns the content.
+    Parses the preview file of the given ELN import at a specific subpath and returns the content.
     If `subpath` is None, the ro-crate-preview.html will be parsed.
     Otherwise if `subpath` is not none, the file with the given subpath in ro_crate_preview_files/ will be parsed.
 
