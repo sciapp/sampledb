@@ -58,17 +58,20 @@ class ELNSanitizer:
 
     def sanitize(self, content: str, mime_type: str) -> str:
         """
-        Sanitizes content based on its mime type. Currently only text/html and text/css are sanitized.
+        Sanitizes content based on its mime type.
+        Currently only text/html and text/css are supported for santization.
 
         :param content: String that should be sanitized
         :param mime_type: Mime type of content
-        :return: Sanitized string if mime type is text/html or text/css. Otherwise an empty string is returned.
+        :return: Sanitized string if mime type is allowed. Otherwise an empty string is returned.
         """
-        if mime_type == "text/html":
-            return self._sanitize_html(content)
-        if mime_type == "text/css":
-            return self._sanitize_css_stylesheet(content)
-        return ""
+        match mime_type:
+            case "text/html":
+                return self._sanitize_html(content)
+            case "text/css":
+                return self._sanitize_css_stylesheet(content)
+            case _:
+                return ""
 
     def _sanitize_html(self, html_content: str) -> str:
         """

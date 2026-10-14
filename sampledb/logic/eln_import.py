@@ -244,7 +244,7 @@ def update_sanitized_eln_preview() -> None:
         files.append(pf)
         eln_files_by_import[pf.eln_import_id] = files
 
-    for eln_import_id in eln_files_by_import.keys():
+    for eln_import_id in eln_files_by_import:
         files_to_import, _ = parse_eln_preview(eln_import_id)
         for file in files_to_import:
             db.session.merge(eln_imports.ELNImportPreviewFile(
