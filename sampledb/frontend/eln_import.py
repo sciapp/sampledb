@@ -124,6 +124,9 @@ def eln_preview(eln_import_id: int) -> FlaskResponseT:
     except logic.errors.ELNImportDoesNotExistError:
         return flask.abort(404)
 
+    if not logic.eln_import.has_eln_preview(eln_import_id):
+        return flask.abort(404)
+
     return flask.render_template('eln_files/eln_preview.html', eln_import_id=eln_import.id, subpath=subpath)
 
 
