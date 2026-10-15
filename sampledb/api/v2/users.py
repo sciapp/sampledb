@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from .authentication import multi_auth
 from ..utils import Resource
 from ...logic import errors, users
-from .utils.responses import ErrorDetailsModel
+from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -72,32 +72,30 @@ class CurrentUser(Resource):
 
 
 class Users(Resource):
-    class QueryModel(BaseModel):
+    class QueryModel(PaginationQueryModel):
         filter_hidden: bool | None = Field(None, description="whether to filter for only hidden or only non-hidden users", examples=[False])
         filter_active: bool | None = Field(None, description="whether to filter for only active or only non-active users", examples=[True])
         filter_readonly: bool | None = Field(None, description="whether to filter for only readonly or only non-readonly users", examples=[False])
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> list[UserModel]:
+    def get(self, query: QueryModel) -> PaginatedSequence[UserModel]:
         """
         List all users.
         """
-        filtered_users = users.get_users()
-        if flask.g.user.is_admin:
-            for filter_value, filter_attr in [
-                (query.filter_hidden, 'is_hidden'),
-                (query.filter_active, 'is_active'),
-                (query.filter_readonly, 'is_readonly'),
-            ]:
-                if filter_value is None:
-                    continue
-                filtered_users = [
-                    user
-                    for user in filtered_users
-                    if getattr(user, filter_attr) == filter_value
-                ]
-        return [
-            UserModel.from_user(user)
-            for user in filtered_users
-        ]
+        filtered_users = users.get_users(
+            filter_hidden=query.filter_hidden if flask.g.user.is_admin else None,
+            filter_active=query.filter_active if flask.g.user.is_admin else None,
+            filter_readonly=query.filter_readonly if flask.g.user.is_admin else None,
+            sort_by="id",
+            after_id=query.previous_id,
+            limit=query.limit,
+        )
+        return PaginatedSequence(
+            items=[
+                UserModel.from_user(user)
+                for user in filtered_users
+            ],
+            query=query,
+            id_getter=lambda user: user.user_id,
+        )

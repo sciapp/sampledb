@@ -18,7 +18,8 @@ from ...logic import errors, instrument_log_entries
 from ...logic.object_permissions import get_user_object_permissions
 from ...models import Permissions
 from .utils.validation import Base64Encoded, ModelWithDefaultsFromValidationInfo, is_valid, populate_missing_or_expect_from_validation_info, generate_example
-from .utils.responses import make_response, ErrorDetailsModel, CreatedResponseModel
+from .utils.responses import make_response, ErrorDetailsModel, CreatedResponseModel, PaginatedSequence, \
+    PaginationQueryModel
 from .utils.openapi import method
 
 MAX_FILE_NAME_LENGTH = 256
@@ -287,7 +288,7 @@ class InstrumentLogEntries(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[InstrumentLogEntryModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[InstrumentLogEntryModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel:
         """
         List all log entries for an instrument.
         """
@@ -305,11 +306,21 @@ class InstrumentLogEntries(Resource):
             return ViewingInstrumentLogEntriesForbiddenModel(
                 detail=f"Only instrument scientists may view log entries for instrument #{path.instrument_id}."
             )
-        log_entries = get_instrument_log_entries(path.instrument_id)
-        return [
-            InstrumentLogEntryModel.from_instrument_log_entry(log_entry)
-            for log_entry in log_entries
-        ]
+        log_entries = get_instrument_log_entries(
+            instrument_id=path.instrument_id,
+            after_id=query.previous_id,
+            limit=query.limit,
+            sort_by='id',
+        )
+        return PaginatedSequence(
+            items=[
+                InstrumentLogEntryModel.from_instrument_log_entry(log_entry)
+                for log_entry in log_entries
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda log_entry: log_entry.log_entry_id,
+        )
 
     @multi_auth.login_required
     @method(request_body_context_builder=_ValidationContext.from_path_without_log_entry)
@@ -421,7 +432,7 @@ class InstrumentLogEntryVersions(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[InstrumentLogEntryVersionModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel | InstrumentLogEntryNotFoundModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[InstrumentLogEntryVersionModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel | InstrumentLogEntryNotFoundModel:
         """
         List all versions of an instrument log entry.
         """
@@ -447,10 +458,15 @@ class InstrumentLogEntryVersions(Resource):
             return InstrumentLogEntryNotFoundModel(
                 detail=f"Log entry #{path.log_entry_id} for instrument #{path.instrument_id} does not exist."
             )
-        return [
-            InstrumentLogEntryVersionModel.from_instrument_log_entry_version(version)
-            for version in log_entry.versions
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                InstrumentLogEntryVersionModel.from_instrument_log_entry_version(version)
+                for version in log_entry.versions
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda version: version.version_id,
+        )
 
     @multi_auth.login_required
     @method(request_body_context_builder=_ValidationContext.from_path_with_log_entry)
@@ -574,7 +590,7 @@ class InstrumentLogEntryFileAttachments(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[InstrumentLogFileAttachmentModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel | InstrumentLogEntryNotFoundModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[InstrumentLogFileAttachmentModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel | InstrumentLogEntryNotFoundModel:
         """
         List all file attachments for an instrument log entry.
         """
@@ -600,10 +616,15 @@ class InstrumentLogEntryFileAttachments(Resource):
             return InstrumentLogEntryNotFoundModel(
                 detail=f"Log entry #{path.log_entry_id} for instrument #{path.instrument_id} does not exist."
             )
-        return [
-            InstrumentLogFileAttachmentModel.from_instrument_log_file_attachment(file_attachment)
-            for file_attachment in log_entry.file_attachments
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                InstrumentLogFileAttachmentModel.from_instrument_log_file_attachment(file_attachment)
+                for file_attachment in log_entry.file_attachments
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda file_attachment: file_attachment.file_attachment_id,
+        )
 
 
 class InstrumentLogEntryFileAttachment(Resource):
@@ -658,7 +679,7 @@ class InstrumentLogEntryObjectAttachments(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[InstrumentLogObjectAttachmentModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel | InstrumentLogEntryNotFoundModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[InstrumentLogObjectAttachmentModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel | InstrumentLogEntryNotFoundModel:
         """
         List all object attachments for an instrument log entry.
         """
@@ -684,10 +705,15 @@ class InstrumentLogEntryObjectAttachments(Resource):
             return InstrumentLogEntryNotFoundModel(
                 detail=f"Log entry #{path.log_entry_id} for instrument #{path.instrument_id} does not exist."
             )
-        return [
-            InstrumentLogObjectAttachmentModel.from_instrument_log_object_attachment(object_attachment)
-            for object_attachment in log_entry.object_attachments
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                InstrumentLogObjectAttachmentModel.from_instrument_log_object_attachment(object_attachment)
+                for object_attachment in log_entry.object_attachments
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda object_attachment: object_attachment.object_attachment_id,
+        )
 
 
 class InstrumentLogEntryObjectAttachment(Resource):
@@ -741,7 +767,7 @@ class InstrumentLogCategories(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[InstrumentLogCategoryModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[InstrumentLogCategoryModel] | InstrumentNotFoundModel | ViewingInstrumentLogEntriesForbiddenModel:
         """
         List all log categories for an instrument.
         """
@@ -760,10 +786,15 @@ class InstrumentLogCategories(Resource):
                 detail=f"Only instrument scientists may view log entries for instrument #{path.instrument_id}."
             )
         categories = get_instrument_log_categories(path.instrument_id)
-        return [
-            InstrumentLogCategoryModel.from_category(category)
-            for category in categories
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                InstrumentLogCategoryModel.from_category(category)
+                for category in categories
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda category: category.category_id,
+        )
 
 
 class InstrumentLogCategory(Resource):

@@ -7,7 +7,7 @@ from .authentication import multi_auth
 from ..utils import Resource
 from ...logic.action_types import get_action_types, get_action_type
 from ...logic import errors, utils, action_types
-from .utils.responses import ErrorDetailsModel
+from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -64,12 +64,16 @@ class ActionType(Resource):
 class ActionTypes(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> list[ActionTypeModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[ActionTypeModel]:
         """
         List all action types.
         """
         action_types = get_action_types()
-        return [
-            ActionTypeModel.from_action_type(action_type)
-            for action_type in action_types
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                ActionTypeModel.from_action_type(action_type)
+                for action_type in action_types
+            ],
+            query=query,
+            id_getter=lambda action_type: action_type.type_id,
+        )

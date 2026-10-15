@@ -861,9 +861,9 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "source_object_id": object_id,
         "target_object_id": other_object_id,
     }
-    r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 204
-    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(other_object_id), auth=auth)
     assert r.status_code == 200
     permissions = sampledb.logic.object_permissions.get_all_object_permissions(object_id)
     perms_source_object = {
@@ -893,11 +893,11 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
     c_object_id = c_object.object_id
 
     # Make sure c_object and b_object do not have the same permissions as object
-    perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
-    perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
-    perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
+    perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), auth=auth).json()
+    perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), auth=auth).json()
+    perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), auth=auth).json()
     assert not all([perms_source.get(key, None) == perms_b_obj.get(key, None) for key in perms_source.keys()]) # Fails if object and b_object have same permissions
-    assert not all([perms_source.get(key, None) == perms_c_obj.get(key, None) for key in perms_source.keys()]) # Failes if object and c_object have same permissions
+    assert not all([perms_source.get(key, None) == perms_c_obj.get(key, None) for key in perms_source.keys()]) # Fails if object and c_object have same permissions
 
     request_json = [
         {
@@ -911,9 +911,9 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
     ]
     r = requests.post(flask_server.base_url + '/api/v2/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 204
-    perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
-    perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
-    perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), json=request_json, auth=auth).json()
+    perms_source = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(object_id), auth=auth).json()
+    perms_b_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(b_object_id), auth=auth).json()
+    perms_c_obj = requests.get(flask_server.base_url + 'api/v2/objects/{}/permissions'.format(c_object_id), auth=auth).json()
     for key in perms_source.keys():
         assert perms_source[key] == perms_b_obj[key]
         assert perms_source[key] == perms_c_obj[key]

@@ -2,6 +2,8 @@
 """
 
 """
+import base64
+
 import flask
 import requests
 import pytest
@@ -95,30 +97,30 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     assert local_entry.user_id == entries[0]['user_id']
     assert local_entry.data == entries[0]['data']
     assert local_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') == entries[0]['utc_datetime']
-    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': "invalid"}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'cursor': "invalid"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
-        "detail": "Input should be a valid integer, unable to parse string as an integer (after_id)",
+        "detail": "Input is not a valid pagination cursor (cursor)",
         "errors": [
             {
-                "detail": "Input should be a valid integer, unable to parse string as an integer",
+                "detail": "Input is not a valid pagination cursor",
                 "input": "invalid",
-                "query_parameter": "after_id"
+                "query_parameter": "cursor"
             }
         ],
         "status": 400,
         "title": "Failed to validate URL query parameters.",
         "type": "http://localhost/api/v2/errors/QueryValidationFailed"
     }
-    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': local_entry.id}, auth=auth)
+    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'cursor': base64.urlsafe_b64encode(str(local_entry.id).encode("utf8")).decode("utf8")}, auth=auth)
     entries = r.json()
-    assert entries == []  # There is no object log_entry > 1
+    assert entries == []  # There is no new object log_entry
     sampledb.logic.comments.create_comment(object.id, object.user_id, content='Comment')
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', auth=auth)
     entries = r.json()
     assert len(entries) == 2    # object creation and comment
     local_entries = sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)
-    for entry, local_entry in zip(entries, local_entries):
+    for entry, local_entry in zip(entries, local_entries[::-1]):
         assert local_entry.id == entry['log_entry_id']
         assert local_entry.type.name == entry['type']
         assert local_entry.object_id == entry['object_id']
@@ -149,7 +151,7 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', auth=auth2)
     entries = r.json()
     assert len(entries) == 3  # user2 became admin and is able to access all object log entries...
-    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'after_id': local_entry.id - 1}, auth=auth2)
+    r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'cursor': base64.urlsafe_b64encode(str(local_entry.id - 1).encode("utf8")).decode("utf8")}, auth=auth2)
     entries = r.json()
     assert len(entries) == 1  # ...but filters the results
 

@@ -73,6 +73,8 @@ def test_comments(user: User, object: Object):
     assert comment2.content == "Test 1"
     assert comment2.utc_datetime >= start_datetime
     assert comment2.utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
+    assert comments.get_comments_for_object(object_id=object.object_id, after_id=comment.id) == [comment1]
+    assert comments.get_comments_for_object(object_id=object.object_id, limit=1) == [comment]
 
 
 def test_create_comment_invalid_object(user, object):

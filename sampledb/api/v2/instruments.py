@@ -5,7 +5,7 @@ import flask
 from pydantic import BaseModel, Field
 
 from .authentication import multi_auth
-from .utils.responses import ErrorDetailsModel
+from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
@@ -71,14 +71,22 @@ class Instrument(Resource):
 class Instruments(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> list[InstrumentModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[InstrumentModel]:
         """
         List all instruments.
         """
         if flask.current_app.config['DISABLE_INSTRUMENTS']:
-            return []
-        instruments = get_instruments()
-        return [
-            InstrumentModel.from_instrument(instrument)
-            for instrument in instruments
-        ]
+            return PaginatedSequence[InstrumentModel](
+                items=[],
+                query=query,
+                id_getter=lambda instrument: instrument.instrument_id,
+            )
+        instruments = get_instruments(after_id=query.previous_id, limit=query.limit)
+        return PaginatedSequence(
+            items=[
+                InstrumentModel.from_instrument(instrument)
+                for instrument in instruments
+            ],
+            query=query,
+            id_getter=lambda instrument: instrument.instrument_id,
+        )

@@ -2,6 +2,9 @@
 """
 
 """
+import base64
+from urllib.parse import urlencode
+
 import flask
 import requests
 import pytest
@@ -153,6 +156,105 @@ def test_get_locations(flask_server, auth, user):
     ]
 
 
+def test_get_locations_pagination(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/locations/?&limit=10', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == []
+
+    locations = [
+        sampledb.logic.locations.create_location(
+            name={'en': f"Example Location {i}"},
+            description={'en': "This is an example location"},
+            parent_location_id=None,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+        for i in range(30)
+    ]
+    for location in locations:
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.READ)
+
+    r = requests.get(flask_server.base_url + 'api/v2/locations/?limit=10', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'location_id': location.id,
+            'name': location.name['en'],
+            'description': "This is an example location",
+            'parent_location_id': None,
+            'type_id': location.type_id,
+            'is_hidden': False,
+            'enable_object_assignments': True,
+        }
+        for location in locations[:10]
+    ]
+    assert r.headers['Link'] == ', '.join(
+        [
+            '<http://localhost/api/v2/locations/?limit=10>; rel="start"',
+            '<http://localhost/api/v2/locations/?limit=10>; rel="self"',
+            f'<http://localhost/api/v2/locations/?' + urlencode({"limit": 10, "cursor": base64.urlsafe_b64encode(str(locations[9].id).encode('utf8')).decode('utf8')}) + '>; rel="next"',
+        ]
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/locations/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(locations[9].id).encode('utf8')).decode('utf8')}), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'location_id': location.id,
+            'name': location.name['en'],
+            'description': "This is an example location",
+            'parent_location_id': None,
+            'type_id': location.type_id,
+            'is_hidden': False,
+            'enable_object_assignments': True,
+        }
+        for location in locations[10:15]
+    ]
+    assert r.headers['Link'] == ', '.join(
+        [
+            '<http://localhost/api/v2/locations/?limit=5>; rel="start"',
+            f'<http://localhost/api/v2/locations/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(locations[9].id).encode('utf8')).decode('utf8')}) + '>; rel="self"',
+            f'<http://localhost/api/v2/locations/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(locations[14].id).encode('utf8')).decode('utf8')}) + '>; rel="next"',
+        ]
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/locations/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(locations[-4].id).encode('utf8')).decode('utf8')}), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'location_id': location.id,
+            'name': location.name['en'],
+            'description': "This is an example location",
+            'parent_location_id': None,
+            'type_id': location.type_id,
+            'is_hidden': False,
+            'enable_object_assignments': True,
+        }
+        for location in locations[-3:]
+    ]
+    assert r.headers['Link'] == ', '.join(
+        [
+            '<http://localhost/api/v2/locations/?limit=5>; rel="start"',
+            f'<http://localhost/api/v2/locations/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(locations[-4].id).encode('utf8')).decode('utf8')}) + '>; rel="self"',
+        ]
+    )
+    for location in locations[::2]:
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.logic.location_permissions.Permissions.NONE)
+    r = requests.get(flask_server.base_url + 'api/v2/locations/?limit=10', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'location_id': location.id,
+            'name': location.name['en'],
+            'description': "This is an example location",
+            'parent_location_id': None,
+            'type_id': location.type_id,
+            'is_hidden': False,
+            'enable_object_assignments': True,
+        }
+        for location in locations[1::2][:10]
+    ]
+
+
 def test_get_location_assignment(flask_server, auth, user, action):
     flask.current_app.config["SERVER_NAME"] = "localhost"
     r = requests.get(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth)
@@ -195,6 +297,7 @@ def test_get_location_assignment(flask_server, auth, user, action):
     r = requests.get(flask_server.base_url + 'api/v2/objects/{}/locations/0'.format(object.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
+        'object_location_assignment_id': sampledb.logic.locations.get_object_location_assignments(object.id)[0].id,
         'object_id': object.id,
         'location_id': location.id,
         'responsible_user_id': user.id,
@@ -241,6 +344,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
     assert r.status_code == 200
     assert r.json() == [
         {
+            'object_location_assignment_id': sampledb.logic.locations.get_object_location_assignments(object.id)[0].id,
             'object_id': object.id,
             'location_id': location.id,
             'responsible_user_id': None,

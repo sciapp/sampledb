@@ -1,4 +1,5 @@
-import sys
+import base64
+import urllib.parse
 
 import flask
 import requests
@@ -975,7 +976,8 @@ def test_get_objects(flask_server, auth, user, other_user, action):
     ]
 
 
-def test_get_objects_with_limit_and_offset(flask_server, auth, user, action):
+def test_get_objects_pagination(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     for i in range(10):
         data = {
             'name': {
@@ -991,17 +993,7 @@ def test_get_objects_with_limit_and_offset(flask_server, auth, user, action):
         for object in r.json()
     ] == [
         str(i)
-        for i in reversed(range(10))
-    ]
-
-    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"offset": 3}, auth=auth, allow_redirects=False)
-    assert r.status_code == 200
-    assert [
-        object["data"]["name"]["text"]
-        for object in r.json()
-    ] == [
-        str(i)
-        for i in reversed(range(7))
+        for i in range(10)
     ]
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5}, auth=auth, allow_redirects=False)
@@ -1011,48 +1003,95 @@ def test_get_objects_with_limit_and_offset(flask_server, auth, user, action):
         for object in r.json()
     ] == [
         str(i)
-        for i in reversed(range(5,10))
+        for i in range(5)
     ]
+    next_link = [link.strip().split('>')[0].removeprefix('<') for link in r.headers["Link"].split(',') if 'rel="next"' in link][0]
+    query_args = urllib.parse.parse_qs(urllib.parse.urlsplit(next_link).query)
+    assert query_args["limit"] == ["5"]
 
-    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5, "offset": 3}, auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5, "cursor": query_args["cursor"][0]}, auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert [
         object["data"]["name"]["text"]
         for object in r.json()
     ] == [
         str(i)
-        for i in reversed(range(2,7))
+        for i in range(5,10)
     ]
 
-    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"offset": -3}, auth=auth, allow_redirects=False)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5, "cursor": base64.urlsafe_b64encode(b'2').decode('utf8')}, auth=auth, allow_redirects=False)
     assert r.status_code == 200
     assert [
         object["data"]["name"]["text"]
         for object in r.json()
     ] == [
         str(i)
-        for i in reversed(range(10))
+        for i in range(2,7)
     ]
 
     r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": -5}, auth=auth, allow_redirects=False)
-    assert r.status_code == 200
-    assert [
-        object["data"]["name"]["text"]
-        for object in r.json()
-    ] == [
-        str(i)
-        for i in reversed(range(10))
-    ]
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be greater than 0 (limit)",
+        "errors": [
+            {
+                "detail": "Input should be greater than 0",
+                "input": "-5",
+                "query_parameter": "limit",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
 
-    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": "unparsable", "offset": int(1e20)}, auth=auth, allow_redirects=False)
-    assert r.status_code == 200
-    assert [
-        object["data"]["name"]["text"]
-        for object in r.json()
-    ] == [
-        str(i)
-        for i in reversed(range(10))
-    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": int(1e16)}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be less than 1000000000000000 (limit)",
+        "errors": [
+            {
+                "detail": "Input should be less than 1000000000000000",
+                "input": "10000000000000000",
+                "query_parameter": "limit",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"cursor": base64.urlsafe_b64encode(b'-3').decode('utf8')}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input is not a valid pagination cursor (cursor)",
+        "errors": [
+            {
+                "detail": "Input is not a valid pagination cursor",
+                "input": "LTM=",
+                "query_parameter": "cursor",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"cursor": base64.urlsafe_b64encode(str(int(1e20)).encode('utf8')).decode('utf8')}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input is not a valid pagination cursor (cursor)",
+        "errors": [
+            {
+                "detail": "Input is not a valid pagination cursor",
+                "input": "MTAwMDAwMDAwMDAwMDAwMDAwMDAw",
+                "query_parameter": "cursor",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
 
 
 def test_get_objects_with_name_only(flask_server, auth, user):
@@ -1857,19 +1896,6 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
     assert r.status_code == 200
     assert r.json() == [
         {
-            "object_id": measurment1.object_id,
-            "version_id": measurment1.version_id,
-            "action_id": measurment1.action_id,
-            "user_id": measurment1.user_id,
-            "utc_datetime": measurment1.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "schema": measurment1.schema,
-            "data": measurment1.data,
-            "fed_object_id": measurment1.fed_object_id,
-            "fed_version_id": measurment1.fed_version_id,
-            "component_id": measurment1.component_id,
-            "referencing_objects": []
-        },
-        {
             'action_id': sample.action_id,
             'component_id': None,
             "user_id": sample.user_id,
@@ -1881,7 +1907,20 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
             'referencing_objects': [],
             'schema': sample.schema,
             'version_id': sample.version_id
-         }
+         },
+        {
+            "object_id": measurment1.object_id,
+            "version_id": measurment1.version_id,
+            "action_id": measurment1.action_id,
+            "user_id": measurment1.user_id,
+            "utc_datetime": measurment1.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": measurment1.schema,
+            "data": measurment1.data,
+            "fed_object_id": measurment1.fed_object_id,
+            "fed_version_id": measurment1.fed_version_id,
+            "component_id": measurment1.component_id,
+            "referencing_objects": []
+        }
     ]
     measurement_data = {
         'name': {
@@ -1897,32 +1936,6 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, params={'get_referencing_objects': 'True'}, allow_redirects=False)
     assert r.status_code == 200
     assert r.json() == [
-        {
-            "object_id": measurement2.object_id,
-            "version_id": measurement2.version_id,
-            "action_id": measurement2.action_id,
-            "user_id": measurement2.user_id,
-            "utc_datetime": measurement2.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "schema": measurement2.schema,
-            "data": measurement2.data,
-            "fed_object_id": measurement2.fed_object_id,
-            "fed_version_id": measurement2.fed_version_id,
-            "component_id": measurement2.component_id,
-            "referencing_objects": []
-        },
-        {
-            "object_id": measurment1.object_id,
-            "version_id": measurment1.version_id,
-            "action_id": measurment1.action_id,
-            "user_id": measurment1.user_id,
-            "utc_datetime": measurment1.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "schema": measurment1.schema,
-            "data": measurment1.data,
-            "fed_object_id": measurment1.fed_object_id,
-            "fed_version_id": measurment1.fed_version_id,
-            "component_id": measurment1.component_id,
-            "referencing_objects": []
-        },
         {
             'action_id': sample.action_id,
             "user_id": sample.user_id,
@@ -1942,8 +1955,33 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
             ],
             'schema': sample.schema,
             'version_id': sample.version_id
-         }
-
+         },
+         {
+            "object_id": measurment1.object_id,
+            "version_id": measurment1.version_id,
+            "action_id": measurment1.action_id,
+            "user_id": measurment1.user_id,
+            "utc_datetime": measurment1.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": measurment1.schema,
+            "data": measurment1.data,
+            "fed_object_id": measurment1.fed_object_id,
+            "fed_version_id": measurment1.fed_version_id,
+            "component_id": measurment1.component_id,
+            "referencing_objects": []
+        },
+        {
+            "object_id": measurement2.object_id,
+            "version_id": measurement2.version_id,
+            "action_id": measurement2.action_id,
+            "user_id": measurement2.user_id,
+            "utc_datetime": measurement2.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema": measurement2.schema,
+            "data": measurement2.data,
+            "fed_object_id": measurement2.fed_object_id,
+            "fed_version_id": measurement2.fed_version_id,
+            "component_id": measurement2.component_id,
+            "referencing_objects": []
+        }
     ]
 
 def test_create_object_with_file_invalid_reference(flask_server, auth, user, action):
@@ -2086,27 +2124,7 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
             "component_id": object.component_id,
             "referencing_objects": None,
         }
-        for object in [objects[-2], objects[0]]
-    ]
-    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
-        'object_ids': [objects[0].object_id, objects[1].object_id, objects[-2].object_id, objects[-1].object_id]
-    })
-    assert r.status_code == 200
-    assert r.json() == [
-        {
-            "object_id": object.object_id,
-            "version_id": object.version_id,
-            "action_id": object.action_id,
-            "user_id": object.user_id,
-            "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "schema": object.schema,
-            "data": object.data,
-            "fed_object_id": object.fed_object_id,
-            "fed_version_id": object.fed_version_id,
-            "component_id": object.component_id,
-            "referencing_objects": None,
-        }
-        for object in [objects[-2], objects[0]]
+        for object in [objects[0], objects[-2]]
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
         'object_ids': [','.join(str(object.object_id) for object in objects[1:]), str(objects[0].object_id)],
@@ -2126,7 +2144,7 @@ def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
             "component_id": object.component_id,
             "referencing_objects": None,
         }
-        for object in reversed(objects[::2])
+        for object in objects[::2]
     ]
     r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
         'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}',
