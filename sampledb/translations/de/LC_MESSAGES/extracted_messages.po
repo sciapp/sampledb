@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-08-12 14:53+0200\n"
+"POT-Creation-Date: 2026-10-15 06:48+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4306,6 +4306,9 @@ msgstr ""
 
 msgid "Import preview"
 msgstr "Vorschau importieren"
+
+msgid "This ELN file does not provide a preview."
+msgstr "Diese ELN-Datei bietet keine Vorschau."
 
 #, python-format
 msgid "This .eln file was signed by %(sign_url)s."

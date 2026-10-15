@@ -16,6 +16,8 @@
           {{ _('Import preview') }}
         </label>
       </div>
+      {% else %}
+      <p>{{ _('This ELN file does not provide a preview.') }}</p>
       {% endif %}
       {% if parsed_eln_file_data.signed_by %}
         <p>{{ _("This .eln file was signed by %(sign_url)s.", sign_url=parsed_eln_file_data.signed_by) }}</p>
