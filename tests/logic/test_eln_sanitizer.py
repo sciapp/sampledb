@@ -261,7 +261,7 @@ CSS_EXFILTRATION_TEST_DATA = [
 
 @import "./ro-crate-preview_files/styles.css";
 """,
-        "expected_result": "@import /eln_imports/1/preview?subpath=styles.css;"
+        "expected_result": "@import /eln_imports/1/preview/content?subpath=styles.css;"
     },
     {
         "payload": """
@@ -282,7 +282,7 @@ html {
         """,
         "expected_result": """
 html {
-    background-image: url(/eln_imports/1/preview?subpath=image1.png);
+    background-image: url(/eln_imports/1/preview/content?subpath=image1.png);
 }
 """
     },
@@ -299,7 +299,7 @@ html {
         "expected_result": """
 @media (max-width: 768px) {
     html {
-        background-image: url(/eln_imports/1/preview?subpath=image1.png);
+        background-image: url(/eln_imports/1/preview/content?subpath=image1.png);
         height: 100px;
     }
 }
@@ -333,13 +333,13 @@ def test_eln_sanitizer_html_replace_supplied_file_url(app):
         sanitized_content_different_root_path_not_available = sanitizer.sanitize("<a href='not_available.html'>Preview</a>", mime_type="text/html")
 
     assert ['/ro-crate-preview.html'] == referenced_files_root
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview">Preview</a>' == sanitized_content_root
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content">Preview</a>' == sanitized_content_root
     assert ['/ro-crate-preview_files/styles.css'] == referenced_files_style
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=styles.css">Preview</a>' == sanitized_content_style
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content?subpath=styles.css">Preview</a>' == sanitized_content_style
     assert ['/ro-crate-preview_files/subdir/test.html'] == referenced_files_subdir
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=subdir/test.html">Preview</a>' == sanitized_content_subdir
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content?subpath=subdir/test.html">Preview</a>' == sanitized_content_subdir
     assert ['/ro-crate-preview_files/abc/test.html'] == referenced_files_different_root_path
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=abc/test.html">Preview</a>' == sanitized_content_different_root_path
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content?subpath=abc/test.html">Preview</a>' == sanitized_content_different_root_path
     assert '<a>Preview</a>' == sanitized_content_different_root_path_not_available
 
 
