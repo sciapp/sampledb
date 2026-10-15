@@ -8,7 +8,8 @@ from ...logic import errors, groups
 from ..utils import Resource
 from .authentication import multi_auth
 from .utils.validation import UserId, generate_example
-from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel
+from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel, PaginatedSequence, \
+    PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -48,14 +49,19 @@ class GroupModel(BaseModel):
 class Groups(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> list[GroupModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[GroupModel]:
         """
         List all basic groups.
         """
-        return [
-            GroupModel.from_group(group)
-            for group in sorted(groups.get_groups(), key=lambda group: group.id)
-        ]
+        all_groups = groups.get_groups()
+        return PaginatedSequence.apply_pagination(
+            items=[
+                GroupModel.from_group(group)
+                for group in all_groups
+            ],
+            query=query,
+            id_getter=lambda group: group.group_id,
+        )
 
 
 class GroupNotFoundModel(ErrorDetailsModel):
@@ -106,7 +112,7 @@ class GroupMemberUsers(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[UserRef] | OnlyAdminsMayManageGroupsModel | GroupNotFoundModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[UserRef] | OnlyAdminsMayManageGroupsModel | GroupNotFoundModel:
         """
         List all member users of a basic group.
         """
@@ -120,10 +126,15 @@ class GroupMemberUsers(Resource):
             return GroupNotFoundModel(
                 detail=f"Basic group #{path.group_id} does not exist."
             )
-        return [
-            UserRef.from_user_id(user_id)
-            for user_id in sorted(group_member_ids)
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                UserRef.from_user_id(user_id)
+                for user_id in sorted(group_member_ids)
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda user_ref: user_ref.user_id,
+        )
 
     @multi_auth.login_required
     @method()

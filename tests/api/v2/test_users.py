@@ -2,6 +2,9 @@
 """
 
 """
+import base64
+from urllib.parse import urlencode
+
 import flask
 import requests
 import pytest
@@ -144,3 +147,53 @@ def test_get_users(flask_server, auth, user, users, param, getter, setter):
             for user in users
             if getter(user) == value
         ]
+
+def test_get_users_pagination(flask_server, auth, user):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/users/?&limit=10', auth=auth)
+    assert r.status_code == 200
+    assert len(r.json()) == 1
+
+    users = [user] + [
+        sampledb.logic.users.create_user(
+            name=f"User {i}",
+            email=f"user{i}@example.com",
+            type=sampledb.models.UserType.PERSON,
+            affiliation=None,
+            role=None,
+        )
+        for i in range(30)
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v2/users/?limit=10', auth=auth)
+    assert r.status_code == 200
+    assert [
+        user["name"]
+        for user in r.json()
+    ] == [
+        user.name
+        for user in users[:10]
+    ]
+    assert r.headers['Link'] == ', '.join(
+        [
+            '<http://localhost/api/v2/users/?limit=10>; rel="start"',
+            '<http://localhost/api/v2/users/?limit=10>; rel="self"',
+            f'<http://localhost/api/v2/users/?' + urlencode({"limit": 10, "cursor": base64.urlsafe_b64encode(str(users[9].id).encode('utf8')).decode('utf8')}) + '>; rel="next"',
+        ]
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/users/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(users[9].id).encode('utf8')).decode('utf8')}), auth=auth)
+    assert r.status_code == 200
+    assert [
+        user["name"]
+        for user in r.json()
+    ] == [
+        user.name
+        for user in users[10:15]
+    ]
+    assert r.headers['Link'] == ', '.join(
+        [
+            '<http://localhost/api/v2/users/?limit=5>; rel="start"',
+            f'<http://localhost/api/v2/users/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(users[9].id).encode('utf8')).decode('utf8')}) + '>; rel="self"',
+            f'<http://localhost/api/v2/users/?' + urlencode({"limit": 5, "cursor": base64.urlsafe_b64encode(str(users[14].id).encode('utf8')).decode('utf8')}) + '>; rel="next"',
+        ]
+    )

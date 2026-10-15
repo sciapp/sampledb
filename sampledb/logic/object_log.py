@@ -30,10 +30,15 @@ def object_log_entry_to_json(log_entry: ObjectLogEntry) -> typing.Dict[str, typi
     }
 
 
-def get_object_log_entries_by_user(user_id: int, after_id: int = 0) -> typing.List[ObjectLogEntry]:
+def get_object_log_entries_by_user(
+        user_id: int,
+        after_id: int | None = None,
+        limit: int | None = None,
+) -> typing.List[ObjectLogEntry]:
     user = get_user(user_id)
     if user.has_admin_permissions:
-        object_log_entries = db.session.execute(db.select(ObjectLogEntry).where(ObjectLogEntry.id > after_id).order_by(db.desc(ObjectLogEntry.utc_datetime))).all()
+        stmt = db.select(ObjectLogEntry)
+        stmt_params = {}
     else:
         stmt = db.text("""
             SELECT DISTINCT object_id
@@ -42,14 +47,18 @@ def get_object_log_entries_by_user(user_id: int, after_id: int = 0) -> typing.Li
         """).columns(
             Objects._current_table.c.object_id,
         ).subquery('readable_objects')
-        stmt = db.select(ObjectLogEntry).join(stmt).where(ObjectLogEntry.id > after_id).order_by(db.desc(ObjectLogEntry.utc_datetime))
-
-        object_log_entries = db.session.execute(stmt, {
+        stmt = db.select(ObjectLogEntry).join(stmt)
+        stmt_params = {
             'user_id': user_id,
             'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
             'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS'],
-            'after_id': after_id
-        }).all()
+        }
+    if after_id is not None:
+        stmt = stmt.where(ObjectLogEntry.id > after_id)
+    stmt = stmt.order_by(ObjectLogEntry.id.asc())
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    object_log_entries = db.session.execute(stmt, stmt_params).all()
     return process_object_log_entries([row[0] for row in object_log_entries], user_id)
 
 

@@ -486,18 +486,35 @@ def get_instrument_log_entry(instrument_log_entry_id: int) -> InstrumentLogEntry
     return InstrumentLogEntry.from_database(log_entry)
 
 
-def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogEntry]:
+def get_instrument_log_entries(
+        instrument_id: int,
+        after_id: int | None = None,
+        limit: int | None = None,
+        sort_by: typing.Literal['id', 'utc_datetime'] = 'utc_datetime'
+) -> typing.List[InstrumentLogEntry]:
     """
     Returns a list of log entries for an instrument.
 
     :param instrument_id: the ID of an existing instrument
-    :return: the list of log entries, sorted from oldest to newest
+    :param after_id: all returned log entries must have an ID greater than this
+        ID, if it is not None (must be None if sort_by is "utc_datetime")
+    :param limit: the maximum number of log entries to return (must be None if
+        sort_by is "utc_datetime")
+    :param sort_by: the sort order, must be "id" if limit or after_id are set
+    :return: the list of log entries
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
         given instrument ID exists
     """
-    log_entries = instrument_log_entries.InstrumentLogEntry.query.filter_by(
+    stmt = instrument_log_entries.InstrumentLogEntry.query.filter_by(
         instrument_id=instrument_id
-    ).all()
+    )
+    if sort_by == 'id':
+        stmt = stmt.order_by(instrument_log_entries.InstrumentLogEntry.id.asc())
+        if after_id is not None:
+            stmt = stmt.where(instrument_log_entries.InstrumentLogEntry.id > after_id)
+        if limit is not None:
+            stmt = stmt.limit(limit)
+    log_entries = stmt.all()
     if not log_entries:
         # ensure that the instrument exists
         instruments.check_instrument_exists(instrument_id)
@@ -505,7 +522,9 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
         InstrumentLogEntry.from_database(log_entry)
         for log_entry in log_entries
     ]
-    wrapped_log_entries.sort(key=lambda log_entry: log_entry.versions[0].utc_datetime)
+    if sort_by == 'utc_datetime':
+        assert after_id is None and limit is None
+        wrapped_log_entries.sort(key=lambda log_entry: log_entry.versions[0].utc_datetime)
     InstrumentLogEntry.preload_cached_properties(wrapped_log_entries)
     return wrapped_log_entries
 

@@ -1,5 +1,43 @@
 components:
   schemas:
+    AccessTokenModel:
+      properties:
+        access_token:
+          description: A token usable to authenticate with the API via HTTP Bearer
+            authentication
+          examples:
+          - be740310706c1050e7a1668e2c0c407e029559a862d544d2d059f363c9ad8219
+          title: Access Token
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Description of the access token
+          examples:
+          - Access Token for Instrument Control
+          title: Description
+        expiration_utc_datetime:
+          description: A string containing the datetime (in UTC) when the access token
+            expires
+          examples:
+          - '2026-01-01 12:34:56'
+          title: Expiration Datetime
+          type: string
+        refresh_token:
+          description: A token usable to authenticate with the /access_tokens/ endpoint
+            via HTTP Bearer authentication to refresh an access token
+          examples:
+          - a844185d4a924f52eec40d5b83f68fed8953665553b134dd5a02521250205b19
+          title: Refresh Token
+          type: string
+      required:
+      - access_token
+      - refresh_token
+      - expiration_utc_datetime
+      - description
+      title: AccessTokenModel
+      type: object
     ActionModel:
       properties:
         action_id:
@@ -128,6 +166,52 @@ components:
       - object_name
       - admin_only
       title: ActionTypeModel
+      type: object
+    AllObjectPermissionsModel:
+      properties:
+        anonymous_users:
+          description: the permissions for anonymous users for this object
+          examples:
+          - read
+          title: Anonymous Users
+          type: string
+        authenticated_users:
+          description: the permissions for all authenticated users for this object
+          examples:
+          - read
+          title: Authenticated Users
+          type: string
+        groups:
+          additionalProperties:
+            type: string
+          description: the permissions for basic groups for this object
+          examples:
+          - '1': read
+          title: Groups
+          type: object
+        projects:
+          additionalProperties:
+            type: string
+          description: the permissions for project groups for this object
+          examples:
+          - '1': write
+          title: Projects
+          type: object
+        users:
+          additionalProperties:
+            type: string
+          description: the permissions for users for this object
+          examples:
+          - '1': grant
+          title: Users
+          type: object
+      required:
+      - users
+      - groups
+      - projects
+      - authenticated_users
+      - anonymous_users
+      title: AllObjectPermissionsModel
       type: object
     CommentModel:
       properties:
@@ -315,6 +399,39 @@ components:
       required:
       - detail
       title: ErrorDetailsModel
+      type: object
+    ErrorTypeModel:
+      properties:
+        href:
+          description: the URL of the error type.
+          examples:
+          - http://example.org/api/v2/errors/PathValidationFailed
+          title: Href
+          type: string
+        name:
+          description: the name of the error type.
+          examples:
+          - PathValidationFailed
+          title: Name
+          type: string
+        status:
+          description: the HTTP status code of the error type.
+          examples:
+          - 400
+          title: Status
+          type: integer
+        title:
+          description: the title of the error type.
+          examples:
+          - Failed to validate URL path.
+          title: Title
+          type: string
+      required:
+      - name
+      - status
+      - title
+      - href
+      title: ErrorTypeModel
       type: object
     FoundResponseModel:
       properties:
@@ -768,6 +885,12 @@ components:
           - 1
           title: Object Id
           type: integer
+        object_location_assignment_id:
+          description: the ID of the object assignment
+          examples:
+          - 1
+          title: Object Location Assignment Id
+          type: integer
         responsible_user_id:
           anyOf:
           - type: integer
@@ -795,6 +918,7 @@ components:
           - '2026-01-02 03:04:05'
           title: Utc Datetime
       required:
+      - object_location_assignment_id
       - object_id
       - location_id
       - responsible_user_id
@@ -898,6 +1022,175 @@ components:
       required:
       - object_id
       title: ObjectReferenceModel
+      type: object
+    ObjectVersionModel:
+      properties:
+        action:
+          anyOf:
+          - $ref: '#/components/schemas/ActionModel'
+          - type: 'null'
+          description: the action the object was created with, as if queried via its
+            ID
+          examples:
+          - action_id: 1
+            action_schema:
+              properties:
+                name:
+                  title:
+                    en: Name
+                  type: text
+              required:
+              - name
+              title:
+                en: Object Information
+              type: object
+            description: This is an example action.
+            instrument_id: 1
+            is_hidden: false
+            name: Example Action
+            type: sample
+            type_id: 1
+            user_id: 1
+        action_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: the ID of the action the object was created with
+          examples:
+          - 1
+          title: Action Id
+        component_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: the federation component ID of the object this version belongs
+            to
+          examples:
+          - 1
+          title: Component Id
+        data:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          description: the data of the object version
+          examples:
+          - name:
+              _type: text
+              text:
+                en: Example Object
+          title: Data
+        data_diff:
+          anyOf:
+          - {}
+          - type: 'null'
+          description: the data diff between the previous object version and this
+            one
+          examples:
+          - name:
+              _after:
+                _type: text
+                text:
+                  en: Example Object
+              _before:
+                _type: text
+                text:
+                  en: Previous Example Object
+          title: Data Diff
+        fed_object_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: the federated object ID of the object the version belongs to
+          examples:
+          - 1
+          title: Fed Object Id
+        fed_version_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: the federated object version ID for this object version
+          examples:
+          - 1
+          title: Fed Version Id
+        object_id:
+          description: the ID of the object the version belongs to
+          examples:
+          - 1
+          title: Object Id
+          type: integer
+        schema:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          description: the schema of the object version
+          examples:
+          - properties:
+              name:
+                title:
+                  en: Name
+                type: text
+            required:
+            - name
+            title:
+              en: Object Information
+            type: object
+          title: Schema
+        user:
+          anyOf:
+          - $ref: '#/components/schemas/UserModel'
+          - type: 'null'
+          description: the user who created this object version, as if queried via
+            their ID
+          examples:
+          - affiliation: Example Institute
+            email: user@example.com
+            is_active: true
+            is_hidden: false
+            is_readonly: false
+            name: Example User
+            orcid: 0000-0001-2345-6789
+            role: Researcher
+            user_id: 1
+        user_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: the ID of the user who created this object version
+          examples:
+          - 1
+          title: User Id
+        utc_datetime:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: the datetime in UTC when the object version was created, formatted
+            as YYYY-MM-DD HH:MM:SS
+          examples:
+          - '2026-01-02 03:04:05'
+          title: Utc Datetime
+        version_id:
+          description: the ID of the object version
+          examples:
+          - 0
+          title: Version Id
+          type: integer
+      required:
+      - object_id
+      - version_id
+      - action_id
+      - user_id
+      - utc_datetime
+      - schema
+      - data
+      - fed_object_id
+      - fed_version_id
+      - component_id
+      - user
+      - action
+      - data_diff
+      title: ObjectVersionModel
       type: object
     PathErrorDetailModel:
       properties:
@@ -1064,6 +1357,35 @@ components:
       - query_parameter
       - input
       title: QueryErrorDetailModel
+      type: object
+    RelatedObjectsModel:
+      properties:
+        referenced_objects:
+          description: the list of referenced objects
+          examples:
+          - - component_uuid: 59b4f08d-f2e6-4343-a155-9880e988cead
+              eln_object_url: https://example.com/objects/A
+              eln_source_url: https://example.com
+              object_id: 1
+          items:
+            $ref: '#/components/schemas/ObjectReferenceModel'
+          title: Referenced Objects
+          type: array
+        referencing_objects:
+          description: the list of referencing objects
+          examples:
+          - - component_uuid: 59b4f08d-f2e6-4343-a155-9880e988cead
+              eln_object_url: https://example.com/objects/A
+              eln_source_url: https://example.com
+              object_id: 1
+          items:
+            $ref: '#/components/schemas/ObjectReferenceModel'
+          title: Referencing Objects
+          type: array
+      required:
+      - referencing_objects
+      - referenced_objects
+      title: RelatedObjectsModel
       type: object
     RequestBodyErrorDetailModel:
       properties:
@@ -1653,44 +1975,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  access_token:
-                    description: A token usable to authenticate with the API via HTTP
-                      Bearer authentication
-                    examples:
-                    - be740310706c1050e7a1668e2c0c407e029559a862d544d2d059f363c9ad8219
-                    title: Access Token
-                    type: string
-                  description:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: Description of the access token
-                    examples:
-                    - Access Token for Instrument Control
-                    title: Description
-                  expiration_utc_datetime:
-                    description: A string containing the datetime (in UTC) when the
-                      access token expires
-                    examples:
-                    - '2026-01-01 12:34:56'
-                    title: Expiration Datetime
-                    type: string
-                  refresh_token:
-                    description: A token usable to authenticate with the /access_tokens/
-                      endpoint via HTTP Bearer authentication to refresh an access
-                      token
-                    examples:
-                    - a844185d4a924f52eec40d5b83f68fed8953665553b134dd5a02521250205b19
-                    title: Refresh Token
-                    type: string
-                required:
-                - access_token
-                - refresh_token
-                - expiration_utc_datetime
-                - description
-                title: AccessTokenModel
-                type: object
+                $ref: '#/components/schemas/AccessTokenModel'
           description: 'Created: Document created, URL follows'
         '400':
           content:
@@ -1704,7 +1989,39 @@ paths:
       - authentication
   /action_types/:
     get:
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -1714,6 +2031,26 @@ paths:
                   $ref: '#/components/schemas/ActionTypeModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all action types.
       tags:
       - action_types
@@ -1758,7 +2095,39 @@ paths:
       description: '
 
         Get a list of all actions the user has READ permissions for.'
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -1768,6 +2137,26 @@ paths:
                   $ref: '#/components/schemas/ActionModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all actions.
       tags:
       - actions
@@ -1973,38 +2362,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  href:
-                    description: the URL of the error type.
-                    examples:
-                    - http://example.org/api/v2/errors/PathValidationFailed
-                    title: Href
-                    type: string
-                  name:
-                    description: the name of the error type.
-                    examples:
-                    - PathValidationFailed
-                    title: Name
-                    type: string
-                  status:
-                    description: the HTTP status code of the error type.
-                    examples:
-                    - 400
-                    title: Status
-                    type: integer
-                  title:
-                    description: the title of the error type.
-                    examples:
-                    - Failed to validate URL path.
-                    title: Title
-                    type: string
-                required:
-                - name
-                - status
-                - title
-                - href
-                title: ErrorTypeModel
-                type: object
+                $ref: '#/components/schemas/ErrorTypeModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           content:
@@ -2023,7 +2381,39 @@ paths:
       - errors
   /groups/:
     get:
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2033,6 +2423,26 @@ paths:
                   $ref: '#/components/schemas/GroupModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all basic groups.
       tags:
       - groups
@@ -2086,6 +2496,38 @@ paths:
           - 1
           title: Group Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2095,12 +2537,27 @@ paths:
                   $ref: '#/components/schemas/UserRef'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -2289,7 +2746,39 @@ paths:
       - groups
   /instruments/:
     get:
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2299,6 +2788,26 @@ paths:
                   $ref: '#/components/schemas/InstrumentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all instruments.
       tags:
       - instruments
@@ -2352,6 +2861,38 @@ paths:
           - 1
           title: Instrument Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2361,12 +2902,27 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogCategoryModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -2450,6 +3006,38 @@ paths:
           - 1
           title: Instrument Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2459,12 +3047,27 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogEntryModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -2677,6 +3280,38 @@ paths:
           - 1
           title: Log Entry Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2686,12 +3321,27 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogFileAttachmentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -2801,6 +3451,38 @@ paths:
           - 1
           title: Log Entry Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2810,12 +3492,27 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogObjectAttachmentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -2925,6 +3622,38 @@ paths:
           - 1
           title: Log Entry Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -2934,12 +3663,27 @@ paths:
                   $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -3176,7 +3920,39 @@ paths:
       - instrument_log
   /location_types/:
     get:
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -3186,6 +3962,26 @@ paths:
                   $ref: '#/components/schemas/LocationTypeModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all location types.
       tags:
       - locations
@@ -3227,7 +4023,39 @@ paths:
       - locations
   /locations/:
     get:
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -3237,6 +4065,26 @@ paths:
                   $ref: '#/components/schemas/LocationModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: Get all locations.
       tags:
       - locations
@@ -3465,20 +4313,38 @@ paths:
   /object_log_entries/:
     get:
       parameters:
-      - description: "the ID of an existing log entry \u2014 filter for log entries\
-          \ with an ID greater than this one"
-        example: 0
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
         in: query
-        name: after_id
+        name: limit
         required: false
         schema:
-          default: 0
-          description: "the ID of an existing log entry \u2014 filter for log entries\
-            \ with an ID greater than this one"
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
           examples:
-          - 0
-          title: After Id
-          type: integer
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -3488,6 +4354,20 @@ paths:
                   $ref: '#/components/schemas/ObjectLogEntryModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
@@ -3503,6 +4383,38 @@ paths:
 
         Get a list of all objects matching the query parameters.'
       parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       - description: "the ID of an existing action \u2014 filter for objects created\
           \ with this action"
         example: 1
@@ -3572,34 +4484,6 @@ paths:
           examples:
           - 1
           title: Related User Id
-      - description: an upper limit for the number of objects to return
-        example: 1
-        in: query
-        name: limit
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          default: null
-          description: an upper limit for the number of objects to return
-          examples:
-          - 1
-          title: Limit
-      - description: an offset for returned objects when also using `limit`
-        example: 1
-        in: query
-        name: offset
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          default: null
-          description: an offset for returned objects when also using `limit`
-          examples:
-          - 1
-          title: Offset
       - description: whether to reduce data and schema to the object name
         example: false
         in: query
@@ -3659,6 +4543,20 @@ paths:
                   $ref: '#/components/schemas/_ObjectModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
@@ -3879,6 +4777,38 @@ paths:
           - 1
           title: Object ID
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -3888,12 +4818,27 @@ paths:
                   $ref: '#/components/schemas/CommentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -4226,6 +5171,38 @@ paths:
           - 1
           title: Object Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -4235,12 +5212,27 @@ paths:
                   $ref: '#/components/schemas/ObjectLocationAssignmentModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -4427,52 +5419,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  anonymous_users:
-                    description: the permissions for anonymous users for this object
-                    examples:
-                    - read
-                    title: Anonymous Users
-                    type: string
-                  authenticated_users:
-                    description: the permissions for all authenticated users for this
-                      object
-                    examples:
-                    - read
-                    title: Authenticated Users
-                    type: string
-                  groups:
-                    additionalProperties:
-                      type: string
-                    description: the permissions for basic groups for this object
-                    examples:
-                    - '1': read
-                    title: Groups
-                    type: object
-                  projects:
-                    additionalProperties:
-                      type: string
-                    description: the permissions for project groups for this object
-                    examples:
-                    - '1': write
-                    title: Projects
-                    type: object
-                  users:
-                    additionalProperties:
-                      type: string
-                    description: the permissions for users for this object
-                    examples:
-                    - '1': grant
-                    title: Users
-                    type: object
-                required:
-                - users
-                - groups
-                - projects
-                - authenticated_users
-                - anonymous_users
-                title: AllObjectPermissionsModel
-                type: object
+                $ref: '#/components/schemas/AllObjectPermissionsModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           content:
@@ -4562,52 +5509,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  anonymous_users:
-                    description: the permissions for anonymous users for this object
-                    examples:
-                    - read
-                    title: Anonymous Users
-                    type: string
-                  authenticated_users:
-                    description: the permissions for all authenticated users for this
-                      object
-                    examples:
-                    - read
-                    title: Authenticated Users
-                    type: string
-                  groups:
-                    additionalProperties:
-                      type: string
-                    description: the permissions for basic groups for this object
-                    examples:
-                    - '1': read
-                    title: Groups
-                    type: object
-                  projects:
-                    additionalProperties:
-                      type: string
-                    description: the permissions for project groups for this object
-                    examples:
-                    - '1': write
-                    title: Projects
-                    type: object
-                  users:
-                    additionalProperties:
-                      type: string
-                    description: the permissions for users for this object
-                    examples:
-                    - '1': grant
-                    title: Users
-                    type: object
-                required:
-                - users
-                - groups
-                - projects
-                - authenticated_users
-                - anonymous_users
-                title: AllObjectPermissionsModel
-                type: object
+                $ref: '#/components/schemas/AllObjectPermissionsModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           content:
@@ -5551,34 +6453,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  referenced_objects:
-                    description: the list of referenced objects
-                    examples:
-                    - - component_uuid: 59b4f08d-f2e6-4343-a155-9880e988cead
-                        eln_object_url: https://example.com/objects/A
-                        eln_source_url: https://example.com
-                        object_id: 1
-                    items:
-                      $ref: '#/components/schemas/ObjectReferenceModel'
-                    title: Referenced Objects
-                    type: array
-                  referencing_objects:
-                    description: the list of referencing objects
-                    examples:
-                    - - component_uuid: 59b4f08d-f2e6-4343-a155-9880e988cead
-                        eln_object_url: https://example.com/objects/A
-                        eln_source_url: https://example.com
-                        object_id: 1
-                    items:
-                      $ref: '#/components/schemas/ObjectReferenceModel'
-                    title: Referencing Objects
-                    type: array
-                required:
-                - referencing_objects
-                - referenced_objects
-                title: RelatedObjectsModel
-                type: object
+                $ref: '#/components/schemas/RelatedObjectsModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           content:
@@ -5838,175 +6713,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  action:
-                    anyOf:
-                    - $ref: '#/components/schemas/ActionModel'
-                    - type: 'null'
-                    description: the action the object was created with, as if queried
-                      via its ID
-                    examples:
-                    - action_id: 1
-                      action_schema:
-                        properties:
-                          name:
-                            title:
-                              en: Name
-                            type: text
-                        required:
-                        - name
-                        title:
-                          en: Object Information
-                        type: object
-                      description: This is an example action.
-                      instrument_id: 1
-                      is_hidden: false
-                      name: Example Action
-                      type: sample
-                      type_id: 1
-                      user_id: 1
-                  action_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the action the object was created with
-                    examples:
-                    - 1
-                    title: Action Id
-                  component_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the federation component ID of the object this version
-                      belongs to
-                    examples:
-                    - 1
-                    title: Component Id
-                  data:
-                    anyOf:
-                    - additionalProperties: true
-                      type: object
-                    - type: 'null'
-                    description: the data of the object version
-                    examples:
-                    - name:
-                        _type: text
-                        text:
-                          en: Example Object
-                    title: Data
-                  data_diff:
-                    anyOf:
-                    - {}
-                    - type: 'null'
-                    description: the data diff between the previous object version
-                      and this one
-                    examples:
-                    - name:
-                        _after:
-                          _type: text
-                          text:
-                            en: Example Object
-                        _before:
-                          _type: text
-                          text:
-                            en: Previous Example Object
-                    title: Data Diff
-                  fed_object_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the federated object ID of the object the version
-                      belongs to
-                    examples:
-                    - 1
-                    title: Fed Object Id
-                  fed_version_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the federated object version ID for this object version
-                    examples:
-                    - 1
-                    title: Fed Version Id
-                  object_id:
-                    description: the ID of the object the version belongs to
-                    examples:
-                    - 1
-                    title: Object Id
-                    type: integer
-                  schema:
-                    anyOf:
-                    - additionalProperties: true
-                      type: object
-                    - type: 'null'
-                    description: the schema of the object version
-                    examples:
-                    - properties:
-                        name:
-                          title:
-                            en: Name
-                          type: text
-                      required:
-                      - name
-                      title:
-                        en: Object Information
-                      type: object
-                    title: Schema
-                  user:
-                    anyOf:
-                    - $ref: '#/components/schemas/UserModel'
-                    - type: 'null'
-                    description: the user who created this object version, as if queried
-                      via their ID
-                    examples:
-                    - affiliation: Example Institute
-                      email: user@example.com
-                      is_active: true
-                      is_hidden: false
-                      is_readonly: false
-                      name: Example User
-                      orcid: 0000-0001-2345-6789
-                      role: Researcher
-                      user_id: 1
-                  user_id:
-                    anyOf:
-                    - type: integer
-                    - type: 'null'
-                    description: the ID of the user who created this object version
-                    examples:
-                    - 1
-                    title: User Id
-                  utc_datetime:
-                    anyOf:
-                    - type: string
-                    - type: 'null'
-                    description: the datetime in UTC when the object version was created,
-                      formatted as YYYY-MM-DD HH:MM:SS
-                    examples:
-                    - '2026-01-02 03:04:05'
-                    title: Utc Datetime
-                  version_id:
-                    description: the ID of the object version
-                    examples:
-                    - 0
-                    title: Version Id
-                    type: integer
-                required:
-                - object_id
-                - version_id
-                - action_id
-                - user_id
-                - utc_datetime
-                - schema
-                - data
-                - fed_object_id
-                - fed_version_id
-                - component_id
-                - user
-                - action
-                - data_diff
-                title: ObjectVersionModel
-                type: object
+                $ref: '#/components/schemas/ObjectVersionModel'
           description: 'OK: Request fulfilled, document follows'
         '400':
           content:
@@ -6033,7 +6740,39 @@ paths:
       - objects
   /projects/:
     get:
-      parameters: []
+      parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -6043,6 +6782,26 @@ paths:
                   $ref: '#/components/schemas/ProjectModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: Failed to validate URL query parameters.
       summary: List all project groups.
       tags:
       - projects
@@ -6096,6 +6855,38 @@ paths:
           - 1
           title: Project Id
           type: integer
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       responses:
         '200':
           content:
@@ -6105,12 +6896,27 @@ paths:
                   $ref: '#/components/schemas/ProjectMemberUserRefModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Failed to validate URL path.
+          description: 'Either: Failed to validate URL path. Or: Failed to validate
+            URL query parameters.'
         '403':
           content:
             application/problem+json:
@@ -6389,6 +7195,38 @@ paths:
   /users/:
     get:
       parameters:
+      - description: the maximum number of items to return, or null to return all
+          items
+        example: 10
+        in: query
+        name: limit
+        required: false
+        schema:
+          anyOf:
+          - exclusiveMaximum: 1000000000000000
+            exclusiveMinimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          description: the maximum number of items to return, or null to return all
+            items
+          examples:
+          - 10
+          title: Limit
+      - description: an opaque cursor used for pagination
+        example: MQ==
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          description: an opaque cursor used for pagination
+          examples:
+          - MQ==
+          title: Cursor
       - description: whether to filter for only hidden or only non-hidden users
         example: false
         in: query
@@ -6440,6 +7278,20 @@ paths:
                   $ref: '#/components/schemas/UserModel'
                 type: array
           description: 'OK: Request fulfilled, document follows'
+          headers:
+            Link:
+              content:
+                text/plain:
+                  schema:
+                    description: RFC 8288-compatible links for relationships "self",
+                      "start", and "next" (if there are more items to return, otherwise
+                      the "next" link is omitted).
+                    examples:
+                    - <https://example.com/api/v2/collection?limit=5>; rel="start",
+                      <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>;
+                      rel="start", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>;
+                      rel="next"
+                    type: string
         '400':
           content:
             application/problem+json:

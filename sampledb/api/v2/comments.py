@@ -11,7 +11,7 @@ from ...models import Permissions
 from ..utils import Resource
 from .authentication import object_permissions_required
 from .utils.validation import is_expected_from_validation_info, NonEmptyString
-from .utils.responses import CreatedResponseModel, ErrorDetailsModel
+from .utils.responses import CreatedResponseModel, ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -99,11 +99,16 @@ class ObjectComments(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> list[CommentModel]:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[CommentModel]:
         """
         Get all comments for an object.
         """
-        return [
-            CommentModel.from_comment(comment)
-            for comment in get_comments_for_object(path.object_id)
-        ]
+        return PaginatedSequence(
+            items=[
+                CommentModel.from_comment(comment)
+                for comment in get_comments_for_object(path.object_id, after_id=query.previous_id, limit=query.limit)
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda comment: comment.comment_id,
+        )

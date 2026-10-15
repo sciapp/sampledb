@@ -1,7 +1,9 @@
 import copy
 import os.path
 
+import flask
 import pytest
+import requests
 import yaml
 from openapi_spec_validator import validate
 
@@ -65,3 +67,37 @@ def test_openapi_spec_in_docs(spec_dict):
     with open(docs_yaml_file_path, 'w') as f:
         f.write(generated_yaml_file_content)
     assert current_yaml_file_content == generated_yaml_file_content
+
+
+def test_error_for_params_without_model(flask_server):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
+    auth = ('username', 'password')
+
+    r = requests.get(flask_server.base_url + 'api/v2/users/', auth=auth)
+    assert r.status_code == 200
+
+    r = requests.get(flask_server.base_url + 'api/v2/users/', auth=auth, json={'key': 'value'})
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "A request body is not permitted",
+        "errors": [],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + f'api/v2/users/{user.id}', auth=auth, params={'limit': 5})
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Extra inputs are not permitted (limit)",
+        "errors": [{
+            "detail": "Extra inputs are not permitted",
+            "query_parameter": "limit",
+            "input": ["5"]
+        }],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
