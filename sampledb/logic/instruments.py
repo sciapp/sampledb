@@ -170,15 +170,27 @@ def create_instrument(
     return Instrument.from_database(instrument)
 
 
-def get_instruments() -> typing.List[Instrument]:
+def get_instruments(
+        after_id: int | None = None,
+        limit: int | None = None,
+) -> typing.List[Instrument]:
     """
     Returns all instruments.
 
+    :param after_id: all returned instruments must have an ID greater than
+        this ID, if it is not None
+    :param limit: the maximum number of instruments to return
     :return: the list of instruments
     """
+    instruments_query = models.Instrument.query
+    if after_id is not None:
+        instruments_query = instruments_query.filter(models.Instrument.id > after_id)
+    instruments_query = instruments_query.order_by(models.Instrument.id.asc())
+    if limit is not None:
+        instruments_query = instruments_query.limit(limit)
     return [
         Instrument.from_database(instrument)
-        for instrument in models.Instrument.query.all()
+        for instrument in instruments_query.all()
     ]
 
 

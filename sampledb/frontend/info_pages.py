@@ -11,7 +11,6 @@ from wtforms.validators import DataRequired
 
 from . import frontend, utils
 from ..logic import errors, info_pages, users, languages, markdown_to_html, markdown_images
-from ..models import User
 from ..utils import FlaskResponseT
 
 
@@ -106,7 +105,7 @@ def admin_info_page(info_page_id: int) -> FlaskResponseT:
         "info_pages/info_page.html",
         info_page=info_page,
         url_map=flask.current_app.url_map,
-        users=users.get_users(exclude_hidden=False, order_by=User.id, exclude_fed=True, exclude_eln_import=True),
+        users=users.get_users(exclude_hidden=False, sort_by='id', exclude_fed=True, exclude_eln_import=True),
         acknowledgements=info_pages.get_acknowledgements_for_info_page(info_page_id=info_page_id),
         set_info_page_disabled_form=set_info_page_disabled_form,
         delete_info_page_form=delete_info_page_form,

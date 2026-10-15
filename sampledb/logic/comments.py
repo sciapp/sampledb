@@ -174,16 +174,32 @@ def update_comment(
     db.session.commit()
 
 
-def get_comments_for_object(object_id: int) -> typing.List[Comment]:
+def get_comments_for_object(
+        object_id: int,
+        after_id: int | None = None,
+        limit: int | None = None,
+) -> typing.List[Comment]:
     """
     Returns a list of comments for an object.
 
     :param object_id: the ID of an existing object
+    :param after_id: all returned comments must have an ID greater than this
+        ID, if it is not None
+    :param limit: the maximum number of comments to return
     :return: the list of comments, sorted from oldest to newest
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     """
-    comments = models.Comment.query.filter_by(object_id=object_id).order_by(db.asc(models.Comment.utc_datetime)).all()
+    comments_query = models.Comment.query.filter_by(object_id=object_id)
+    if after_id is not None:
+        comments_query = comments_query.filter(models.Comment.id > after_id)
+    if after_id is not None or limit is not None:
+        comments_query = comments_query.order_by(models.Comment.id.asc())
+    else:
+        comments_query = comments_query.order_by(db.asc(models.Comment.utc_datetime))
+    if limit is not None:
+        comments_query = comments_query.limit(limit)
+    comments = comments_query.all()
     if not comments:
         # ensure that the object exists
         objects.check_object_exists(object_id)

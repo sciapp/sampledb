@@ -22,4 +22,5 @@ class ObjectLogEntries(Resource):
                 pass
 
         log_entries = get_object_log_entries_by_user(flask.g.user.id, after_id)
+        log_entries.sort(key=lambda log_entry: log_entry.utc_datetime, reverse=True)
         return [object_log_entry_to_json(log_entry) for log_entry in log_entries]

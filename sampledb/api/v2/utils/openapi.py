@@ -14,7 +14,8 @@ from pydantic import BaseModel
 
 from ...utils import Resource, ResponseData
 from .validation import validate, ValidatingError
-from .responses import make_response, ResourceMethodResult, ReturnValue, RedirectResponseModel, ErrorDetailsModel, NoContentModel, PathErrorDetailModel, QueryErrorDetailModel, RequestBodyErrorDetailModel
+from .responses import make_response, ResourceMethodResult, ReturnValue, RedirectResponseModel, ErrorDetailsModel, \
+    NoContentModel, PathErrorDetailModel, QueryErrorDetailModel, RequestBodyErrorDetailModel, PaginatedSequence
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -194,13 +195,30 @@ def method(
                         default_status_code=default_status_code,
                         return_type_hint=return_type_hint,
                     )
+            elif kwargs:
+                return make_response(
+                    result=PathValidationFailedModel(
+                        detail=f"Extra inputs are not permitted ({sorted(kwargs.keys())[0]})",
+                        errors=[
+                            PathErrorDetailModel(
+                                path_parameter=key,
+                                detail="Extra inputs are not permitted",
+                                input=value,
+                            )
+                            for key, value in kwargs.items()
+                        ],
+                    ),
+                    default_status_code=default_status_code,
+                    return_type_hint=return_type_hint,
+                )
+            query_args = sorted(flask.request.args.lists())
             if query_model is not None:
                 try:
                     new_kwargs['query'] = validate(
                         query_model,
                         {
                             key: values[0] if len(values) == 1 else values
-                            for key, values in flask.request.args.lists()
+                            for key, values in query_args
                         }
                     )
                 except ValidatingError as e:
@@ -219,6 +237,22 @@ def method(
                         default_status_code=default_status_code,
                         return_type_hint=return_type_hint,
                     )
+            elif query_args:
+                return make_response(
+                    result=QueryValidationFailedModel(
+                        detail=f"Extra inputs are not permitted ({query_args[0][0]})",
+                        errors=[
+                            QueryErrorDetailModel(
+                                query_parameter=key,
+                                detail="Extra inputs are not permitted",
+                                input=value,
+                            )
+                            for key, value in query_args
+                        ],
+                    ),
+                    default_status_code=default_status_code,
+                    return_type_hint=return_type_hint,
+                )
             if request_body_model is not None:
                 try:
                     new_kwargs['request_body'] = validate(
@@ -242,6 +276,15 @@ def method(
                         default_status_code=default_status_code,
                         return_type_hint=return_type_hint,
                     )
+            elif flask.request.content_length:
+                return make_response(
+                    result=RequestBodyValidationFailedModel(
+                        detail="A request body is not permitted",
+                        errors=[],
+                    ),
+                    default_status_code=default_status_code,
+                    return_type_hint=return_type_hint,
+                )
             return make_response(
                 result=func(self, **new_kwargs),  # type: ignore[misc]
                 default_status_code=default_status_code,
@@ -558,6 +601,13 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
                                     assert spec_dict["components"]["schemas"][defs_key] == return_type_option_json_schema['$defs'][defs_key]
                                 spec_dict["components"]["schemas"][defs_key] = return_type_option_json_schema['$defs'][defs_key]
                             del return_type_option_json_schema['$defs']
+                        if return_type_option_json_schema['title'] in spec_dict["components"]["schemas"]:
+                            assert return_type_option_json_schema == spec_dict["components"]["schemas"][return_type_option_json_schema['title']]
+                        else:
+                            spec_dict["components"]["schemas"][return_type_option_json_schema['title']] = return_type_option_json_schema
+                        return_type_option_json_schema = {
+                            "$ref": f"#/components/schemas/{return_type_option_json_schema['title']}"
+                        }
                         spec_dict["paths"][rule_path][method]["responses"][str(method_info.default_status_code)] = {
                             "description": _generate_description_by_status_code(method_info.default_status_code),
                             "content": {
@@ -566,20 +616,43 @@ def generate_openapi_spec() -> dict[str, typing.Any]:
                                 }
                             }
                         }
-                    elif typing.get_origin(return_type_option) is list and len(typing.get_args(return_type_option)) == 1 and inspect.isclass(typing.get_args(return_type_option)[0]) and issubclass(typing.get_args(return_type_option)[0], BaseModel):
+                    elif typing.get_origin(return_type_option) is PaginatedSequence and len(typing.get_args(return_type_option)) == 1 and inspect.isclass(typing.get_args(return_type_option)[0]) and issubclass(typing.get_args(return_type_option)[0], BaseModel):
                         assert str(method_info.default_status_code) not in spec_dict["paths"][rule_path][method].get("responses", {})
-                        return_type_option_json_schema = pydantic.TypeAdapter(return_type_option).json_schema(by_alias=True, ref_template="#/components/schemas/{model}")
+                        return_type_option_json_schema = pydantic.TypeAdapter(typing.get_args(return_type_option)[0]).json_schema(by_alias=True, ref_template="#/components/schemas/{model}")
                         if '$defs' in return_type_option_json_schema:
                             for defs_key in return_type_option_json_schema['$defs']:
                                 if defs_key in spec_dict["components"]["schemas"]:
                                     assert spec_dict["components"]["schemas"][defs_key] == return_type_option_json_schema['$defs'][defs_key]
                                 spec_dict["components"]["schemas"][defs_key] = return_type_option_json_schema['$defs'][defs_key]
                             del return_type_option_json_schema['$defs']
+                        if return_type_option_json_schema['title'] in spec_dict["components"]["schemas"]:
+                            assert return_type_option_json_schema == spec_dict["components"]["schemas"][return_type_option_json_schema['title']]
+                        else:
+                            spec_dict["components"]["schemas"][return_type_option_json_schema['title']] = return_type_option_json_schema
+                        return_type_option_json_schema = {
+                            "$ref": f"#/components/schemas/{return_type_option_json_schema['title']}"
+                        }
                         spec_dict["paths"][rule_path][method]["responses"][str(method_info.default_status_code)] = {
                             "description": _generate_description_by_status_code(method_info.default_status_code),
                             "content": {
                                 "application/json": {
-                                    "schema": return_type_option_json_schema
+                                    "schema": {
+                                        "items": return_type_option_json_schema,
+                                        "type": "array"
+                                    }
+                                }
+                            },
+                            "headers": {
+                                "Link": {
+                                    "content": {
+                                        "text/plain": {
+                                            "schema": {
+                                                "type": "string",
+                                                "description": "RFC 8288-compatible links for relationships \"self\", \"start\", and \"next\" (if there are more items to return, otherwise the \"next\" link is omitted).",
+                                                "examples": ["<https://example.com/api/v2/collection?limit=5>; rel=\"start\", <https://example.com/api/v2/collection?limit=5&cursor=NQ%3D%3D>; rel=\"start\", <https://example.com/api/v2/collection?limit=5&cursor=MTA%3D>; rel=\"next\""]
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -19,7 +19,7 @@ from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info
-from .utils.responses import ErrorDetailsModel
+from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -204,14 +204,19 @@ class Action(Resource):
 class Actions(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> list[ActionModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[ActionModel]:
         """
         List all actions.
 
         Get a list of all actions the user has READ permissions for.
         """
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
-        return [
-            ActionModel.from_action(action)
-            for action in actions
-        ]
+        # TODO: apply pagination in database
+        return PaginatedSequence.apply_pagination(
+            items=[
+                ActionModel.from_action(action)
+                for action in actions
+            ],
+            query=query,
+            id_getter=lambda action: action.action_id,
+        )

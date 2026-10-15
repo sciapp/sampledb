@@ -9,7 +9,8 @@ from ...models import Permissions
 from ..utils import Resource
 from .authentication import multi_auth
 from .utils.validation import UserId, generate_example, PermissionsModel
-from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel
+from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel, PaginatedSequence, \
+    PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -108,14 +109,19 @@ class CannotChangePermissionsOfOnlyGrantUserInProjectModel(ErrorDetailsModel):
 class Projects(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> list[ProjectModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[ProjectModel]:
         """
         List all project groups.
         """
-        return [
-            ProjectModel.from_project(project)
-            for project in sorted(projects.get_projects(), key=lambda project: project.id)
-        ]
+        all_projects = projects.get_projects()
+        return PaginatedSequence.apply_pagination(
+            items=[
+                ProjectModel.from_project(project)
+                for project in all_projects
+            ],
+            query=query,
+            id_getter=lambda project: project.project_id,
+        )
 
 
 class Project(Resource):
@@ -147,7 +153,7 @@ class ProjectMemberUsers(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, path: PathModel) -> list[ProjectMemberUserRefModel] | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[ProjectMemberUserRefModel] | OnlyAdminsMayManageProjectsModel | ProjectNotFoundModel:
         """
         List all member users of a project group.
         """
@@ -161,10 +167,15 @@ class ProjectMemberUsers(Resource):
             return ProjectNotFoundModel(
                 detail=f"Project group #{path.project_id} does not exist."
             )
-        return [
-            ProjectMemberUserRefModel.from_user_id_and_permissions(user_id, project_permissions_by_member_id[user_id])
-            for user_id in sorted(project_permissions_by_member_id)
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                ProjectMemberUserRefModel.from_user_id_and_permissions(user_id, project_permissions_by_member_id[user_id])
+                for user_id in project_permissions_by_member_id
+            ],
+            query=query,
+            path=path,
+            id_getter=lambda user_ref: user_ref.user_id,
+        )
 
     @multi_auth.login_required
     @method()

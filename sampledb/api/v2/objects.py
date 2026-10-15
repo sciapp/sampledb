@@ -8,6 +8,7 @@ import flask
 from pydantic import (AfterValidator, AliasChoices, BaseModel, BeforeValidator,
                       Field, Strict, ValidationInfo, model_validator, field_validator)
 from pydantic_core import PydanticCustomError
+from sqlalchemy.sql import and_
 
 from ... import models
 from .authentication import multi_auth, object_permissions_required
@@ -26,7 +27,7 @@ from ..utils import Resource
 from .actions import ActionModel
 from .users import UserModel
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, populate_missing_or_expect_from_validation_info, generate_example
-from .utils.responses import CreatedResponseModel, FoundResponseModel, ErrorDetailsModel, RequestBodyErrorDetailModel
+from .utils.responses import CreatedResponseModel, FoundResponseModel, ErrorDetailsModel, RequestBodyErrorDetailModel, PaginationQueryModel, PaginatedSequence
 from .utils.openapi import method
 
 
@@ -537,7 +538,7 @@ class Objects(Resource):
                 )
             return self
 
-    class QueryModel(BaseModel):
+    class QueryModel(PaginationQueryModel):
         action_id: typing.Annotated[int, AfterValidator(_action_exists)] | None = Field(None, description="the ID of an existing action — filter for objects created with this action", examples=[1])
         action_type_id: typing.Annotated[
             typing.Annotated[int, BeforeValidator(_action_type_id)] | None,
@@ -548,8 +549,6 @@ class Objects(Resource):
             BeforeValidator(lambda value: [int(ss) for s in (value if isinstance(value, list) else [value]) for ss in s.split(",")]),
         ] | None = Field(None, description="a list of objects IDs  — filter for objects created with any of these IDs", examples=[[1, 2, 3]])
         related_user_id: int | None = Field(None, description="the ID of an existing user — filter for objects related to this user", examples=[1])
-        limit: typing.Annotated[int | None, BeforeValidator(lambda value: _int_in_range(value, 1, 1e15))] = Field(None, description="an upper limit for the number of objects to return", examples=[1])
-        offset: typing.Annotated[int | None, BeforeValidator(lambda value: _int_in_range(value, 0, 1e15))] = Field(None, description="an offset for returned objects when also using `limit`", examples=[1])
         name_only: typing.Annotated[bool, BeforeValidator(text_to_bool)] = Field(False, description="whether to reduce data and schema to the object name", examples=[False])
         query_string: typing.Annotated[str | None, Field(validation_alias="q")] = Field(None, description="a query string for the object search", examples=["name == \"Object-1\""])
         use_advanced_search: typing.Annotated[bool, BeforeValidator(text_to_bool)] = Field(True, description="whether to use the advanced search when also using `q`", examples=[True])
@@ -557,7 +556,7 @@ class Objects(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self, query: QueryModel) -> list[_ObjectModel] | ObjectSearchFailedModel:
+    def get(self, query: QueryModel) -> PaginatedSequence[_ObjectModel] | ObjectSearchFailedModel:
         """
         List all (or some) objects.
 
@@ -587,6 +586,18 @@ class Objects(Resource):
 
             def filter_func(data: typing.Any) -> typing.Any:
                 return True
+
+        if query.previous_id is not None:
+            original_filter_func = filter_func
+
+            def filter_func_with_after_id(data: typing.Any) -> typing.Any:
+                return and_(data.object_id_column > query.previous_id, original_filter_func(data))
+
+            filter_func = filter_func_with_after_id
+
+        def sorting_func(current_columns: typing.Any, original_columns: typing.Any) -> typing.Any:
+            return current_columns.object_id.asc()
+
         try:
             objects = get_objects_with_permissions(
                 user_id=flask.g.user.id,
@@ -595,8 +606,8 @@ class Objects(Resource):
                 action_ids=[args.action_id] if args.action_id is not None else None,
                 action_type_ids=[args.action_type_id] if args.action_type_id is not None else None,
                 project_id=None,
-                limit=args.limit,
-                offset=args.offset,
+                limit=query.limit,
+                sorting_func=sorting_func,
                 name_only=args.name_only,
                 object_ids=list(object_ids) if object_ids is not None else None,
             )
@@ -613,14 +624,14 @@ class Objects(Resource):
             )
         elif args.get_referencing_objects:
             object_references = get_referencing_object_ids({object.id for object in objects})
-            ret = []
+            objects_to_return = []
             for object in objects:
                 references = object_references[object.object_id]
                 referenced: list[ObjectReferenceModel] = []
                 for ref in references:
                     if ref is not None:
                         referenced.append(ObjectReferenceModel.from_object_ref(ref))
-                ret.append(
+                objects_to_return.append(
                     _ObjectModel(
                         object_id=object.object_id,
                         version_id=object.version_id,
@@ -635,9 +646,8 @@ class Objects(Resource):
                         referencing_objects=referenced
                     )
                 )
-            return ret
         else:
-            return [
+            objects_to_return = [
                 _ObjectModel(
                     object_id=object.object_id,
                     version_id=object.version_id,
@@ -653,6 +663,11 @@ class Objects(Resource):
                 )
                 for object in objects
             ]
+        return PaginatedSequence[_ObjectModel](
+            items=objects_to_return,
+            query=query,
+            id_getter=lambda object: object.object_id,
+        )
 
     @multi_auth.login_required
     @method()

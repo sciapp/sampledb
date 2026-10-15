@@ -13,7 +13,7 @@ from ..utils import Resource
 from ...logic import errors, locations, location_permissions, utils
 from ...models import Permissions
 from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, UserId, is_expected_from_validation_info, populate_missing_or_expect_from_validation_info
-from .utils.responses import CreatedResponseModel, ErrorDetailsModel, make_response
+from .utils.responses import CreatedResponseModel, ErrorDetailsModel, make_response, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
 
@@ -98,6 +98,7 @@ class LocationTypeModel(BaseModel):
 
 
 class ObjectLocationAssignmentModel(BaseModel):
+    object_location_assignment_id: int = Field(description="the ID of the object assignment", examples=[1])
     object_id: int = Field(description="the ID of the object that is assigned to a location/responsible user", examples=[1])
     location_id: int | None = Field(description="the ID of the location the object is assigned to", examples=[1])
     responsible_user_id: int | None = Field(description="the ID of the responsible user the object is assigned to", examples=[1])
@@ -108,6 +109,7 @@ class ObjectLocationAssignmentModel(BaseModel):
     @classmethod
     def from_object_location_assignment(cls, object_location_assignment: locations.ObjectLocationAssignment) -> typing.Self:
         return cls(
+            object_location_assignment_id=object_location_assignment.id,
             object_id=object_location_assignment.object_id,
             location_id=object_location_assignment.location_id,
             responsible_user_id=object_location_assignment.responsible_user_id,
@@ -305,17 +307,23 @@ class Locations(Resource):
 
     @multi_auth.login_required
     @method()
-    def get(self) -> list[LocationModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[LocationModel]:
         """
         Get all locations.
         """
-        return [
-            LocationModel.from_location(location)
-            for location in location_permissions.get_locations_with_user_permissions(
-                user_id=flask.g.user.id,
-                permissions=Permissions.READ
-            )
-        ]
+        locations_with_permissions = location_permissions.get_locations_with_user_permissions(
+            user_id=flask.g.user.id,
+            permissions=Permissions.READ
+        )
+        # TODO: apply pagination in database
+        return PaginatedSequence.apply_pagination(
+            items=[
+                LocationModel.from_location(location)
+                for location in locations_with_permissions
+            ],
+            query=query,
+            id_getter=lambda location: location.location_id,
+        )
 
     @multi_auth.login_required
     @method()
@@ -384,14 +392,18 @@ class LocationType(Resource):
 class LocationTypes(Resource):
     @multi_auth.login_required
     @method()
-    def get(self) -> list[LocationTypeModel]:
+    def get(self, query: PaginationQueryModel) -> PaginatedSequence[LocationTypeModel]:
         """
         List all location types.
         """
-        return [
-            LocationTypeModel.from_location_type(location_type)
-            for location_type in locations.get_location_types()
-        ]
+        return PaginatedSequence.apply_pagination(
+            items=[
+                LocationTypeModel.from_location_type(location_type)
+                for location_type in locations.get_location_types()
+            ],
+            query=query,
+            id_getter=lambda location_type: location_type.location_type_id,
+        )
 
 
 class ObjectLocationAssignment(Resource):
@@ -451,15 +463,20 @@ class ObjectLocationAssignments(Resource):
 
     @object_permissions_required(Permissions.READ)
     @method()
-    def get(self, path: PathModel) -> list[ObjectLocationAssignmentModel] | ObjectNotFoundModel:
+    def get(self, path: PathModel, query: PaginationQueryModel) -> PaginatedSequence[ObjectLocationAssignmentModel] | ObjectNotFoundModel:
         """
         List all object location assignments.
         """
         try:
-            return [
-                ObjectLocationAssignmentModel.from_object_location_assignment(object_location_assignment)
-                for object_location_assignment in locations.get_object_location_assignments(path.object_id)
-            ]
+            return PaginatedSequence(
+                items=[
+                    ObjectLocationAssignmentModel.from_object_location_assignment(object_location_assignment)
+                    for object_location_assignment in locations.get_object_location_assignments(path.object_id, after_id=query.previous_id, limit=query.limit, sort_by="id")
+                ],
+                query=query,
+                path=path,
+                id_getter=lambda object_location_assignment: object_location_assignment.object_location_assignment_id,
+            )
         except errors.ObjectDoesNotExistError:
             return ObjectNotFoundModel(
                 detail=f"Object #{path.object_id} does not exist."
@@ -481,7 +498,7 @@ class ObjectLocationAssignments(Resource):
                     detail=f"Location #{location.id} does not allow object assignments."
                 )
         try:
-            locations.assign_location_to_object(
+            object_location_assignment_id = locations.assign_location_to_object(
                 object_id=path.object_id,
                 location_id=None if request_body.location is None else request_body.location.id,
                 responsible_user_id=request_body.responsible_user_id,
@@ -492,7 +509,7 @@ class ObjectLocationAssignments(Resource):
             return LocationCapacityReachedModel(
                 detail=f"Location #{request_body.location_id} has reached its maximum capacity for objects of this type. Object #{path.object_id} could not be assigned to it as that would exceed the maximum capacity."
             )
-        object_location_assignment = locations.get_object_location_assignments(path.object_id)[-1]
+        object_location_assignment = locations.get_object_location_assignment(object_location_assignment_id)
         return CreatedResponseModel(
             location=flask.url_for(
                 '.object_location_assignment',

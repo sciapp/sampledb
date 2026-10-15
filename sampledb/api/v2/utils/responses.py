@@ -1,11 +1,15 @@
+import base64
+import binascii
 import inspect
 import typing
-from collections.abc import Sequence
+from collections.abc import Sequence, Callable
 from http import HTTPStatus
+from functools import cached_property
 
 import flask
 import werkzeug
 from pydantic import BaseModel, TypeAdapter, Field, field_validator, HttpUrl
+from pydantic_core import PydanticCustomError
 
 from ...utils import make_json_response
 from .validation import generate_example
@@ -153,7 +157,140 @@ class ReturnValue[T]:
         self.value: T = value
 
 
-type ResourceMethodResult = BaseModel | Sequence[BaseModel] | ReturnValue[typing.Any] | ErrorDetailsModel | RedirectResponseModel | NoContentModel
+class PaginationQueryModel(BaseModel):
+    limit: int | None = Field(None, description='the maximum number of items to return, or null to return all items', examples=[10], gt=0, lt=int(1e15))
+    cursor: str | None = Field(None, description='an opaque cursor used for pagination', examples=["MQ=="])
+
+    @cached_property
+    def previous_id(self) -> int | None:
+        if self.cursor is None:
+            return None
+        else:
+            return int(base64.urlsafe_b64decode(self.cursor).decode('utf-8'))
+
+    @field_validator('cursor', mode='after')
+    @classmethod
+    def validate_cursor(cls, value: str | None) -> str | None:
+        if not PaginationQueryModel.is_valid_cursor(value):
+            raise PydanticCustomError("invalid_pagination_cursor", "Input is not a valid pagination cursor")
+        return value
+
+    @staticmethod
+    def is_valid_cursor(cursor: str | None) -> bool:
+        if cursor is None:
+            return True
+        try:
+            decoded_cursor = base64.urlsafe_b64decode(cursor).decode('utf-8')
+        except binascii.Error:
+            return False
+        except UnicodeEncodeError:
+            return False
+        try:
+            int_cursor = int(decoded_cursor)
+        except ValueError:
+            return False
+        if not 0 <= int_cursor < 1e15:
+            return False
+        return True
+
+    @staticmethod
+    def build_cursor(id: int) -> str:
+        """
+        Build an opaque cursor containing an ID.
+
+        :param id: the ID to create the cursor for
+
+        Currently, this is simply urlsafe base64 of the IDs string
+        representation encoded as utf8 (or ASCII, due to the character set
+        used by (urlsafe) base64). However, this could change in the future.
+        """
+        return base64.urlsafe_b64encode(str(id).encode('utf8')).decode('utf8')
+
+
+T_co = typing.TypeVar('T_co', bound=BaseModel, covariant=True)
+
+
+class PaginatedSequence(typing.Generic[T_co]):
+    def __init__(
+            self,
+            items: Sequence[T_co],
+            id_getter: Callable[[T_co], int],
+            query: PaginationQueryModel,
+            path: BaseModel | None = None,
+    ) -> None:
+        assert query.limit is None or len(items) <= query.limit
+        self.items: Sequence[T_co] = items
+        self._endpoint = flask.request.endpoint
+        self._limit = query.limit
+        self._self_cursor = query.cursor
+        self._next_cursor = None
+        if query.limit is not None and len(items) == query.limit:
+            self._next_cursor = PaginationQueryModel.build_cursor(id_getter(items[-1]))
+        extra_url_for_args = query.model_dump()
+        if path is not None:
+            extra_url_for_args.update(path.model_dump())
+        del extra_url_for_args["limit"]
+        del extra_url_for_args["cursor"]
+        self._extra_url_for_args = extra_url_for_args if extra_url_for_args is not None else {}
+
+    @classmethod
+    def apply_pagination(
+            cls,
+            items: list[T_co],
+            id_getter: Callable[[T_co], int],
+            query: PaginationQueryModel,
+            path: BaseModel | None = None,
+    ) -> typing.Self:
+        """
+        Return a PaginatedSequence based on the pagination query parameters
+        and the full set of items. As this uses all items, using this only
+        makes sense when there is no need for an in-database implementation
+        of pagination, or when that still needs to be done.
+
+        :param items: the items to paginate
+        :param id_getter: a callable to get the item ID to use for sorting and filtering
+        :param query: the pagination query parameters, and any extra query parameters to include in links
+        :param path: the URL path parameters to use for link generation
+        """
+        if query.previous_id is not None:
+            items = [
+                item
+                for item in items
+                if id_getter(item) > query.previous_id
+            ]
+        items.sort(key=id_getter)
+        if query.limit is not None:
+            items = items[:query.limit]
+        return cls(
+            items=items,
+            id_getter=id_getter,
+            query=query,
+            path=path,
+        )
+
+    @property
+    def link_header(self) -> str:
+        if self._endpoint is None:
+            return ""
+        links = [
+            "<" + flask.url_for(self._endpoint, _external=True, limit=self._limit, **self._extra_url_for_args) + ">; rel=\"start\""
+        ]
+        if self._self_cursor is None:
+            links.append(
+                "<" + flask.url_for(self._endpoint, _external=True, limit=self._limit, **self._extra_url_for_args) + ">; rel=\"self\""
+            )
+        else:
+            links.append(
+                "<" + flask.url_for(self._endpoint, _external=True, limit=self._limit, cursor=self._self_cursor, **self._extra_url_for_args) + ">; rel=\"self\""
+            )
+        if self._next_cursor is not None:
+            links.append(
+                "<" + flask.url_for(self._endpoint, _external=True, limit=self._limit, cursor=self._next_cursor, **self._extra_url_for_args) + ">; rel=\"next\""
+            )
+        return ", ".join(links)
+
+
+type ResourceMethodResult = BaseModel | PaginatedSequence[BaseModel] | ReturnValue[typing.Any] | ErrorDetailsModel | RedirectResponseModel | NoContentModel
 
 
 def make_response(
@@ -180,13 +317,16 @@ def make_response(
             b"",
             status=result.STATUS_CODE
         )
-    if isinstance(result, list):
+    if isinstance(result, PaginatedSequence):
         return make_json_response(
             [
                 item.model_dump(by_alias=True) if isinstance(item, BaseModel) else item
-                for item in result
+                for item in result.items
             ],
-            status=default_status_code
+            status=default_status_code,
+            headers={
+                "Link": result.link_header
+            }
         )
     if isinstance(result, BaseModel):
         return make_json_response(
