@@ -267,6 +267,7 @@
   </div>
 </nav>
 <div id="main">
+  {% block extended_content %}
   <div class="container">
     <noscript>
         <div class="alert alert-danger" role="alert">
@@ -316,7 +317,7 @@
     {% endblock %}
     {% block content %}{% endblock %}
   </div>
-  {% block extended_content %} {% endblock %}
+  {% endblock %}
 </div>
 <div id="sidebar">
 {% block sidebar %}{% endblock %}

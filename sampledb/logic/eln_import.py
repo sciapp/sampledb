@@ -260,9 +260,12 @@ def update_sanitized_eln_preview() -> None:
     db.session.commit()
 
 
-def has_eln_preview(eln_import_id: int) -> bool:
+def has_eln_preview(eln_import_id: int, check_unimported: bool = False) -> bool:
     try:
-        get_eln_import_preview_file(eln_import_id, None)
+        if not check_unimported:
+            get_eln_import_preview_file(eln_import_id, None)
+        else:
+            parse_eln_preview_file(eln_import_id, subpath=None)
     except errors.ELNImportPreviewFileDoesNotExistError:
         return False
     return True
