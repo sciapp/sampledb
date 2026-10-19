@@ -333,13 +333,13 @@ def test_eln_sanitizer_html_replace_supplied_file_url(app):
         sanitized_content_different_root_path_not_available = sanitizer.sanitize("<a href='not_available.html'>Preview</a>", mime_type="text/html")
 
     assert ['/ro-crate-preview.html'] == referenced_files_root
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content">Preview</a>' == sanitized_content_root
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview">Preview</a>' == sanitized_content_root
     assert ['/ro-crate-preview_files/styles.css'] == referenced_files_style
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content?subpath=styles.css">Preview</a>' == sanitized_content_style
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=styles.css">Preview</a>' == sanitized_content_style
     assert ['/ro-crate-preview_files/subdir/test.html'] == referenced_files_subdir
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content?subpath=subdir/test.html">Preview</a>' == sanitized_content_subdir
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=subdir/test.html">Preview</a>' == sanitized_content_subdir
     assert ['/ro-crate-preview_files/abc/test.html'] == referenced_files_different_root_path
-    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview/content?subpath=abc/test.html">Preview</a>' == sanitized_content_different_root_path
+    assert f'<a href="/eln_imports/{ELN_IMPORT_ID}/preview?subpath=abc/test.html">Preview</a>' == sanitized_content_different_root_path
     assert '<a>Preview</a>' == sanitized_content_different_root_path_not_available
 
 
@@ -349,7 +349,8 @@ def test_eln_sanitizer_html_owasp_snippets(app):
             eln_import_id=ELN_IMPORT_ID,
             root_path=ROOT_PATH,
             referenced_files=[],
-            valid_preview_files=[]
+            valid_preview_files=[],
+            add_sampledb_notice=False
         )
         for test_case in OWASP_XSS_TEST_CASES:
             sanitized_content = sanitizer.sanitize(
@@ -370,6 +371,7 @@ def test_eln_sanitizer_css_exfiltration(app):
             root_path=ROOT_PATH,
             referenced_files=[],
             valid_preview_files=valid_preview_files,
+            add_sampledb_notice=False
         )
         for test_data in CSS_EXFILTRATION_TEST_DATA:
             sanitized_content = sanitizer.sanitize(

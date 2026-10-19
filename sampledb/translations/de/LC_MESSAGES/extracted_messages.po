@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-10-15 06:48+0200\n"
+"POT-Creation-Date: 2026-10-19 14:12+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4298,11 +4298,11 @@ msgstr ""
 
 #, python-format
 msgid ""
-"This ELN file provides a preview: <a href=\"%(preview_url)s\" "
-"target=\"_blank\">Open preview</a>"
+"This ELN file provides a preview: <a href=\"%(preview_url)s\">Open "
+"preview</a>"
 msgstr ""
-"Diese ELN-Datei bietet eine Vorschau: <a href=\"%(preview_url)s\" "
-"target=\"_blank\">Vorschau öffnen</a>"
+"Diese ELN-Datei bietet eine Vorschau: <a "
+"href=\"%(preview_url)s\">Vorschau öffnen</a>"
 
 msgid "Import preview"
 msgstr "Vorschau importieren"
@@ -8276,6 +8276,14 @@ msgid "The .eln file did not contain any valid flexible metadata for this object
 msgstr ""
 "Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses "
 "Objekt."
+
+#, python-format
+msgid ""
+"This is the preview for <a href=\"%(eln_import_url)s\">ELN Import "
+"#%(eln_import_id)s</a>.</p>"
+msgstr ""
+"Dies ist die Vorschau für <a href=\"%(eln_import_url)s\">ELN-Import "
+"#%(eln_import_id)s</a>.</p>"
 
 #, python-format
 msgid "Unnamed Instrument (#%(instrument_id)s)"

@@ -6,6 +6,9 @@ from bs4.element import Tag
 import flask
 import tinycss2
 
+import flask
+from flask_babel import _
+
 from . import errors
 
 
@@ -44,7 +47,7 @@ class ELNSanitizer:
     # The version is used to detect changes to the sanitizer and update the sanitized content of files in the database.
     SANITIZER_VERSION = 1
 
-    def __init__(self, eln_import_id: int, root_path: str, referenced_files: typing.Optional[list[str]], valid_preview_files: typing.Optional[list[str]]):
+    def __init__(self, eln_import_id: int, root_path: str, referenced_files: typing.Optional[list[str]], valid_preview_files: typing.Optional[list[str]], add_sampledb_notice: bool = True):
         self.eln_import_id = eln_import_id
         self.root_path = root_path
         if referenced_files is None:
@@ -56,6 +59,8 @@ class ELNSanitizer:
             self.valid_preview_files: list[str] = []
         else:
             self.valid_preview_files = valid_preview_files
+
+        self.add_sampledb_notice = add_sampledb_notice
 
     def sanitize(self, content: str, mime_type: str) -> str:
         """
@@ -89,7 +94,29 @@ class ELNSanitizer:
             except errors.ELNImportPreviewIllegalTagError:
                 tag.unwrap()
 
+        if self.add_sampledb_notice:
+            self._add_sampledb_notice(soup)
+
         return str(soup)
+
+    def _add_sampledb_notice(self, soup: BeautifulSoup) -> None:
+        if soup.body is None:
+            body = soup.new_tag("body")
+            soup.append(body)
+        else:
+            body = soup.body
+        sampledb_notice = f"""
+            <div class="sampledb_notice" style='position: fixed; top: 20px; right: 20px; background-color: #f8f8f8; padding: 10px; border-radius: 5px; border: 1px solid black;'>
+                <style>
+                    .sampledb_notice {{ font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }}
+                    .sampledb_notice a {{ color: #337ab7; text-decoration: none; }}
+                    .sampledb_notice a:hover {{ text-decoration: underline; }}
+                </style>
+                <p>{ _('This is the preview for <a href=\"%(eln_import_url)s\">ELN Import #%(eln_import_id)s</a>.</p>', eln_import_url=flask.url_for('frontend.eln_import', eln_import_id=self.eln_import_id), eln_import_id=self.eln_import_id)}
+                <p style='text-align: center;'><a style="" href=\"{flask.current_app.config['SERVICE_LEGAL_NOTICE']}\">{_('Legal Notice')}</a> • <a href=\"{flask.current_app.config['SERVICE_PRIVACY_POLICY']}\">{_('Privacy Policy')}</a></p>
+            </div>
+        """
+        body.append(BeautifulSoup(sampledb_notice, "html.parser"))
 
     def _sanitize_html_attributes(self, tag: Tag) -> None:
         CUSTOM_ATTRIB_FILTERS = {
@@ -323,8 +350,8 @@ class ELNSanitizer:
             return None
 
         if normalized_fullpath.startswith("ro-crate-preview.html"):
-            return f"{flask.url_for("frontend.eln_preview_content", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
+            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
         elif normalized_fullpath.startswith("ro-crate-preview_files/"):
             subpath = normalized_fullpath[len("ro-crate-preview_files/"):]
-            return flask.url_for("frontend.eln_preview_content", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
+            return flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
         return None

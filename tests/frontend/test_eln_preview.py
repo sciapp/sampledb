@@ -67,7 +67,7 @@ def test_eln_preview_main_entrypoint_available(flask_server, user, eln_preview):
 
     assert session.get(f"{flask_server.base_url}users/{user.id}/autologin").status_code == 200
 
-    result = session.get(f"{flask_server.base_url}eln_imports/{eln_preview.eln_import_id}/preview/content")
+    result = session.get(f"{flask_server.base_url}eln_imports/{eln_preview.eln_import_id}/preview")
     assert result.status_code == 200
     assert result.headers['Content-Type'] == "text/html; charset=utf-8"
     assert result.headers['X-Content-Type-Options'] == 'nosniff'
@@ -81,7 +81,7 @@ def test_eln_preview_subpath_not_available(flask_server, user, eln_preview):
 
     assert session.get(f"{flask_server.base_url}users/{user.id}/autologin").status_code == 200
 
-    result = session.get(f"{flask_server.base_url}eln_imports/{eln_preview.eln_import_id}/preview/content?subpath=not_available.png")
+    result = session.get(f"{flask_server.base_url}eln_imports/{eln_preview.eln_import_id}/preview?subpath=not_available.png")
     assert result.status_code == 404
 
 
@@ -90,7 +90,7 @@ def test_eln_preview_subpath_available(flask_server, user, eln_preview_styles):
 
     assert session.get(f"{flask_server.base_url}users/{user.id}/autologin").status_code == 200
 
-    result = session.get(f"{flask_server.base_url}eln_imports/{eln_preview_styles.eln_import_id}/preview/content?subpath=styles.css")
+    result = session.get(f"{flask_server.base_url}eln_imports/{eln_preview_styles.eln_import_id}/preview?subpath=styles.css")
     assert result.status_code == 200
     assert result.headers['Content-Type'] == "text/css; charset=utf-8"
     assert result.headers['X-Content-Type-Options'] == 'nosniff'
