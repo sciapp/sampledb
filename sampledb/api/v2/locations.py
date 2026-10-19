@@ -10,9 +10,9 @@ from pydantic_core import PydanticCustomError
 from .authentication import multi_auth, object_permissions_required
 from .objects import ObjectNotFoundModel
 from ..utils import Resource
-from ...logic import errors, locations, location_permissions, utils
+from ...logic import errors, locations, location_permissions
 from ...models import Permissions
-from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, UserId, is_expected_from_validation_info, populate_missing_or_expect_from_validation_info
+from .utils.validation import ModelWithDefaultsFromValidationInfo, OptionalNotNone, UserId, is_expected_from_validation_info, populate_missing_or_expect_from_validation_info, LanguageCode
 from .utils.responses import CreatedResponseModel, ErrorDetailsModel, make_response, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
@@ -87,13 +87,13 @@ class _ParentLocationMixin(_BaseLocation):
 
 class LocationTypeModel(BaseModel):
     location_type_id: int = Field(description="the ID of the location type", examples=[1])
-    name: str | None = Field(description="the name of the location type", examples=["Example Location Type"])
+    name: dict[str, str] | None = Field(description="the name of the location type", examples=["Example Location Type"])
 
     @classmethod
     def from_location_type(cls, location_type: locations.LocationType) -> typing.Self:
         return cls(
             location_type_id=location_type.id,
-            name=location_type.name.get('en', None) if location_type.name else None,
+            name=location_type.name,
         )
 
 
@@ -103,7 +103,7 @@ class ObjectLocationAssignmentModel(BaseModel):
     location_id: int | None = Field(description="the ID of the location the object is assigned to", examples=[1])
     responsible_user_id: int | None = Field(description="the ID of the responsible user the object is assigned to", examples=[1])
     user_id: int | None = Field(description="the ID of the user who assinged the object to a location/responsible user", examples=[1])
-    description: str | None = Field(description="the description of the object location/responsible user assignment", examples=["The object is stored on the example shelf."])
+    description: dict[str, str] | None = Field(description="the description of the object location/responsible user assignment", examples=[{"en": "The object is stored on the example shelf."}])
     utc_datetime: str | None = Field(description="the datetime in UTC when the object was assignment was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
 
     @classmethod
@@ -114,15 +114,15 @@ class ObjectLocationAssignmentModel(BaseModel):
             location_id=object_location_assignment.location_id,
             responsible_user_id=object_location_assignment.responsible_user_id,
             user_id=object_location_assignment.user_id,
-            description=utils.get_translated_text(object_location_assignment.description, 'en'),
+            description=object_location_assignment.description,
             utc_datetime=object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if object_location_assignment.utc_datetime is not None else None
         )
 
 
 class LocationModel(BaseModel):
     location_id: int = Field(description="the ID of the location", examples=[1])
-    name: str | None = Field(description="the name of the location", examples=["Example Location"])
-    description: str | None = Field(description="the description of the location", examples=["This is an example location."])
+    name: dict[str, str] | None = Field(description="the name of the location", examples=[{"en": "Example Location"}])
+    description: dict[str, str] | None = Field(description="the description of the location", examples=[{"en": "This is an example location."}])
     parent_location_id: int | None = Field(description="the ID of the parent location of the location", examples=[2])
     type_id: int | None = Field(description="the ID of the location type of the location", examples=[-99])
     is_hidden: bool = Field(description="whether the location is hidden from location lists", examples=[False])
@@ -132,8 +132,8 @@ class LocationModel(BaseModel):
     def from_location(cls, location: locations.Location) -> typing.Self:
         return cls(
             location_id=location.id,
-            name=utils.get_translated_text(location.name, 'en') if location.name else None,
-            description=utils.get_translated_text(location.description, 'en') if location.description else None,
+            name=location.name,
+            description=location.description,
             parent_location_id=location.parent_location_id,
             type_id=location.type_id,
             is_hidden=location.is_hidden,
@@ -215,8 +215,8 @@ class Location(Resource):
 
     class RequestBodyModel(ModelWithDefaultsFromValidationInfo, _ParentLocationMixin):
         location_id: typing.Annotated[int, Strict(), populate_missing_or_expect_from_validation_info(lambda i: i.context.location.id)] = Field(description="the ID for the location to update, must match the location_id path parameter", examples=[1])
-        name: str = Field(description="the name for the location to update", examples=["Example Location"])
-        description: str = Field(description="the description for the location to update", examples=["This is an example location"])
+        name: dict[LanguageCode, str] = Field(description="the name for the location to update", examples=[{"en": "Example Location"}])
+        description: dict[LanguageCode, str] = Field(description="the description for the location to update", examples=[{"en": "This is an example location"}])
         parent_location_id: typing.Annotated[int | None, Strict()] = Field(description="the ID of the parent location for the location to update", examples=[1])
         type_id: typing.Annotated[int, Strict()] = Field(description="the location type ID for the location to create", examples=[-99])
         is_hidden: bool = Field(description="whether the location should be set to hidden", examples=[False])
@@ -282,8 +282,8 @@ class Location(Resource):
             )
         locations.update_location(
             location_id=path.location_id,
-            name={'en': request_body.name},
-            description={'en': request_body.description},
+            name=request_body.name,
+            description=request_body.description,
             parent_location_id=request_body.parent_location_id,
             user_id=flask.g.user.id,
             type_id=request_body.type.id,
@@ -296,8 +296,8 @@ class Location(Resource):
 
 class Locations(Resource):
     class RequestBodyModel(_ParentLocationMixin, BaseModel):
-        name: str = Field(description="the name for the location to create", examples=["Example Location"])
-        description: str = Field("", description="the description for the location to create", examples=["This is an example location"])
+        name: dict[LanguageCode, str] = Field(description="the name for the location to create", examples=[{"en": "Example Location"}])
+        description: dict[LanguageCode, str] = Field({"en": ""}, description="the description for the location to create", examples=[{"en": "This is an example location"}])
         parent_location_id: typing.Annotated[int | None, Strict()] = Field(None, description="the ID of the parent location for the location to create", examples=[1])
         type_id: OptionalNotNone[typing.Annotated[int, Strict()]] = Field(None, description="the location type ID for the location to create", examples=[-99])
 
@@ -354,8 +354,8 @@ class Locations(Resource):
                     detail=f"Location type #{location_type.id} does not allow having a parent location."
                 )
         location = locations.create_location(
-            name={'en': request_body.name},
-            description={'en': request_body.description},
+            name=request_body.name,
+            description=request_body.description,
             parent_location_id=None if request_body.parent_location is None else request_body.parent_location.id,
             user_id=flask.g.user.id,
             type_id=locations.LocationType.LOCATION if request_body.type is None else request_body.type.id
@@ -438,7 +438,7 @@ class ObjectLocationAssignments(Resource):
         object_id: OptionalNotNone[typing.Annotated[int, is_expected_from_validation_info(lambda i: i.context.object_id)]] = Field(description="the ID the object to assign to a user or location, must match the object_id path parameter", examples=[1])
         location_id: OptionalNotNone[typing.Annotated[int, Strict()]] = Field(description="the ID of the location for this object", examples=[1])
         responsible_user_id: OptionalNotNone[typing.Annotated[UserId, Strict()]] = Field(description="the ID of the responsible user for this object", examples=[1])
-        description: str = Field("", description="the description for the object location assignment to create", examples=["The object is stored in shelf A"])
+        description: dict[LanguageCode, str] = Field({"en": ""}, description="the description for the object location assignment to create", examples=[{"en": "The object is stored in shelf A"}])
 
         @cached_property
         def location(self) -> locations.Location | None:
@@ -503,7 +503,7 @@ class ObjectLocationAssignments(Resource):
                 location_id=None if request_body.location is None else request_body.location.id,
                 responsible_user_id=request_body.responsible_user_id,
                 user_id=flask.g.user.id,
-                description={'en': request_body.description}
+                description=request_body.description
             )
         except errors.ExceedingLocationCapacityError:
             return LocationCapacityReachedModel(

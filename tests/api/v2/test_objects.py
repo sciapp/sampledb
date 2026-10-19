@@ -230,8 +230,11 @@ def test_get_object_version(flask_server, auth, user, action):
             'user_id': None,
             'type': 'sample',
             'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
-            'name': action.name['en'],
-            'description': action.description['en'],
+            'name': action.name,
+            'description': action.description,
+            'description_is_markdown': False,
+            'short_description': action.short_description,
+            'short_description_is_markdown': False,
             'is_hidden': action.is_hidden,
             'schema': action.schema
         },

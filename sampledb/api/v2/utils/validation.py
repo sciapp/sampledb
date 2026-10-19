@@ -7,7 +7,7 @@ from itertools import groupby
 from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, ValidationInfo, model_validator, SerializerFunctionWrapHandler, WrapSerializer
 from pydantic_core import ErrorDetails, PydanticCustomError
 
-from ....logic import errors, users
+from ....logic import errors, users, languages
 from ....logic.utils import parse_url
 from ....models import Permissions
 
@@ -249,3 +249,22 @@ def _permissions_serializer(permissions: Permissions, handler: SerializerFunctio
 
 
 type PermissionsModel = typing.Annotated[Permissions, BeforeValidator(_permissions_validator), WrapSerializer(_permissions_serializer)]
+
+
+def _is_valid_language_code_for_input(value: str) -> str:
+    try:
+        language = languages.get_language_by_lang_code(value)
+    except errors.LanguageDoesNotExistError:
+        raise PydanticCustomError(
+            "unexpected",
+            "No language with this language code exists.",
+        )
+    if not language.enabled_for_input:
+        raise PydanticCustomError(
+            "unexpected",
+            "The language with language code is not enabled for input.",
+        )
+    return value
+
+
+type LanguageCode = typing.Annotated[str, AfterValidator(_is_valid_language_code_for_input)]
