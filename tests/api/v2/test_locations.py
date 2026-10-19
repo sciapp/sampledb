@@ -86,8 +86,8 @@ def test_get_location(flask_server, auth, user):
     assert r.status_code == 200
     assert r.json() == {
         'location_id': location.id,
-        'name': "Example Location",
-        'description': "This is an example location",
+        'name': location.name,
+        'description': location.description,
         'parent_location_id': None,
         'type_id': location.type_id,
         'is_hidden': False,
@@ -111,12 +111,13 @@ def test_get_location(flask_server, auth, user):
         is_hidden=True,
         enable_object_assignments=True,
     )
+    location = sampledb.logic.locations.get_location(location.id)
     r = requests.get(flask_server.base_url + 'api/v2/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'location_id': location.id,
-        'name': "Example Location",
-        'description': "This is an example location",
+        'name': location.name,
+        'description': location.description,
         'parent_location_id': parent_location.id,
         'type_id': location.type_id,
         'is_hidden': True,
@@ -146,8 +147,8 @@ def test_get_locations(flask_server, auth, user):
     assert r.json() == [
         {
             'location_id': location.id,
-            'name': "Example Location",
-            'description': "This is an example location",
+            'name': location.name,
+            'description': location.description,
             'parent_location_id': None,
             'type_id': location.type_id,
             'is_hidden': False,
@@ -180,8 +181,8 @@ def test_get_locations_pagination(flask_server, auth, user):
     assert r.json() == [
         {
             'location_id': location.id,
-            'name': location.name['en'],
-            'description': "This is an example location",
+            'name': location.name,
+            'description': location.description,
             'parent_location_id': None,
             'type_id': location.type_id,
             'is_hidden': False,
@@ -201,8 +202,8 @@ def test_get_locations_pagination(flask_server, auth, user):
     assert r.json() == [
         {
             'location_id': location.id,
-            'name': location.name['en'],
-            'description': "This is an example location",
+            'name': location.name,
+            'description': location.description,
             'parent_location_id': None,
             'type_id': location.type_id,
             'is_hidden': False,
@@ -222,8 +223,8 @@ def test_get_locations_pagination(flask_server, auth, user):
     assert r.json() == [
         {
             'location_id': location.id,
-            'name': location.name['en'],
-            'description': "This is an example location",
+            'name': location.name,
+            'description': location.description,
             'parent_location_id': None,
             'type_id': location.type_id,
             'is_hidden': False,
@@ -244,8 +245,8 @@ def test_get_locations_pagination(flask_server, auth, user):
     assert r.json() == [
         {
             'location_id': location.id,
-            'name': location.name['en'],
-            'description': "This is an example location",
+            'name': location.name,
+            'description': location.description,
             'parent_location_id': None,
             'type_id': location.type_id,
             'is_hidden': False,
@@ -302,7 +303,7 @@ def test_get_location_assignment(flask_server, auth, user, action):
         'location_id': location.id,
         'responsible_user_id': user.id,
         'user_id': user.id,
-        'description': "This is an example description",
+        'description': {"en": "This is an example description"},
         'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
     }
 
@@ -349,7 +350,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
             'location_id': location.id,
             'responsible_user_id': None,
             'user_id': user.id,
-            'description': "This is an example description",
+            'description': {"en": "This is an example description"},
             'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
         }
     ]
@@ -360,7 +361,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     r = requests.post(flask_server.base_url + 'api/v2/objects/1/locations/', auth=auth, json={
         'location_id': 2,
         'responsible_user_id': user.id,
-        'description': 'This is an example description',
+        'description': {'en': 'This is an example description'},
     })
     assert r.status_code == 404
     assert r.json() == {
@@ -381,7 +382,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
-        'description': 'This is an example description',
+        'description': {'en': 'This is an example description'},
     })
     assert r.status_code == 400
     assert r.json() == {
@@ -390,7 +391,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
             {
                 "detail": "Object assignment should include a location or a responsible user",
                 "input": {
-                    "description": "This is an example description",
+                    "description": {"en": "This is an example description"},
                 },
                 "json_pointer": "/",
             },
@@ -402,7 +403,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
-        'description': 'This is an example description',
+        'description': {'en': 'This is an example description'},
         'location_id': 1
     })
     assert r.status_code == 400
@@ -412,7 +413,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
             {
                 "detail": "Location should exist (location_id)",
                 "input": {
-                    "description": "This is an example description",
+                    "description": {"en": "This is an example description"},
                     "location_id": 1,
                 },
                 "json_pointer": "/",
@@ -425,7 +426,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
-        'description': 'This is an example description',
+        'description': {'en': 'This is an example description'},
         'responsible_user_id': user.id + 1
     })
     assert r.status_code == 400
@@ -445,7 +446,7 @@ def test_create_location_assignment(flask_server, auth, user, action):
     assert len(sampledb.logic.locations.get_object_location_assignments(object.id)) == 0
 
     r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/locations/', auth=auth, json={
-        'description': 'This is an example description',
+        'description': {'en': 'This is an example description'},
         'responsible_user_id': user.id,
     })
     assert r.status_code == 201
@@ -638,7 +639,7 @@ def test_create_location(flask_server, auth, user):
     assert len(sampledb.logic.locations.get_locations()) == 0
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
+        "name": {"en": "Example Location"},
     })
     assert r.status_code == 201
     assert len(sampledb.logic.locations.get_locations()) == 1
@@ -666,8 +667,8 @@ def test_create_location(flask_server, auth, user):
     )
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': parent_location_id
     })
@@ -680,8 +681,8 @@ def test_create_location(flask_server, auth, user):
     assert location.type_id == location_type.id
 
     data = {
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id + 1,
         'parent_location_id': parent_location_id
     }
@@ -717,8 +718,8 @@ def test_create_location(flask_server, auth, user):
         show_location_log=False,
     )
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': parent_location_id
     })
@@ -747,8 +748,8 @@ def test_create_location(flask_server, auth, user):
         show_location_log=False,
     )
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': parent_location_id
     })
@@ -763,8 +764,8 @@ def test_create_location(flask_server, auth, user):
     assert len(sampledb.logic.locations.get_locations()) == 2
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': None
     })
@@ -791,8 +792,8 @@ def test_create_location(flask_server, auth, user):
     )
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': location.id
     })
@@ -822,8 +823,8 @@ def test_create_location(flask_server, auth, user):
     )
 
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': parent_location_id
     })
@@ -831,8 +832,8 @@ def test_create_location(flask_server, auth, user):
     assert len(sampledb.logic.locations.get_locations()) == 4
 
     data = {
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': parent_location_id + 100
     }
@@ -855,8 +856,8 @@ def test_create_location(flask_server, auth, user):
 
     sampledb.logic.location_permissions.set_user_location_permissions(parent_location_id, user.id, sampledb.models.Permissions.READ)
     r = requests.post(flask_server.base_url + 'api/v2/locations/', auth=auth, json={
-        'name': 'Example Location',
-        'description': 'This is an example action.',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example action."},
         'type_id': location_type.id,
         'parent_location_id': parent_location_id
     })
@@ -957,8 +958,8 @@ def test_update_location(flask_server, auth, user):
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
-        'name': 'Example Location',
-        'description': 'This is an example location',
+        'name': {"en": "Example Location"},
+        'description': {"en": "This is an example location"},
         'parent_location_id': None,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -976,8 +977,8 @@ def test_update_location(flask_server, auth, user):
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': None,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -999,8 +1000,8 @@ def test_update_location(flask_server, auth, user):
 
     data = {
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id + 1,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -1024,8 +1025,8 @@ def test_update_location(flask_server, auth, user):
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -1057,8 +1058,8 @@ def test_update_location(flask_server, auth, user):
     )
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -1089,8 +1090,8 @@ def test_update_location(flask_server, auth, user):
     )
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -1121,8 +1122,8 @@ def test_update_location(flask_server, auth, user):
     )
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,
@@ -1135,8 +1136,8 @@ def test_update_location(flask_server, auth, user):
 
     data = {
         'location_id': location.id,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id,
         'type_id': sampledb.logic.locations.LocationType.LOCATION + 1,
         'is_hidden': False,
@@ -1160,8 +1161,8 @@ def test_update_location(flask_server, auth, user):
 
     r = requests.put(flask_server.base_url + f'api/v2/locations/{location.id}', auth=auth, json={
         'location_id': location.id + 1,
-        'name': 'Example Location 2',
-        'description': 'This is an example location 2',
+        'name': {"en": "Example Location 2"},
+        'description': {"en": "This is an example location 2"},
         'parent_location_id': parent_location.id,
         'type_id': sampledb.logic.locations.LocationType.LOCATION,
         'is_hidden': False,

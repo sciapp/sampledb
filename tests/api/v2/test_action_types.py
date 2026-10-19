@@ -36,8 +36,8 @@ def test_get_action_type(flask_server, auth):
         assert r.status_code == 200
         assert r.json() == {
             'type_id': action_type.id,
-            'name': action_type.name.get('en'),
-            'object_name': action_type.object_name.get('en'),
+            'name': action_type.name,
+            'object_name': action_type.object_name,
             'admin_only': action_type.admin_only
         }
 
@@ -49,8 +49,8 @@ def test_get_action_types(flask_server, auth):
     for action_type in sampledb.logic.action_types.get_action_types():
         expected_json.append({
             'type_id': action_type.id,
-            'name': action_type.name.get('en'),
-            'object_name': action_type.object_name.get('en'),
+            'name': action_type.name,
+            'object_name': action_type.object_name,
             'admin_only': action_type.admin_only
         })
     assert r.json() == expected_json

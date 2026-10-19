@@ -48,12 +48,22 @@ components:
           type: integer
         description:
           anyOf:
-          - type: string
+          - additionalProperties:
+              type: string
+            type: object
           - type: 'null'
           description: the description of the action
           examples:
-          - This is an example action.
+          - en: This is an example action.
           title: Description
+        description_is_markdown:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: whether the description is formatted in Markdown
+          examples:
+          - false
+          title: Description Is Markdown
         instrument_id:
           anyOf:
           - type: integer
@@ -70,11 +80,13 @@ components:
           type: boolean
         name:
           anyOf:
-          - type: string
+          - additionalProperties:
+              type: string
+            type: object
           - type: 'null'
           description: the name of the action
           examples:
-          - Example Action
+          - en: Example Action
           title: Name
         schema:
           anyOf:
@@ -94,6 +106,24 @@ components:
               en: Object Information
             type: object
           title: Schema
+        short_description:
+          anyOf:
+          - additionalProperties:
+              type: string
+            type: object
+          - type: 'null'
+          description: the short description of the action for action lists
+          examples:
+          - en: This is an example action.
+          title: Short Description
+        short_description_is_markdown:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: whether the short description is formatted in Markdown
+          examples:
+          - false
+          title: Short Description Is Markdown
         type:
           deprecated: true
           description: a string representation of the action type
@@ -130,6 +160,9 @@ components:
       - type_id
       - name
       - description
+      - description_is_markdown
+      - short_description
+      - short_description_is_markdown
       - is_hidden
       - schema
       title: ActionModel
@@ -143,17 +176,21 @@ components:
           title: Admin Only
           type: boolean
         name:
+          additionalProperties:
+            type: string
           description: the name of the action type
           examples:
           - Sample Creation
           title: Name
-          type: string
+          type: object
         object_name:
+          additionalProperties:
+            type: string
           description: the name for objects created with actions of the action type
           examples:
           - Sample
           title: Object Name
-          type: string
+          type: object
         type_id:
           description: the ID of the action type
           examples:
@@ -707,12 +744,14 @@ components:
           - 1
           title: Component Id
         description:
+          additionalProperties:
+            type: string
           description: the description of the instrument, shown on the instrument
             page
           examples:
-          - This is an example instrument.
+          - en: This is an example instrument.
           title: Description
-          type: string
+          type: object
         fed_id:
           anyOf:
           - type: integer
@@ -750,18 +789,22 @@ components:
           - 1
           title: Location Id
         name:
+          additionalProperties:
+            type: string
           description: the name of the instrument
           examples:
-          - Example Instrument
+          - en: Example Instrument
           title: Name
-          type: string
+          type: object
         short_description:
+          additionalProperties:
+            type: string
           description: the short description of the instrument, shown in instrument
             lists
           examples:
-          - This is an example instrument.
+          - en: This is an example instrument.
           title: Short Description
-          type: string
+          type: object
       required:
       - instrument_id
       - name
@@ -774,15 +817,19 @@ components:
       - component_id
       title: InstrumentModel
       type: object
+    LanguageCode:
+      type: string
     LocationModel:
       properties:
         description:
           anyOf:
-          - type: string
+          - additionalProperties:
+              type: string
+            type: object
           - type: 'null'
           description: the description of the location
           examples:
-          - This is an example location.
+          - en: This is an example location.
           title: Description
         enable_object_assignments:
           description: whether objects may be assigned to the location
@@ -804,11 +851,13 @@ components:
           type: integer
         name:
           anyOf:
-          - type: string
+          - additionalProperties:
+              type: string
+            type: object
           - type: 'null'
           description: the name of the location
           examples:
-          - Example Location
+          - en: Example Location
           title: Name
         parent_location_id:
           anyOf:
@@ -846,7 +895,9 @@ components:
           type: integer
         name:
           anyOf:
-          - type: string
+          - additionalProperties:
+              type: string
+            type: object
           - type: 'null'
           description: the name of the location type
           examples:
@@ -864,11 +915,13 @@ components:
       properties:
         description:
           anyOf:
-          - type: string
+          - additionalProperties:
+              type: string
+            type: object
           - type: 'null'
           description: the description of the object location/responsible user assignment
           examples:
-          - The object is stored on the example shelf.
+          - en: The object is stored on the example shelf.
           title: Description
         location_id:
           anyOf:
@@ -1044,10 +1097,16 @@ components:
               title:
                 en: Object Information
               type: object
-            description: This is an example action.
+            description:
+              en: This is an example action.
+            description_is_markdown: false
             instrument_id: 1
             is_hidden: false
-            name: Example Action
+            name:
+              en: Example Action
+            short_description:
+              en: This is an example action.
+            short_description_is_markdown: false
             type: sample
             type_id: 1
             user_id: 1
@@ -2187,6 +2246,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
           description: Failed to validate URL path.
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetailsModel'
+          description: The user does not have sufficient permissions for the action.
         '404':
           content:
             application/problem+json:
@@ -2196,7 +2261,7 @@ paths:
       summary: Get an action.
       tags:
       - actions
-    post:
+    put:
       parameters:
       - description: the ID of an existing action
         example: 1
@@ -2222,14 +2287,21 @@ paths:
                   title: Action Id
                   type: integer
                 description:
-                  anyOf:
-                  - type: string
-                  - type: 'null'
-                  default: null
+                  additionalProperties:
+                    type: string
                   description: the description of the action to update
                   examples:
-                  - This is an example action
+                  - en: This is an example action
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Description
+                  type: object
+                description_is_markdown:
+                  description: whether the description is formatted in markdown
+                  examples:
+                  - false
+                  title: Description Is Markdown
+                  type: boolean
                 instrument_id:
                   anyOf:
                   - type: integer
@@ -2249,16 +2321,17 @@ paths:
                   - false
                   title: Is Hidden
                 name:
-                  anyOf:
-                  - type: string
-                  - type: 'null'
-                  default: null
+                  additionalProperties:
+                    maxLength: 100
+                    minLength: 1
+                    type: string
                   description: the name of the action to update
                   examples:
                   - Example Action
-                  maxLength: 100
-                  minLength: 1
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Name
+                  type: object
                 schema:
                   anyOf:
                   - additionalProperties: true
@@ -2278,6 +2351,22 @@ paths:
                       en: Object Information
                     type: object
                   title: Schema
+                short_description:
+                  additionalProperties:
+                    type: string
+                  description: the description of the action to update
+                  examples:
+                  - en: This is an example action
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
+                  title: Short Description
+                  type: object
+                short_description_is_markdown:
+                  description: whether the description is formatted in markdown
+                  examples:
+                  - false
+                  title: Short Description Is Markdown
+                  type: boolean
                 type:
                   anyOf:
                   - type: string
@@ -2311,6 +2400,11 @@ paths:
               - user_id
               - type
               - type_id
+              - name
+              - description
+              - description_is_markdown
+              - short_description
+              - short_description_is_markdown
               title: RequestBodyModel
               type: object
         required: true
@@ -2333,7 +2427,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorDetailsModel'
-          description: Read-only users may not make changes via the API.
+          description: 'Either: The user does not have sufficient permissions for
+            the action. Or: Read-only users may not make changes via the API.'
         '404':
           content:
             application/problem+json:
@@ -4096,18 +4191,27 @@ paths:
             schema:
               properties:
                 description:
-                  default: ''
+                  additionalProperties:
+                    type: string
+                  default:
+                    en: ''
                   description: the description for the location to create
                   examples:
-                  - This is an example location
+                  - en: This is an example location
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Description
-                  type: string
+                  type: object
                 name:
+                  additionalProperties:
+                    type: string
                   description: the name for the location to create
                   examples:
-                  - Example Location
+                  - en: Example Location
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Name
-                  type: string
+                  type: object
                 parent_location_id:
                   anyOf:
                   - type: integer
@@ -4228,11 +4332,15 @@ paths:
             schema:
               properties:
                 description:
+                  additionalProperties:
+                    type: string
                   description: the description for the location to update
                   examples:
-                  - This is an example location
+                  - en: This is an example location
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Description
-                  type: string
+                  type: object
                 enable_object_assignments:
                   description: whether object assignments should be enabled for the
                     location to update
@@ -4254,11 +4362,15 @@ paths:
                   title: Location Id
                   type: integer
                 name:
+                  additionalProperties:
+                    type: string
                   description: the name for the location to update
                   examples:
-                  - Example Location
+                  - en: Example Location
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Name
-                  type: string
+                  type: object
                 parent_location_id:
                   anyOf:
                   - type: integer
@@ -5267,13 +5379,18 @@ paths:
             schema:
               properties:
                 description:
-                  default: ''
+                  additionalProperties:
+                    type: string
+                  default:
+                    en: ''
                   description: the description for the object location assignment
                     to create
                   examples:
-                  - The object is stored in shelf A
+                  - en: The object is stored in shelf A
+                  propertyNames:
+                    $ref: '#/components/schemas/LanguageCode'
                   title: Description
-                  type: string
+                  type: object
                 location_id:
                   anyOf:
                   - type: integer

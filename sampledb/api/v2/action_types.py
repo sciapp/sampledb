@@ -6,31 +6,23 @@ from pydantic import BaseModel, Field
 from .authentication import multi_auth
 from ..utils import Resource
 from ...logic.action_types import get_action_types, get_action_type
-from ...logic import errors, utils, action_types
+from ...logic import errors, action_types
 from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
 
 class ActionTypeModel(BaseModel):
     type_id: int = Field(description="the ID of the action type", examples=[1])
-    name: str = Field(description="the name of the action type", examples=["Sample Creation"])
-    object_name: str = Field(description="the name for objects created with actions of the action type", examples=["Sample"])
+    name: dict[str, str] = Field(description="the name of the action type", examples=["Sample Creation"])
+    object_name: dict[str, str] = Field(description="the name for objects created with actions of the action type", examples=["Sample"])
     admin_only: bool = Field(description="whether the action type may only be used by administrators", examples=[False])
 
     @classmethod
     def from_action_type(cls, action_type: action_types.ActionType) -> typing.Self:
         return cls(
             type_id=action_type.id,
-            name=utils.get_translated_text(
-                action_type.name,
-                language_code='en',
-                default='Unnamed Action Type'
-            ),
-            object_name=utils.get_translated_text(
-                action_type.object_name,
-                language_code='en',
-                default='Object'
-            ),
+            name=action_type.name,
+            object_name=action_type.object_name,
             admin_only=action_type.admin_only
         )
 
