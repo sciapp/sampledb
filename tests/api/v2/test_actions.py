@@ -1,3 +1,4 @@
+import flask
 import requests
 import pytest
 
@@ -58,8 +59,11 @@ def test_get_action(flask_server, auth):
         'user_id': None,
         'type': 'sample',
         'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
-        'name': "Example Action",
-        'description': "This is an example action",
+        'name': {"en": "Example Action"},
+        'description': {"en": "This is an example action"},
+        'description_is_markdown': False,
+        'short_description': {},
+        'short_description_is_markdown': False,
         'is_hidden': False,
         'schema': {
             'title': 'Example Object',
@@ -111,8 +115,11 @@ def test_get_actions(flask_server, auth, auth_user):
             'user_id': auth_user[1].id,
             'type': 'sample',
             'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
-            'name': "Example Action",
-            'description': "This is an example action",
+            'name': {"en": "Example Action"},
+            'description': {"en": "This is an example action"},
+            'description_is_markdown': False,
+            'short_description': {},
+            'short_description_is_markdown': False,
             'is_hidden': False,
             'schema': {
                 'title': 'Example Object',
@@ -129,7 +136,8 @@ def test_get_actions(flask_server, auth, auth_user):
     ]
 
 
-def test_post_action(flask_server, auth):
+def test_put_action(flask_server, auth):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema={
@@ -155,23 +163,59 @@ def test_post_action(flask_server, auth):
     assert r.status_code == 200
 
     action_data = r.json()
-    action_data['name'] = 'Updated Example Action'
-    action_data['description'] = 'This is an updated example action'
+
+    r = requests.put(flask_server.base_url + f'api/v2/actions/{action.id + 1}', auth=auth, json=action_data)
+    assert r.status_code == 404
+    assert r.json() == {
+        "detail": f"Action #{action.id + 1} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The action does not exist.",
+        "type": "http://localhost/api/v2/errors/ActionNotFound",
+    }
+
+    r = requests.put(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
+    assert r.status_code == 403
+
+    action_data['name'] = {"en": "Updated Example Action", "de": "Aktualisierte Beispiel-Aktion"}
+    action_data['description'] = {"en": "This is an updated example action"}
+    action_data['short_description'] = {"en": "*English* short description", "de": "*German* short description"}
+    action_data['short_description_is_markdown'] = True
     action_data['is_hidden'] = True
     action_data['schema']['title'] = 'Updated Example Object'
 
-    r = requests.post(flask_server.base_url + f'api/v2/actions/{action.id + 1}', auth=auth, json=action_data)
-    assert r.status_code == 404
-    assert r.json() == {"msg": f"action {action.id + 1} does not exist"}
-
-    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
-    assert r.status_code == 403
+    german = sampledb.logic.languages.get_language_by_lang_code('de')
+    sampledb.logic.languages.update_language(
+        language_id=german.id,
+        names=german.names,
+        lang_code=german.lang_code,
+        datetime_format_datetime=german.datetime_format_datetime,
+        datetime_format_moment=german.datetime_format_moment,
+        datetime_format_moment_output=german.datetime_format_moment_output,
+        date_format_moment_output=german.date_format_moment_output,
+        enabled_for_input=False,
+        enabled_for_user_interface=False,
+    )
 
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
-    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
+    r = requests.put(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 400
 
-    r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
+    r = requests.put(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
+    assert r.status_code == 400
+
+    sampledb.logic.languages.update_language(
+        language_id=german.id,
+        names=german.names,
+        lang_code=german.lang_code,
+        datetime_format_datetime=german.datetime_format_datetime,
+        datetime_format_moment=german.datetime_format_moment,
+        datetime_format_moment_output=german.datetime_format_moment_output,
+        date_format_moment_output=german.date_format_moment_output,
+        enabled_for_input=True,
+        enabled_for_user_interface=False,
+    )
+    r = requests.put(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json=action_data)
     assert r.status_code == 200
     assert r.json() == {
         'action_id': action.id,
@@ -179,8 +223,11 @@ def test_post_action(flask_server, auth):
         'user_id': None,
         'type': 'sample',
         'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
-        'name': "Updated Example Action",
-        'description': "This is an updated example action",
+        'name': {"en": "Updated Example Action", "de": "Aktualisierte Beispiel-Aktion"},
+        'description': {"en": "This is an updated example action"},
+        'description_is_markdown': False,
+        'short_description':  {"en": "*English* short description", "de": "*German* short description"},
+        'short_description_is_markdown': True,
         'is_hidden': True,
         'schema': {
             'title': 'Updated Example Object',
@@ -214,13 +261,16 @@ def test_post_action(flask_server, auth):
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.GRANT)
     for key, value in [
         ('action_id', action.id + 1),
-        ('name', {'en': 'Example Action'}),
-        ('description', {'en': 'Example Description'}),
+        ('name', 'Example Action'),
+        ('description', 'Example Description'),
+        ('short_description', 'Example Short Description'),
+        ('short_description_is_markdown', 'Markdown'),
         ('is_hidden', None),
         ('schema', [action.schema]),
         ('schema', {'title': 'Invalid Schema', 'type': 'object'}),
-        ('name', ''),
-        ('name', 'x' * 101)
+        ('description', {"en": "Example Description", "te": "Example Description"}),
+        ('name', {"en": ""}),
+        ('name', {"en": "x" * 101})
     ]:
-        r = requests.post(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json={**action_data, key: value})
-        assert r.status_code == 400
+        r = requests.put(flask_server.base_url + 'api/v2/actions/{}'.format(action.id), auth=auth, json={**action_data, key: value})
+        assert r.status_code == 400, f"got status code {r.status_code} for: {key} -> {value}"

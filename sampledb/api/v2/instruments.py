@@ -9,14 +9,14 @@ from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQue
 from .utils.openapi import method
 from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
-from ...logic import errors, utils, instruments
+from ...logic import errors, instruments
 
 
 class InstrumentModel(BaseModel):
     instrument_id: int = Field(description="the ID of the instrument", examples=[1])
-    name: str = Field(description="the name of the instrument", examples=["Example Instrument"])
-    short_description: str = Field(description="the short description of the instrument, shown in instrument lists", examples=["This is an example instrument."])
-    description: str = Field(description="the description of the instrument, shown on the instrument page", examples=["This is an example instrument."])
+    name: dict[str, str] = Field(description="the name of the instrument", examples=[{"en": "Example Instrument"}])
+    short_description: dict[str, str] = Field(description="the short description of the instrument, shown in instrument lists", examples=[{"en": "This is an example instrument."}])
+    description: dict[str, str] = Field(description="the description of the instrument, shown on the instrument page", examples=[{"en": "This is an example instrument."}])
     is_hidden: bool = Field(description="whether the instrument is hidden from object lists", examples=[False])
     instrument_scientists: list[int] = Field(description="the list of instrument scientists for the instrument", examples=[[1]])
     location_id: int | None = Field(description="the ID of the location of the instrument", examples=[1])
@@ -27,9 +27,9 @@ class InstrumentModel(BaseModel):
     def from_instrument(cls, instrument: instruments.Instrument) -> typing.Self:
         return cls(
             instrument_id=instrument.id,
-            name=utils.get_translated_text(instrument.name, 'en'),
-            short_description=utils.get_translated_text(instrument.short_description, 'en'),
-            description=utils.get_translated_text(instrument.description, 'en'),
+            name=instrument.name,
+            short_description=instrument.short_description,
+            description=instrument.description,
             is_hidden=instrument.is_hidden,
             instrument_scientists=[user.id for user in instrument.responsible_users],
             location_id=instrument.location_id,

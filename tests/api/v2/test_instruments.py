@@ -65,13 +65,14 @@ def test_get_instrument(flask_server, auth, user, location):
         short_description='This is the short description',
         description="This is an example instrument"
     )
+    instrument = sampledb.logic.instruments.get_instrument(instrument.id)
     r = requests.get(flask_server.base_url + 'api/v2/instruments/{}'.format(instrument.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
         'instrument_id': instrument.id,
-        'name': "Example Instrument",
-        'short_description': 'This is the short description',
-        'description': "This is an example instrument",
+        'name': instrument.name,
+        'short_description': instrument.short_description,
+        'description': instrument.description,
         'is_hidden': False,
         'instrument_scientists': [],
         'location_id': None,
@@ -85,9 +86,9 @@ def test_get_instrument(flask_server, auth, user, location):
     assert r.status_code == 200
     assert r.json() == {
         'instrument_id': instrument.id,
-        'name': "Example Instrument",
-        'short_description': 'This is the short description',
-        'description': "This is an example instrument",
+        'name': instrument.name,
+        'short_description': instrument.short_description,
+        'description': instrument.description,
         'is_hidden': False,
         'instrument_scientists': [user.id],
         'location_id': location.id,
@@ -108,6 +109,7 @@ def test_get_instruments(flask_server, auth):
         name="Example Instrument",
         description="This is an example instrument"
     )
+    instrument = sampledb.logic.instruments.get_instrument(instrument.id)
     component = sampledb.logic.components.add_component(UUID_1, 'TestDB', None, '')
     fed_instrument = sampledb.logic.instruments.create_instrument(component_id=component.id, fed_id=12)
     sampledb.logic.instrument_translations.set_instrument_translation(
@@ -116,15 +118,16 @@ def test_get_instruments(flask_server, auth):
         name="Example Fed Instrument",
         description="This is an example fed instrument"
     )
+    fed_instrument = sampledb.logic.instruments.get_instrument(fed_instrument.id)
 
     r = requests.get(flask_server.base_url + 'api/v2/instruments/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [
         {
             'instrument_id': instrument.id,
-            'name': "Example Instrument",
-            'short_description': '',
-            'description': "This is an example instrument",
+            'name': instrument.name,
+            'short_description': instrument.short_description,
+            'description': instrument.description,
             'is_hidden': False,
             'instrument_scientists': [],
             'location_id': None,
@@ -133,9 +136,9 @@ def test_get_instruments(flask_server, auth):
         },
         {
             'instrument_id': fed_instrument.id,
-            'name': "Example Fed Instrument",
-            'short_description': '',
-            'description': "This is an example fed instrument",
+            'name': fed_instrument.name,
+            'short_description': fed_instrument.short_description,
+            'description': fed_instrument.description,
             'is_hidden': False,
             'instrument_scientists': [],
             'location_id': None,
