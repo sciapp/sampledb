@@ -380,7 +380,6 @@ def test_status_codes(flask_server, user, driver):
         'eln_imports': 200,
         f'eln_imports/{eln_import_id}': 302,
         f'eln_imports/{eln_import_id}/preview': 404,
-        f'eln_imports/{eln_import_id}/preview/content': 404,
         'favicon.ico': 200,
         'federated-login/create-account/invalid': 302,
         'federated-login/idp/metadata.xml': 302,

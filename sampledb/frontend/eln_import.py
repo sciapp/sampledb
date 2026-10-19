@@ -79,12 +79,9 @@ def upload_eln_import() -> FlaskResponseT:
     )
 
 
-@frontend.route("/eln_imports/<int:eln_import_id>/preview/content")
+@frontend.route("/eln_imports/<int:eln_import_id>/preview")
 @flask_login.login_required
-def eln_preview_content(eln_import_id: int) -> FlaskResponseT:
-    if flask.request.headers['Sec-Fetch-Dest'] != 'iframe':
-        return flask.abort(400)
-
+def eln_preview(eln_import_id: int) -> FlaskResponseT:
     subpath = flask.request.args.get('subpath', None)
     try:
         eln_import = logic.eln_import.get_eln_import(eln_import_id)
@@ -116,22 +113,6 @@ def eln_preview_content(eln_import_id: int) -> FlaskResponseT:
                 mimetype=parsed_preview_file.mime_type
             )
         return flask.Response(parsed_preview_file.content, mimetype=parsed_preview_file.mime_type)
-
-
-@frontend.route("/eln_imports/<int:eln_import_id>/preview")
-@flask_login.login_required
-def eln_preview(eln_import_id: int) -> FlaskResponseT:
-    subpath = flask.request.args.get('subpath', None)
-    try:
-        eln_import = logic.eln_import.get_eln_import(eln_import_id)
-    except logic.errors.ELNImportDoesNotExistError:
-        return flask.abort(404)
-
-    if not logic.eln_import.has_eln_preview(eln_import_id, check_unimported=True):
-        return flask.abort(404)
-
-
-    return flask.render_template('eln_files/eln_preview.html', eln_import_id=eln_import.id, subpath=subpath)
 
 
 @frontend.route('/eln_imports/<int:eln_import_id>', methods=['POST', 'GET'])
