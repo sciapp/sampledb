@@ -127,6 +127,24 @@ def method(
     ],
     GenericOperationCallable[R]
 ]:
+    """
+    Decorator factory for api/v2/ methods exposed via OpenAPI spec.
+
+    :param default_status_code: the status code to use for the regular response
+    :param request_body_context_builder: a callable that uses the path argument
+        to build the context for request body model validation
+    :param allow_read_only: whether to allow access by read-only users
+    :return: the decorator to apply to the method
+
+    The returned decorator converts the get, post, put or delete methods of a
+    Resource subclass, adding validation of request body, URL query parameters,
+    and URL path parameters, based on the methods argument type hints for the
+    arguments request_body, query and path. The method docstring is used to
+    generate the OpenAPI method summary (the first non-empty line of the
+    docstring) and description (the rest of the docstring, stripped of
+    leading and trailing whitespace). The return value type hints are used to
+    generate the responses spec for the OpenAPI method.
+    """
     def method_decorator_impl(
             func: (
                 BareCallable[R] |
