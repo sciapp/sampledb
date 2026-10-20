@@ -379,3 +379,32 @@ def test_eln_sanitizer_css_exfiltration(app):
                 mime_type="text/css",
             )
             assert test_data['expected_result'].strip() == sanitized_content.strip()
+
+
+def test_eln_sanitizer_add_sampledb_notice(app):
+    sanitizer = eln_sanitizer.ELNSanitizer(
+        eln_import_id=ELN_IMPORT_ID,
+        root_path=ROOT_PATH,
+        referenced_files=[],
+        valid_preview_files=[],
+        add_sampledb_notice=True
+    )
+    html = "<html><body><div>Should Stay</div></body></html>"
+
+    with app.test_request_context('/'):
+        result_html = sanitizer.sanitize(html, "text/html")
+
+    assert "Should Stay" in result_html
+    assert "Legal Notice" in result_html
+    assert "Privacy Policy" in result_html
+    assert f"ELN Import #{ELN_IMPORT_ID}" in result_html
+
+    html_without_body = "<html></html>"
+
+    with app.test_request_context('/'):
+        result_html_without_body = sanitizer.sanitize(html, "text/html")
+
+    assert "Should Stay" in result_html_without_body
+    assert "Legal Notice" in result_html_without_body
+    assert "Privacy Policy" in result_html_without_body
+    assert f"ELN Import #{ELN_IMPORT_ID}" in result_html_without_body
