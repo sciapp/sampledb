@@ -4,10 +4,9 @@ import typing
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 import flask
+from flask_babel import _
 import tinycss2
 
-import flask
-from flask_babel import _
 
 from . import errors
 
@@ -112,7 +111,7 @@ class ELNSanitizer:
                     .sampledb_notice a {{ color: #337ab7; text-decoration: none; }}
                     .sampledb_notice a:hover {{ text-decoration: underline; }}
                 </style>
-                <p>{ _('This is the preview for <a href=\"%(eln_import_url)s\">ELN Import #%(eln_import_id)s</a>.</p>', eln_import_url=flask.url_for('frontend.eln_import', eln_import_id=self.eln_import_id), eln_import_id=self.eln_import_id)}
+                <p>{_('This is the preview for <a href=\"%(eln_import_url)s\">ELN Import #%(eln_import_id)s</a>.</p>', eln_import_url=flask.url_for('frontend.eln_import', eln_import_id=self.eln_import_id), eln_import_id=self.eln_import_id)}
                 <p style='text-align: center;'><a style="" href=\"{flask.current_app.config['SERVICE_LEGAL_NOTICE']}\">{_('Legal Notice')}</a> • <a href=\"{flask.current_app.config['SERVICE_PRIVACY_POLICY']}\">{_('Privacy Policy')}</a></p>
             </div>
         """
