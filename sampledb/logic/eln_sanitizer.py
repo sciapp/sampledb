@@ -44,7 +44,14 @@ class ELNSanitizer:
 
     # Simple versioning for the sanitizer. It should be increased when changes were made to the sanitizer.
     # The version is used to detect changes to the sanitizer and update the sanitized content of files in the database.
-    SANITIZER_VERSION = 1
+    SANITIZER_VERSION: int = 1
+
+    ALLOWED_PREVIEW_MIME_TYPES: list[str] = [
+        "text/html",
+        "text/css",
+        "image/jpeg",
+        "image/png"
+    ]
 
     def __init__(self, eln_import_id: int, root_path: str, referenced_files: typing.Optional[list[str]], valid_preview_files: typing.Optional[list[str]], add_sampledb_notice: bool = True):
         self.eln_import_id = eln_import_id
@@ -129,9 +136,7 @@ class ELNSanitizer:
             for attr in attr_keys:
                 if attr in CUSTOM_ATTRIB_FILTERS:
                     CUSTOM_ATTRIB_FILTERS[attr](tag)
-                elif "javascript:" in tag[attr]:
-                    tag.attrs.pop(attr)
-                elif attr not in WHITELIST_ATTRIBUTES:
+                elif "javascript:" in tag[attr] or attr not in WHITELIST_ATTRIBUTES:
                     tag.attrs.pop(attr)
 
     def _sanitize_html_attrib_file_reference(self, attrib: str) -> typing.Callable[[Tag], None]:
@@ -345,7 +350,7 @@ class ELNSanitizer:
         if normalized_fullpath.startswith("/"):
             normalized_fullpath = normalized_fullpath[1:]
 
-        if normalized_fullpath not in self.valid_preview_files:
+        if normalized_fullpath.split('#')[0] not in self.valid_preview_files:
             return None
 
         if normalized_fullpath.startswith("ro-crate-preview.html"):
