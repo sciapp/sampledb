@@ -1450,8 +1450,8 @@ def parse_eln_preview(
                             filepath=path.removeprefix(f"{root_path_name}/"),
                             mime_type=mime_type,
                         ), files)
-                except Exception:
-                    raise errors.InvalidELNFileError(f"{path} must be a UTF-8 encoded text file")
+                except Exception as e:
+                    raise errors.InvalidELNFileError(f"Failed to parse preview file {path}: {e}")
 
             if os.path.normpath(f"{root_path_name}/ro-crate-preview.html") not in member_names:
                 return [], []
@@ -1478,6 +1478,8 @@ def parse_eln_preview(
 
     except zipfile.BadZipfile:
         raise errors.InvalidELNFileError(".eln file must be valid .zip file")
+    except errors.InvalidELNFileError as e:
+        raise e
     except Exception as e:
         raise errors.InvalidELNFileError("Unknown error") from e
 
