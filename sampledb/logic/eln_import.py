@@ -1519,8 +1519,8 @@ def parse_eln_preview_file(
                 try:
                     with zip_file.open(member_names[ro_crate_file_name]) as ro_crate_file:
                         binary_data = ro_crate_file.read()
-                except Exception:
-                    raise errors.InvalidELNFileError(f"Failed to parse preview file: {ro_crate_file_name}")
+                except Exception as e:
+                    raise errors.InvalidELNFileError(f"Failed to parse preview file {ro_crate_file_name}: {e}")
             else:
                 raise errors.ELNImportPreviewFileDoesNotExistError()
     except zipfile.BadZipfile:
