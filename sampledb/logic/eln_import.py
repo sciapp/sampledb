@@ -37,14 +37,6 @@ from ..models import eln_imports, users, Language, Permissions, UserType, Object
 from .eln_sanitizer import ELNSanitizer
 
 
-ALLOWED_PREVIEW_MIME_TYPES = [
-    "text/html",
-    "text/css",
-    "image/jpeg",
-    "image/png"
-]
-
-
 @dataclasses.dataclass
 class ELNImport:
     id: int
@@ -235,7 +227,7 @@ def get_eln_import_preview_file(
 
 def update_sanitized_eln_preview() -> None:
     preview_files = eln_imports.ELNImportPreviewFile.query.filter(
-        eln_imports.ELNImportPreviewFile.mime_type.startswith("text/"),
+        eln_imports.ELNImportPreviewFile.filepath == 'ro-crate-preview.html',
         eln_imports.ELNImportPreviewFile.sanitizer_version < ELNSanitizer.SANITIZER_VERSION
     ).order_by(eln_imports.ELNImportPreviewFile.eln_import_id.asc()).all()
 
@@ -584,7 +576,7 @@ def import_eln_file(
                 sanitizer_version=ELNSanitizer.SANITIZER_VERSION,
                 mime_type=preview_file.mime_type,
             ))
-            db.session.commit()
+        db.session.commit()
 
     return imported_object_ids, users_by_id, errors
 
@@ -1392,8 +1384,8 @@ def _find_valid_preview_files(member_names: dict[str, str], root_path_name: str)
     for member_name in member_names:
         mime_type, _ = guess_file_type(member_name)
         if (
-            (member_name.startswith(f"{root_path_name}/ro-crate-preview.html") or member_name.startswith(f"{root_path_name}/ro-crate-preview_files/")) and
-            mime_type in ALLOWED_PREVIEW_MIME_TYPES
+                member_name == f"{root_path_name}/ro-crate-preview.html" or
+                (member_name.startswith(f"{root_path_name}/ro-crate-preview_files/") and mime_type in ELNSanitizer.ALLOWED_PREVIEW_MIME_TYPES)
         ):
             result.append(member_name.removeprefix(f"{root_path_name}/"))
 
@@ -1467,7 +1459,7 @@ def parse_eln_preview(
                     full_filename = os.path.normpath(f"{root_path_name}/{filename}")
                     if full_filename in member_names:
                         mime_type = guess_file_type(full_filename)[0]
-                        if mime_type is None or mime_type not in ALLOWED_PREVIEW_MIME_TYPES:
+                        if mime_type is None or mime_type not in ELNSanitizer.ALLOWED_PREVIEW_MIME_TYPES:
                             ignored_files.append(full_filename)
                             continue
                         parsed_preview_file, files = parse_preview_file(full_filename, mime_type)
@@ -1533,7 +1525,7 @@ def parse_eln_preview_file(
     valid_preview_files = _find_valid_preview_files(member_names, root_path_name)
 
     mime_type = guess_file_type(ro_crate_file_name)[0]
-    if mime_type not in ALLOWED_PREVIEW_MIME_TYPES:
+    if mime_type not in ELNSanitizer.ALLOWED_PREVIEW_MIME_TYPES:
         raise errors.ELNImportPreviewIllegalMimeTypeError()
     if mime_type.startswith("text/"):
         sanitizer = ELNSanitizer(
