@@ -298,7 +298,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             script_sources = [
                 "'unsafe-inline'"
             ]
-        elif flask.request.endpoint == 'frontend.eln_preview_content' and response.status_code != 404:
+        elif flask.request.endpoint == 'frontend.eln_preview' and response.status_code != 404:
             script_sources = ["'none'"]
             image_sources = ["'self'"]
 
@@ -311,7 +311,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     @app.after_request
     def set_eln_preview_headers(response: flask.Response) -> flask.Response:
-        if flask.request.endpoint == 'frontend.eln_preview_content':
+        if flask.request.endpoint == 'frontend.eln_preview':
             response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
 
