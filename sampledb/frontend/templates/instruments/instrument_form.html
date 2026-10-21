@@ -32,10 +32,19 @@
   {% endfor %}
   {% do set_template_value("categories", categories) %}
 
+  {% set templates = [] %}
+  {% for template in instrument_log_templates %}
+    {% do templates.append({"id": template.id | string, "title": template.title, "content": template.content}) %}
+  {% endfor %}
+  {% do set_template_value("templates", templates) %}
+
   {% do set_template_value("default_theme_name", instrument_log_category_themes[0].name.lower()) %}
 
   {% do set_template_value("translations.enter_category_title", _('Please enter a category title.')) %}
   {% do set_template_value("translations.enter_shorter_category_title", _('Please enter a shorter category title (at most 100 characters).')) %}
+  {% do set_template_value("translations.enter_template_title", _('Please enter a template name.')) %}
+  {% do set_template_value("translations.enter_shorter_template_title", _('Please enter a shorter template name (at most 100 characters).')) %}
+  {% do set_template_value("translations.enter_template_content", _('Please enter a template content.')) %}
 
   {% do set_template_value("is_create_form", submit_text !=  _('Save')) %}
 
@@ -282,6 +291,46 @@
         <button class="btn btn-success" type="button" id="button-instrument-log-new-category"><i class="fa fa-plus"></i></button>
       </div>
       <input type="hidden" id="input-categories" name="{{ instrument_form.categories.name }}" value="">
+
+      <label>{{ _('Instrument Log Templates') }}</label>
+      <div class="hidden" id="instrument-log-template-template">
+        <div class="form-group">
+          <div data-template-id="">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="{{ _('Template Name') }}">
+              <span class="input-group-btn">
+                <button class="btn btn-danger button-delete-template" type="button"><i class="fa fa-trash"></i></button>
+              </span>
+            </div>
+            <div class="form-group" style="padding-top:8px">
+              <textarea class="form-control" placeholder="{{ _('Template Content') }}"></textarea>
+            </div>
+          </div>
+          <span class="help-block"></span>
+        </div>
+      </div>
+      {% for template in instrument_log_templates %}
+      <div class="form-group">
+          <div data-template-id="{{ template.id }}">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="{{ _('Template Name') }}" value="{{ template.title }}">
+              <span class="input-group-btn">
+                <button class="btn btn-danger button-delete-template" type="button"><i class="fa fa-trash"></i></button>
+              </span>
+            </div>
+            <div class="form-group" style="padding-top:8px">
+              <textarea class="form-control" placeholder="{{ _('Template Content') }}">{{ template.content }}</textarea>
+            </div>
+          </div>
+          <span class="help-block"></span>
+      </div>
+      {% endfor %}
+      <div></div>
+      <div class="form-group text-right">
+        <button class="btn btn-success" type="button" id="button-instrument-log-new-template"><i class="fa fa-plus"></i></button>
+      </div>
+      <input type="hidden" id="input-templates" name="{{ instrument_form.templates.name }}" value="">
+
       <div class="checkbox">
         <label for="input-users_can_create_log_entries">
           <input type="checkbox" id="input-users_can_create_log_entries" name="{{ instrument_form.users_can_create_log_entries.name }}" {% if instrument_form.users_can_create_log_entries.data %}checked="checked"{% endif %}> {{ _('Users can create log entries') }}

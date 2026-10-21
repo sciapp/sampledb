@@ -260,6 +260,30 @@ class InstrumentLogCategory:
         )
 
 
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogTemplate:
+    """
+    This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogTemplate.
+    """
+
+    id: int
+    instrument_id: int
+    title: str
+    content: str
+
+    @classmethod
+    def from_database(
+            cls,
+            template: instrument_log_entries.InstrumentLogTemplate
+    ) -> 'InstrumentLogTemplate':
+        return InstrumentLogTemplate(
+            id=template.id,
+            instrument_id=template.instrument_id,
+            title=template.title,
+            content=template.content,
+        )
+
+
 def get_instrument_log_categories(instrument_id: int) -> typing.List[InstrumentLogCategory]:
     """
     Return the instrument log categories for an object.
@@ -728,4 +752,74 @@ def hide_instrument_log_file_attachment(
         raise errors.InstrumentLogFileAttachmentDoesNotExistError()
     attachment.is_hidden = True
     db.session.add(attachment)
+    db.session.commit()
+
+
+def get_instrument_log_templates(
+        instrument_id: int
+) -> list[InstrumentLogTemplate]:
+    """
+    Return the instrument log templates for an instrument.
+
+    :param instrument_id: the ID of an existing instrument
+    :return: the instrument log templates
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
+    """
+    templates = instrument_log_entries.InstrumentLogTemplate.query.filter_by(instrument_id=instrument_id).all()
+    if not templates:
+        # ensure that the instrument exists
+        instruments.check_instrument_exists(instrument_id=instrument_id)
+        return []
+    return [
+        InstrumentLogTemplate.from_database(template)
+        for template in templates
+    ]
+
+
+def create_instrument_log_template(
+    instrument_id: int,
+    title: str,
+    content: str
+) -> InstrumentLogTemplate:
+    """
+    Create a new instrument log template for an instrument.
+
+    :param instrument_id: the ID of an existing instrument
+    :param title: the template title
+    :param content: the template content
+    :return: the newly created template
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
+    """
+    template = instrument_log_entries.InstrumentLogTemplate(
+        instrument_id=instrument_id,
+        title=title,
+        content=content
+    )
+    db.session.add(template)
+    db.session.commit()
+    return InstrumentLogTemplate.from_database(template)
+
+
+def update_instrument_log_template(
+    template_id: int,
+    title: str,
+    content: str,
+) -> InstrumentLogTemplate:
+    template = instrument_log_entries.InstrumentLogTemplate.query.filter_by(id=template_id).first()
+    if template is None:
+        raise errors.InstrumentLogTemplateDoesNotExistError()
+    template.title = title
+    template.content = content
+    db.session.add(template)
+    db.session.commit()
+    return InstrumentLogTemplate.from_database(template)
+
+
+def delete_instrument_log_template(template_id: int) -> None:
+    template = instrument_log_entries.InstrumentLogTemplate.query.filter_by(id=template_id).first()
+    if template is None:
+        raise errors.InstrumentLogTemplateDoesNotExistError()
+    db.session.delete(template)
     db.session.commit()
