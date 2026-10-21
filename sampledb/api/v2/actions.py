@@ -34,10 +34,10 @@ class ActionModel(BaseModel):
     user_id: int | None = Field(description="the ID of the user who created the action", examples=[1])
     type: typing.Literal['sample', 'measurement', 'simulation', 'custom'] = Field(description="a string representation of the action type", examples=["sample"], deprecated=True)
     type_id: int | None = Field(description="the ID of the action type", examples=[1])
-    name: dict[str, str] | None = Field(description="the name of the action", examples=[{"en": "Example Action"}])
-    description: dict[str, str] | None = Field(description="the description of the action", examples=[{"en": "This is an example action."}])
+    name: dict[LanguageCode, str] | None = Field(description="the name of the action", examples=[{"en": "Example Action"}])
+    description: dict[LanguageCode, str] | None = Field(description="the description of the action", examples=[{"en": "This is an example action."}])
     description_is_markdown: bool | None = Field(description="whether the description is formatted in Markdown", examples=[False])
-    short_description: dict[str, str] | None = Field(description="the short description of the action for action lists", examples=[{"en": "This is an example action."}])
+    short_description: dict[LanguageCode, str] | None = Field(description="the short description of the action for action lists", examples=[{"en": "This is an example action."}])
     short_description_is_markdown: bool | None = Field(description="whether the short description is formatted in Markdown", examples=[False])
     is_hidden: bool = Field(description="whether the action is hidden from action lists", examples=[False])
     action_schema: dict[str, typing.Any] | None = Field(

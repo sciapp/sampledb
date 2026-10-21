@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from .authentication import multi_auth
 from .utils.responses import ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
+from .utils.validation import LanguageCode
 from ..utils import Resource
 from ...logic.instruments import get_instrument, get_instruments
 from ...logic import errors, instruments
@@ -14,9 +15,9 @@ from ...logic import errors, instruments
 
 class InstrumentModel(BaseModel):
     instrument_id: int = Field(description="the ID of the instrument", examples=[1])
-    name: dict[str, str] = Field(description="the name of the instrument", examples=[{"en": "Example Instrument"}])
-    short_description: dict[str, str] = Field(description="the short description of the instrument, shown in instrument lists", examples=[{"en": "This is an example instrument."}])
-    description: dict[str, str] = Field(description="the description of the instrument, shown on the instrument page", examples=[{"en": "This is an example instrument."}])
+    name: dict[LanguageCode, str] = Field(description="the name of the instrument", examples=[{"en": "Example Instrument"}])
+    short_description: dict[LanguageCode, str] = Field(description="the short description of the instrument, shown in instrument lists", examples=[{"en": "This is an example instrument."}])
+    description: dict[LanguageCode, str] = Field(description="the description of the instrument, shown on the instrument page", examples=[{"en": "This is an example instrument."}])
     is_hidden: bool = Field(description="whether the instrument is hidden from object lists", examples=[False])
     instrument_scientists: list[int] = Field(description="the list of instrument scientists for the instrument", examples=[[1]])
     location_id: int | None = Field(description="the ID of the location of the instrument", examples=[1])
