@@ -50,6 +50,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the description of the action
@@ -82,6 +84,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the name of the action
@@ -110,6 +114,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the short description of the action for action lists
@@ -181,6 +187,8 @@ components:
           description: the name of the action type
           examples:
           - Sample Creation
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Name
           type: object
         object_name:
@@ -189,6 +197,8 @@ components:
           description: the name for objects created with actions of the action type
           examples:
           - Sample
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Object Name
           type: object
         type_id:
@@ -498,6 +508,8 @@ components:
           description: the description of the basic group
           examples:
           - en: This is an example basic group.
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Description
           type: object
         group_id:
@@ -521,6 +533,8 @@ components:
           description: the name of the basic group
           examples:
           - en: Example Basic Group
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Name
           type: object
       required:
@@ -750,6 +764,8 @@ components:
             page
           examples:
           - en: This is an example instrument.
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Description
           type: object
         fed_id:
@@ -794,6 +810,8 @@ components:
           description: the name of the instrument
           examples:
           - en: Example Instrument
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Name
           type: object
         short_description:
@@ -803,6 +821,8 @@ components:
             lists
           examples:
           - en: This is an example instrument.
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Short Description
           type: object
       required:
@@ -825,6 +845,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the description of the location
@@ -853,6 +875,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the name of the location
@@ -897,6 +921,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the name of the location type
@@ -917,6 +943,8 @@ components:
           anyOf:
           - additionalProperties:
               type: string
+            propertyNames:
+              $ref: '#/components/schemas/LanguageCode'
             type: object
           - type: 'null'
           description: the description of the object location/responsible user assignment
@@ -1347,6 +1375,8 @@ components:
           description: the description of the project group
           examples:
           - en: This is an example project group.
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Description
           type: object
         member_groups:
@@ -1375,6 +1405,8 @@ components:
           description: the name of the project group
           examples:
           - en: Example Project Group
+          propertyNames:
+            $ref: '#/components/schemas/LanguageCode'
           title: Name
           type: object
         project_id:

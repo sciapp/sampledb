@@ -8,7 +8,7 @@ from ...logic import errors, projects
 from ...models import Permissions
 from ..utils import Resource
 from .authentication import multi_auth
-from .utils.validation import UserId, generate_example, PermissionsModel
+from .utils.validation import UserId, generate_example, PermissionsModel, LanguageCode
 from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel, PaginatedSequence, \
     PaginationQueryModel
 from .utils.openapi import method
@@ -44,8 +44,8 @@ class ProjectMemberGroupRefModel(BaseModel):
 
 class ProjectModel(BaseModel):
     project_id: int = Field(description="the ID of the project group", examples=[1])
-    name: dict[str, str] = Field(description="the name of the project group", examples=[{"en": "Example Project Group"}])
-    description: dict[str, str] = Field(description="the description of the project group", examples=[{"en": "This is an example project group."}])
+    name: dict[LanguageCode, str] = Field(description="the name of the project group", examples=[{"en": "Example Project Group"}])
+    description: dict[LanguageCode, str] = Field(description="the description of the project group", examples=[{"en": "This is an example project group."}])
     member_users: list[ProjectMemberUserRefModel] = Field(description="the list of users who are members of the project group", examples=[
         [generate_example(ProjectMemberUserRefModel)]
     ])

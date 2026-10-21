@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from ...logic import errors, groups
 from ..utils import Resource
 from .authentication import multi_auth
-from .utils.validation import UserId, generate_example
+from .utils.validation import UserId, generate_example, LanguageCode
 from .utils.responses import CreatedResponseModel, NoContentModel, ErrorDetailsModel, PaginatedSequence, \
     PaginationQueryModel
 from .utils.openapi import method
@@ -27,8 +27,8 @@ class UserRef(BaseModel):
 
 class GroupModel(BaseModel):
     group_id: int = Field(description="the ID of the basic group", examples=[1])
-    name: dict[str, str] = Field(description="the name of the basic group", examples=[{"en": "Example Basic Group"}])
-    description: dict[str, str] = Field(description="the description of the basic group", examples=[{"en": "This is an example basic group."}])
+    name: dict[LanguageCode, str] = Field(description="the name of the basic group", examples=[{"en": "Example Basic Group"}])
+    description: dict[LanguageCode, str] = Field(description="the description of the basic group", examples=[{"en": "This is an example basic group."}])
     member_users: list[UserRef] = Field(description="the list of users who are members of the basic group", examples=[
         [generate_example(UserRef)]
     ])
