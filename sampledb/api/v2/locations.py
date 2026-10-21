@@ -87,7 +87,7 @@ class _ParentLocationMixin(_BaseLocation):
 
 class LocationTypeModel(BaseModel):
     location_type_id: int = Field(description="the ID of the location type", examples=[1])
-    name: dict[str, str] | None = Field(description="the name of the location type", examples=["Example Location Type"])
+    name: dict[LanguageCode, str] | None = Field(description="the name of the location type", examples=["Example Location Type"])
 
     @classmethod
     def from_location_type(cls, location_type: locations.LocationType) -> typing.Self:
@@ -103,7 +103,7 @@ class ObjectLocationAssignmentModel(BaseModel):
     location_id: int | None = Field(description="the ID of the location the object is assigned to", examples=[1])
     responsible_user_id: int | None = Field(description="the ID of the responsible user the object is assigned to", examples=[1])
     user_id: int | None = Field(description="the ID of the user who assinged the object to a location/responsible user", examples=[1])
-    description: dict[str, str] | None = Field(description="the description of the object location/responsible user assignment", examples=[{"en": "The object is stored on the example shelf."}])
+    description: dict[LanguageCode, str] | None = Field(description="the description of the object location/responsible user assignment", examples=[{"en": "The object is stored on the example shelf."}])
     utc_datetime: str | None = Field(description="the datetime in UTC when the object was assignment was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
 
     @classmethod
@@ -121,8 +121,8 @@ class ObjectLocationAssignmentModel(BaseModel):
 
 class LocationModel(BaseModel):
     location_id: int = Field(description="the ID of the location", examples=[1])
-    name: dict[str, str] | None = Field(description="the name of the location", examples=[{"en": "Example Location"}])
-    description: dict[str, str] | None = Field(description="the description of the location", examples=[{"en": "This is an example location."}])
+    name: dict[LanguageCode, str] | None = Field(description="the name of the location", examples=[{"en": "Example Location"}])
+    description: dict[LanguageCode, str] | None = Field(description="the description of the location", examples=[{"en": "This is an example location."}])
     parent_location_id: int | None = Field(description="the ID of the parent location of the location", examples=[2])
     type_id: int | None = Field(description="the ID of the location type of the location", examples=[-99])
     is_hidden: bool = Field(description="whether the location is hidden from location lists", examples=[False])

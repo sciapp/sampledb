@@ -4,6 +4,7 @@ from http import HTTPStatus
 from pydantic import BaseModel, Field
 
 from .authentication import multi_auth
+from .utils.validation import LanguageCode
 from ..utils import Resource
 from ...logic.action_types import get_action_types, get_action_type
 from ...logic import errors, action_types
@@ -13,8 +14,8 @@ from .utils.openapi import method
 
 class ActionTypeModel(BaseModel):
     type_id: int = Field(description="the ID of the action type", examples=[1])
-    name: dict[str, str] = Field(description="the name of the action type", examples=["Sample Creation"])
-    object_name: dict[str, str] = Field(description="the name for objects created with actions of the action type", examples=["Sample"])
+    name: dict[LanguageCode, str] = Field(description="the name of the action type", examples=["Sample Creation"])
+    object_name: dict[LanguageCode, str] = Field(description="the name for objects created with actions of the action type", examples=["Sample"])
     admin_only: bool = Field(description="whether the action type may only be used by administrators", examples=[False])
 
     @classmethod
