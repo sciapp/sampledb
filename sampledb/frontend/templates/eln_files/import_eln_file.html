@@ -8,6 +8,21 @@
     <p class="text-center help-block">{{ _('%(service_name)s can import objects from .eln files exported by other electronic lab notebooks.', service_name=service_name) }} <a href="https://github.com/TheELNConsortium/TheELNFileFormat">{{ _('Read more.') }}</a></p>
     <form class="form-horizontal" method="post" id="form-eln_import" enctype="multipart/form-data">
       {{ import_eln_file_form.csrf_token() }}
+      {% if parsed_eln_file_data.has_preview %}
+      <p>{{ _('This ELN file provides a preview: <a href="%(preview_url)s">Open preview</a>', preview_url=url_for(".eln_preview", eln_import_id=eln_import_id)) }}</p>
+      <div class="form-group">
+        <div class="col-sm-4">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="{{ import_eln_file_form.import_preview.name }}" {% if import_eln_file_form.import_preview.data %}checked="checked"{% endif %} />
+              {{ _('Import preview') }}
+            </label>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p>{{ _('This ELN file does not provide a preview.') }}</p>
+      {% endif %}
       {% if parsed_eln_file_data.signed_by %}
         <p>{{ _("This .eln file was signed by %(sign_url)s.", sign_url=parsed_eln_file_data.signed_by) }}</p>
       {% else %}
