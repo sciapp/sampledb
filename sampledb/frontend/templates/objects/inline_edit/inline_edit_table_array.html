@@ -32,7 +32,7 @@
             {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
             {% set entry_index = loop.index0 %}
             {% set data = item %}
-            <tr>
+            <tr data-id-prefix="{{ id_prefix }}">
               {% for property_name in item_property_names %}
                 <td>
                   {% set is_required = property_name in schema.get('required', ()) %}
