@@ -503,4 +503,31 @@ $(function () {
       });
     }
   });
+
+  window.new_log_entry = null;
+  window.templates = window.getTemplateValue('templates');
+  $('.new-log-entry-button').on('click', function () {
+    const templateID = $(this).attr('data-template-id');
+    if (templateID) {
+      const matchingTemplates = window.templates.filter(function (template) {
+        return template.id === templateID;
+      });
+      if (matchingTemplates.length > 0) {
+        if (window.new_log_entry !== null) {
+          window.new_log_entry.value(matchingTemplates[0].content);
+        } else {
+          $('#textarea-log-entry-text').val(matchingTemplates[0].content);
+          const markdownToggle = $('#input-content-is-markdown');
+          if (!markdownToggle.prop('checked')) {
+            markdownToggle.prop('checked', true).trigger('change');
+          }
+        }
+      }
+    }
+    $('#newLogEntryModal').on('shown.bs.modal', function () {
+      if (window.new_log_entry !== null) {
+        window.new_log_entry.codemirror.refresh();
+      }
+    }).modal('show');
+  });
 });

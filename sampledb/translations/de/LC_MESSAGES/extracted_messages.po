@@ -4714,6 +4714,9 @@ msgstr ""
 msgid "Create Log Entry"
 msgstr "Log-Eintrag erstellen"
 
+msgid "… without template"
+msgstr "… ohne Vorlage"
+
 msgid "Smartphone Upload as Log Entry"
 msgstr "Smartphone-Upload als Log-Eintrag"
 
@@ -4880,6 +4883,15 @@ msgstr "Bitte geben Sie einen Kategorietitel ein."
 msgid "Please enter a shorter category title (at most 100 characters)."
 msgstr "Bitte geben Sie einen kürzeren Kategorietitel ein (höchstens 100 Zeichen)."
 
+msgid "Please enter a template name."
+msgstr "Bitte geben Sie einen Vorlagenname ein."
+
+msgid "Please enter a shorter template name (at most 100 characters)."
+msgstr "Bitte geben Sie einen kürzeren Vorlagennamen ein (höchstens 100 Zeichen)."
+
+msgid "Please enter a template content."
+msgstr "Bitte geben Sie einen Inhalt ein."
+
 msgid "Please enter a shorter instrument name (at most 100 characters)."
 msgstr "Bitte geben Sie einen kürzeren Instrumentnamen ein (maximal 100 Zeichen)."
 
@@ -4910,6 +4922,15 @@ msgstr "Instrument Log Kategorien"
 
 msgid "Category Name"
 msgstr "Kategorie-Name"
+
+msgid "Instrument Log Templates"
+msgstr "Instrument Log Vorlagen"
+
+msgid "Template Name"
+msgstr "Vorlagenname"
+
+msgid "Template Content"
+msgstr "Vorlangeninhalt"
 
 msgid "Users can create log entries"
 msgstr "Nutzer können Log-Einträge erstellen"

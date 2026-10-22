@@ -170,6 +170,24 @@ This example shows how Markdown can be used for instrument Notes.
             title='Normal',
             theme=sampledb.models.instrument_log_entries.InstrumentLogCategoryTheme.GRAY
         )
+        sampledb.logic.instrument_log_entries.create_instrument_log_template(
+            instrument_id=instrument.id,
+            title='Issue Report',
+            content="""# Issue Report
+
+## Summary
+
+## Steps
+
+### When does this issue occur?
+
+### What happens?
+
+### What did you expect to happen?
+
+## Comments
+"""
+        )
         for category in sampledb.logic.instrument_log_entries.get_instrument_log_categories(instrument.id):
             sampledb.logic.instrument_log_entries.create_instrument_log_entry(
                 instrument.id, basic_user.id, "This is an example instrument log entry",

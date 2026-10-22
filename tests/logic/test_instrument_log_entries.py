@@ -124,3 +124,34 @@ def test_log_entry_categories(instrument, instrument_responsible_user):
             content="test",
             category_ids=[category_b.id]
         )
+
+
+def test_log_entry_templates(instrument, instrument_responsible_user):
+    template_a = instrument_log_entries.create_instrument_log_template(
+        instrument_id=instrument.id,
+        title="template A",
+        content="A"
+    )
+    template_b = instrument_log_entries.create_instrument_log_template(
+        instrument_id=instrument.id,
+        title="template B",
+        content="B"
+    )
+    assert set(instrument_log_entries.get_instrument_log_templates(instrument.id)) == {template_a, template_b}
+
+    instrument_log_entries.update_instrument_log_template(
+        template_id=template_a.id,
+        title="template A+",
+        content="A+"
+    )
+    instrument_log_entries.delete_instrument_log_template(template_b.id)
+    assert template_b not in set(instrument_log_entries.get_instrument_log_templates(instrument.id))
+
+    with pytest.raises(errors.InstrumentLogTemplateDoesNotExistError):
+        instrument_log_entries.delete_instrument_log_template(template_b.id)
+    with pytest.raises(errors.InstrumentLogTemplateDoesNotExistError):
+        instrument_log_entries.update_instrument_log_template(
+            template_id=template_b.id,
+            title="Template B",
+            content="B"
+        )
