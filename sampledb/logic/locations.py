@@ -443,7 +443,7 @@ def assign_location_to_object(
         responsible_user_id: typing.Optional[int],
         user_id: int,
         description: typing.Optional[typing.Dict[str, str]]
-) -> None:
+) -> int:
     """
     Assign a location to an object.
 
@@ -453,6 +453,7 @@ def assign_location_to_object(
     :param user_id: the ID of an existing user
     :param description: a description of where the object was stored in a dict.
         The keys are the lang codes and the values are the descriptions.
+    :return: the ID of the created object location assignment
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.LocationDoesNotExistError: when no location with the given
@@ -528,6 +529,7 @@ def assign_location_to_object(
             location_log.add_object(user_id, location_id, object_location_assignment.id)
         if previous_location_id is not None:
             location_log.remove_object(user_id, previous_location_id, object_location_assignment.id)
+    return object_location_assignment.id
 
 
 def create_fed_assignment(
@@ -577,18 +579,40 @@ def create_fed_assignment(
     return object_location_assignment
 
 
-def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocationAssignment]:
+def get_object_location_assignments(
+        object_id: int,
+        after_id: int | None = None,
+        limit: int | None = None,
+        sort_by: typing.Literal['utc_datetime', 'id'] = 'utc_datetime',
+) -> typing.List[ObjectLocationAssignment]:
     """
     Get a list of all object location assignments for an object.
 
     :param object_id: the ID of an existing object
+    :param after_id: all returned object location assignments must have an ID
+        greater than this ID, if it is not None (must be None if sort_by is
+        "utc_datetime")
+    :param limit: the maximum number of object location assignments to return
+        (must be None if sort_by is "utc_datetime")
+    :param sort_by: the sort order, must be "id" if limit or after_id are set
     :return: the list of object location assignments
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     """
+    if limit is not None or after_id is not None:
+        assert sort_by == 'id'
     # ensure the object exists
     objects.check_object_exists(object_id)
-    object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime).all()
+    object_location_assignments_query = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id)
+    if after_id is not None:
+        object_location_assignments_query = object_location_assignments_query.filter(locations.ObjectLocationAssignment.id > after_id)
+    if sort_by == 'utc_datetime':
+        object_location_assignments_query = object_location_assignments_query.order_by(locations.ObjectLocationAssignment.utc_datetime)
+    else:
+        object_location_assignments_query = object_location_assignments_query.order_by(locations.ObjectLocationAssignment.id)
+    if limit is not None:
+        object_location_assignments_query = object_location_assignments_query.limit(limit)
+    object_location_assignments = object_location_assignments_query.all()
     return [
         ObjectLocationAssignment.from_database(object_location_assignment)
         for object_location_assignment in object_location_assignments

@@ -1,6 +1,7 @@
 coverage
 jsonschema
 lxml
+openapi-spec-validator
 pypdf
 pytest
 pytest-cov

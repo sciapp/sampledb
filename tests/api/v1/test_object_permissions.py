@@ -654,7 +654,7 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
     assert r.status_code == 200
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
     assert r.status_code == 200
-    perms_source_object = sampledb.api.server.object_permissions.all_object_permissions_dict_to_json(sampledb.logic.object_permissions.get_all_object_permissions(object_id))
+    perms_source_object = sampledb.api.v1.object_permissions.all_object_permissions_dict_to_json(sampledb.logic.object_permissions.get_all_object_permissions(object_id))
     perms_source_object["users"] = {str(k): v for k,v in perms_source_object["users"].items()} if perms_source_object.get("users") else None
     perms_source_object["groups"] = {str(k): v for k,v in perms_source_object["groups"].items()} if perms_source_object.get("groups") else None
     perms_source_object["projects"] = {str(k): v for k,v in perms_source_object["projects"].items()} if perms_source_object.get("projects") else None

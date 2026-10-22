@@ -1,6 +1,8 @@
+pillow
 pygments
 pytest
 selenium
 Sphinx
 sphinxcontrib.httpdomain
+swagger_plugin_for_sphinx
 vcversioner

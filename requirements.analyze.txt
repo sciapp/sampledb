@@ -9,3 +9,4 @@ types-beautifulsoup4
 types-bleach
 types-ldap3
 types-requests
+types-PyYAML

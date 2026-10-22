@@ -3,12 +3,14 @@
 SampleDB API package
 """
 
-from . import server
+from . import v1
+from . import v2
 from . import federation
 from . import frontend
 
 __all__ = [
-    'server',
+    'v1',
+    'v2',
     'federation',
     'frontend',
 ]

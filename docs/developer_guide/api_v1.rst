@@ -1,7 +1,7 @@
 .. _http_api:
 
-HTTP API
-========
+HTTP API v1
+===========
 
 The SampleDB HTTP API makes it possible to use HTTP requests to perform most actions that can be done via the web frontend. This can be very useful for automated data entry, e.g. for uploading metadata from instrument control software, and retrieval, e.g. for data analysis.
 
