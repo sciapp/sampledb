@@ -138,6 +138,7 @@ def object_data_to_html(
     else:
         cache_entry = None
 
+    component_uuid: str | None
     if cache_entry is not None:
         cached_html: typing.Optional[str] = cache_entry.html
         object_dependencies = typing.cast(typing.Set[typing.Tuple[int, typing.Optional[str], typing.Optional[int]]], {tuple(object_dependency) for object_dependency in cache_entry.object_dependencies})
@@ -251,7 +252,7 @@ def object_data_to_html(
             if 'file_id' in property_data:
                 file_id = property_data['file_id']
                 try:
-                    file = get_file(file_id, object_id, component_uuid)
+                    file = get_file(file_id, object_id, component_id)
                     file_dependencies.add((file_id, object_id, component_uuid, file.is_hidden, file.title))
                 except errors.FileDoesNotExistError:
                     file_dependencies.add((file_id, object_id, component_uuid, None, None))
