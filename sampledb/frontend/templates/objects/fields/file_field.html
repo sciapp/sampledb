@@ -1,3 +1,15 @@
+{% set conflicting = false %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+  {% set conflicting = 'imported' in data or 'local' in data %}
+  {% if conflicting %}
+    {% set imported_data = data.get('imported') %}
+    {% set local_data = data.get('local') %}
+    {% set data = data.get('local') or data.get('imported') %}
+  {% endif %}
+{% endif %}
+
 {% set selected_file_id = none %}
 {% if form_data[id_prefix+'_file_id'] %}
   {% set selected_file_id = form_data[id_prefix+'_file_id'] | int(None) %}
@@ -8,7 +20,7 @@
 
 {% set filepicker_options = [] %}
 {% if not is_required %}
-  {% do filepicker_options.append(('', '&mdash;' | safe, selected_file_id is none)) %}
+  {% do filepicker_options.append(('', '&mdash;' | safe, selected_file_id is none, conflicting and local_data is none, conflicting and imported_data is none)) %}
 {% endif %}
 {% if file_names_by_id %}
   {% for file_id, file_names in file_names_by_id.items() %}
@@ -19,15 +31,21 @@
       {% endif %}
     {% endfor %}
     {% if (ns.has_extension and file_id >= 0) or selected_file_id == file_id %}
-      {% do filepicker_options.append((file_id, file_names[1], selected_file_id == file_id)) %}
+      {% do filepicker_options.append((file_id, file_names[1], selected_file_id == file_id, local_data is not none and local_data['file_id'] == file_id, imported_data is not none and imported_data['file_id'] == file_id)) %}
     {% endif %}
   {% endfor %}
 {% endif %}
 
-<div class="input-group">
+<div class="input-group {% if conflicting %}has-conflict{% endif %}">
   <select {% if is_template %} class="template-file-select" data-template-class="form-control selectpicker file-select" {% else %} class="form-control selectpicker file-select" {% endif %} name="{{ id_prefix }}_file_id" data-live-search="true" {% if not filepicker_options %}disabled="disabled" data-none-selected-text="{{ _('Please upload a file.') }}"{% endif %}>
-    {% for value, text, is_selected in filepicker_options %}
-      <option value="{{ value }}" {% if is_selected %} selected="selected" {% endif %}>{{ text }}</option>
+    {% for value, text, is_selected, is_local_selection, is_imported_selection in filepicker_options %}
+      {% set subtext = none %}
+      {% if is_local_selection %}
+        {% set subtext = _("Local Selection") %}
+      {% elif is_imported_selection %}
+        {% set subtext = _("Imported Selection") %}
+      {% endif %}
+      <option value="{{ value }}" {% if is_selected %} selected="selected" {% endif %} {% if subtext %} data-subtext="{{ subtext }}" {% endif %}>{{ text }}</option>
     {% endfor %}
   </select>
   <span class="input-group-btn">

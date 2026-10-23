@@ -21,6 +21,7 @@ Currently in development.
 - Added miscellaneous OIDC improvements
 - Added location filter for instrument list
 - Minor fixes and improvements
+- Added write access for shared objects
 
 
 Version 0.33.1

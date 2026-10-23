@@ -69,7 +69,7 @@ def process_object_log_entries(object_log_entries: typing.List[ObjectLogEntry], 
             object_id_value = object_log_entry.data.get(using_object_id)
             if type(object_id_value) is int:
                 referenced_object_ids[object_log_entry.id] = object_id_value
-        if object_log_entry.user_id not in users_by_id:
+        if object_log_entry.user_id not in users_by_id and object_log_entry.user_id is not None:
             users_by_id[object_log_entry.user_id] = users.get_user(object_log_entry.user_id)
         object_log_entry.user = users_by_id[object_log_entry.user_id]
         # remove the modified log entry from the session to avoid an
@@ -116,7 +116,7 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
 def _store_new_log_entry(
         type: ObjectLogEntryType,
         object_id: int,
-        user_id: int,
+        user_id: typing.Optional[int],
         data: typing.Dict[str, typing.Any],
         utc_datetime: typing.Optional[datetime.datetime] = None,
         is_imported: bool = False
@@ -139,11 +139,14 @@ def create_object(
         object_id: int,
         previous_object_id: typing.Optional[int] = None,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        is_imported: bool = False
+        is_imported: bool = False,
+        imported_from_component_id: typing.Optional[int] = None,
 ) -> None:
     data = {}
     if previous_object_id:
         data['previous_object_id'] = previous_object_id
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=ObjectLogEntryType.CREATE_OBJECT,
         object_id=object_id,
@@ -159,15 +162,19 @@ def edit_object(
         object_id: int,
         version_id: int,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        is_imported: bool = False
+        is_imported: bool = False,
+        imported_from_component_id: typing.Optional[int] = None,
 ) -> None:
+    data = {
+        'version_id': version_id,
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=ObjectLogEntryType.EDIT_OBJECT,
         object_id=object_id,
         user_id=user_id,
-        data={
-            'version_id': version_id
-        },
+        data=data,
         utc_datetime=utc_datetime,
         is_imported=is_imported
     )
@@ -181,6 +188,42 @@ def restore_object_version(user_id: int, object_id: int, version_id: int, restor
         data={
             'version_id': version_id,
             'restored_version_id': restored_version_id
+        }
+    )
+
+
+def import_conflicting_version(user_id: int, object_id: int, fed_version_id: int, component_id: int) -> None:
+    _store_new_log_entry(
+        type=ObjectLogEntryType.IMPORT_CONFLICTING_VERSION,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'fed_version_id': fed_version_id,
+            'component_id': component_id
+        }
+    )
+
+
+@typing.overload
+def solve_version_conflict(user_id: None, object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = True) -> None:
+    ...
+
+
+@typing.overload
+def solve_version_conflict(user_id: int, object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = True) -> None:
+    ...
+
+
+def solve_version_conflict(user_id: typing.Optional[int], object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = False) -> None:
+    _store_new_log_entry(
+        type=ObjectLogEntryType.SOLVE_VERSION_CONFLICT,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'solved_in': solved_in,
+            'version_id': version_id,
+            'component_id': component_id,
+            'automerged': automerged
         }
     )
 
@@ -212,15 +255,19 @@ def post_comment(
         object_id: int,
         comment_id: int,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        is_imported: bool = False
+        is_imported: bool = False,
+        imported_from_component_id: typing.Optional[int] = None,
 ) -> None:
+    data = {
+        'comment_id': comment_id
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=ObjectLogEntryType.POST_COMMENT,
         object_id=object_id,
         user_id=user_id,
-        data={
-            'comment_id': comment_id
-        },
+        data=data,
         utc_datetime=utc_datetime,
         is_imported=is_imported
     )
@@ -231,15 +278,19 @@ def upload_file(
         object_id: int,
         file_id: int,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        is_imported: bool = False
+        is_imported: bool = False,
+        imported_from_component_id: typing.Optional[int] = None
 ) -> None:
+    data = {
+        'file_id': file_id
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=ObjectLogEntryType.UPLOAD_FILE,
         object_id=object_id,
         user_id=user_id,
-        data={
-            'file_id': file_id
-        },
+        data=data,
         utc_datetime=utc_datetime,
         is_imported=is_imported
     )
@@ -261,15 +312,19 @@ def assign_location(
         object_id: int,
         object_location_assignment_id: int,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        is_imported: bool = False
+        is_imported: bool = False,
+        imported_from_component_id: typing.Optional[int] = None
 ) -> None:
+    data = {
+        'object_location_assignment_id': object_location_assignment_id
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=ObjectLogEntryType.ASSIGN_LOCATION,
         object_id=object_id,
         user_id=user_id,
-        data={
-            'object_location_assignment_id': object_location_assignment_id
-        },
+        data=data,
         utc_datetime=utc_datetime,
         is_imported=is_imported
     )
