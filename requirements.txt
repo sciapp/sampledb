@@ -6,8 +6,8 @@ bcrypt==5.0.0
 beautifulsoup4==4.14.3
 bleach==6.3.0
 blinker==1.9.0
-brotli==1.2.0
-certifi==2026.2.25
+brotli==1.2.1
+certifi==2026.10.23
 cffi==2.0.0
 charset-normalizer==3.4.6
 cheroot==11.1.2
