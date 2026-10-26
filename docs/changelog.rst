@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.33.2
+--------------
+
+Released on October 26th, 2026.
+
+- Updated brotli (https://github.com/advisories/GHSA-9v8h-qqgm-4m35)
+- Updated certifi (https://github.com/advisories/GHSA-6q48-6c7w-9gw2)
+
+
 Version 0.33.1
 --------------
 
@@ -10,6 +19,7 @@ Released on April 20th, 2026.
 - Fixed repeated sending of notifications to referenced users
 - Fixed showing the button for creating instrument log entries for users who cannot view instrument log entries
 - Fixed permission checks for instrument log entry attachments
+
 
 Version 0.33
 ------------
