@@ -201,7 +201,8 @@ def driver_session():
 @pytest.fixture()
 def driver(driver_session):
     driver_session.delete_all_cookies()
-    return driver_session
+    yield driver_session
+    wait_for_browser_requests(driver_session)
 
 
 @pytest.fixture(autouse=True)
@@ -299,6 +300,12 @@ def wait_for_page_load(driver, timeout=10):
         # https://github.com/SeleniumHQ/selenium/issues/15401
         time.sleep(0.1)
         WebDriverWait(driver, timeout).until(staleness_of(old_page))
+
+
+def wait_for_browser_requests(driver, timeout=10):
+    WebDriverWait(driver, timeout).until(lambda driver: driver.execute_script("""
+        return document.readyState === 'complete' && (typeof window.jQuery === 'undefined' || window.jQuery.active === 0);
+    """))
 
 
 def wait_for_background_task(task: sampledb.logic.background_tasks.core.BackgroundTask):
