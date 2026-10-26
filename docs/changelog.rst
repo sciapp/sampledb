@@ -23,6 +23,15 @@ Currently in development.
 - Minor fixes and improvements
 
 
+Version 0.33.2
+--------------
+
+Released on October 26th, 2026.
+
+- Updated brotli (https://github.com/advisories/GHSA-9v8h-qqgm-4m35)
+- Updated certifi (https://github.com/advisories/GHSA-6q48-6c7w-9gw2)
+
+
 Version 0.33.1
 --------------
 
