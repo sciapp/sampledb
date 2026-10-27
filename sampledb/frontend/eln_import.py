@@ -83,6 +83,9 @@ def upload_eln_import() -> FlaskResponseT:
 @flask_login.login_required
 def eln_preview(eln_import_id: int) -> FlaskResponseT:
     subpath = flask.request.args.get('subpath', None)
+    headers = {
+        'X-Content-Type-Options': 'nosniff'
+    }
     try:
         eln_import = logic.eln_import.get_eln_import(eln_import_id)
     except logic.errors.ELNImportDoesNotExistError:
@@ -97,9 +100,10 @@ def eln_preview(eln_import_id: int) -> FlaskResponseT:
                 return flask.abort(404)
             return flask.Response(
                 preview_file.sanitized_binary_data.decode(),
-                mimetype=preview_file.mime_type
+                mimetype=preview_file.mime_type,
+                headers=headers,
             )
-        return flask.Response(preview_file.binary_data, mimetype=preview_file.mime_type)
+        return flask.Response(preview_file.binary_data, mimetype=preview_file.mime_type, headers=headers)
     else:
         try:
             parsed_preview_file = logic.eln_import.parse_eln_preview_file(eln_import_id, subpath)
@@ -110,9 +114,10 @@ def eln_preview(eln_import_id: int) -> FlaskResponseT:
                 return flask.abort(404)
             return flask.Response(
                 parsed_preview_file.sanitized_content.decode(),
-                mimetype=parsed_preview_file.mime_type
+                mimetype=parsed_preview_file.mime_type,
+                headers=headers,
             )
-        return flask.Response(parsed_preview_file.content, mimetype=parsed_preview_file.mime_type)
+        return flask.Response(parsed_preview_file.content, mimetype=parsed_preview_file.mime_type, headers=headers)
 
 
 @frontend.route('/eln_imports/<int:eln_import_id>', methods=['POST', 'GET'])

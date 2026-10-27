@@ -309,10 +309,4 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             response.headers["Content-Security-Policy"] = content_security_policy
         return response
 
-    @app.after_request
-    def set_eln_preview_headers(response: flask.Response) -> flask.Response:
-        if flask.request.endpoint == 'frontend.eln_preview':
-            response.headers['X-Content-Type-Options'] = 'nosniff'
-        return response
-
     return app
