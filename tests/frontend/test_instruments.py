@@ -7,11 +7,14 @@ import requests
 import pytest
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
 import sampledb
 import sampledb.models
 import sampledb.logic
 
+from ..conftest import wait_for_page_load
 
 @pytest.fixture
 def user(flask_server):
@@ -123,6 +126,59 @@ def test_create_instrument_log_entry(flask_server, user, instrument, object_id):
             break
     else:
         assert False
+
+
+def test_create_instrument_log_entry_with_templates(flask_server, driver, user, instrument):
+    template_a = sampledb.logic.instrument_log_entries.create_instrument_log_template(
+        instrument.id,
+        title="Template A",
+        content="A"
+    )
+    template_b = sampledb.logic.instrument_log_entries.create_instrument_log_template(
+        instrument.id,
+        title="Template B",
+        content="B"
+    )
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 0
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'instruments/{instrument.id}')
+
+    driver.find_elements(By.CSS_SELECTOR, '.fa.fa-comment-o.fa-fw')[0].click()
+    buttons = driver.find_elements(By.CSS_SELECTOR, 'ul.dropdown-menu li button')
+    buttons_by_text = {button.get_attribute("textContent"): button for button in buttons}
+    assert "… without template" in buttons_by_text
+    buttons_by_text["… without template"].click()
+    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, 'textarea-log-entry-text')))
+    driver.find_element(By.ID, 'textarea-log-entry-text').send_keys('Test Content')
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '#newLogEntryModal button[type="submit"]').click()
+
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 1
+    log_entry = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)[0]
+    assert log_entry.user_id == user.id
+    assert log_entry.instrument_id == instrument.id
+    assert log_entry.versions[0].content == 'Test Content'
+    assert not log_entry.versions[0].content_is_markdown
+    assert log_entry.versions[0].categories == []
+
+    driver.get(flask_server.base_url + f'instruments/{instrument.id}')
+
+    driver.find_elements(By.CSS_SELECTOR, '.fa.fa-comment-o.fa-fw')[0].click()
+    buttons = driver.find_elements(By.CSS_SELECTOR, 'ul.dropdown-menu li button')
+    buttons_by_text = {button.get_attribute("textContent"): button for button in buttons}
+    assert "Template A" in buttons_by_text
+    buttons_by_text["Template A"].click()
+    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#newLogEntryModal button[type="submit"]')))
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '#newLogEntryModal button[type="submit"]').click()
+
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 2
+    log_entry = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)[1]
+    assert log_entry.user_id == user.id
+    assert log_entry.instrument_id == instrument.id
+    assert log_entry.versions[0].content == template_a.content
+    assert log_entry.versions[0].content_is_markdown
+    assert log_entry.versions[0].categories == []
 
 
 def test_external_links(flask_server, app, driver, user):

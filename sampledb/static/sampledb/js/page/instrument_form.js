@@ -1,5 +1,6 @@
 'use strict';
 /* eslint-env jquery */
+/* globals InscrybMDE */
 
 import {
   updateTranslationJSON,
@@ -14,18 +15,24 @@ window.mdeFields = {
   notes: []
 };
 window.new_category_counter = -1;
+window.new_template_counter = -1;
 $(function () {
   window.translations = window.getTemplateValue('translations');
   window.categories = window.getTemplateValue('categories');
+  window.templates = window.getTemplateValue('templates');
 
   window.languages = window.getTemplateValue('language_info.languages');
   function updateCategoryJSON () {
     $('#input-categories').val(JSON.stringify(window.categories));
   }
+  function updateTemplateJSON () {
+    $('#input-templates').val(JSON.stringify(window.templates));
+  }
 
   updateCategoryJSON();
+  updateTemplateJSON();
   updateTranslationJSON();
-  function updateEventHandler () {
+  function updateCategoryEventHandler () {
     $('[data-category-id][data-category-id!=""]').each(function () {
       $(this).find('input').on('change', function () {
         const categoryElement = $(this).closest('[data-category-id]');
@@ -78,7 +85,68 @@ $(function () {
     window.new_category_counter -= 1;
     $('[data-category-id][data-category-id!=""] select').addClass('selectpicker');
     $('.selectpicker').selectpicker();
-    updateEventHandler();
+    updateCategoryEventHandler();
+    updateCategoryJSON();
+  });
+  window.template_mdes = {};
+  function updateTemplateEventHandler () {
+    $('[data-template-id][data-template-id!=""]').each(function () {
+      const templateID = $(this).attr('data-template-id');
+      if (!window.template_mdes[templateID]) {
+        window.template_mdes[templateID] = new InscrybMDE({
+          element: $(this).find('textarea')[0],
+          indentWithTabs: false,
+          spellChecker: false,
+          status: false,
+          hideIcons: ['guide', 'fullscreen', 'side-by-side', 'quote'],
+          showIcons: ['code', 'table'],
+          minHeight: '100px',
+          autoDownloadFontAwesome: false
+        });
+      }
+      $(this).find('input, textarea').on('change', function () {
+        const templateElement = $(this).closest('[data-template-id]');
+        const templateID = templateElement.attr('data-template-id');
+        const templateTitle = templateElement.find('input[type="text"]').val().trim();
+        const templateContent = window.template_mdes[templateID].value();
+        if (templateTitle === '') {
+          templateElement.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_template_title'));
+        } else if (templateTitle.length > 100) {
+          templateElement.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_shorter_template_title'));
+        } else if (templateContent === '') {
+          templateElement.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_template_content'));
+        } else {
+          templateElement.parent().removeClass('has-error').find('.help-block').html('');
+        }
+        window.templates.forEach(function (template) {
+          if (template.id === templateID) {
+            template.title = templateTitle;
+            template.content = templateContent;
+          }
+        });
+        updateTemplateJSON();
+      }).change();
+      $(this).find('.button-delete-template').on('click', function () {
+        const templateElement = $(this).closest('[data-template-id]');
+        const templateID = templateElement.attr('data-template-id');
+        templateElement.parent().remove();
+        window.templates = window.templates.filter(function (template) {
+          return template.id !== templateID;
+        });
+        updateTemplateJSON();
+      });
+    });
+  }
+  $('#button-instrument-log-new-template').on('click', function () {
+    $($('#instrument-log-template-template').html()).insertBefore($(this).parent());
+    $(this).parent().prev('.form-group').find('[data-template-id=""]').attr('data-template-id', window.new_template_counter);
+    window.templates.push({
+      id: window.new_template_counter.toString(),
+      title: '',
+      content: ''
+    });
+    window.new_template_counter -= 1;
+    updateTemplateEventHandler();
     updateCategoryJSON();
   });
 
@@ -110,7 +178,8 @@ $(function () {
   $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id], .form-group[data-name="input-short-descriptions"] [data-language-id], .form-group[data-name="input-notes"] [data-language-id]').each(function () {
     setTranslationHandler(this);
   });
-  updateEventHandler();
+  updateCategoryEventHandler();
+  updateTemplateEventHandler();
 
   $('form').on('submit', function () {
     $('input').change();

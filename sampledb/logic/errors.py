@@ -279,6 +279,10 @@ class InstrumentLogCategoryDoesNotExistError(Exception):
     pass
 
 
+class InstrumentLogTemplateDoesNotExistError(Exception):
+    pass
+
+
 class GroupInvitationDoesNotExistError(Exception):
     pass
 

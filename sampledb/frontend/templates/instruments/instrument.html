@@ -219,9 +219,24 @@
         {% set bottom_buttons_log_entries_threshold = 6 %}
         <div style="margin-bottom: 10px;">
           {% if show_instrument_log_entry_buttons %}
-            <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
-              <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
-            </button>
+            {% if instrument_log_templates %}
+              <div class="btn-group" style="margin-top: 2px">
+                <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="height:32px">
+                  <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }} <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  {% for template in instrument_log_templates %}
+                    <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="{{ template.id }}">{{ template.title }}</button></li>
+                  {% endfor %}
+                  <li role="separator" class="divider"></li>
+                  <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="">{{ _('… without template') }}</button></li>
+                </ul>
+              </div>
+            {% else %}
+              <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+                <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
+              </button>
+            {% endif %}
             <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
               <i class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone Upload as Log Entry') }}
             </button>
@@ -499,9 +514,24 @@
         </div>
         {% if show_instrument_log_entry_buttons and instrument_log_entries | length >= bottom_buttons_log_entries_threshold %}
           <div style="margin-top: 10px;">
-            <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
-              <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
-            </button>
+            {% if instrument_log_templates %}
+              <div class="btn-group dropup" style="margin-top: 2px">
+                <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="height:32px">
+                  <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }} <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  {% for template in instrument_log_templates %}
+                    <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="{{ template.id }}">{{ template.title }}</button></li>
+                  {% endfor %}
+                  <li role="separator" class="divider"></li>
+                  <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="">{{ _('… without template') }}</button></li>
+                </ul>
+              </div>
+            {% else %}
+              <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+                <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
+              </button>
+            {% endif %}
             <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
               <i class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone Upload as Log Entry') }}
             </button>
@@ -510,18 +540,48 @@
       {% else %}
         <p class="text-muted">{{ _('There are no log entries for this instrument.') }}</p>
         {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
-          <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
-            <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
-          </button>
+          {% if instrument_log_templates %}
+            <div class="btn-group dropup" style="margin-top: 2px">
+              <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="height:32px">
+                <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }} <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                {% for template in instrument_log_templates %}
+                  <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="{{ template.id }}">{{ template.title }}</button></li>
+                {% endfor %}
+                <li role="separator" class="divider"></li>
+                <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="">{{ _('… without template') }}</button></li>
+              </ul>
+            </div>
+          {% else %}
+            <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+              <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
+            </button>
+          {% endif %}
           <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
             <i class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone Upload as Log Entry') }}
           </button>
         {% endif %}
       {% endif %}
     {% elif not current_user.is_readonly and instrument.users_can_create_log_entries %}
-      <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
-        <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
-      </button>
+      {% if instrument_log_templates %}
+        <div class="btn-group dropup" style="margin-top: 2px">
+          <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="height:32px">
+            <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }} <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+            {% for template in instrument_log_templates %}
+              <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="{{ template.id }}">{{ template.title }}</button></li>
+            {% endfor %}
+            <li role="separator" class="divider"></li>
+            <li><button type="button" class="btn btn-link new-log-entry-button" data-template-id="">{{ _('… without template') }}</button></li>
+          </ul>
+        </div>
+      {% else %}
+        <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newLogEntryModal" style="height:32px">
+          <i class="fa fa-comment-o fa-fw"></i> {{ _('Create Log Entry') }}
+        </button>
+      {% endif %}
       <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#mobileFileLinkModal" style="height:32px">
         <i class="fa fa-mobile-phone fa-fw"></i> {{ _('Smartphone Upload as Log Entry') }}
       </button>
@@ -651,6 +711,11 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
       {% endif %}
     {% endfor %}
   {% endif %}
+  {% set templates = [] %}
+  {% for template in instrument_log_templates %}
+    {% do templates.append({"id": template.id | string, "title": template.title, "content": template.content}) %}
+  {% endfor %}
+  {% do set_template_value("templates", templates) %}
   {% do set_template_value("instrument_log_entries.editable_ids", editable_log_entry_ids) %}
   {% do set_template_value("can_create_instrument_log_entries", not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries)) %}
   {% set ns = namespace(log_entry_text_missing=False) %}
