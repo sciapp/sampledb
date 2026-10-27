@@ -216,7 +216,7 @@ def test_get_comments(flask_server, object, auth, user):
             'object_id': object.id,
             'comment_id': comment_id,
             'user_id': user.id,
-            'utc_datetime': sampledb.logic.comments.get_comment(comment_id).utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+            'utc_datetime': sampledb.logic.comments.get_comment(comment_id).utc_datetime.isoformat().replace('+00:00', 'Z'),
             'content': content
         }
     ]

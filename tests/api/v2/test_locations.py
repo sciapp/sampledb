@@ -304,7 +304,7 @@ def test_get_location_assignment(flask_server, auth, user, action):
         'responsible_user_id': user.id,
         'user_id': user.id,
         'description': {"en": "This is an example description"},
-        'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.isoformat().replace('+00:00', 'Z')
     }
 
 
@@ -351,7 +351,7 @@ def test_get_location_assignments(flask_server, auth, user, action):
             'responsible_user_id': None,
             'user_id': user.id,
             'description': {"en": "This is an example description"},
-            'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            'utc_datetime': sampledb.logic.locations.get_object_location_assignments(object.id)[0].utc_datetime.isoformat().replace('+00:00', 'Z')
         }
     ]
 

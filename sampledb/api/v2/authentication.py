@@ -17,6 +17,7 @@ from ..utils import Resource
 from .utils.openapi import method, RequestBodyValidationFailedModel, GenericOperationCallable, R
 from ..errors import handle_api_error
 from .utils.responses import ErrorDetailsModel, make_response
+from .utils.validation import UTCDatetime
 
 http_basic_auth = HTTPBasicAuth()
 http_api_token_or_access_token_auth = HTTPTokenAuth(scheme='Bearer')
@@ -139,10 +140,10 @@ def object_permissions_required(permissions: Permissions) -> Callable[[GenericOp
 
 
 class AccessTokenModel(BaseModel):
-    access_token: str = Field(..., title="Access Token", description="A token usable to authenticate with the API via HTTP Bearer authentication", examples=["be740310706c1050e7a1668e2c0c407e029559a862d544d2d059f363c9ad8219"])
-    refresh_token: str = Field(..., title="Refresh Token", description="A token usable to authenticate with the /access_tokens/ endpoint via HTTP Bearer authentication to refresh an access token", examples=["a844185d4a924f52eec40d5b83f68fed8953665553b134dd5a02521250205b19"])
-    expiration_utc_datetime: str = Field(..., title="Expiration Datetime", description="A string containing the datetime (in UTC) when the access token expires", examples=["2026-01-01 12:34:56"])
-    description: str | None = Field(..., title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
+    access_token: str = Field(title="Access Token", description="A token usable to authenticate with the API via HTTP Bearer authentication", examples=["be740310706c1050e7a1668e2c0c407e029559a862d544d2d059f363c9ad8219"])
+    refresh_token: str = Field(title="Refresh Token", description="A token usable to authenticate with the /access_tokens/ endpoint via HTTP Bearer authentication to refresh an access token", examples=["a844185d4a924f52eec40d5b83f68fed8953665553b134dd5a02521250205b19"])
+    expiration_utc_datetime: UTCDatetime = Field(title="Expiration Datetime", description="The ISO-formatted datetime in UTC when the access token expires", examples=["2026-01-02T03:04:05.000000Z"])
+    description: str | None = Field(title="Description", description="Description of the access token", examples=["Access Token for Instrument Control"])
 
 
 class FailedToRefreshAPITokenModel(ErrorDetailsModel):
@@ -168,10 +169,10 @@ class AccessTokens(Resource):
                     detail="Failed to refresh API token."
                 )
             return AccessTokenModel(
-                access_token=result["access_token"],
-                refresh_token=result["refresh_token"],
-                expiration_utc_datetime=result["expiration_utc_datetime"],
-                description=result["description"]
+                access_token=result.access_token,
+                refresh_token=result.refresh_token,
+                expiration_utc_datetime=result.expiration_utc_datetime,
+                description=result.description
             )
         if request_body is None:
             return RequestBodyValidationFailedModel(
@@ -179,8 +180,8 @@ class AccessTokens(Resource):
             )
         access_token = generate_api_access_token(user_id=flask.g.user.id, description=request_body.description)
         return AccessTokenModel(
-            access_token=typing.cast(str, access_token["access_token"]),
-            refresh_token=typing.cast(str, access_token["refresh_token"]),
-            expiration_utc_datetime=typing.cast(str, access_token["expiration_utc_datetime"]),
-            description=access_token["description"]
+            access_token=access_token.access_token,
+            refresh_token=access_token.refresh_token,
+            expiration_utc_datetime=access_token.expiration_utc_datetime,
+            description=access_token.description
         )

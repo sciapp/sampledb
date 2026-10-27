@@ -116,7 +116,12 @@ class AccessTokens(Resource):
                 return {
                     "message": "failed to refresh API token"
                 }, 400
-            return result, 201
+            return {
+                "access_token": result.access_token,
+                "refresh_token": result.refresh_token,
+                "expiration_utc_datetime": result.expiration_utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                "description": result.description,
+            }, 201
         request_json = flask.request.get_json(force=True, silent=True)
         if not isinstance(request_json, dict):
             return {
@@ -131,4 +136,10 @@ class AccessTokens(Resource):
             return {
                 "message": "description must be a string"
             }, 400
-        return generate_api_access_token(user_id=flask.g.user.id, description=description), 201
+        result = generate_api_access_token(user_id=flask.g.user.id, description=description)
+        return {
+            "access_token": result.access_token,
+            "refresh_token": result.refresh_token,
+            "expiration_utc_datetime": result.expiration_utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "description": result.description,
+        }, 201
