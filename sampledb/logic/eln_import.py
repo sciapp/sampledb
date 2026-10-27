@@ -1501,20 +1501,18 @@ def parse_eln_preview_file(
             else:
                 ro_crate_file_name = os.path.normpath(root_path_name + '/ro-crate-preview_files/' + subpath)
 
-            if ro_crate_file_name in member_names:
-                try:
-                    with zip_file.open(member_names[ro_crate_file_name]) as ro_crate_file:
-                        binary_data = ro_crate_file.read()
-                except Exception as e:
-                    raise errors.InvalidELNFileError(f"Failed to parse preview file {ro_crate_file_name}: {e}")
-            else:
+            if ro_crate_file_name not in member_names:
                 raise errors.ELNImportPreviewFileDoesNotExistError()
+
+            with zip_file.open(member_names[ro_crate_file_name]) as ro_crate_file:
+                binary_data = ro_crate_file.read()
+
     except zipfile.BadZipfile:
         raise errors.InvalidELNFileError(".eln file must be valid .zip file")
-    except (errors.InvalidELNFileError, errors.ELNImportPreviewFileDoesNotExistError) as e:
-        raise e
+    except (errors.InvalidELNFileError, errors.ELNImportPreviewFileDoesNotExistError):
+        raise
     except Exception as e:
-        raise errors.InvalidELNFileError("Unknown error") from e
+        raise errors.InvalidELNFileError(f"Failed to parse preview file {subpath}: {e}") from e
 
     valid_preview_files = _find_valid_preview_files(member_names, root_path_name)
 
