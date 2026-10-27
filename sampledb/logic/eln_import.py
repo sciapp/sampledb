@@ -231,18 +231,12 @@ def update_sanitized_eln_preview() -> None:
         eln_imports.ELNImportPreviewFile.sanitizer_version < ELNSanitizer.SANITIZER_VERSION
     ).order_by(eln_imports.ELNImportPreviewFile.eln_import_id.asc()).all()
 
-    eln_files_by_import: dict[int, list[eln_imports.ELNImportPreviewFile]] = {}
     for pf in preview_files:
-        files: list[eln_imports.ELNImportPreviewFile] = eln_files_by_import.get(pf.eln_import_id, [])
-        files.append(pf)
-        eln_files_by_import[pf.eln_import_id] = files
-
-    for eln_import_id in eln_files_by_import:
-        files_to_import, _ = parse_eln_preview(eln_import_id)
+        files_to_import, _ = parse_eln_preview(pf.eln_import_id)
         for file in files_to_import:
             db.session.merge(eln_imports.ELNImportPreviewFile(
                 filepath=file.filepath,
-                eln_import_id=eln_import_id,
+                eln_import_id=pf.eln_import_id,
                 binary_data=file.content,
                 sanitized_binary_data=file.sanitized_content,
                 sanitizer_version=ELNSanitizer.SANITIZER_VERSION,
