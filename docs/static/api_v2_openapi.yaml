@@ -18,12 +18,11 @@ components:
           - Access Token for Instrument Control
           title: Description
         expiration_utc_datetime:
-          description: A string containing the datetime (in UTC) when the access token
-            expires
+          $ref: '#/components/schemas/UTCDatetime'
+          description: The ISO-formatted datetime in UTC when the access token expires
           examples:
-          - '2026-01-01 12:34:56'
+          - '2026-01-02T03:04:05.000000Z'
           title: Expiration Datetime
-          type: string
         refresh_token:
           description: A token usable to authenticate with the /access_tokens/ endpoint
             via HTTP Bearer authentication to refresh an access token
@@ -290,13 +289,11 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/UTCDatetime'
           - type: 'null'
-          description: the datetime in UTC when the comment was posted, formatted
-            as YYYY-MM-DD HH:MM:SS.ffffff
+          description: the ISO-formatted datetime in UTC when the comment was posted
           examples:
-          - '2026-01-02 03:04:05.678910'
-          title: Utc Datetime
+          - '2026-01-02T03:04:05.678910Z'
       required:
       - object_id
       - comment_id
@@ -606,9 +603,9 @@ components:
                 title: 1
               content: This is a log entry.
               content_is_markdown: false
-              event_utc_datetime: '2026-01-02T03:04:05.678910'
+              event_utc_datetime: '2026-01-02T03:04:05.678910Z'
               log_entry_id: 1
-              utc_datetime: '2026-01-02 03:04:05'
+              utc_datetime: '2026-01-02T03:04:05.678910Z'
               version_id: 1
           items:
             $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
@@ -646,13 +643,12 @@ components:
           type: boolean
         event_utc_datetime:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/UTCDatetime'
           - type: 'null'
-          description: the ISO formatted datetime in UTC of the event described in
+          description: the ISO-formatted datetime in UTC of the event described in
             the instrument log entry
           examples:
-          - '2026-01-02T03:04:05.678910'
-          title: Event Utc Datetime
+          - '2026-01-02T03:04:05.678910Z'
         log_entry_id:
           description: the ID of the instrument log entry the version belongs to
           examples:
@@ -660,12 +656,11 @@ components:
           title: Log Entry Id
           type: integer
         utc_datetime:
-          description: the datetime in UTC when the instrument log entry version was
-            created, formatted as YYYY-MM-DD HH:MM:SS
+          $ref: '#/components/schemas/UTCDatetime'
+          description: the ISO-formatted datetime in UTC when the instrument log entry
+            version was created
           examples:
-          - '2026-01-02 03:04:05'
-          title: Utc Datetime
-          type: string
+          - '2026-01-02T03:04:05.678910Z'
         version_id:
           description: the ID of the instrument log entry version
           examples:
@@ -991,13 +986,12 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/UTCDatetime'
           - type: 'null'
-          description: the datetime in UTC when the object was assignment was created,
-            formatted as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the object assignment
+            was created
           examples:
-          - '2026-01-02 03:04:05'
-          title: Utc Datetime
+          - '2026-01-02T03:04:05.678910Z'
       required:
       - object_location_assignment_id
       - object_id
@@ -1048,12 +1042,11 @@ components:
           title: User Id
           type: integer
         utc_datetime:
-          description: the datetime in UTC when the object log entry was created,
-            formatted as YYYY-MM-DD HH:MM:SS
+          $ref: '#/components/schemas/UTCDatetime'
+          description: the ISO-formatted datetime in UTC when the object log entry
+            was created
           examples:
-          - '2026-01-02 03:04:05'
-          title: Utc Datetime
-          type: string
+          - '2026-01-02T03:04:05.687910Z'
       required:
       - log_entry_id
       - type
@@ -1250,13 +1243,12 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/UTCDatetime'
           - type: 'null'
-          description: the datetime in UTC when the object version was created, formatted
-            as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the object version was
+            created
           examples:
-          - '2026-01-02 03:04:05'
-          title: Utc Datetime
+          - '2026-01-02T03:04:05.687910Z'
         version_id:
           description: the ID of the object version
           examples:
@@ -1505,6 +1497,9 @@ components:
       - input
       title: RequestBodyErrorDetailModel
       type: object
+    UTCDatetime:
+      format: date-time
+      type: string
     Url:
       type: string
     UrlFileModel:
@@ -1969,13 +1964,12 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - $ref: '#/components/schemas/UTCDatetime'
           - type: 'null'
-          description: the datetime in UTC when the current object version was created,
-            formatted as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the current object version
+            was created
           examples:
-          - '2026-01-02 03:04:05'
-          title: Utc Datetime
+          - '2026-01-02T03:04:05.687910Z'
         version_id:
           description: the ID of the current object version
           examples:
@@ -3257,15 +3251,13 @@ paths:
                   type: boolean
                 event_utc_datetime:
                   anyOf:
-                  - format: date-time
-                    type: string
+                  - $ref: '#/components/schemas/UTCDatetime'
                   - type: 'null'
                   default: null
-                  description: the ISO formatted datetime in UTC of the event described
+                  description: the ISO-formatted datetime in UTC of the event described
                     in the instrument log entry
                   examples:
-                  - '2026-01-02T03:04:05.678910'
-                  title: Event Utc Datetime
+                  - '2026-01-02T03:04:05.678910Z'
                 file_attachments:
                   default: []
                   description: a list of file attachments
@@ -3885,15 +3877,13 @@ paths:
                   type: boolean
                 event_utc_datetime:
                   anyOf:
-                  - format: date-time
-                    type: string
+                  - $ref: '#/components/schemas/UTCDatetime'
                   - type: 'null'
                   default: null
-                  description: the ISO formatted datetime in UTC of the event described
+                  description: the ISO-formatted datetime in UTC of the event described
                     in the instrument log entry
                   examples:
-                  - '2026-01-02T03:04:05.678910'
-                  title: Event Utc Datetime
+                  - '2026-01-02T03:04:05.678910Z'
                 file_attachments:
                   anyOf:
                   - items:

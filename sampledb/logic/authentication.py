@@ -607,10 +607,18 @@ def login_via_api_token(api_token: str) -> typing.Optional[logic.users.User]:
     return None
 
 
+@dataclasses.dataclass(frozen=True)
+class AccessToken:
+    access_token: str
+    refresh_token: str
+    expiration_utc_datetime: datetime.datetime
+    description: str | None
+
+
 def generate_api_access_token(
         user_id: int,
         description: typing.Optional[str]
-) -> typing.Dict[str, typing.Optional[str]]:
+) -> AccessToken:
     """
     Create a new API access token as an authentication method for a given user.
 
@@ -619,6 +627,7 @@ def generate_api_access_token(
     :return: a dict containing the access token information
     """
     expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+    expiration_utc_datetime = expiration_utc_datetime.replace(microsecond=0)
     expiration_utc_datetime_str = expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
     access_token = secrets.token_hex(32)
@@ -638,12 +647,12 @@ def generate_api_access_token(
         user_id=user_id
     ))
     db.session.commit()
-    return {
-        'access_token': access_token,
-        'refresh_token': refresh_token,
-        'expiration_utc_datetime': expiration_utc_datetime_str,
-        'description': description
-    }
+    return AccessToken(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expiration_utc_datetime=expiration_utc_datetime,
+        description=description
+    )
 
 
 def remove_expired_api_access_tokens() -> None:
@@ -665,7 +674,7 @@ def remove_expired_api_access_tokens() -> None:
     db.session.commit()
 
 
-def refresh_api_access_token(api_refresh_token: str) -> typing.Optional[typing.Dict[str, str]]:
+def refresh_api_access_token(api_refresh_token: str) -> AccessToken | None:
     """
     Replace an API access token using its refresh token.
 
@@ -682,6 +691,7 @@ def refresh_api_access_token(api_refresh_token: str) -> typing.Optional[typing.D
         )
     ).all()
     expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+    expiration_utc_datetime = expiration_utc_datetime.replace(microsecond=0)
     expiration_utc_datetime_str = expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
     for authentication_method in authentication_methods:
@@ -701,12 +711,12 @@ def refresh_api_access_token(api_refresh_token: str) -> typing.Optional[typing.D
             }
             db.session.add(authentication_method)
             db.session.commit()
-            return {
-                'access_token': new_access_token,
-                'refresh_token': new_refresh_token,
-                'expiration_utc_datetime': expiration_utc_datetime_str,
-                'description': description
-            }
+            return AccessToken(
+                access_token=new_access_token,
+                refresh_token=new_refresh_token,
+                expiration_utc_datetime=expiration_utc_datetime,
+                description=description,
+            )
     return None
 
 

@@ -10,7 +10,7 @@ from ...logic.comments import Comment, create_comment, get_comment_for_object, g
 from ...models import Permissions
 from ..utils import Resource
 from .authentication import object_permissions_required
-from .utils.validation import is_expected_from_validation_info, NonEmptyString
+from .utils.validation import is_expected_from_validation_info, NonEmptyString, UTCDatetime
 from .utils.responses import CreatedResponseModel, ErrorDetailsModel, PaginatedSequence, PaginationQueryModel
 from .utils.openapi import method
 
@@ -19,7 +19,7 @@ class CommentModel(BaseModel):
     object_id: int = Field(description="the ID of the object the comment was posted for", examples=[1])
     comment_id: int = Field(description="the ID of the comment", examples=[1])
     user_id: int | None = Field(description="the ID of the user who posted the comment", examples=[1])
-    utc_datetime: str | None = Field(description="the datetime in UTC when the comment was posted, formatted as YYYY-MM-DD HH:MM:SS.ffffff", examples=["2026-01-02 03:04:05.678910"])
+    utc_datetime: UTCDatetime | None = Field(description="the ISO-formatted datetime in UTC when the comment was posted", examples=["2026-01-02T03:04:05.678910Z"])
     content: str = Field(description="the content of the comment", examples=["This is a comment."])
 
     @classmethod
@@ -28,7 +28,7 @@ class CommentModel(BaseModel):
             object_id=comment.object_id,
             comment_id=comment.id,
             user_id=comment.user_id,
-            utc_datetime=comment.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if comment.utc_datetime is not None else None,
+            utc_datetime=comment.utc_datetime,
             content=comment.content,
         )
 

@@ -300,13 +300,13 @@ def make_response(
 ) -> werkzeug.Response:
     if isinstance(result, ErrorDetailsModel):
         return make_json_response(
-            result.model_dump(by_alias=True),
+            result.model_dump(mode='json', by_alias=True),
             status=result.STATUS,
             mimetype='application/problem+json',
         )
     if isinstance(result, RedirectResponseModel):
         return make_json_response(
-            result.model_dump(by_alias=True),
+            result.model_dump(mode='json', by_alias=True),
             status=result.STATUS,
             headers={
                 "Location": result.location
@@ -320,7 +320,7 @@ def make_response(
     if isinstance(result, PaginatedSequence):
         return make_json_response(
             [
-                item.model_dump(by_alias=True) if isinstance(item, BaseModel) else item
+                item.model_dump(mode='json', by_alias=True) if isinstance(item, BaseModel) else item
                 for item in result.items
             ],
             status=default_status_code,
@@ -330,7 +330,7 @@ def make_response(
         )
     if isinstance(result, BaseModel):
         return make_json_response(
-            result.model_dump(by_alias=True),
+            result.model_dump(mode='json', by_alias=True),
             status=default_status_code
         )
     if isinstance(result, ReturnValue):

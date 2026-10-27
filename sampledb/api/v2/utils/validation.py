@@ -1,10 +1,12 @@
 import base64
+import datetime
 import typing
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import groupby
 
-from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, ValidationInfo, model_validator, SerializerFunctionWrapHandler, WrapSerializer
+import pytz
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, ValidationInfo, model_validator, SerializerFunctionWrapHandler, WrapSerializer, AwareDatetime
 from pydantic_core import ErrorDetails, PydanticCustomError
 
 from ....logic import errors, users, languages
@@ -268,3 +270,15 @@ def _is_valid_language_code_for_input(value: str) -> str:
 
 
 type LanguageCode = typing.Annotated[str, AfterValidator(_is_valid_language_code_for_input)]
+
+
+def _is_utc_datetime(value: datetime.datetime) -> datetime.datetime:
+    if value.tzinfo not in (datetime.timezone.utc, pytz.utc):
+        raise PydanticCustomError(
+            "wrong_timezone",
+            "The datetime is not in UTC.",
+        )
+    return value
+
+
+type UTCDatetime = typing.Annotated[AwareDatetime, AfterValidator(_is_utc_datetime)]
