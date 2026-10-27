@@ -1579,14 +1579,7 @@ def parse_eln_file(
             member_names, root_path_name = _get_member_names_and_root_path_from_archive(zip_file)
 
             ro_crate_preview_file_name = os.path.normpath(root_path_name + '/ro-crate-preview.html')
-            parsed_data = ParsedELNImport(
-                objects=parsed_data.objects,
-                users=parsed_data.users,
-                import_notes=parsed_data.import_notes,
-                signed_by=parsed_data.signed_by,
-                object_parts_relationships=parsed_data.object_parts_relationships,
-                has_preview=ro_crate_preview_file_name in member_names,
-            )
+            parsed_data = dataclasses.replace(parsed_data, has_preview=ro_crate_preview_file_name in member_names)
 
             ro_crate_metadata_file_name = root_path_name + '/ro-crate-metadata.json'
             ro_crate_metadata_file_name = os.path.normpath(ro_crate_metadata_file_name)

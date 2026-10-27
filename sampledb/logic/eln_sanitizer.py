@@ -53,6 +53,11 @@ class ELNSanitizer:
         "image/png"
     ]
 
+    MIME_TYPES_TO_SANITIZE: list[str] = [
+        "text/html",
+        "text/css",
+    ]
+
     def __init__(self, eln_import_id: int, root_path: str, referenced_files: typing.Optional[list[str]], valid_preview_files: typing.Optional[list[str]], add_sampledb_notice: bool = True):
         self.eln_import_id = eln_import_id
         self.root_path = root_path
@@ -362,4 +367,6 @@ class ELNSanitizer:
 
     @classmethod
     def is_sanitization_required(cls, mime_type: str) -> bool:
-        return mime_type.startswith("text/")
+        if mime_type not in cls.ALLOWED_PREVIEW_MIME_TYPES:
+            raise errors.ELNImportPreviewIllegalMimeTypeError()
+        return mime_type in cls.MIME_TYPES_TO_SANITIZE
