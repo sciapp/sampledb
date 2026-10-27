@@ -25,7 +25,7 @@ from .objects.view import get_project_if_it_exists
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location, get_instrument_object_links, set_instrument_object
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, get_instrument_log_templates, create_instrument_log_template, update_instrument_log_template, delete_instrument_log_template, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
 from ..logic.actions import get_actions, get_action
@@ -597,6 +597,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
         instrument_log_categories=instrument_log_categories,
+        instrument_log_templates=get_instrument_log_templates(instrument_id),
         attached_object_names=attached_object_names,
         is_instrument_responsible_user=is_instrument_responsible_user,
         instrument_log_entry_form=instrument_log_entry_form,
@@ -624,6 +625,7 @@ class InstrumentForm(FlaskForm):
     notes_is_markdown = BooleanField(default=False)
     translations = StringField(validators=[DataRequired()])
     categories = StringField(validators=[DataRequired()])
+    templates = StringField(validators=[DataRequired()])
     users_can_create_log_entries = BooleanField(default=False)
     users_can_view_log_entries = BooleanField(default=False)
     create_log_entry_default = BooleanField(default=False)
@@ -809,6 +811,40 @@ def new_instrument() -> FlaskResponseT:
                         category['title'],
                         category_theme
                     )
+        try:
+            template_data = json.loads(instrument_form.templates.data)
+        except Exception:
+            pass
+        else:
+            template_keys = {'id', 'title', 'content'}
+            if not isinstance(template_data, list):
+                template_data = ()
+            for template in template_data:
+                # skip any invalid entries
+                if not isinstance(template, dict):
+                    continue
+                if set(template.keys()) != template_keys:
+                    continue
+                if not all(isinstance(template[key], str) for key in template_keys):
+                    continue
+                template_title = template['title'].strip()
+                if not template_title:
+                    continue
+                if len(template_title) > 100:
+                    continue
+                template_content = template['content']
+                if not template_content:
+                    continue
+                try:
+                    template_id = int(template['id'])
+                except ValueError:
+                    continue
+                if template_id < 0:
+                    create_instrument_log_template(
+                        instrument.id,
+                        template_title,
+                        template_content,
+                    )
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
     return flask.render_template(
         'instruments/instrument_form.html',
@@ -973,6 +1009,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
                             instrument_language_ids=instrument_language_ids,
                             ENGLISH=ENGLISH,
                             instrument_log_categories=get_instrument_log_categories(instrument.id),
+                            instrument_log_templates=get_instrument_log_templates(instrument.id),
                             languages=get_languages(only_enabled_for_input=True),
                             instrument_form=instrument_form
                         )
@@ -1060,6 +1097,56 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
             for category in get_instrument_log_categories(instrument_id):
                 if category.id not in valid_category_ids:
                     delete_instrument_log_category(category.id)
+        try:
+            template_data = json.loads(instrument_form.templates.data)
+        except Exception:
+            pass
+        else:
+            template_keys = {'id', 'title', 'content'}
+            if not isinstance(template_data, list):
+                template_data = ()
+            existing_template_ids = {
+                template.id
+                for template in get_instrument_log_templates(instrument_id)
+            }
+            valid_template_ids = set()
+            for template in template_data:
+                # skip any invalid entries
+                if not isinstance(template, dict):
+                    continue
+                if set(template.keys()) != template_keys:
+                    continue
+                if not all(isinstance(template[key], str) for key in template_keys):
+                    continue
+                template_title = template['title'].strip()
+                if not template_title:
+                    continue
+                if len(template_title) > 100:
+                    continue
+                template_content = template['content']
+                if not template_content:
+                    continue
+                try:
+                    template_id = int(template['id'])
+                except ValueError:
+                    continue
+                if template_id < 0:
+                    new_template = create_instrument_log_template(
+                        instrument.id,
+                        template_title,
+                        template_content
+                    )
+                    valid_template_ids.add(new_template.id)
+                elif template_id in existing_template_ids:
+                    update_instrument_log_template(
+                        template_id,
+                        template_title,
+                        template_content
+                    )
+                    valid_template_ids.add(template_id)
+            for template in get_instrument_log_templates(instrument_id):
+                if template.id not in valid_template_ids:
+                    delete_instrument_log_template(template.id)
         flask.flash(_('The instrument was updated successfully.'), 'success')
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
 
@@ -1079,6 +1166,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
         instrument_language_ids=instrument_language_ids,
         ENGLISH=english,
         instrument_log_categories=get_instrument_log_categories(instrument.id),
+        instrument_log_templates=get_instrument_log_templates(instrument.id),
         languages=get_languages(only_enabled_for_input=True),
         instrument_form=instrument_form,
         location_is_invalid=location_is_invalid

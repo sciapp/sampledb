@@ -197,3 +197,16 @@ class InstrumentLogObjectAttachment(Model):
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, log_entry_id={self.log_entry_id}, object_id={self.object_id})>'
+
+
+class InstrumentLogTemplate(Model):
+    __tablename__ = 'instrument_log_templates'
+
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
+    title: Mapped[str] = db.Column(db.Text, nullable=False)
+    content: Mapped[str] = db.Column(db.Text, nullable=False)
+    # TODO: categories?
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogTemplate"]]

@@ -149,6 +149,7 @@ body > footer {
     padding:0;
     margin:0;
 }
+.btn-group > .dropdown-menu button.btn.btn-link,
 .form-navbar-signout button.btn.btn-link,
 .multiselect-actions li button.btn.btn-link
 {
@@ -161,6 +162,7 @@ body > footer {
     color:rgb(51, 51, 51);
     text-align: left;
 }
+.btn-group > .dropdown-menu button.btn.btn-link:hover,
 .form-navbar-signout button.btn.btn-link:hover,
 div.multiselect-actions li button.btn.btn-link:hover
 {
