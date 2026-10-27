@@ -91,9 +91,9 @@ def eln_preview(eln_import_id: int) -> FlaskResponseT:
     except logic.errors.ELNImportDoesNotExistError:
         return flask.abort(404)
 
-    content: bytes|str|None = None
-    sanitized_content: str|None = None
-    mime_type: str|None = None
+    content: bytes | str | None = None
+    sanitized_content: str | None = None
+    mime_type: str | None = None
 
     try:
         if eln_import.imported:

@@ -1448,7 +1448,6 @@ def parse_eln_preview(
 
             valid_preview_files = _find_valid_preview_files(member_names, root_path_name)
 
-
             if os.path.normpath(f"{root_path_name}/ro-crate-preview.html") not in member_names:
                 return [], []
 
