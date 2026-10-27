@@ -1,7 +1,7 @@
 import typing
 
 import flask
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AwareDatetime
 
 from .utils.responses import PaginatedSequence, PaginationQueryModel
 from ..utils import Resource
@@ -17,7 +17,7 @@ class ObjectLogEntryModel(BaseModel):
     object_id: int = Field(description="the ID of the object the log entry belongs to", examples=[1])
     user_id: int = Field(description="the ID of the user who caused the object log entry", examples=[1])
     data: dict[str, typing.Any] = Field(description="the data of the log entry", examples=[{}])
-    utc_datetime: str = Field(description="the datetime in UTC when the object log entry was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    utc_datetime: AwareDatetime = Field(description="the ISO-formatted datetime in UTC when the object log entry was created", examples=["2026-01-02T03:04:05.687910Z"])
     is_imported: bool = Field(description="whether the object log entry was imported", examples=[False])
 
     @classmethod
@@ -28,7 +28,7 @@ class ObjectLogEntryModel(BaseModel):
             object_id=log_entry.object_id,
             user_id=log_entry.user_id,
             data={key: value for key, value in log_entry.data.items() if key not in ['object', 'sample', 'measurement']},
-            utc_datetime=log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            utc_datetime=log_entry.utc_datetime,
             is_imported=log_entry.is_imported
         )
 

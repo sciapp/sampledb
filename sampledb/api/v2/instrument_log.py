@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from http import HTTPStatus
 
 import flask
-from pydantic import BaseModel, BeforeValidator, NonNegativeInt, Strict, ValidationInfo, constr, model_validator, Field
+import pytz
+from pydantic import BaseModel, NonNegativeInt, Strict, ValidationInfo, constr, model_validator, Field, AwareDatetime
 from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth
@@ -108,15 +109,6 @@ class _ObjectAttachment(BaseModel):
             raise PydanticCustomError("no_such_object", "Object should exist")
 
 
-def _parse_datetime(value: typing.Any) -> datetime.datetime:
-    if not isinstance(value, str):
-        raise PydanticCustomError("datetime_type", "Input should be a valid timestamp")
-    try:
-        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
-    except Exception:
-        raise PydanticCustomError("datetime_parsing", "Timestamp should be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910")
-
-
 class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
     content: str | None = Field(description="the content for the instrument log entry", examples=["This is an instrument log entry."])
     content_is_markdown: bool = Field(False, description="whether the content for the instrument log entry is formatted in Markdown", examples=[False])
@@ -135,13 +127,12 @@ class _BaseInstrumentLogEntry(ModelWithDefaultsFromValidationInfo):
         ],
     ] = Field([], description="the IDs of the categories for the instrument log entry", examples=[[1, 2, 4]])
     event_utc_datetime: typing.Annotated[
-        datetime.datetime,
-        BeforeValidator(_parse_datetime),
+        AwareDatetime,
         is_valid(
-            lambda v, i: abs(v - datetime.datetime.now()) <= datetime.timedelta(days=365_242),
+            lambda v, i: abs(v - datetime.datetime.now(tz=pytz.utc)) <= datetime.timedelta(days=365_242),
             lambda i: PydanticCustomError("datetime_range", "Timestamp should not be more than 1000 years before or after the current date"),
         ),
-    ] | None = Field(None, description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
+    ] | None = Field(None, description="the ISO-formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910Z"])
 
 
 _ObjectAttachments = typing.Annotated[
@@ -168,10 +159,10 @@ class InstrumentLogCategoryModel(BaseModel):
 class InstrumentLogEntryVersionModel(BaseModel):
     log_entry_id: int = Field(description="the ID of the instrument log entry the version belongs to", examples=[1])
     version_id: int = Field(description="the ID of the instrument log entry version", examples=[1])
-    utc_datetime: str = Field(description="the datetime in UTC when the instrument log entry version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    utc_datetime: AwareDatetime = Field(description="the ISO-formatted datetime in UTC when the instrument log entry version was created", examples=["2026-01-02T03:04:05.678910Z"])
     content: str = Field(description="the content of the instrument log entry", examples=["This is a log entry."])
     categories: list[InstrumentLogCategoryModel] = Field(description="the categories of the instrument log entry", examples=[[generate_example(InstrumentLogCategoryModel)]])
-    event_utc_datetime: str | None = Field(description="the ISO formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910"])
+    event_utc_datetime: AwareDatetime | None = Field(description="the ISO-formatted datetime in UTC of the event described in the instrument log entry", examples=["2026-01-02T03:04:05.678910Z"])
     content_is_markdown: bool = Field(description="whether the content of the instrument log entry is formatted in Markdown", examples=[False])
 
     @classmethod
@@ -179,13 +170,13 @@ class InstrumentLogEntryVersionModel(BaseModel):
         return cls(
             log_entry_id=instrument_log_entry_version.log_entry_id,
             version_id=instrument_log_entry_version.version_id,
-            utc_datetime=instrument_log_entry_version.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds'),
+            utc_datetime=instrument_log_entry_version.utc_datetime,
             content=instrument_log_entry_version.content,
             categories=[
                 InstrumentLogCategoryModel.from_category(category)
                 for category in instrument_log_entry_version.categories
             ],
-            event_utc_datetime=instrument_log_entry_version.event_utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if instrument_log_entry_version.event_utc_datetime is not None else None,
+            event_utc_datetime=instrument_log_entry_version.event_utc_datetime if instrument_log_entry_version.event_utc_datetime is not None else None,
             content_is_markdown=instrument_log_entry_version.content_is_markdown,
         )
 

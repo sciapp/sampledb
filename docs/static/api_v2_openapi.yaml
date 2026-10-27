@@ -18,10 +18,10 @@ components:
           - Access Token for Instrument Control
           title: Description
         expiration_utc_datetime:
-          description: A string containing the datetime (in UTC) when the access token
-            expires
+          description: The ISO-formatted datetime in UTC when the access token expires
           examples:
-          - '2026-01-01 12:34:56'
+          - '2026-01-02T03:04:05.000000Z'
+          format: date-time
           title: Expiration Datetime
           type: string
         refresh_token:
@@ -290,12 +290,12 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - format: date-time
+            type: string
           - type: 'null'
-          description: the datetime in UTC when the comment was posted, formatted
-            as YYYY-MM-DD HH:MM:SS.ffffff
+          description: the ISO-formatted datetime in UTC when the comment was posted
           examples:
-          - '2026-01-02 03:04:05.678910'
+          - '2026-01-02T03:04:05.678910Z'
           title: Utc Datetime
       required:
       - object_id
@@ -606,9 +606,9 @@ components:
                 title: 1
               content: This is a log entry.
               content_is_markdown: false
-              event_utc_datetime: '2026-01-02T03:04:05.678910'
+              event_utc_datetime: '2026-01-02T03:04:05.678910Z'
               log_entry_id: 1
-              utc_datetime: '2026-01-02 03:04:05'
+              utc_datetime: '2026-01-02T03:04:05.678910Z'
               version_id: 1
           items:
             $ref: '#/components/schemas/InstrumentLogEntryVersionModel'
@@ -646,12 +646,13 @@ components:
           type: boolean
         event_utc_datetime:
           anyOf:
-          - type: string
+          - format: date-time
+            type: string
           - type: 'null'
-          description: the ISO formatted datetime in UTC of the event described in
+          description: the ISO-formatted datetime in UTC of the event described in
             the instrument log entry
           examples:
-          - '2026-01-02T03:04:05.678910'
+          - '2026-01-02T03:04:05.678910Z'
           title: Event Utc Datetime
         log_entry_id:
           description: the ID of the instrument log entry the version belongs to
@@ -660,10 +661,11 @@ components:
           title: Log Entry Id
           type: integer
         utc_datetime:
-          description: the datetime in UTC when the instrument log entry version was
-            created, formatted as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the instrument log entry
+            version was created
           examples:
-          - '2026-01-02 03:04:05'
+          - '2026-01-02T03:04:05.678910Z'
+          format: date-time
           title: Utc Datetime
           type: string
         version_id:
@@ -991,12 +993,13 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - format: date-time
+            type: string
           - type: 'null'
-          description: the datetime in UTC when the object was assignment was created,
-            formatted as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the object assignment
+            was created
           examples:
-          - '2026-01-02 03:04:05'
+          - '2026-01-02T03:04:05.678910Z'
           title: Utc Datetime
       required:
       - object_location_assignment_id
@@ -1048,10 +1051,11 @@ components:
           title: User Id
           type: integer
         utc_datetime:
-          description: the datetime in UTC when the object log entry was created,
-            formatted as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the object log entry
+            was created
           examples:
-          - '2026-01-02 03:04:05'
+          - '2026-01-02T03:04:05.687910Z'
+          format: date-time
           title: Utc Datetime
           type: string
       required:
@@ -1250,12 +1254,13 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - format: date-time
+            type: string
           - type: 'null'
-          description: the datetime in UTC when the object version was created, formatted
-            as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the object version was
+            created
           examples:
-          - '2026-01-02 03:04:05'
+          - '2026-01-02T03:04:05.687910Z'
           title: Utc Datetime
         version_id:
           description: the ID of the object version
@@ -1969,12 +1974,13 @@ components:
           title: User Id
         utc_datetime:
           anyOf:
-          - type: string
+          - format: date-time
+            type: string
           - type: 'null'
-          description: the datetime in UTC when the current object version was created,
-            formatted as YYYY-MM-DD HH:MM:SS
+          description: the ISO-formatted datetime in UTC when the current object version
+            was created
           examples:
-          - '2026-01-02 03:04:05'
+          - '2026-01-02T03:04:05.687910Z'
           title: Utc Datetime
         version_id:
           description: the ID of the current object version
@@ -3261,10 +3267,10 @@ paths:
                     type: string
                   - type: 'null'
                   default: null
-                  description: the ISO formatted datetime in UTC of the event described
+                  description: the ISO-formatted datetime in UTC of the event described
                     in the instrument log entry
                   examples:
-                  - '2026-01-02T03:04:05.678910'
+                  - '2026-01-02T03:04:05.678910Z'
                   title: Event Utc Datetime
                 file_attachments:
                   default: []
@@ -3889,10 +3895,10 @@ paths:
                     type: string
                   - type: 'null'
                   default: null
-                  description: the ISO formatted datetime in UTC of the event described
+                  description: the ISO-formatted datetime in UTC of the event described
                     in the instrument log entry
                   examples:
-                  - '2026-01-02T03:04:05.678910'
+                  - '2026-01-02T03:04:05.678910Z'
                   title: Event Utc Datetime
                 file_attachments:
                   anyOf:

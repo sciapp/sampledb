@@ -4,7 +4,8 @@ from functools import cached_property
 from http import HTTPStatus
 
 import flask
-from pydantic import BaseModel, Strict, model_validator, Field
+import pytz
+from pydantic import BaseModel, Strict, model_validator, Field, AwareDatetime
 from pydantic_core import PydanticCustomError
 
 from .authentication import multi_auth, object_permissions_required
@@ -104,7 +105,7 @@ class ObjectLocationAssignmentModel(BaseModel):
     responsible_user_id: int | None = Field(description="the ID of the responsible user the object is assigned to", examples=[1])
     user_id: int | None = Field(description="the ID of the user who assinged the object to a location/responsible user", examples=[1])
     description: dict[LanguageCode, str] | None = Field(description="the description of the object location/responsible user assignment", examples=[{"en": "The object is stored on the example shelf."}])
-    utc_datetime: str | None = Field(description="the datetime in UTC when the object was assignment was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    utc_datetime: AwareDatetime | None = Field(description="the ISO-formatted datetime in UTC when the object assignment was created", examples=["2026-01-02T03:04:05.678910Z"])
 
     @classmethod
     def from_object_location_assignment(cls, object_location_assignment: locations.ObjectLocationAssignment) -> typing.Self:
@@ -115,7 +116,7 @@ class ObjectLocationAssignmentModel(BaseModel):
             responsible_user_id=object_location_assignment.responsible_user_id,
             user_id=object_location_assignment.user_id,
             description=object_location_assignment.description,
-            utc_datetime=object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if object_location_assignment.utc_datetime is not None else None
+            utc_datetime=object_location_assignment.utc_datetime.astimezone(tz=pytz.utc) if object_location_assignment.utc_datetime is not None else None,
         )
 
 

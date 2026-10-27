@@ -87,7 +87,7 @@ def test_authentication_access_token(flask_server):
     assert isinstance(response_json['access_token'], str)
     assert isinstance(response_json['refresh_token'], str)
     assert response_json['description'] == 'API Session Token Test'
-    expiration_utc_datetime = datetime.datetime.strptime(response_json['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+    expiration_utc_datetime = datetime.datetime.fromisoformat(response_json['expiration_utc_datetime'])
     assert datetime.datetime.now(datetime.timezone.utc) < expiration_utc_datetime <= datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
     access_token = response_json['access_token']
     refresh_token = response_json['refresh_token']
@@ -110,5 +110,5 @@ def test_authentication_access_token(flask_server):
     assert isinstance(response_json['refresh_token'], str)
     assert response_json['description'] == 'API Session Token Test'
     previous_expiration_utc_datetime = expiration_utc_datetime
-    expiration_utc_datetime = datetime.datetime.strptime(response_json['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+    expiration_utc_datetime = datetime.datetime.fromisoformat(response_json['expiration_utc_datetime'])
     assert previous_expiration_utc_datetime < expiration_utc_datetime <= datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)

@@ -5,8 +5,7 @@ from functools import cached_property
 from http import HTTPStatus
 
 import flask
-from pydantic import (AfterValidator, AliasChoices, BaseModel, BeforeValidator,
-                      Field, Strict, ValidationInfo, model_validator, field_validator)
+from pydantic import AfterValidator, AliasChoices, AwareDatetime, BaseModel, BeforeValidator, Field, Strict, ValidationInfo, model_validator, field_validator
 from pydantic_core import PydanticCustomError
 from sqlalchemy.sql import and_
 
@@ -52,7 +51,7 @@ class _ObjectModel(BaseModel):
     version_id: int = Field(description="the ID of the current object version", examples=[0])
     action_id: int | None = Field(description="the ID of the action the object was created with", examples=[1])
     user_id: int | None = Field(description="the ID of the user who created this object version", examples=[1])
-    utc_datetime: str | None = Field(description="the datetime in UTC when the current object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    utc_datetime: AwareDatetime | None = Field(description="the ISO-formatted datetime in UTC when the current object version was created", examples=["2026-01-02T03:04:05.687910Z"])
     schema_: dict[str, typing.Any] | None = Field(
         alias="schema",
         description="the schema of the current object version",
@@ -90,7 +89,7 @@ class ObjectVersionModel(BaseModel):
     version_id: int = Field(description="the ID of the object version", examples=[0])
     action_id: int | None = Field(description="the ID of the action the object was created with", examples=[1])
     user_id: int | None = Field(description="the ID of the user who created this object version", examples=[1])
-    utc_datetime: str | None = Field(description="the datetime in UTC when the object version was created, formatted as YYYY-MM-DD HH:MM:SS", examples=["2026-01-02 03:04:05"])
+    utc_datetime: AwareDatetime | None = Field(description="the ISO-formatted datetime in UTC when the object version was created", examples=["2026-01-02T03:04:05.687910Z"])
     schema_: dict[str, typing.Any] | None = Field(
         alias="schema",
         description="the schema of the object version",
@@ -241,7 +240,7 @@ class ObjectVersion(Resource):
             version_id=object.version_id,
             action_id=object.action_id,
             user_id=object.user_id,
-            utc_datetime=object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime else None,
+            utc_datetime=object.utc_datetime,
             schema=object.schema,
             data=object.data,
             fed_object_id=object.fed_object_id,
@@ -637,7 +636,7 @@ class Objects(Resource):
                         version_id=object.version_id,
                         action_id=object.action_id,
                         user_id=object.user_id,
-                        utc_datetime=object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
+                        utc_datetime=object.utc_datetime,
                         schema=object.schema,
                         data=object.data,
                         fed_object_id=object.fed_object_id,
@@ -653,7 +652,7 @@ class Objects(Resource):
                     version_id=object.version_id,
                     action_id=object.action_id,
                     user_id=object.user_id,
-                    utc_datetime=object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S") if object.utc_datetime is not None else None,
+                    utc_datetime=object.utc_datetime,
                     schema=object.schema,
                     data=object.data,
                     fed_object_id=object.fed_object_id,

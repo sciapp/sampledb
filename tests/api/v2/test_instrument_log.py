@@ -2,6 +2,7 @@ import base64
 import datetime
 
 import flask
+import pytz
 import requests
 import pytest
 
@@ -84,7 +85,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
                 {
                     'version_id': 1,
                     'log_entry_id': log_entry.id,
-                    'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                    'utc_datetime': log_entry.versions[0].utc_datetime.isoformat().replace('+00:00', 'Z'),
                     'content': "Example Log Entry",
                     'event_utc_datetime': None,
                     'content_is_markdown': False,
@@ -126,8 +127,8 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
             {
                 'version_id': 1,
                 'log_entry_id': log_entry.id,
-                'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
-                'event_utc_datetime': log_entry.versions[0].event_utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'utc_datetime': log_entry.versions[0].utc_datetime.isoformat().replace('+00:00', 'Z'),
+                'event_utc_datetime': log_entry.versions[0].event_utc_datetime.isoformat().replace('+00:00', 'Z'),
                 'content_is_markdown': False,
                 'content': "Example Log Entry 2",
                 'categories': [
@@ -140,7 +141,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
             {
                 'version_id': 2,
                 'log_entry_id': log_entry.id,
-                'utc_datetime': log_entry.versions[1].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'utc_datetime': log_entry.versions[1].utc_datetime.isoformat().replace('+00:00', 'Z'),
                 'event_utc_datetime': None,
                 'content_is_markdown': True,
                 'content': "**Example Log Entry 2**",
@@ -209,7 +210,7 @@ def test_get_instrument_log_entry(flask_server, auth, user):
             {
                 'version_id': 1,
                 'log_entry_id': log_entry.id,
-                'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'utc_datetime': log_entry.versions[0].utc_datetime.isoformat().replace('+00:00', 'Z'),
                 'content': "Example Log Entry",
                 'event_utc_datetime': None,
                 'content_is_markdown': False,
@@ -955,7 +956,7 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 3
 
     data['content'] = 'Example Log Entry Test'
-    data['event_utc_datetime'] = '2024-01-02T03:04:05.678910'
+    data['event_utc_datetime'] = '2024-01-02T03:04:05.678910Z'
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 201
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
@@ -966,17 +967,17 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     assert r.status_code == 400
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
 
-    data['event_utc_datetime'] = '0001-01-01T00:00:00.00000'
+    data['event_utc_datetime'] = '0001-01-01T00:00:00.00000Z'
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 400
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
 
-    data['event_utc_datetime'] = '9999-01-01T00:00:00.00000'
+    data['event_utc_datetime'] = '9999-01-01T00:00:00.00000Z'
     r = requests.post(flask_server.base_url + f'api/v2/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
     assert r.status_code == 400
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
 
-    data['event_utc_datetime'] = '2024-01-02T03:04:05.678910'
+    data['event_utc_datetime'] = '2024-01-02T03:04:05.678910Z'
     sampledb.logic.instruments.update_instrument(
         instrument_id=instrument.id,
         users_can_create_log_entries=False
@@ -1151,7 +1152,7 @@ def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
         {
             'version_id': 1,
             'log_entry_id': log_entry.id,
-            'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+            'utc_datetime': log_entry.versions[0].utc_datetime.isoformat().replace('+00:00', 'Z'),
             'content': "Example Log Entry",
             'event_utc_datetime': None,
             'content_is_markdown': False,
@@ -1187,8 +1188,8 @@ def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
         {
             'version_id': 1,
             'log_entry_id': log_entry.id,
-            'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
-            'event_utc_datetime': log_entry.versions[0].event_utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+            'utc_datetime': log_entry.versions[0].utc_datetime.isoformat().replace('+00:00', 'Z'),
+            'event_utc_datetime': log_entry.versions[0].event_utc_datetime.isoformat().replace('+00:00', 'Z'),
             'content_is_markdown': False,
             'content': "Example Log Entry 2",
             'categories': [
@@ -1201,7 +1202,7 @@ def test_get_instrument_log_entry_versions(flask_server, auth, user, app):
         {
             'version_id': 2,
             'log_entry_id': log_entry.id,
-            'utc_datetime': log_entry.versions[1].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+            'utc_datetime': log_entry.versions[1].utc_datetime.isoformat().replace('+00:00', 'Z'),
             'event_utc_datetime': None,
             'content_is_markdown': True,
             'content': "**Example Log Entry 2**",
@@ -1271,7 +1272,7 @@ def test_get_instrument_log_entry_version(flask_server, auth, user, app):
     assert r.json() == {
         'version_id': 1,
         'log_entry_id': log_entry.id,
-        'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+        'utc_datetime': log_entry.versions[0].utc_datetime.isoformat().replace('+00:00', 'Z'),
         'content': "Example Log Entry",
         'event_utc_datetime': None,
         'content_is_markdown': False,
@@ -1414,7 +1415,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
             'log_entry_id': log_entry.id,
             'content': "Example Log Entry",
             'content_is_markdown': False,
-            'event_utc_datetime': datetime.datetime.now().replace(tzinfo=None).strftime('%Y-%m-%dT%H:%M:%S.%f'),
+            'event_utc_datetime': datetime.datetime.now(tz=pytz.utc).isoformat().replace('+00:00', 'Z'),
             'file_attachments': [],
             'object_attachments': [],
             'category_ids': []
@@ -1535,7 +1536,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
         if data['event_utc_datetime'] is None:
             assert log_entry.versions[-1].event_utc_datetime is None
         else:
-            assert log_entry.versions[-1].event_utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f') == data['event_utc_datetime']
+            assert log_entry.versions[-1].event_utc_datetime.isoformat().replace('+00:00', 'Z') == data['event_utc_datetime']
         assert [category.id for category in log_entry.versions[-1].categories] == data['category_ids']
         assert len({object_attachment.object_id for object_attachment in log_entry.object_attachments}) == len(log_entry.object_attachments)
         if data['object_attachments'] is None:
@@ -1691,7 +1692,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'object_attachments': [],
                 'category_ids': [category.id]
             },
-            "Timestamp should be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910 (event_utc_datetime)",
+            "Input should have timezone info (event_utc_datetime)",
         ),
         (
             {
@@ -1699,7 +1700,7 @@ def test_post_instrument_log_entry_version(flask_server, auth, user, app):
                 'log_entry_id': log_entry.id,
                 'content': "Example Log Entry",
                 'content_is_markdown': False,
-                'event_utc_datetime': (datetime.datetime.now().replace(tzinfo=None) + datetime.timedelta(days=366000)).strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'event_utc_datetime': (datetime.datetime.now(tz=pytz.utc) + datetime.timedelta(days=366000)).isoformat().replace('+00:00', 'Z'),
                 'file_attachments': [],
                 'object_attachments': [],
                 'category_ids': [category.id]

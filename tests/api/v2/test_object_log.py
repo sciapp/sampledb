@@ -96,7 +96,7 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     assert local_entry.object_id == entries[0]['object_id']
     assert local_entry.user_id == entries[0]['user_id']
     assert local_entry.data == entries[0]['data']
-    assert local_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') == entries[0]['utc_datetime']
+    assert local_entry.utc_datetime.isoformat().replace('+00:00', 'Z') == entries[0]['utc_datetime']
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', params={'cursor': "invalid"}, auth=auth)
     assert r.status_code == 400
     assert r.json() == {
@@ -126,7 +126,7 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
         assert local_entry.object_id == entry['object_id']
         assert local_entry.user_id == entry['user_id']
         assert local_entry.data == entry['data']
-        assert local_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') == entry['utc_datetime']
+        assert local_entry.utc_datetime.isoformat().replace('+00:00', 'Z') == entry['utc_datetime']
     object2 = create_object(user_id=user2.id, action_id=action.id, data={
         'name': {
             '_type': 'text',
@@ -145,7 +145,7 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     assert local_entry.object_id == entries[0]['object_id']
     assert local_entry.user_id == entries[0]['user_id']
     assert local_entry.data == entries[0]['data']
-    assert local_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') == entries[0]['utc_datetime']   # ...but user2 is allowed to read it
+    assert local_entry.utc_datetime.isoformat().replace('+00:00', 'Z') == entries[0]['utc_datetime']   # ...but user2 is allowed to read it
     sampledb.logic.users.set_user_administrator(user2.id, True)
     sampledb.logic.settings.set_user_settings(user2.id, {'USE_ADMIN_PERMISSIONS': True})
     r = requests.get(flask_server.base_url + 'api/v2/object_log_entries/', auth=auth2)
