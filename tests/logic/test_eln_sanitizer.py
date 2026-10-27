@@ -397,14 +397,13 @@ def test_eln_sanitizer_add_sampledb_notice(app):
     assert "Should Stay" in result_html
     assert "Legal Notice" in result_html
     assert "Privacy Policy" in result_html
-    assert f"ELN Import #{ELN_IMPORT_ID}" in result_html
+    assert f".eln file #{ELN_IMPORT_ID}" in result_html
 
     html_without_body = "<html></html>"
 
     with app.test_request_context('/'):
-        result_html_without_body = sanitizer.sanitize(html, "text/html")
+        result_html_without_body = sanitizer.sanitize(html_without_body, "text/html")
 
-    assert "Should Stay" in result_html_without_body
     assert "Legal Notice" in result_html_without_body
     assert "Privacy Policy" in result_html_without_body
-    assert f"ELN Import #{ELN_IMPORT_ID}" in result_html_without_body
+    assert f".eln file #{ELN_IMPORT_ID}" in result_html_without_body
