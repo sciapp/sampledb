@@ -16,6 +16,7 @@
             <label>
               <input type="checkbox" name="{{ import_eln_file_form.import_preview.name }}" {% if import_eln_file_form.import_preview.data %}checked="checked"{% endif %} />
               {{ _('Import preview') }}
+              <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="{{ _("If the preview is imported, it will be accessible to all users.") }}"></i>
             </label>
           </div>
         </div>

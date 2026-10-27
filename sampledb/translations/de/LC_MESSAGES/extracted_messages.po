@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-10-27 06:15+0100\n"
+"POT-Creation-Date: 2026-10-27 06:33+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4306,6 +4306,9 @@ msgstr ""
 
 msgid "Import preview"
 msgstr "Vorschau importieren"
+
+msgid "If the preview is imported, it will be accessible to all users."
+msgstr "Wenn die Vorschau importiert wird, können alle Nutzer auf sie zugreifen."
 
 msgid "This .eln file does not provide a preview."
 msgstr "Diese .eln-Datei bietet keine Vorschau."

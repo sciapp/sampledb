@@ -90,34 +90,36 @@ def eln_preview(eln_import_id: int) -> FlaskResponseT:
         eln_import = logic.eln_import.get_eln_import(eln_import_id)
     except logic.errors.ELNImportDoesNotExistError:
         return flask.abort(404)
-    if eln_import.imported:
-        try:
+
+    content: bytes|str|None = None
+    sanitized_content: str|None = None
+    mime_type: str|None = None
+
+    try:
+        if eln_import.imported:
             preview_file = logic.eln_import.get_eln_import_preview_file(eln_import_id, subpath)
-        except (logic.errors.ELNImportPreviewFileDoesNotExistError, logic.errors.InvalidELNFileError):
-            return flask.abort(404)
-        if preview_file.mime_type.startswith("text/"):
-            if preview_file.sanitized_binary_data is None:
-                return flask.abort(404)
-            return flask.Response(
-                preview_file.sanitized_binary_data.decode(),
-                mimetype=preview_file.mime_type,
-                headers=headers,
-            )
-        return flask.Response(preview_file.binary_data, mimetype=preview_file.mime_type, headers=headers)
-    else:
-        try:
+            mime_type = preview_file.mime_type
+            sanitized_content = preview_file.sanitized_binary_data.decode() if preview_file.sanitized_binary_data is not None else ""
+            content = preview_file.binary_data
+        else:
+            if flask_login.current_user.id != eln_import.user_id:
+                return flask.abort(403)
+
             parsed_preview_file = logic.eln_import.parse_eln_preview_file(eln_import_id, subpath)
-        except (logic.errors.ELNImportPreviewFileDoesNotExistError, logic.errors.InvalidELNFileError, logic.errors.ELNImportDoesNotExistError, logic.errors.ELNImportPreviewIllegalMimeTypeError):
-            return flask.abort(404)
-        if parsed_preview_file.mime_type.startswith("text/"):
-            if parsed_preview_file.sanitized_content is None:
-                return flask.abort(404)
-            return flask.Response(
-                parsed_preview_file.sanitized_content.decode(),
-                mimetype=parsed_preview_file.mime_type,
-                headers=headers,
-            )
-        return flask.Response(parsed_preview_file.content, mimetype=parsed_preview_file.mime_type, headers=headers)
+
+            mime_type = parsed_preview_file.mime_type
+            sanitized_content = parsed_preview_file.sanitized_content.decode() if parsed_preview_file.sanitized_content is not None else ""
+            content = parsed_preview_file.content
+    except (logic.errors.ELNImportPreviewFileDoesNotExistError, logic.errors.InvalidELNFileError, logic.errors.ELNImportPreviewIllegalMimeTypeError):
+        return flask.abort(404)
+
+    if mime_type.startswith("text/"):
+        return flask.Response(
+            sanitized_content,
+            mimetype=mime_type,
+            headers=headers,
+        )
+    return flask.Response(content, mimetype=mime_type, headers=headers)
 
 
 @frontend.route('/eln_imports/<int:eln_import_id>', methods=['POST', 'GET'])
