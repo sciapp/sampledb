@@ -4,7 +4,6 @@ import typing
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 import flask
-from flask_babel import _
 import tinycss2
 
 
@@ -76,7 +75,7 @@ class ELNSanitizer:
     def sanitize(self, content: str, mime_type: str) -> str:
         """
         Sanitizes content based on its mime type.
-        Currently only text/html and text/css are supported for santization.
+        Currently only text/html and text/css are supported for sanitization.
 
         :param content: String that should be sanitized
         :param mime_type: Mime type of content
@@ -116,17 +115,17 @@ class ELNSanitizer:
             soup.append(body)
         else:
             body = soup.body
-        sampledb_notice = f"""
+        sampledb_notice = flask.render_template_string("""
             <div class="sampledb_notice" style='position: fixed; top: 20px; right: 20px; background-color: #f8f8f8; padding: 10px; border-radius: 5px; border: 1px solid black;'>
                 <style>
-                    .sampledb_notice {{ font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }}
-                    .sampledb_notice a {{ color: #337ab7; text-decoration: none; }}
-                    .sampledb_notice a:hover {{ text-decoration: underline; }}
+                    .sampledb_notice { font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }
+                    .sampledb_notice a { color: #337ab7; text-decoration: none; }
+                    .sampledb_notice a:hover { text-decoration: underline; }
                 </style>
-                <p>{_('This is the preview for <a href=\"%(eln_import_url)s\">.eln file #%(eln_import_id)s</a>.</p>', eln_import_url=flask.url_for('frontend.eln_import', eln_import_id=self.eln_import_id), eln_import_id=self.eln_import_id)}
-                <p style='text-align: center;'><a style="" href=\"{flask.current_app.config['SERVICE_LEGAL_NOTICE']}\">{_('Legal Notice')}</a> • <a href=\"{flask.current_app.config['SERVICE_PRIVACY_POLICY']}\">{_('Privacy Policy')}</a></p>
+                <p>{{ _('This is the preview for <a href=\"%(eln_import_url)s\">.eln file #%(eln_import_id)s</a>.</p>', eln_import_url=url_for('frontend.eln_import', eln_import_id=eln_import_id), eln_import_id=eln_import_id) }}
+                <p style='text-align: center;'>{% if service_legal_notice %}<a href=\"{{ service_legal_notice }}\">{{_('Legal Notice') }}</a>{% endif %}{% if service_legal_notice and service_privacy_policy %} • {% endif %} {% if service_privacy_policy %}<a href=\"{{ service_privacy_policy }}\">{{ _('Privacy Policy') }}</a>{% endif %}</p>
             </div>
-        """
+        """, eln_import_id=self.eln_import_id)
         body.append(BeautifulSoup(sampledb_notice, "html.parser"))
 
     def _sanitize_html_attributes(self, tag: Tag) -> None:
