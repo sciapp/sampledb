@@ -359,3 +359,7 @@ class ELNSanitizer:
             subpath = normalized_fullpath[len("ro-crate-preview_files/"):]
             return flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
         return None
+
+    @classmethod
+    def is_sanitization_required(cls, mime_type: str) -> bool:
+        return mime_type.startswith("text/")

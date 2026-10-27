@@ -113,7 +113,7 @@ def eln_preview(eln_import_id: int) -> FlaskResponseT:
     except (logic.errors.ELNImportPreviewFileDoesNotExistError, logic.errors.InvalidELNFileError, logic.errors.ELNImportPreviewIllegalMimeTypeError):
         return flask.abort(404)
 
-    if mime_type.startswith("text/"):
+    if logic.eln_sanitizer.ELNSanitizer.is_sanitization_required(mime_type):
         return flask.Response(
             sanitized_content,
             mimetype=mime_type,

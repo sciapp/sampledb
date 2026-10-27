@@ -1420,7 +1420,7 @@ def parse_eln_preview(
                 try:
                     with zip_file.open(member_names[path]) as ro_crate_file:
                         files: list[str] = []
-                        if mime_type.startswith("text/"):
+                        if ELNSanitizer.is_sanitization_required(mime_type):
                             binary_data = ro_crate_file.read()
                             sanitizer = ELNSanitizer(
                                 eln_import_id=eln_import_id,
@@ -1527,7 +1527,7 @@ def parse_eln_preview_file(
     mime_type = guess_file_type(ro_crate_file_name)[0]
     if mime_type not in ELNSanitizer.ALLOWED_PREVIEW_MIME_TYPES:
         raise errors.ELNImportPreviewIllegalMimeTypeError()
-    if mime_type.startswith("text/"):
+    if ELNSanitizer.is_sanitization_required(mime_type):
         sanitizer = ELNSanitizer(
             eln_import_id=eln_import_id,
             root_path=os.path.split(os.path.join('/ro-crate-preview_files/', subpath))[0] if subpath is not None else '/',
