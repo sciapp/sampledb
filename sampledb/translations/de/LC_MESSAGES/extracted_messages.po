@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-10-19 14:12+0200\n"
+"POT-Creation-Date: 2026-10-27 06:15+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4298,17 +4298,17 @@ msgstr ""
 
 #, python-format
 msgid ""
-"This ELN file provides a preview: <a href=\"%(preview_url)s\">Open "
+"This .eln file provides a preview: <a href=\"%(preview_url)s\">Open "
 "preview</a>"
 msgstr ""
-"Diese ELN-Datei bietet eine Vorschau: <a "
+"Diese .eln-Datei bietet eine Vorschau: <a "
 "href=\"%(preview_url)s\">Vorschau öffnen</a>"
 
 msgid "Import preview"
 msgstr "Vorschau importieren"
 
-msgid "This ELN file does not provide a preview."
-msgstr "Diese ELN-Datei bietet keine Vorschau."
+msgid "This .eln file does not provide a preview."
+msgstr "Diese .eln-Datei bietet keine Vorschau."
 
 #, python-format
 msgid "This .eln file was signed by %(sign_url)s."
@@ -8279,10 +8279,10 @@ msgstr ""
 
 #, python-format
 msgid ""
-"This is the preview for <a href=\"%(eln_import_url)s\">ELN Import "
+"This is the preview for <a href=\"%(eln_import_url)s\">.eln file "
 "#%(eln_import_id)s</a>.</p>"
 msgstr ""
-"Dies ist die Vorschau für <a href=\"%(eln_import_url)s\">ELN-Import "
+"Dies ist die Vorschau für <a href=\"%(eln_import_url)s\">.eln-Datei "
 "#%(eln_import_id)s</a>.</p>"
 
 #, python-format
