@@ -171,15 +171,15 @@ OWASP_XSS_TEST_CASES = [
     },
     {
         "payload": r'<META HTTP-EQUIV="refresh" CONTENT="0;url=javascript:alert(\'XSS\');">',
-        "expected_result": "<meta/>"
+        "expected_result": ""
     },
     {
         "payload": '<META HTTP-EQUIV="refresh" CONTENT="0;url=data:text/html base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K">',
-        "expected_result": "<meta content=\"0;url=data:text/html base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K\"/>",
+        "expected_result": "",
     },
     {
         "payload": '<META HTTP-EQUIV="refresh" CONTENT="0; URL=http://;URL=javascript:alert(\'XSS\');">',
-        "expected_result": "<meta/>"
+        "expected_result": ""
     },
     {
         "payload": '<IFRAME SRC="javascript:alert(\'XSS\');"></IFRAME>',

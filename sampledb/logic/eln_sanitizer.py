@@ -29,13 +29,13 @@ WHITELIST_CSS_AT_RULES = {
 
 
 WHITELIST_TAGS = {
-    "p", "a", "div", "article", "section", "nav", "span", "meta", "title", "h1", "h2", "h3", "h4", "h5", "html", "body", "head", "header",
+    "p", "a", "div", "article", "section", "nav", "span", "title", "h1", "h2", "h3", "h4", "h5", "html", "body", "head", "header",
     "main", "footer", "table", "tbody", "tr", "td", "th", "colgroup", "col", "ul", "ol", "li", "br", "hr", "summary", "details", "img", "input",
     "sup", "sub",
 }
 
 WHITELIST_ATTRIBUTES = {
-    "class", "src", "href", "name", "content", "charset", "id", "lang", "rel", "type"
+    "class", "src", "href", "name", "charset", "id", "lang", "rel", "type"
 }
 
 
