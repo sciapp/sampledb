@@ -172,7 +172,12 @@ class ELNSanitizer:
         style_content = tag["style"]
         style_parsed = tinycss2.parse_blocks_contents(style_content)
         style_sanitized = self._css_sanitize_rules(style_parsed)
-        tag["style"] = tinycss2.serialize(style_sanitized)
+        serialized_style = tinycss2.serialize(style_sanitized)
+        soup = BeautifulSoup(f"<span style=\"{serialized_style}\">", "html.parser")
+        if len(soup.span.attrs) == 1:
+            tag["style"] = serialized_style
+        else:
+            tag["style"] = ""
 
     def _sanitize_html_tag(self, tag: Tag) -> None:
         CUSTOM_FILTERS = {
@@ -190,7 +195,12 @@ class ELNSanitizer:
 
     def _sanitize_html_tag_style(self, tag: Tag) -> None:
         if tag.string is not None:
-            tag.string = self._sanitize_css_stylesheet(tag.string)
+            sanitized_content = self._sanitize_css_stylesheet(tag.string)
+            sanitized_result = BeautifulSoup(f"<style>{self._sanitize_css_stylesheet(tag.string)}</style>", "html.parser")
+            if len(list(sanitized_result.children)) == 1:
+                tag.string = sanitized_content
+            else:
+                tag.string = ""
 
     def _sanitize_html_tag_link(self, tag: Tag) -> None:
         href: typing.Optional[str] = tag.attrs.get("href", None)
