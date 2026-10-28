@@ -174,7 +174,7 @@ class ELNSanitizer:
         style_sanitized = self._css_sanitize_rules(style_parsed)
         serialized_style = tinycss2.serialize(style_sanitized)
         soup = BeautifulSoup(f"<span style=\"{serialized_style}\">", "html.parser")
-        if len(soup.span.attrs) == 1:
+        if soup.span is not None and len(soup.span.attrs) == 1 and len(list(soup.children)) == 1:
             tag["style"] = serialized_style
         else:
             tag["style"] = ""
