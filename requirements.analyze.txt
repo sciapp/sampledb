@@ -6,6 +6,5 @@ pylint
 types-Markdown
 types-babel
 types-beautifulsoup4
-types-bleach
 types-ldap3
 types-requests
