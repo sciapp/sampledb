@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2026-10-27 06:33+0100\n"
+"POT-Creation-Date: 2026-10-28 09:17+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -8279,14 +8279,6 @@ msgid "The .eln file did not contain any valid flexible metadata for this object
 msgstr ""
 "Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses "
 "Objekt."
-
-#, python-format
-msgid ""
-"This is the preview for <a href=\"%(eln_import_url)s\">.eln file "
-"#%(eln_import_id)s</a>.</p>"
-msgstr ""
-"Dies ist die Vorschau für <a href=\"%(eln_import_url)s\">.eln-Datei "
-"#%(eln_import_id)s</a>.</p>"
 
 #, python-format
 msgid "Unnamed Instrument (#%(instrument_id)s)"

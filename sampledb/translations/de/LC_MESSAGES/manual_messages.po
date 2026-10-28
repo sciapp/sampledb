@@ -36,3 +36,13 @@ msgstr "API Token ist nicht gültig."
 
 msgid "The Dataverse does not have the required metadata blocks."
 msgstr "Das Dataverse hat nicht die erforderlichen Metadatenblöcke."
+
+msgid ""
+"This is the preview for <a "
+"href=\"%(eln_import_url)s\">.eln file "
+"#%(eln_import_id)s</a>.</p>"
+msgstr ""
+"Dies ist die Vorschau für <a "
+"href=\"%(eln_import_url)s\">.eln-Datei "
+"#%(eln_import_id)s</a>.</p>"
+
