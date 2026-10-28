@@ -342,8 +342,7 @@ class ELNSanitizer:
         return keep
 
     def _css_sanitize_url_string(self, url: str) -> tuple[bool, str]:
-        root_path = ""
-        fullpath = os.path.join(root_path, url)
+        fullpath = os.path.join(self.root_path, url)
         normalized_fullpath = os.path.normpath(fullpath)
         preview_url = self._transform_url_to_preview_url(normalized_fullpath) or ""
 
