@@ -83,6 +83,8 @@ def upload_eln_import() -> FlaskResponseT:
 @flask_login.login_required
 def eln_preview(eln_import_id: int) -> FlaskResponseT:
     subpath = flask.request.args.get('subpath', None)
+    if subpath is not None and '#' in subpath:
+        subpath = subpath[:subpath.index('#')]
     headers = {
         'X-Content-Type-Options': 'nosniff'
     }
