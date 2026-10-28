@@ -1,6 +1,5 @@
 bcrypt
 beautifulsoup4
-bleach
 CherryPy
 email-validator
 fido2
@@ -15,6 +14,7 @@ flask-orjson
 Flask-SQLAlchemy
 Flask-WTF
 itsdangerous
+justhtml
 kaleido
 ldap3
 Markdown

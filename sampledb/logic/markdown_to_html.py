@@ -2,9 +2,10 @@
 """
 
 """
+import re
 import typing
 
-import bleach
+import justhtml
 from markdown import markdown as _markdown_to_html
 from markdown.extensions.toc import TocExtension, slugify_unicode
 
@@ -47,8 +48,33 @@ def markdown_to_safe_html(markdown: str, use_cache: bool = True, anchor_prefix: 
         slugify=lambda value, separator: slugify_unicode(anchor_prefix + '-' + value, separator)
     )
 
+    # allowed values taken from bleach (package previously used for sanitizing the markdown input)
+    allowed_tags = {"a", "abbr", "acronym", "b", "blockquote", "code", "em", "i", "li", "ol", "strong", "ul"}
+    allowed_attributes = {
+        "a": {"href", "title"},
+        "abbr": {"title"},
+        "acronym": {"title"},
+    }
+    allowed_schemes = {"http", "https", "mailto"}
+
     html = _markdown_to_html(
-        bleach.clean(markdown),
+        justhtml.JustHTML(
+            html=re.sub(r"<!--.*?-->", "", markdown, flags=re.DOTALL),
+            fragment=True,
+            policy=justhtml.SanitizationPolicy(
+                allowed_tags=allowed_tags,
+                allowed_attributes=allowed_attributes,
+                url_policy=justhtml.UrlPolicy(
+                    allow_rules={
+                        ("a", "href"): justhtml.UrlRule(
+                            allowed_schemes=allowed_schemes,
+                            allow_relative=True,
+                        )
+                    }
+                ),
+                disallowed_tag_handling="escape",
+            )
+        ).to_html(pretty=False),
         extensions=[
             'tables',
             'sane_lists',

@@ -4,7 +4,6 @@ APScheduler==3.10.4
 babel==2.18.0
 bcrypt==5.0.0
 beautifulsoup4==4.14.3
-bleach==6.3.0
 blinker==1.9.0
 brotli==1.2.1
 certifi==2026.10.23
@@ -46,6 +45,7 @@ jaraco.collections==5.2.1
 jaraco.context==6.1.1
 jaraco.functools==4.4.0
 jaraco.text==4.2.0
+justhtml==3.16.0
 Jinja2==3.1.6
 kaleido==1.2.0
 ldap3==2.9.1
