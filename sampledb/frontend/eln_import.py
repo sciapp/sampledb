@@ -4,6 +4,7 @@
 """
 from base64 import b64decode
 import typing
+from urllib.parse import urlsplit
 
 import flask
 import flask_login
@@ -83,8 +84,8 @@ def upload_eln_import() -> FlaskResponseT:
 @flask_login.login_required
 def eln_preview(eln_import_id: int) -> FlaskResponseT:
     subpath = flask.request.args.get('subpath', None)
-    if subpath is not None and '#' in subpath:
-        subpath = subpath[:subpath.index('#')]
+    if subpath is not None:
+        subpath = urlsplit(subpath).path
     headers = {
         'X-Content-Type-Options': 'nosniff'
     }

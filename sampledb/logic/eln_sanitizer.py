@@ -1,5 +1,6 @@
 import os
 import typing
+from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -155,7 +156,7 @@ class ELNSanitizer:
             preview_url = self._transform_url_to_preview_url(fullpath)
             if preview_url is not None:
                 tag[attrib] = preview_url
-                file_fullpath = fullpath.split("#")[0]
+                file_fullpath = urlsplit(fullpath).path
                 if file_fullpath not in self.referenced_files:
                     self.referenced_files.append(file_fullpath)
             elif not src.startswith("#"):
@@ -349,7 +350,7 @@ class ELNSanitizer:
         if not preview_url:
             return False, ""
 
-        file_fullpath = normalized_fullpath.split("#")[0]
+        file_fullpath = urlsplit(normalized_fullpath).path
         if file_fullpath not in self.referenced_files:
             self.referenced_files.append(file_fullpath)
         return True, preview_url
@@ -365,7 +366,7 @@ class ELNSanitizer:
         if normalized_fullpath.startswith("/"):
             normalized_fullpath = normalized_fullpath[1:]
 
-        if normalized_fullpath.split('#')[0] not in self.valid_preview_files:
+        if urlsplit(normalized_fullpath).path not in self.valid_preview_files:
             return None
 
         if normalized_fullpath.startswith("ro-crate-preview.html"):
