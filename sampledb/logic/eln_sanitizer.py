@@ -140,7 +140,7 @@ class ELNSanitizer:
             for attr in attr_keys:
                 if attr in CUSTOM_ATTRIB_FILTERS:
                     CUSTOM_ATTRIB_FILTERS[attr](tag)
-                elif "javascript:" in tag[attr] or attr not in WHITELIST_ATTRIBUTES:
+                elif attr not in WHITELIST_ATTRIBUTES:
                     tag.attrs.pop(attr)
 
     def _sanitize_html_attrib_file_reference(self, attrib: str) -> typing.Callable[[Tag], None]:
@@ -249,10 +249,12 @@ class ELNSanitizer:
             return True
         elif at_key == 'import':
             url_token = None
-            if isinstance(prelude[0], tinycss2.ast.WhitespaceToken):
+            if len(prelude) > 1 and isinstance(prelude[0], tinycss2.ast.WhitespaceToken):
                 url_token = prelude[1]
-            else:
+            elif len(prelude) > 0:
                 url_token = prelude[0]
+            else:
+                return False
 
             keep = False
             if isinstance(url_token, tinycss2.ast.StringToken):
@@ -311,7 +313,7 @@ class ELNSanitizer:
         elif function_block.name == 'url':
             if not isinstance(function_block.arguments[0], tinycss2.ast.StringToken):
                 return False
-            self._css_sanitize_url_string_token(function_block.arguments[0])
+            return self._css_sanitize_url_string_token(function_block.arguments[0])
         return False
 
     def _css_sanitize_url_token(self, url_token: tinycss2.ast.URLToken) -> bool:
