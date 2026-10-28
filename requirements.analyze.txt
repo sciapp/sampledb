@@ -8,3 +8,4 @@ types-babel
 types-beautifulsoup4
 types-ldap3
 types-requests
+types-PyYAML

@@ -26,8 +26,10 @@ Pillow
 Pint
 plotly
 psycopg2-binary
+pydantic
 pyotp
 pysaml2
+pyyaml
 qrcode
 requests
 simple_openid_connect

@@ -580,7 +580,7 @@ def test_get_object_log_entries_by_user(object, action, user2):
     sampledb.logic.comments.create_comment(object.id, object.user_id, content='Comment')
     entries = sampledb.logic.object_log.get_object_log_entries_by_user(object.user_id)
     assert len(entries) == 2
-    assert entries == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)  # object creation and comment
+    assert entries[::-1] == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)  # object creation and comment
     object2 = create_object(user_id=user2.id, action_id=action.id, data={
         'name': {
             '_type': 'text',
@@ -589,7 +589,7 @@ def test_get_object_log_entries_by_user(object, action, user2):
     })
     entries = sampledb.logic.object_log.get_object_log_entries_by_user(object.user_id)
     assert len(entries) == 2
-    assert entries == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)  # new object by other user should not affect this result...
+    assert entries[::-1] == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)  # new object by other user should not affect this result...
     entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id)
     assert len(entries) == 1
     assert entries == sampledb.logic.object_log.get_object_log_entries(object2.object_id, object2.user_id)  # ...but user2 is allowed to read it
@@ -597,7 +597,7 @@ def test_get_object_log_entries_by_user(object, action, user2):
     sampledb.logic.settings.set_user_settings(user2.id, {'USE_ADMIN_PERMISSIONS': True})
     entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id)
     assert len(entries) == 3    # user2 became admin and is able to access all object log entries...
-    entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id, after_id=entries[0].id - 1)
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id, after_id=entries[-1].id - 1)
     assert len(entries) == 1    # ...but filters the results
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
         sampledb.logic.object_log.get_object_log_entries_by_user(user2.id + 1)

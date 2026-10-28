@@ -75,6 +75,7 @@ def test_status_codes(flask_server, user, driver):
         )
         component_id = component.id
         token = "invalid"
+        error_name = "ErrorNotFound"
         static_file_name = 'css/custom.css'
         action_type_id = sampledb.models.ActionType.SAMPLE_CREATION
         action_id = sampledb.logic.actions.create_action(
@@ -375,6 +376,81 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/projects/{project_id}': 200,
         f'api/v1/projects/{project_id}/member_users/': 200,
         f'api/v1/projects/{project_id}/member_users/{user_id}': 200,
+        'api/v2/action_types/': 200,
+        f'api/v2/action_types/{action_type_id}': 200,
+        'api/v2/actions/': 200,
+        f'api/v2/actions/{action_id}': 200,
+        f'api/v2/actions/{other_action_id}': 200,
+        f'api/v2/errors/{error_name}': 200,
+        'api/v2/instruments/': 200,
+        f'api/v2/instruments/{instrument_id}': 200,
+        f'api/v2/instruments/{instrument_id}/log_categories/': 200,
+        f'api/v2/instruments/{instrument_id}/log_categories/{instrument_log_category_id}': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/file_attachments/': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/file_attachments/{instrument_log_file_attachment_id}': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/object_attachments/': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/object_attachments/{instrument_log_object_attachment_id}': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/versions/': 200,
+        f'api/v2/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/versions/1': 200,
+        'api/v2/locations/': 200,
+        f'api/v2/locations/{location_id}': 200,
+        'api/v2/location_types/': 200,
+        f'api/v2/location_types/{location_type_id}': 200,
+        'api/v2/objects/': 200,
+        f'api/v2/objects/{object_id}': 302,
+        f'api/v2/objects/{object_id}/comments/': 200,
+        f'api/v2/objects/{object_id}/comments/{comment_id}': 200,
+        f'api/v2/objects/{object_id}/files/': 200,
+        f'api/v2/objects/{object_id}/files/{file_id}': 200,
+        f'api/v2/objects/{object_id}/locations/': 200,
+        f'api/v2/objects/{object_id}/locations/{object_location_assignment_index}': 200,
+        f'api/v2/objects/{object_id}/permissions/': 200,
+        f'api/v2/objects/{object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
+        f'api/v2/objects/{object_id}/permissions/authenticated_users': 200,
+        f'api/v2/objects/{object_id}/permissions/groups/': 200,
+        f'api/v2/objects/{object_id}/permissions/groups/{group_id}': 200,
+        f'api/v2/objects/{object_id}/permissions/projects/': 200,
+        f'api/v2/objects/{object_id}/permissions/projects/{project_id}': 200,
+        f'api/v2/objects/{object_id}/permissions/public': 200,
+        f'api/v2/objects/{object_id}/permissions/users/': 200,
+        f'api/v2/objects/{object_id}/permissions/users/{user_id}': 200,
+        f'api/v2/objects/{object_id}/related_objects': 200,
+        f'api/v2/objects/{object_id}/versions/0': 200,
+        f'api/v2/objects/{other_object_id}': 302,
+        f'api/v2/objects/{other_object_id}/comments/': 200,
+        f'api/v2/objects/{other_object_id}/comments/{comment_id}': 404,
+        f'api/v2/objects/{other_object_id}/files/': 200,
+        f'api/v2/objects/{other_object_id}/files/{file_id}': 404,
+        f'api/v2/objects/{other_object_id}/locations/': 200,
+        f'api/v2/objects/{other_object_id}/locations/{object_location_assignment_index}': 404,
+        f'api/v2/objects/{other_object_id}/permissions/': 200,
+        f'api/v2/objects/{other_object_id}/permissions/anonymous_users': 400,  # 400 because anonymous users are disabled
+        f'api/v2/objects/{other_object_id}/permissions/authenticated_users': 200,
+        f'api/v2/objects/{other_object_id}/permissions/groups/': 200,
+        f'api/v2/objects/{other_object_id}/permissions/groups/{group_id}': 200,
+        f'api/v2/objects/{other_object_id}/permissions/projects/': 200,
+        f'api/v2/objects/{other_object_id}/permissions/projects/{project_id}': 200,
+        f'api/v2/objects/{other_object_id}/permissions/public': 200,
+        f'api/v2/objects/{other_object_id}/permissions/users/': 200,
+        f'api/v2/objects/{other_object_id}/permissions/users/{user_id}': 200,
+        f'api/v2/objects/{other_object_id}/related_objects': 200,
+        f'api/v2/objects/{other_object_id}/versions/0': 200,
+        'api/v2/object_log_entries/': 200,
+        'api/v2/users/': 200,
+        f'api/v2/users/{user_id}': 200,
+        'api/v2/users/me': 200,
+        'api/v2/groups/': 200,
+        f'api/v2/groups/{group_id}': 200,
+        f'api/v2/groups/{group_id}/member_users/': 200,
+        f'api/v2/groups/{group_id}/member_users/{user_id}': 200,
+        'api/v2/projects/': 200,
+        f'api/v2/projects/{project_id}': 200,
+        f'api/v2/projects/{project_id}/member_users/': 200,
+        f'api/v2/projects/{project_id}/member_users/{user_id}': 200,
+        'api/v2/openapi.json': 200,
+        'api/v2/openapi.yaml': 200,
         'apple-touch-icon.png': 200,
         'dashboard/telemetry/get_is_telemetry_answered': 200,
         'eln_imports': 200,
@@ -511,7 +587,7 @@ def test_status_codes(flask_server, user, driver):
         f'.well-known/keys/{keypair_id}': 200,
     }
     for relative_url, expected_status_code in expected_status_codes.items():
-        if relative_url.startswith('api/v1/'):
+        if relative_url.startswith('api/'):
             headers = {
                 'Authorization': 'Bearer ' + api_token
             }
@@ -529,7 +605,7 @@ def test_status_codes(flask_server, user, driver):
     excluded_routes = [
         f'users/{user_id}/autologin',
         'users/me/loginstatus',
-        'api/v1/errors/400',
+        'api/v2/errors/400',
     ]
 
     handled_routes = list(expected_status_codes.keys()) + excluded_routes
@@ -539,6 +615,7 @@ def test_status_codes(flask_server, user, driver):
         'instrument_id': instrument_id,
         'log_entry_id': instrument_log_entry_id,
         'log_entry_version_id': 1,
+        'error_name': error_name,
         'file_attachment_id': instrument_log_file_attachment_id,
         'object_attachment_id': instrument_log_object_attachment_id,
         'user_id': user_id,

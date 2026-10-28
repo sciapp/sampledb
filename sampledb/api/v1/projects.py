@@ -22,7 +22,7 @@ def project_to_json(project: projects.Project) -> typing.Dict[str, typing.Any]:
                 {
                     'user_id': user_id,
                     'permissions': permissions.name.lower(),
-                    'href': flask.url_for('api.user', user_id=user_id, _external=True),
+                    'href': flask.url_for('.user', user_id=user_id, _external=True),
                 } for user_id, permissions in projects.get_project_member_user_ids_and_permissions(project_id=project.id).items()
             ],
             key=lambda member_user: member_user['user_id']
@@ -32,7 +32,7 @@ def project_to_json(project: projects.Project) -> typing.Dict[str, typing.Any]:
                 {
                     'group_id': group_id,
                     'permissions': permissions.name.lower(),
-                    'href': flask.url_for('api.group', group_id=group_id, _external=True),
+                    'href': flask.url_for('.group', group_id=group_id, _external=True),
                 }
                 for group_id, permissions in projects.get_project_member_group_ids_and_permissions(project_id=project.id).items()
             ],
@@ -78,7 +78,7 @@ class ProjectMemberUsers(Resource):
         return [{
             'user_id': user_id,
             'permissions': project_permissions_by_member_id[user_id].name.lower(),
-            'href': flask.url_for('api.user', user_id=user_id, _external=True),
+            'href': flask.url_for('.user', user_id=user_id, _external=True),
         } for user_id in sorted(project_permissions_by_member_id)]
 
     @multi_auth.login_required
@@ -151,7 +151,7 @@ class ProjectMemberUser(Resource):
         return {
             'user_id': user_id,
             'permissions': permissions.name.lower(),
-            'href': flask.url_for('api.user', user_id=user_id, _external=True),
+            'href': flask.url_for('.user', user_id=user_id, _external=True),
         }
 
     @multi_auth.login_required
@@ -196,7 +196,7 @@ class ProjectMemberUser(Resource):
         return {
             'user_id': user_id,
             'permissions': permissions.name.lower(),
-            'href': flask.url_for('api.user', user_id=user_id, _external=True),
+            'href': flask.url_for('.user', user_id=user_id, _external=True),
         }
 
     @multi_auth.login_required
