@@ -11,7 +11,7 @@
       {% if parsed_eln_file_data.has_preview %}
       <p>{{ _('This .eln file provides a preview: <a href="%(preview_url)s">Open preview</a>', preview_url=url_for(".eln_preview", eln_import_id=eln_import_id)) }}</p>
       <div class="form-group">
-        <div class="col-sm-4">
+        <div class="col-sm-12">
           <div class="checkbox">
             <label>
               <input type="checkbox" name="{{ import_eln_file_form.import_preview.name }}" {% if import_eln_file_form.import_preview.data %}checked="checked"{% endif %} />
