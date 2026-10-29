@@ -371,10 +371,10 @@ class ELNSanitizer:
             return None
 
         if parsed_subpath.path.startswith("ro-crate-preview.html"):
-            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, _anchor=parsed_subpath.fragment)}"
+            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, _anchor=parsed_subpath.fragment if parsed_subpath.fragment else None)}"
         elif parsed_subpath.path.startswith("ro-crate-preview_files/"):
             subpath = parsed_subpath.path[len("ro-crate-preview_files/"):]
-            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False, _anchor=parsed_subpath.fragment)}"
+            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False, _anchor=parsed_subpath.fragment if parsed_subpath.fragment else None)}"
         return None
 
     @classmethod
