@@ -3042,6 +3042,26 @@ def test_import_object_location_assignment_no_description(simple_object, compone
     assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
+def test_shared_object_preprocessor_filters_local_url_files(simple_object, user, app):
+    app.config['FILE_URL_ALLOWED_REGEXES'] = [r'^X:\\.+$']
+    app.config['FILE_URL_MAX_LENGTH'] = 0
+    valid = create_url_file(simple_object.object_id, user.id, 'https://example.com/file')
+    local = create_url_file(simple_object.object_id, user.id, r'X:\Projects\file.ppt')
+    long_url = create_url_file(simple_object.object_id, user.id, 'https://example.com/' + 'a' * 2048)
+    hidden = create_url_file(simple_object.object_id, user.id, r'X:\Projects\hidden.ppt')
+    logic.files.hide_file(simple_object.object_id, hidden.id, user.id, 'Hidden')
+
+    processed_object = shared_object_preprocessor(simple_object.object_id, POLICY, [], {})
+    exported = {file['file_id']: file for file in processed_object['files']}
+
+    assert valid.id in exported
+    assert exported[valid.id]['data']['url'] == 'https://example.com/file'
+    assert local.id not in exported
+    assert long_url.id not in exported
+    assert hidden.id in exported
+    assert exported[hidden.id]['hidden'] is not None
+
+
 def test_shared_object_preprocessor(complex_object, app):
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():

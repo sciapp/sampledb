@@ -21,6 +21,7 @@ Currently in development.
 - Added miscellaneous OIDC improvements
 - Added location filter for instrument list
 - Added instrument log templates
+- Added custom file link configuration options
 - Minor fixes and improvements
 
 

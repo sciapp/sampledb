@@ -50,6 +50,39 @@ def test_is_default_notification_modes_valid(default_notification_modes: typing.
     sampledb.config.DEFAULT_NOTIFICATION_MODES = default_notification_modes
     assert sampledb.config.is_default_notification_modes_valid() == should_be_valid
 
+
+@pytest.mark.parametrize(
+    ['file_url_allowed_regexes', 'should_be_valid'],
+    [
+        ([], True),
+        ([r'^[XY]:\\Projects\\.+$'], True),
+        ([r'^\\\\fileserver\\shared\\.+$'], True),
+        (r'^[XY]:\\Projects\\.+$', False),
+        ([1], False),
+        ([r'['], False),
+    ]
+)
+def test_are_file_url_allowed_regexes_valid(file_url_allowed_regexes: typing.Any, should_be_valid: bool):
+    sampledb.config.FILE_URL_ALLOWED_REGEXES = file_url_allowed_regexes
+    assert sampledb.config.are_file_url_allowed_regexes_valid() == should_be_valid
+
+
+@pytest.mark.parametrize(
+    ['file_url_max_length', 'should_be_valid'],
+    [
+        (2048, True),
+        (1, True),
+        (0, True),
+        (-1, False),
+        ('0', False),
+        (None, False),
+    ]
+)
+def test_is_file_url_max_length_valid(file_url_max_length: typing.Any, should_be_valid: bool):
+    sampledb.config.FILE_URL_MAX_LENGTH = file_url_max_length
+    assert sampledb.config.is_file_url_max_length_valid() == should_be_valid
+
+
 def test_parse_and_convert_external_links():
     config = {}
     config['EXTERNAL_LINKS'] = None

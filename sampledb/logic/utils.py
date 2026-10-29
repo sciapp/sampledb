@@ -260,9 +260,10 @@ def get_all_translated_texts(
 
 def parse_url(
         url: str,
-        max_length: int = 2048,
-        valid_schemes: typing.Sequence[str] = ('http', 'https', 'ftp', 'file', 'sftp', 'smb')
-) -> typing.Dict[str, str]:
+        max_length: typing.Optional[int] = -1,
+        valid_schemes: typing.Optional[typing.Sequence[str]] = None,
+        allowed_regexes: typing.Optional[typing.Sequence[str]] = None
+) -> typing.Optional[typing.Dict[str, str]]:
     """
     Validate and parse a given URI/URL.
 
@@ -270,9 +271,10 @@ def parse_url(
     like file:///path and file:/path are considered invalid.
 
     :param url: string representing the URI to validate
-    :param max_length: the URI strings maximum allowed length (default: 2048)
-    :param valid_schemes: valid URI schemes
-    :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
+    :param max_length: maximum length; -1 uses the configured default, None disables the check
+    :param valid_schemes: explicitly allowed URI schemes, or None for the default file URL rules
+    :param allowed_regexes: additional allowed patterns, or None to use the default rules
+    :return: parsed URI components, or None for a custom pattern match
     :raise errors.InvalidURLError: if the given URL is invalid
     :raise errors.URLTooLongError: if the given URL is too long
     :raise errors.InvalidIPAddressError: if the IP contained in the given URL
@@ -280,7 +282,14 @@ def parse_url(
     :raise errors.InvalidPortNumberError: if the port contained in the given
         URL is invalid
     """
-    if not len(url) <= max_length:
+    use_config = valid_schemes is None and flask.has_app_context()
+    if valid_schemes is None:
+        valid_schemes = ('http', 'https', 'ftp', 'file', 'sftp', 'smb')
+    if max_length == -1:
+        max_length = (flask.current_app.config['FILE_URL_MAX_LENGTH'] or None) if use_config else 2048
+    if allowed_regexes is None:
+        allowed_regexes = flask.current_app.config['FILE_URL_ALLOWED_REGEXES'] if use_config else ()
+    if max_length is not None and not len(url) <= max_length:
         raise errors.URLTooLongError()
 
     regex = re.compile(
@@ -313,6 +322,8 @@ def parse_url(
     match = re.match(regex, url)
 
     if match is None:
+        if any(re.fullmatch(pattern, url) for pattern in allowed_regexes):
+            return None
         raise errors.InvalidURLError()
 
     match_dict = match.groupdict()

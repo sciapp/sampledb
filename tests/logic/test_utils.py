@@ -12,6 +12,31 @@ from sampledb.models import Tag
 from sampledb import db, config
 
 
+@pytest.mark.parametrize('url', ['https://example.com/', 'X:\\Projects\\'])
+def test_parse_url_with_configured_length_limit(url):
+    allowed_regexes = [r'^X:\\Projects\\.+$']
+    max_length = len(url) + 1
+    utils.parse_url(url + 'a', max_length=max_length, allowed_regexes=allowed_regexes)
+    with pytest.raises(errors.URLTooLongError):
+        utils.parse_url(url + 'aa', max_length=max_length, allowed_regexes=allowed_regexes)
+
+
+def test_parse_url_uses_config_for_default_schemes(app):
+    app.config['FILE_URL_ALLOWED_REGEXES'] = [r'^X:\\.+$']
+    app.config['FILE_URL_MAX_LENGTH'] = 20
+    assert utils.parse_url(r'X:\Projects\file') is None
+    with pytest.raises(errors.InvalidURLError):
+        utils.parse_url(r'X:\Projects\file', valid_schemes=('http', 'https'))
+    with pytest.raises(errors.InvalidURLError):
+        utils.parse_url(r'X:\Projects\file', valid_schemes=('http', 'https', 'ftp', 'file', 'sftp', 'smb'))
+    with pytest.raises(errors.InvalidURLError):
+        utils.parse_url(r'X:\Projects\file', max_length=2048, allowed_regexes=())
+    with pytest.raises(errors.URLTooLongError):
+        utils.parse_url('X:\\Projects\\' + 'a' * 20)
+    app.config['FILE_URL_MAX_LENGTH'] = 0
+    assert utils.parse_url('X:\\Projects\\' + 'a' * 2050) is None
+
+
 def test_parse_url():
     assert utils.parse_url('https://www.example.com') == {
         'scheme': 'https',
@@ -174,6 +199,16 @@ def test_parse_url():
         utils.parse_url('ftp://example.com', valid_schemes=['http', 'https', 'file', 'sftp', 'smb'])
     with pytest.raises(errors.URLTooLongError):
         utils.parse_url('https://www.example.com', max_length=10)
+    assert utils.parse_url('https://www.example.com', max_length=None) == {
+        'scheme': 'https',
+        'domain': 'www.example.com',
+        'host': None,
+        'ip_address': None,
+        'ipv6_address': None,
+        'port': None,
+        'path': '',
+        'query': None
+    }
     with pytest.raises(errors.InvalidIPAddressError):
         utils.parse_url('http://999.123.123.123')
     with pytest.raises(errors.InvalidURLError):
