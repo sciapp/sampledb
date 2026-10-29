@@ -174,8 +174,8 @@ class ELNSanitizer:
         style_parsed = tinycss2.parse_blocks_contents(style_content)
         style_sanitized = self._css_sanitize_rules(style_parsed)
         serialized_style = tinycss2.serialize(style_sanitized)
-        soup = BeautifulSoup(f"<span style=\"{serialized_style}\">", "html.parser")
-        if soup.span is not None and len(soup.span.attrs) == 1 and len(list(soup.children)) == 1:
+        soup = BeautifulSoup(f"<span style=\"{serialized_style}\"></span>", "html.parser")
+        if soup.span is not None and len(soup.span.attrs) == 1 and len(soup.find_all()) == 1:
             tag["style"] = serialized_style
         else:
             tag["style"] = ""
@@ -366,14 +366,15 @@ class ELNSanitizer:
         if normalized_fullpath.startswith("/"):
             normalized_fullpath = normalized_fullpath[1:]
 
-        if urlsplit(normalized_fullpath).path not in self.valid_preview_files:
+        parsed_subpath = urlsplit(normalized_fullpath)
+        if parsed_subpath.path not in self.valid_preview_files:
             return None
 
-        if normalized_fullpath.startswith("ro-crate-preview.html"):
-            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id)}{normalized_fullpath[len("ro-crate-preview.html"):]}"
-        elif normalized_fullpath.startswith("ro-crate-preview_files/"):
-            subpath = normalized_fullpath[len("ro-crate-preview_files/"):]
-            return flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False)
+        if parsed_subpath.path.startswith("ro-crate-preview.html"):
+            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, _anchor=parsed_subpath.fragment)}"
+        elif parsed_subpath.path.startswith("ro-crate-preview_files/"):
+            subpath = parsed_subpath.path[len("ro-crate-preview_files/"):]
+            return f"{flask.url_for("frontend.eln_preview", eln_import_id=self.eln_import_id, subpath=subpath, _external=False, _anchor=parsed_subpath.fragment)}"
         return None
 
     @classmethod
