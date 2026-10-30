@@ -18,7 +18,7 @@ WHITELIST_CSS_FUNCTIONS = {
     'min', 'minmax', 'mod', 'oklab', 'oklch', 'opacity', 'perspective', 'polygon', 'pow', 'radial-gradient', 'ray', 'rem', 'repeat',
     'repeating-conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'rgb', 'rgba', 'rotate', 'rotate3d', 'rotatex',
     'rotatey', 'rotatez', 'round', 'saturate', 'scale', 'scale3d', 'scalex', 'scaley', 'sepia', 'sin', 'skew', 'skewx', 'skewy', 'sqrt',
-    'steps', 'tan', 'translate', 'translatex', 'translatey', 'var',
+    'steps', 'tan', 'translate', 'translatex', 'translatey'
 }
 
 WHITELIST_CSS_AT_RULES = {
@@ -174,11 +174,12 @@ class ELNSanitizer:
         style_parsed = tinycss2.parse_blocks_contents(style_content)
         style_sanitized = self._css_sanitize_rules(style_parsed)
         serialized_style = tinycss2.serialize(style_sanitized)
-        soup = BeautifulSoup(f"<span style=\"{serialized_style}\"></span>", "html.parser")
-        if soup.span is not None and len(soup.span.attrs) == 1 and len(soup.find_all()) == 1:
+        check_tag = Tag(name="span", attrs={"style": serialized_style})
+        soup_check = BeautifulSoup(str(check_tag), "html.parser")
+        if soup_check.span is not None and len(soup_check.span.attrs) == 1 and len(soup_check.find_all()) == 1:
             tag["style"] = serialized_style
         else:
-            tag["style"] = ""
+            tag.attrs.pop("style")
 
     def _sanitize_html_tag(self, tag: Tag) -> None:
         CUSTOM_FILTERS = {
@@ -201,7 +202,7 @@ class ELNSanitizer:
             if len(list(sanitized_result.children)) == 1:
                 tag.string = sanitized_content
             else:
-                tag.string = ""
+                tag.decompose()
 
     def _sanitize_html_tag_link(self, tag: Tag) -> None:
         href: typing.Optional[str] = tag.attrs.get("href", None)
@@ -325,6 +326,12 @@ class ELNSanitizer:
             if not isinstance(function_block.arguments[0], tinycss2.ast.StringToken):
                 return False
             return self._css_sanitize_url_string_token(function_block.arguments[0])
+        elif function_block.name == 'var':
+            for token in function_block.arguments:
+                if isinstance(token, tinycss2.ast.FunctionBlock) and not self._css_sanitize_function(token):
+                    break
+            else:
+                return True
         return False
 
     def _css_sanitize_url_token(self, url_token: tinycss2.ast.URLToken) -> bool:
