@@ -330,6 +330,8 @@ class ELNSanitizer:
             for token in function_block.arguments:
                 if isinstance(token, tinycss2.ast.FunctionBlock) and not self._css_sanitize_function(token):
                     break
+                elif isinstance(token, tinycss2.ast.URLToken) and not self._css_sanitize_url_string_token(token):
+                    break
             else:
                 return True
         return False
@@ -340,7 +342,7 @@ class ELNSanitizer:
         url_token.representation = f"url({preview_url})"
         return keep
 
-    def _css_sanitize_url_string_token(self, url_token: tinycss2.ast.StringToken) -> bool:
+    def _css_sanitize_url_string_token(self, url_token: tinycss2.ast.StringToken | tinycss2.ast.URLToken) -> bool:
         keep, preview_url = self._css_sanitize_url_string(url_token.value)
         url_token.value = preview_url
         if url_token.representation.startswith("url(") and url_token.value != url_token.representation:
