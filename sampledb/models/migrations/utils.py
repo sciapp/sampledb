@@ -262,7 +262,6 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "objects_current_add_hash_data_metadata",
         "objects_previous_add_hash_data_metadata",
         "objects_subversions_add_hash_data_metadata",
-        "objects_update_hash_data_metadata",
         "components_add_is_hidden",
         "object_log_entry_type_add_import_version_conflict",
         "object_log_entry_type_add_solve_version_conflict",
@@ -277,6 +276,7 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "comments_init_imported_from_component_id",
         "object_location_assignments_add_imported_from_component_id",
         "object_location_assignments_init_imported_from_component_id",
+        "objects_update_hash_data_metadata",
     ]
 
     migrations = []

@@ -17,7 +17,7 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Perform migration
     db.session.execute(db.text("""
         ALTER TABLE objects_subversions
-        ADD hash_metadata VARCHAR
+        ADD hash_metadata VARCHAR DEFAULT NULL
     """))
 
     return True
