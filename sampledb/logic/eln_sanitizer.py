@@ -52,7 +52,6 @@ class ELNSanitizer:
         "image/jpeg",
         "image/png"
     ]
-
     MIME_TYPES_TO_SANITIZE: list[str] = [
         "text/html",
         "text/css",
@@ -354,7 +353,8 @@ class ELNSanitizer:
     def _css_sanitize_url_string(self, url: str) -> tuple[bool, str]:
         fullpath = os.path.join(self.root_path, url)
         normalized_fullpath = os.path.normpath(fullpath)
-        preview_url = self._transform_url_to_preview_url(normalized_fullpath) or ""
+        parsed_fullpath = urlsplit(normalized_fullpath)
+        preview_url = self._transform_url_to_preview_url(parsed_fullpath.path) or ""
 
         if not preview_url:
             return False, ""
