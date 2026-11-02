@@ -4,7 +4,7 @@ ROOT_PATH = '/'
 ELN_IMPORT_ID = 1
 
 # Test cases from: https://cheatsheetseries.owasp.org/cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.html
-OWASP_XSS_TEST_CASES = [
+XSS_TEST_CASES = [
     {
         "payload": "<script>alert('xss')</script>",
         "expected_result": "",
@@ -249,6 +249,22 @@ OWASP_XSS_TEST_CASES = [
         "payload": '<a href="/share?content_type=1&title=This is a regular title&amp;content_type=1;alert(1)">Share</a>',
         "expected_result": '<a>Share</a>'
     },
+    {
+        "payload": "<p style='font-family: \"Times New Roman\"; color: red'>x</p>",
+        "expected_result": "<p style='font-family: \"Times New Roman\"; color: red;'>x</p>"
+    },
+    {
+        "payload": "<p style=\"font-family: var(--missing, url(https://example.org));\">x</p>",
+        "expected_result": "<p style=\"\">x</p>"
+    },
+    {
+        "payload": r"""<style>
+            p {
+              font-family: "\3c /style\3e \3c script\3e \3c /script\3e ";
+            }
+        </style>""",
+        "expected_result": """"""
+    },
 ]
 
 CSS_EXFILTRATION_TEST_DATA = [
@@ -305,6 +321,18 @@ html {
 }
 """
     },
+   {
+        "payload": """
+        html {
+            background-image: url("./ro-crate-preview_files/image1.png#2);background-image:url(https://example.org");
+        }
+        """,
+        "expected_result": """
+        html {
+            background-image: url(/eln_imports/1/preview?subpath=image1.png);
+        }
+"""
+    },
 ]
 
 
@@ -343,7 +371,7 @@ def test_eln_sanitizer_html_replace_supplied_file_url(app):
     assert '<a>Preview</a>' == sanitized_content_different_root_path_not_available
 
 
-def test_eln_sanitizer_html_owasp_snippets(app):
+def test_eln_sanitizer_html_snippets(app):
     with app.test_request_context('/'):
         sanitizer = eln_sanitizer.ELNSanitizer(
             eln_import_id=ELN_IMPORT_ID,
@@ -352,7 +380,7 @@ def test_eln_sanitizer_html_owasp_snippets(app):
             valid_preview_files=[],
             add_sampledb_notice=False
         )
-        for test_case in OWASP_XSS_TEST_CASES:
+        for test_case in XSS_TEST_CASES:
             sanitized_content = sanitizer.sanitize(
                 content=test_case['payload'],
                 mime_type="text/html",
