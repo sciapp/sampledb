@@ -567,3 +567,15 @@ class AutomaticSchemaUpdateAlreadyInProgressError(Exception):
 
 class AutomaticSchemaUpdateDoesNotExistError(Exception):
     pass
+
+
+class ELNImportPreviewFileDoesNotExistError(Exception):
+    pass
+
+
+class ELNImportPreviewIllegalTagError(Exception):
+    pass
+
+
+class ELNImportPreviewIllegalMimeTypeError(Exception):
+    pass

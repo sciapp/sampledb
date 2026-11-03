@@ -22,6 +22,7 @@ Currently in development.
 - Added location filter for instrument list
 - Added instrument log templates
 - Minor fixes and improvements
+- Added import of eln previews
 
 
 Version 0.33.2

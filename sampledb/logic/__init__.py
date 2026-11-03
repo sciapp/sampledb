@@ -21,6 +21,7 @@ from . import dataverse_export
 from . import default_permissions
 from . import eln_export
 from . import eln_import
+from . import eln_sanitizer
 from . import errors
 from . import export
 from . import favorites
@@ -93,6 +94,7 @@ __all__ = [
     'default_permissions',
     'eln_export',
     'eln_import',
+    'eln_sanitizer',
     'errors',
     'export',
     'favorites',
