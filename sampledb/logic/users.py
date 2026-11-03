@@ -403,28 +403,52 @@ def update_user(
 def get_users(
         *,
         exclude_hidden: bool = False,
-        order_by: typing.Optional[db.Column] = users.User.name,  # type: ignore
+        sort_by: typing.Literal["name", "id"] = "name",
         exclude_fed: bool = False,
         exclude_eln_import: bool = False,
+        filter_hidden: bool | None = None,
+        filter_active: bool | None = None,
+        filter_readonly: bool | None = None,
+        after_id: int | None = None,
+        limit: int | None = None
 ) -> typing.List[User]:
     """
     Returns all users.
 
-    :param exclude_hidden: whether to exclude hidden users
-    :param order_by: Column to order the users by, or None
+    :param exclude_hidden: whether to exclude hidden users (deprecated, use filter_hidden instead)
+    :param sort_by: the sort order, must be "id" if limit or after_id are set
     :param exclude_fed: whether to exclude federation users
     :param exclude_eln_import: whether to exclude users from an .eln file
+    :param filter_hidden: whether to filter for hidden or non-hidden users
+    :param filter_active: whether to filter for active or non-active users
+    :param filter_readonly: whether to filter for readonly or non-readonly users
+    :param after_id: all returned users must have an ID greater than this ID,
+        if it is not None (must be None if sort_by is "name")
+    :param limit: the maximum number of users to return (must be None if
+        sort_by is "name")
     :return: the list of users
     """
     user_query = users.User.query
-    if exclude_hidden:
+    if filter_hidden is not None:
+        user_query = user_query.filter_by(is_hidden=filter_hidden)
+    elif exclude_hidden:
         user_query = user_query.filter_by(is_hidden=False)
-    if order_by is not None:
-        user_query = user_query.order_by(order_by)
+    if filter_active is not None:
+        user_query = user_query.filter_by(is_active=filter_active)
+    if filter_readonly is not None:
+        user_query = user_query.filter_by(is_readonly=filter_readonly)
     if exclude_fed:
         user_query = user_query.filter(users.User.type != UserType.FEDERATION_USER)
     if exclude_eln_import:
         user_query = user_query.filter(users.User.type != UserType.ELN_IMPORT_USER)
+    if after_id is not None:
+        user_query = user_query.filter(users.User.id > after_id)
+    if sort_by == 'name':
+        user_query = user_query.order_by(users.User.name)
+    elif sort_by == 'id':
+        user_query = user_query.order_by(users.User.id)
+    if limit is not None:
+        user_query = user_query.limit(limit)
     return [
         User.from_database(user)
         for user in user_query.all()

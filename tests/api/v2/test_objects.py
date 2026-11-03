@@ -1,0 +1,2172 @@
+import base64
+import urllib.parse
+
+import flask
+import requests
+import pytest
+import json
+import uuid
+import datetime
+
+import pytz
+
+import sampledb
+import sampledb.logic
+import sampledb.models
+
+
+@pytest.fixture
+def auth_user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
+        assert user.id is not None
+    return ('username', 'password'), user
+
+
+@pytest.fixture
+def other_user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.models.User(name="Other User", email="other@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(user)
+        sampledb.db.session.commit()
+        assert user.id is not None
+    return  user
+
+
+@pytest.fixture
+def auth(auth_user):
+    return auth_user[0]
+
+
+@pytest.fixture
+def user(auth_user):
+    return auth_user[1]
+
+
+@pytest.fixture
+def action():
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'file': {
+                    'title': 'Example File',
+                    'type': 'file'
+                },
+                'other': {
+                    'title': 'Other Property',
+                    'type': 'text'
+                },
+                'datetime': {
+                    'title': 'Datetime Property',
+                    'type': 'datetime'
+                },
+                'array': {
+                    'title': 'Array',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Item',
+                        'type': 'object',
+                        'properties': {
+                            'text': {
+                                'title': 'Item Text',
+                                'type': 'text'
+                            }
+                        }
+                    }
+                },
+                'object_reference': {
+                    'title': 'Object Reference',
+                    'type': 'object_reference'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.action_translations.Language.ENGLISH,
+        action_id=action.id,
+        name="Example Action",
+        description="This is an example action"
+    )
+    return sampledb.logic.actions.get_action(
+        action_id=action.id
+    )
+
+
+@pytest.fixture
+def other_action():
+    other_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'object_reference',
+                    'action_type_id': -99
+                }
+            },
+            'required': ['name']
+        }
+    )
+    return other_action
+
+
+def test_get_object_version(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/objects/1/versions/0', auth=auth)
+    assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Object #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectNotFound",
+    }
+
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": object.schema,
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "user": None,
+        "action": None,
+        "data_diff": None,
+    }
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.object_id}/versions/1', auth=auth)
+    assert r.status_code == 404
+    assert r.json() == {
+        "detail": f"Version #1 of object #{object.object_id} does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested object version does not exist.",
+        "type": "http://localhost/api/v2/errors/ObjectVersionNotFound",
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?embed_user=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "user": {
+            'user_id': user.id,
+            'name': user.name,
+            'orcid': None,
+            'affiliation': None,
+            'role': None,
+            'email': None,
+            'is_active': None,
+            'is_hidden': None,
+            'is_readonly': None
+        },
+        "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": object.schema,
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "action": None,
+        "data_diff": None,
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "action": None,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": object.schema,
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "user": None,
+        "data_diff": None,
+    }
+
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(object.action_id, sampledb.models.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": object.version_id,
+        "action_id": object.action_id,
+        "action": {
+            'action_id': action.id,
+            'instrument_id': None,
+            'user_id': None,
+            'type': 'sample',
+            'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
+            'name': action.name,
+            'description': action.description,
+            'description_is_markdown': False,
+            'short_description': action.short_description,
+            'short_description_is_markdown': False,
+            'is_hidden': action.is_hidden,
+            'schema': action.schema
+        },
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": object.schema,
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "user": None,
+        "data_diff": None,
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/0?include_diff=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": 0,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": object.schema,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "data": object.data,
+        "user": None,
+        "action": None,
+        "data_diff": None,
+    }
+
+    object_json = {
+        "data": {
+            "name": {
+                '_type': 'text',
+                'text': 'Example2',
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id, version_id=object.version_id + 1)
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?include_diff=1'.format(object.object_id, new_object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": new_object.object_id,
+        "version_id": new_object.version_id,
+        "action_id": new_object.action_id,
+        "user_id": user.id,
+        "utc_datetime": new_object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": new_object.schema,
+        "fed_object_id": new_object.fed_object_id,
+        "fed_version_id": new_object.fed_version_id,
+        "component_id": new_object.component_id,
+        "data": new_object.data,
+        "data_diff": {
+            "name": {
+                "_before": {
+                    "_type": "text",
+                    "text": "Example"
+                },
+                "_after": {
+                    "_type": "text",
+                    "text": "Example2"
+                }
+            }
+        },
+        "user": None,
+        "action": None,
+    }
+
+    component = sampledb.logic.components.add_component(str(uuid.uuid4()))
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(imported_object.object_id, user.id, sampledb.models.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 0), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 0,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 1,
+        "component_id": component.id,
+        "data": None,
+        "user": None,
+        "action": None,
+        "data_diff": None,
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=2,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 1), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 1,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 2,
+        "component_id": component.id,
+        "data": None,
+        "data_diff": None,
+        "user": None,
+        "action": None,
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=3,
+        component_id=component.id,
+        action_id=None,
+        schema=object.schema,
+        data=object.data,
+        user_id=None,
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 2), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 2,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": object.schema,
+        "fed_object_id": 1,
+        "fed_version_id": 3,
+        "component_id": component.id,
+        "data": object.data,
+        "data_diff": {
+            '_before': None,
+            '_after': object.data
+        },
+        "user": None,
+        "action": None,
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=4,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 3), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 3,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 4,
+        "component_id": component.id,
+        "data": None,
+        "data_diff": {
+            '_before': object.data,
+            '_after': None
+        },
+        "user": None,
+        "action": None,
+    }
+
+
+def test_get_object(flask_server, auth, user, action):
+    r = requests.get(flask_server.base_url + 'api/v2/objects/1', auth=auth)
+    assert r.status_code == 404
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/{}'.format(object.object_id), auth=auth, allow_redirects=False)
+    assert r.status_code == 302
+    assert r.headers['Location'] == flask_server.base_url + 'api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id)
+    assert r.json() == {
+        "location": f"{flask_server.base_url}api/v2/objects/{object.object_id}/versions/{object.version_id}",
+        "status": 302
+    }
+
+
+def test_post_object_version(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/objects/1', auth=auth)
+    assert r.status_code == 404
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    object_json = []
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "detail": "Input should be an object",
+                "input": [],
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    object_json = {'unknown': 1}
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Extra inputs are not permitted (unknown)",
+        "errors": [
+            {
+                "detail": "Extra inputs are not permitted",
+                "input": 1,
+                "json_pointer": "/unknown",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    object_json = {
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {}
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "At least one required: data, data_diff",
+        "errors": [
+            {
+                "detail": "At least one required: data, data_diff",
+                "input": None,
+                "json_pointer": "/",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id,
+        'data_diff': {
+            'name': {
+                '_before': {
+                    '_type': 'text',
+                    'text': 'Wrong Object Name',
+                },
+                '_after': {
+                    '_type': 'text',
+                    'text': 'Example Object (Diff)'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Failed to apply the data diff to the current object data.",
+        "errors": [],
+        "status": 400,
+        "title": "Failed to apply the object data diff.",
+        "type": "http://localhost/api/v2/errors/ObjectDataDiffFailed",
+    }
+
+    object_json = {
+        'object_id': object.object_id,
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+    result_object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (Diff)'
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == result_object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (data and data_diff)'
+            }
+        },
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (inconsistent)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "The data and the data diff are conflicting, as applying the diff does not result in the data given in the request body.",
+        "errors": [],
+        "status": 400,
+        "title": "Failed to apply the object data diff.",
+        "type": "http://localhost/api/v2/errors/ObjectDataDiffFailed",
+    }
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (data and data_diff)'
+            }
+        },
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (data and data_diff)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id + 1,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Input should be {object.object_id} (object_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.object_id}",
+                "input": object_json['object_id'],
+                "json_pointer": "/object_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    object_json = {
+        'version_id': object.version_id + 1,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'version_id': object.version_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Input should be {object.version_id + 1} (version_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.version_id + 1}",
+                "input": object_json['version_id'],
+                "json_pointer": "/version_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    object_json = {
+        'action_id': object.action_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'action_id': object.action_id + 1,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Input should be {object.action_id} (action_id)",
+        "errors": [
+            {
+                "detail": f"Input should be {object.action_id}",
+                "input": object_json['action_id'],
+                "json_pointer": "/action_id",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    new_schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Object Name',
+                'type': 'text'
+            },
+            'info': {
+                'title': 'Object Info',
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    object_json = {
+        'schema': new_schema,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            },
+            'info': {
+                '_type': 'text',
+                'text': 'Example Info'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": f"Schema should be {json.dumps(object.schema, indent=4)} or {json.dumps(action.schema, indent=4)} (schema)",
+        "errors": [
+            {
+                "detail": f"Schema should be {json.dumps(object.schema, indent=4)} or {json.dumps(action.schema, indent=4)}",
+                "input": object_json["schema"],
+                "json_pointer": "/schema",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    sampledb.logic.actions.update_action(
+        action_id=action.id,
+        schema=new_schema
+    )
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.schema == object_json['schema']
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'schema': new_schema,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object'
+            },
+            'info': {
+                '_type': 'text',
+                'text': 'Example Info 2'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.schema == object_json['schema']
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'data': {
+            'name': {
+                '_type': 'boolean',
+                'value': True
+            },
+            'info': {
+                '_type': 'text',
+                'text': 'Example Info 2'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - unexpected keys in schema: {'value'} (at name)",
+        "errors": [
+            {
+                "detail": "unexpected keys in schema: {'value'}",
+                "input": object_json["data"]["name"],
+                "json_pointer": "/data/name",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{object.object_id}/versions/{object.version_id}', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    object_json = r.json()
+    # remove keys that must not be copied
+    del object_json['user_id']
+    del object_json['utc_datetime']
+    del object_json['data_diff']
+    del object_json['user']
+    del object_json['action']
+    # update version_id
+    object_json['version_id'] += 1
+    r = requests.post(flask_server.base_url + 'api/v2/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.json() == {
+        "location": f"http://localhost/api/v2/objects/{object.object_id}/versions/{object.version_id + 1}",
+        "status": 201
+    }
+    assert r.status_code == 201
+
+
+def test_get_objects(flask_server, auth, user, other_user, action):
+    r = requests.get(flask_server.base_url + 'api/v2/objects/1', auth=auth)
+    assert r.status_code == 404
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == []
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+
+
+def test_get_objects_pagination(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    for i in range(10):
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': str(i)
+            }
+        }
+        sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in range(10)
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in range(5)
+    ]
+    next_link = [link.strip().split('>')[0].removeprefix('<') for link in r.headers["Link"].split(',') if 'rel="next"' in link][0]
+    query_args = urllib.parse.parse_qs(urllib.parse.urlsplit(next_link).query)
+    assert query_args["limit"] == ["5"]
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5, "cursor": query_args["cursor"][0]}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in range(5,10)
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": 5, "cursor": base64.urlsafe_b64encode(b'2').decode('utf8')}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert [
+        object["data"]["name"]["text"]
+        for object in r.json()
+    ] == [
+        str(i)
+        for i in range(2,7)
+    ]
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": -5}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be greater than 0 (limit)",
+        "errors": [
+            {
+                "detail": "Input should be greater than 0",
+                "input": "-5",
+                "query_parameter": "limit",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"limit": int(1e16)}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be less than 1000000000000000 (limit)",
+        "errors": [
+            {
+                "detail": "Input should be less than 1000000000000000",
+                "input": "10000000000000000",
+                "query_parameter": "limit",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"cursor": base64.urlsafe_b64encode(b'-3').decode('utf8')}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input is not a valid pagination cursor (cursor)",
+        "errors": [
+            {
+                "detail": "Input is not a valid pagination cursor",
+                "input": "LTM=",
+                "query_parameter": "cursor",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"cursor": base64.urlsafe_b64encode(str(int(1e20)).encode('utf8')).decode('utf8')}, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input is not a valid pagination cursor (cursor)",
+        "errors": [
+            {
+                "detail": "Input is not a valid pagination cursor",
+                "input": "MTAwMDAwMDAwMDAwMDAwMDAwMDAw",
+                "query_parameter": "cursor",
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate URL query parameters.",
+        "type": "http://localhost/api/v2/errors/QueryValidationFailed",
+    }
+
+
+def test_get_objects_with_name_only(flask_server, auth, user):
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'other_property': {
+                    'title': 'Other Property',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'other_property': {
+            '_type': 'text',
+            'text': 'Value'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', params={"name_only": "yes"}, auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": action.id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": {
+                'title': 'Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Name',
+                        'type': 'text'
+                    }
+                }
+            },
+            "data": {
+                'name': {
+                    '_type': 'text',
+                    'text': 'Example'
+                }
+            },
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+
+
+def test_create_object(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    object = objects[0]
+    assert r.headers['Location'] == 'http://localhost/api/v2/objects/{}/versions/{}'.format(object.object_id, object.version_id)
+    assert object.version_id == 0
+    assert object.action_id == action.id
+    assert object.schema == action.schema
+    assert object.data == object_json['data']
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Input should be an object",
+        "errors": [
+            {
+                "input": None,
+                "detail": "Input should be an object",
+                "json_pointer": "/"
+            },
+        ],
+        "status": 400,
+        "title": "Failed to validate request body data.",
+        "type": "http://localhost/api/v2/errors/RequestBodyValidationFailed",
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', json=[], auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == 'Input should be an object'
+
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        },
+        'user_id': user.id
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Extra inputs are not permitted (user_id)"
+
+    object_json = {
+        'object_id': 1,
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Extra inputs are not permitted (object_id)"
+
+    object_json = {
+        'version_id': 0,
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201
+
+    object_json = {
+        'version_id': 1,
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Input should be 0 (version_id)"
+
+    object_json = {
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Field required (action_id)"
+
+    object_json = {
+        'action_id': "Create other Sample",
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Input should be a valid integer (action_id)"
+
+    object_json = {
+        'action_id': action.id + 1,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Action should exist (action_id)"
+
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        },
+        'schema': action.schema
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201
+
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        },
+        'schema': {
+            'name': {
+                'type': 'text',
+                'default': 'Sample'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == f"Schema should be {json.dumps(action.schema, indent=4)}"
+
+    object_json = {
+        'action_id': action.id
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['detail'] == "Field required (data)"
+
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'boolean',
+                'value': True
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - unexpected keys in schema: {'value'} (at name)",
+        "errors": [
+            {
+                "detail": "unexpected keys in schema: {'value'}",
+                "input": object_json['data']['name'],
+                "json_pointer": "/data/name",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
+
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'boolean',
+                'value': True
+            },
+            'test': {
+                '_type': 'text',
+                'value': 'Test'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - unexpected keys in schema: {'value'} (at name)\n - unknown property \"test\" (at test)",
+        "errors": [
+            {
+                "detail": "unexpected keys in schema: {'value'}",
+                "input": object_json['data']['name'],
+                "json_pointer": "/data/name",
+            },
+            {
+                "detail": "unknown property \"test\"",
+                "input": object_json['data']['test'],
+                "json_pointer": "/data/test",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
+
+
+def test_search_objects(flask_server, auth, user, other_user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'other': {
+            '_type': 'text',
+            'text': 'Test'
+        },
+        'datetime': {
+            '_type': 'datetime',
+            'utc_datetime': '2024-06-04 12:34:56'
+        },
+        'array': [
+            {
+                'text': {
+                    '_type': 'text',
+                    'text': 'Example Item'
+                }
+            }
+        ]
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example2"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'name=="Example'
+    })
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Error: Unfinished text",
+        "errors": [],
+        "status": 400,
+        "title": "The object search failed.",
+        "type": "http://localhost/api/v2/errors/ObjectSearchFailed",
+    }
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'example'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'example', 'use_advanced_search': 'False'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"test.txt" in files'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"http://example.org/test.txt" == file_name'
+    })
+    assert r.json() == []
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'file_name == "http://example.org/test.txt"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    sampledb.logic.files.create_url_file(
+        object_id=object.object_id,
+        user_id=user.id,
+        url='http://example.org/test.txt'
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"test.txt" in file_name'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"http://example.org/test.txt" == file_name'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'file_name == "http://example.org/test.txt"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test2"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test2"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+            "data": {"name": {"_type": "text", "text": "Example"}},
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Demo Item"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Demo Item"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Example Item"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Example Item"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+            "data": {"name": {"_type": "text", "text": "Example"}},
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    for timezone_name in pytz.common_timezones:
+        sampledb.logic.settings.set_user_settings(user.id, {'TIMEZONE': timezone_name})
+        timezone = pytz.timezone(timezone_name)
+        r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+            'q': 'datetime == 2024-06-04',
+            'name_only': 'name_only'
+        })
+        assert r.status_code == 200
+        if datetime.datetime(2024, 6, 4, 12, 34, 56, tzinfo=datetime.timezone.utc).astimezone(timezone).date() == datetime.date(2024, 6, 4):
+            assert r.json() == [
+                {
+                    "object_id": object.object_id,
+                    "version_id": object.version_id,
+                    "action_id": object.action_id,
+                    "user_id": object.user_id,
+                    "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+                    "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+                    "data": {"name": {"_type": "text", "text": "Example"}},
+                    "fed_object_id": object.fed_object_id,
+                    "fed_version_id": object.fed_version_id,
+                    "component_id": object.component_id,
+                    "referencing_objects": None,
+                }
+            ]
+        else:
+            assert r.json() == []
+
+    data['object_reference'] = {
+        '_type': 'object_reference',
+        'object_id': object.object_id,
+    }
+    sampledb.logic.objects.update_object(object.object_id, data, user.id)
+    object = sampledb.logic.objects.get_object(object.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'q': '*object_reference.name == "Example"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+
+
+def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, other_action):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_id': str(action.id)
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_id': str(other_action.id)
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_id': '-1'
+    })
+    assert r.status_code == 400
+
+
+def test_get_objects_by_action_type(flask_server, auth, user, other_user, action, other_action):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
+    sampledb.logic.object_permissions.set_user_object_permissions(
+        object_id=object.object_id,
+        user_id=user.id,
+        permissions=sampledb.logic.object_permissions.Permissions.READ
+    )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_type': 'sample'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_type': 'measurement'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'action_type': 'other'
+    })
+    assert r.status_code == 400
+
+
+def test_get_related_object_ids(flask_server, auth, user, action, other_action):
+    r = requests.get(flask_server.base_url + 'api/v2/objects/0/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 404
+    sample_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    sample = sampledb.logic.objects.create_object(action_id=action.id, data=sample_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{sample.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [],
+        'referencing_objects': []
+    }
+    measurement_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'sample': {
+            '_type': 'object_reference',
+            'object_id': sample.object_id
+        }
+    }
+    measurement = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{sample.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [],
+        'referencing_objects': [
+            {
+                'object_id': measurement.object_id,
+                'component_uuid': None,
+                'eln_source_url': None,
+                'eln_object_url': None
+            }
+        ]
+    }
+    r = requests.get(flask_server.base_url + f'api/v2/objects/{measurement.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [
+            {
+                'object_id': sample.object_id,
+                'component_uuid': None,
+                'eln_source_url': None,
+                'eln_object_url': None
+            }
+        ],
+        'referencing_objects': []
+    }
+
+
+def test_get_referencing_objects(flask_server, auth, user, action, other_action):
+    sample_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+    }
+    sample = sampledb.logic.objects.create_object(action_id=action.id, data=sample_data, user_id=user.id)
+    measurement_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    measurment1 = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, params={'get_referencing_objects': 'True'}, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'action_id': sample.action_id,
+            'component_id': None,
+            "user_id": sample.user_id,
+            "utc_datetime": sample.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            'data': sample.data,
+            'fed_object_id': sample.fed_object_id,
+            'fed_version_id': sample.fed_version_id,
+            'object_id': sample.object_id,
+            'referencing_objects': [],
+            'schema': sample.schema,
+            'version_id': sample.version_id
+         },
+        {
+            "object_id": measurment1.object_id,
+            "version_id": measurment1.version_id,
+            "action_id": measurment1.action_id,
+            "user_id": measurment1.user_id,
+            "utc_datetime": measurment1.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": measurment1.schema,
+            "data": measurment1.data,
+            "fed_object_id": measurment1.fed_object_id,
+            "fed_version_id": measurment1.fed_version_id,
+            "component_id": measurment1.component_id,
+            "referencing_objects": []
+        }
+    ]
+    measurement_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'sample': {
+            '_type': 'object_reference',
+            'object_id': sample.object_id
+        }
+    }
+    measurement2 = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, params={'get_referencing_objects': 'True'}, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'action_id': sample.action_id,
+            "user_id": sample.user_id,
+            "utc_datetime": sample.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            'component_id': None,
+            'data': sample.data,
+            'fed_object_id': sample.fed_object_id,
+            'fed_version_id': sample.fed_version_id,
+            'object_id': sample.object_id,
+            'referencing_objects': [
+                {
+                    'object_id': measurement2.object_id,
+                    'component_uuid': None,
+                    'eln_source_url': None,
+                    'eln_object_url': None
+                }
+            ],
+            'schema': sample.schema,
+            'version_id': sample.version_id
+         },
+         {
+            "object_id": measurment1.object_id,
+            "version_id": measurment1.version_id,
+            "action_id": measurment1.action_id,
+            "user_id": measurment1.user_id,
+            "utc_datetime": measurment1.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": measurment1.schema,
+            "data": measurment1.data,
+            "fed_object_id": measurment1.fed_object_id,
+            "fed_version_id": measurment1.fed_version_id,
+            "component_id": measurment1.component_id,
+            "referencing_objects": []
+        },
+        {
+            "object_id": measurement2.object_id,
+            "version_id": measurement2.version_id,
+            "action_id": measurement2.action_id,
+            "user_id": measurement2.user_id,
+            "utc_datetime": measurement2.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": measurement2.schema,
+            "data": measurement2.data,
+            "fed_object_id": measurement2.fed_object_id,
+            "fed_version_id": measurement2.fed_version_id,
+            "component_id": measurement2.component_id,
+            "referencing_objects": []
+        }
+    ]
+
+def test_create_object_with_file_invalid_reference(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            },
+            'file': {
+                '_type': 'file',
+                'file_id': 1
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - file does not exist (at file)",
+        "errors": [
+            {
+                "detail": "file does not exist",
+                "input": object_json['data']['file'],
+                "json_pointer": "/data/file",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
+    assert not sampledb.logic.objects.get_objects()
+
+
+def test_update_object_with_file_reference(flask_server, auth, user, action):
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    object = objects[0]
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            },
+            'file': {
+                '_type': 'file',
+                'file_id': 0
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/versions/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    file = sampledb.logic.files.create_database_file(
+        object_id=object.object_id,
+        user_id=object.user_id,
+        file_name='test.txt',
+        save_content=lambda stream: stream.write(b"Test")
+    )
+    assert file.id == 0
+    r = requests.post(flask_server.base_url + f'api/v2/objects/{object.id}/versions/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201
+
+
+def test_create_object_with_missing_required(flask_server, auth, user, action):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    object_json = {
+        'action_id': action.id,
+        'data': {
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v2/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        "detail": "Validation of the object data against its schema failed:\n - missing required property \"name\" (at name)",
+        "errors": [
+            {
+                "detail": "missing required property \"name\"",
+                "input": None,
+                "json_pointer": "/data/name",
+            },
+        ],
+        "status": 400,
+        "title": "Validation of the object data against its schema failed.",
+        "type": "http://localhost/api/v2/errors/ObjectDataValidationFailed",
+    }
+
+def test_get_objects_by_ids(flask_server, auth, user, other_user, action):
+    objects = [
+        sampledb.logic.objects.create_object(
+            action_id=action.id,
+            data={
+                'name': {
+                    '_type': 'text',
+                    'text': f'Example {i}'
+                }
+            },
+            user_id=other_user.id
+        )
+        for i in range(10)
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}'
+    })
+    assert r.json() == []
+    assert r.status_code == 200
+    for object in objects[::2]:
+        sampledb.logic.object_permissions.set_user_object_permissions(
+            object_id=object.object_id,
+            user_id=user.id,
+            permissions=sampledb.logic.object_permissions.Permissions.READ
+        )
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+        for object in [objects[0], objects[-2]]
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': [','.join(str(object.object_id) for object in objects[1:]), str(objects[0].object_id)],
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+        for object in objects[::2]
+    ]
+    r = requests.get(flask_server.base_url + 'api/v2/objects/', auth=auth, allow_redirects=False, params={
+        'object_ids': f'{objects[0].object_id},{objects[1].object_id},{objects[-2].object_id},{objects[-1].object_id}',
+        'q': 'name == "Example 0"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "user_id": object.user_id,
+            "utc_datetime": object.utc_datetime.isoformat().replace('+00:00', 'Z'),
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id,
+            "referencing_objects": None,
+        }
+        for object in [objects[0]]
+    ]

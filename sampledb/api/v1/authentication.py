@@ -5,14 +5,16 @@ Authentication functions for the SampleDB RESTful API.
 import typing
 
 import flask
+from werkzeug.exceptions import HTTPException
 
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
 
 from ...logic.authentication import login, login_via_api_token, login_via_api_access_token, login_via_api_refresh_token, login_via_oidc_access_token, get_active_two_factor_authentication_methods, generate_api_access_token, refresh_api_access_token
 from ...logic.users import User
 from ...models import Permissions
-from ...utils import object_permissions_required as object_permissions_required_generic
+from ...utils import object_permissions_required as object_permissions_required_generic, FlaskResponseT
 from ..utils import Resource, ResponseData
+from ..errors import handle_api_error
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -75,6 +77,18 @@ def verify_password(username: str, password: str) -> typing.Optional[User]:
     return user
 
 
+@http_basic_auth.error_handler
+@http_api_token_or_access_token_auth.error_handler
+@http_api_token_or_refresh_token_auth.error_handler
+def auth_error(status: int) -> FlaskResponseT:
+    try:
+        flask.abort(status)
+    except HTTPException as e:
+        return handle_api_error(e)
+    else:
+        return handle_api_error(None)
+
+
 def object_permissions_required(permissions: Permissions) -> typing.Callable[[typing.Any], typing.Any]:
     """
     Only allow access to a route it the user has the required permissions.
@@ -102,7 +116,12 @@ class AccessTokens(Resource):
                 return {
                     "message": "failed to refresh API token"
                 }, 400
-            return result, 201
+            return {
+                "access_token": result.access_token,
+                "refresh_token": result.refresh_token,
+                "expiration_utc_datetime": result.expiration_utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                "description": result.description,
+            }, 201
         request_json = flask.request.get_json(force=True, silent=True)
         if not isinstance(request_json, dict):
             return {
@@ -117,4 +136,10 @@ class AccessTokens(Resource):
             return {
                 "message": "description must be a string"
             }, 400
-        return generate_api_access_token(user_id=flask.g.user.id, description=description), 201
+        result = generate_api_access_token(user_id=flask.g.user.id, description=description)
+        return {
+            "access_token": result.access_token,
+            "refresh_token": result.refresh_token,
+            "expiration_utc_datetime": result.expiration_utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "description": result.description,
+        }, 201

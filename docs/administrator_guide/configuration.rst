@@ -393,5 +393,7 @@ Miscellaneous
      - Sets external links, see :ref:`External Links <external_links>`.
    * - SAMPLEDB_SORT_REFERENCABLE_OBJECTS
      - If set to ``"name"``, referencable objects will be sorted by their name by default rather than their ID. Users may override this setting in their preferences.
+   * - SAMPLEDB_ENABLE_HTTP_API_V2_DRAFT
+     - If set, the draft of HTTP API v2 will be enabled (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

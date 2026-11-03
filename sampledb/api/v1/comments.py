@@ -67,7 +67,7 @@ class ObjectComments(Resource):
         comment_id = create_comment(object_id, flask.g.user.id, content)
 
         comment_url = flask.url_for(
-            'api.object_comment',
+            '.object_comment',
             object_id=object_id,
             comment_id=comment_id,
             _external=True

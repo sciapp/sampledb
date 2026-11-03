@@ -618,7 +618,7 @@ def get_objects_with_permissions(
         user_id: typing.Optional[int],
         permissions: Permissions,
         filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
-        sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        sorting_func: typing.Optional[typing.Callable[[typing.Any, typing.Any], typing.Any]] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         action_ids: typing.Optional[typing.List[int]] = None,
