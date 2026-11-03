@@ -60,6 +60,9 @@ sampledb.config.TESTING_LDAP_WRONG_PASSWORD = 'wrong-password-for-sampledb-tests
 
 sampledb.config.FEDERATION_UUID = 'aef05dbb-2763-49d1-964d-71205d8da0bf'
 
+sampledb.config.SERVICE_LEGAL_NOTICE = 'http://example.com/legal-notice'
+sampledb.config.SERVICE_PRIVACY_POLICY = 'http://example.com/privacy-policy'
+
 # restore possibly overridden configuration data from environment variables
 sampledb.config.use_environment_configuration(env_prefix='SAMPLEDB_')
 

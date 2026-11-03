@@ -164,45 +164,51 @@ def test_get_eln_import_signed_by(flask_server, app, sampledb_eln_import_id):
 
     allow_http = app.config["ELN_FILE_IMPORT_ALLOW_HTTP"]
     app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = True
-    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        logic.eln_import.import_eln_file(sampledb_eln_import_id)
     app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = allow_http
 
     assert logic.eln_import.get_import_signed_by(sampledb_eln_import_id) == flask_server.base_url.rstrip('/')
 
 
-def test_get_eln_import_users(sampledb_eln_import_id):
+def test_get_eln_import_users(app, sampledb_eln_import_id):
     assert not sampledb.logic.eln_import.get_eln_import_users(sampledb_eln_import_id)
 
-    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        logic.eln_import.import_eln_file(sampledb_eln_import_id)
 
     assert {user.name for user in sampledb.logic.eln_import.get_eln_import_users(sampledb_eln_import_id)} == {'Basic User'}
 
 
-def test_get_eln_import_objects(sampledb_eln_import_id):
+def test_get_eln_import_objects(app, sampledb_eln_import_id):
     assert not sampledb.logic.eln_import.get_eln_import_objects(sampledb_eln_import_id)
 
-    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        logic.eln_import.import_eln_file(sampledb_eln_import_id)
 
     assert {sampledb.logic.utils.get_translated_text(object.name, 'en') for object in sampledb.logic.eln_import.get_eln_import_objects(sampledb_eln_import_id)} == {'Updated Object'}
 
 
-def test_get_eln_import_for_object(flask_server, sampledb_eln_import_id):
+def test_get_eln_import_for_object(app, flask_server, sampledb_eln_import_id):
     assert logic.eln_import.get_eln_import_for_object(-1) is None
-    expected_object_url = logic.eln_import.parse_eln_file(sampledb_eln_import_id).objects[0].url
-    object_ids, _, _ = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        expected_object_url = logic.eln_import.parse_eln_file(sampledb_eln_import_id).objects[0].url
+        object_ids, _, _ = logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert logic.eln_import.get_eln_import_for_object(object_ids[0]) == (logic.eln_import.get_eln_import(sampledb_eln_import_id), expected_object_url)
 
 
-def test_get_eln_import_object_url(sampledb_eln_import_id):
+def test_get_eln_import_object_url(app, sampledb_eln_import_id):
     assert logic.eln_import.get_eln_import_object_url(-1) is None
-    expected_object_url = logic.eln_import.parse_eln_file(sampledb_eln_import_id).objects[0].url
-    object_ids, _, _ = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        expected_object_url = logic.eln_import.parse_eln_file(sampledb_eln_import_id).objects[0].url
+        object_ids, _, _ = logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert logic.eln_import.get_eln_import_object_url(object_ids[0]) == expected_object_url
 
 
-def test_get_pending_eln_imports(user, sampledb_eln_import_id):
+def test_get_pending_eln_imports(app, user, sampledb_eln_import_id):
     assert logic.eln_import.get_pending_eln_imports(user.id) == [logic.eln_import.get_eln_import(sampledb_eln_import_id)]
-    logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert not logic.eln_import.get_pending_eln_imports(user.id)
 
 def test_remove_expired_eln_imports(user):
@@ -272,18 +278,42 @@ def test_mark_eln_import_invalid(eln_import_id):
 def test_parse_sampledb_eln_file(app, flask_server, sampledb_eln_import_id):
     allow_http = app.config["ELN_FILE_IMPORT_ALLOW_HTTP"]
     app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = True
-    parsed_eln_import = logic.eln_import.parse_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(sampledb_eln_import_id)
     app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = allow_http
 
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by == f"{flask_server.base_url}".rstrip('/')
-
-    assert len(parsed_eln_import.objects[0].versions) == 2
-    assert parsed_eln_import.objects[0].versions[0].version_id == 0 and parsed_eln_import.objects[0].versions[0].data['name']['text'] == 'Object'
-    assert parsed_eln_import.objects[0].versions[1].version_id == 1 and parsed_eln_import.objects[0].versions[1].data['name']['text'] == {'en': 'Updated Object'}
+    assert parsed_eln_import.has_preview is True
 
 
-def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
+def test_parse_sampledb_preview(app, flask_server, sampledb_eln_import_id):
+    with app.test_request_context('/'):
+        parsed_eln_previews, _ = logic.eln_import.parse_eln_preview(sampledb_eln_import_id)
+
+    assert len(parsed_eln_previews) == 1
+    assert parsed_eln_previews[0].filepath == "ro-crate-preview.html"
+    assert parsed_eln_previews[0].mime_type == "text/html"
+    assert parsed_eln_previews[0].content is not None
+    assert parsed_eln_previews[0].sanitized_content is not None
+
+
+def test_parse_sampledb_preview_file(app, flask_server, sampledb_eln_import_id):
+    with app.test_request_context('/'):
+        parsed_eln_preview = logic.eln_import.parse_eln_preview_file(sampledb_eln_import_id, None)
+
+    assert parsed_eln_preview.filepath == "ro-crate-preview.html"
+    assert parsed_eln_preview.mime_type == "text/html"
+    assert parsed_eln_preview.content is not None
+    assert parsed_eln_preview.sanitized_content is not None
+
+
+def test_parse_sampledb_preview_file_not_available(app, flask_server, sampledb_eln_import_id):
+    with pytest.raises(logic.errors.ELNImportPreviewFileDoesNotExistError):
+        logic.eln_import.parse_eln_preview_file(sampledb_eln_import_id, "not_available.png")
+
+
+def test_parse_sampledb_eln_file_unsigned(app, user, eln_zip_bytes_unsigned):
     with zipfile.ZipFile(io.BytesIO(eln_zip_bytes_unsigned)) as zip_file:
         assert zip_file.testzip() is None
 
@@ -299,24 +329,26 @@ def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
         zip_bytes=eln_zip_bytes_unsigned
     )
 
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
     assert parsed_eln_import.signed_by is None
 
 
-def test_parse_eln_file_with_directory_members(user, minimal_eln_zip_bytes_with_directory_members):
+def test_parse_eln_file_with_directory_members(app, user, minimal_eln_zip_bytes_with_directory_members):
     eln_import = logic.eln_import.create_eln_import(
         user_id=user.id,
         file_name='test.eln',
         zip_bytes=minimal_eln_zip_bytes_with_directory_members,
     )
 
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
 
     assert [object.name for object in parsed_eln_import.objects] == ['Synthetic experiment']
 
 
-def test_parse_eln_file_with_multiple_root_directories(user, minimal_eln_zip_bytes_with_directory_members):
+def test_parse_eln_file_with_multiple_root_directories(app, user, minimal_eln_zip_bytes_with_directory_members):
     zip_bytes = io.BytesIO(minimal_eln_zip_bytes_with_directory_members)
     with zipfile.ZipFile(zip_bytes, 'a') as zip_file:
         zip_file.mkdir('unexpected-root/')
@@ -328,7 +360,8 @@ def test_parse_eln_file_with_multiple_root_directories(user, minimal_eln_zip_byt
     )
 
     with pytest.raises(logic.errors.InvalidELNFileError) as exc_info:
-        logic.eln_import.parse_eln_file(eln_import.id)
+        with app.test_request_context('/'):
+            logic.eln_import.parse_eln_file(eln_import.id)
     assert str(exc_info.value) == '.eln file must contain a single root directory'
 
 
@@ -356,7 +389,8 @@ def test_parse_eln_file_without_objects(user, app, flask_server, eln_zip_bytes):
         zip_bytes=eln_zip_bytes_modified.getvalue()
     )
     with pytest.raises(logic.errors.InvalidELNFileError) as exc_info:
-        logic.eln_import.parse_eln_file(eln_import.id)
+        with app.test_request_context('/'):
+            logic.eln_import.parse_eln_file(eln_import.id)
     assert str(exc_info.value) == ".eln file must contain at least one object"
 
 
@@ -367,7 +401,8 @@ def test_parse_eln_file_invalid_zip(user, app, flask_server, eln_zip_bytes):
         zip_bytes=eln_zip_bytes[:-10] + b'Invalid'
     )
     with pytest.raises(logic.errors.InvalidELNFileError) as exc_info:
-        logic.eln_import.parse_eln_file(eln_import.id)
+        with app.test_request_context('/'):
+            logic.eln_import.parse_eln_file(eln_import.id)
     assert str(exc_info.value) == ".eln file must be valid .zip file"
 
 
@@ -562,7 +597,8 @@ def test_parse_sampledb_eln_file_ro_crate_metadata_modified(user, app, flask_ser
         zip_bytes=eln_zip_bytes_modified
     )
 
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
     assert "Signature" in parsed_eln_import.import_notes and parsed_eln_import.import_notes["Signature"] == ['Invalid URL scheme: http']
     assert all(len(import_notes) == 0 for key, import_notes in parsed_eln_import.import_notes.items() if key != "Signature")
     assert parsed_eln_import.signed_by is None
@@ -905,7 +941,8 @@ def test_parse_sampledb_eln_file_with_invalid_signature_file(user, app, flask_se
                 mock.get(mock_url, **mock_urls[mock_url])
             parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
     else:
-        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+        with app.test_request_context('/'):
+            parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
     for key in expected_import_notes:
         assert key in parsed_eln_import.import_notes
     for key, value in parsed_eln_import.import_notes.items():
@@ -966,35 +1003,41 @@ def test_parse_sampledb_eln_file_object_modified(user, app, flask_server, modify
     )
 
     with pytest.raises(errors.InvalidELNFileError) as exc_info:
-        logic.eln_import.parse_eln_file(eln_import.id)
+        with app.test_request_context('/'):
+            logic.eln_import.parse_eln_file(eln_import.id)
     assert 'Hash mismatch' in exc_info.value.args[0]
 
 
-def test_import_eln_file_invalid_args(sampledb_eln_import_id):
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id + 1)
+def test_import_eln_file_invalid_args(app, sampledb_eln_import_id):
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id + 1)
     assert not object_ids
     assert not users_by_id
     assert errors == ['Unknown ELN import']
 
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id, [sampledb.logic.action_types.ActionType.SAMPLE_CREATION] * 10)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id, [sampledb.logic.action_types.ActionType.SAMPLE_CREATION] * 10)
     assert not object_ids
     assert not users_by_id
     assert errors == ['Invalid Action Type ID information for this ELN file']
 
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert object_ids
     assert users_by_id
     assert not errors
 
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert not object_ids
     assert not users_by_id
     assert errors == ['This ELN file has already been imported']
 
 
-def test_import_sampledb_eln_file(sampledb_eln_import_id):
+def test_import_sampledb_eln_file(app, sampledb_eln_import_id):
     exported_object = sampledb.logic.objects.get_objects()[0]
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert not errors
     assert len(object_ids) == 1
     imported_object = sampledb.logic.objects.get_object(object_ids[0])
@@ -1005,7 +1048,7 @@ def test_import_sampledb_eln_file(sampledb_eln_import_id):
     assert users_by_id['./users/1'].eln_object_id == './users/1'
 
 
-def test_import_elabftw_eln_file(user):
+def test_import_elabftw_eln_file(app, user):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'elabftw-export.eln'), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
@@ -1013,7 +1056,8 @@ def test_import_elabftw_eln_file(user):
         file_name='test.eln',
         zip_bytes=eln_zip_bytes
     ).id
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     assert parsed_eln_import.import_notes == {
         './RD - Testing-relationship-between-acceleration-and-gravity - 5adb0eb3/': ['The .eln file did not contain any valid flexible metadata for this object.'],
         './Demo - Synthesis-of-Aspirin - 6bc46aec/': ['The .eln file did not contain any valid flexible metadata for this object.'],
@@ -1034,7 +1078,8 @@ def test_import_elabftw_eln_file(user):
         './Discussions - Numquam-alias-repellendus-corporis - 2c266830/': ['The .eln file did not contain any valid flexible metadata for this object.'],
         './Demo - Officiis-consequatur-vel-ut-nihil-sit-ut - 350a45f5/': ['The .eln file did not contain any valid flexible metadata for this object.']
     }
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) == 18
     for object_id in object_ids:
@@ -1099,7 +1144,7 @@ def test_import_elabftw_eln_file(user):
     assert len(users_by_id) == 4
 
 
-def test_import_pasta_eln_file(user):
+def test_import_pasta_eln_file(app, user):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'PASTA.eln'), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
@@ -1107,9 +1152,11 @@ def test_import_pasta_eln_file(user):
         file_name='test.eln',
         zip_bytes=eln_zip_bytes
     ).id
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     assert all(len(import_notes) <= 1 for import_notes in parsed_eln_import.import_notes.values())
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) == 26
     assert len(users_by_id) == 1
@@ -1117,7 +1164,7 @@ def test_import_pasta_eln_file(user):
     assert users_by_id['author_Steffen_Brinckmann'].eln_object_id == 'author_Steffen_Brinckmann'
 
 
-def test_import_kadi4mat_eln_file(user):
+def test_import_kadi4mat_eln_file(app, user):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'kadi4mat-records-example.eln'), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
@@ -1125,9 +1172,11 @@ def test_import_kadi4mat_eln_file(user):
         file_name='test.eln',
         zip_bytes=eln_zip_bytes
     ).id
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     assert all(len(import_notes) == 1 for import_notes in parsed_eln_import.import_notes.values())
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) == 1
     imported_object = sampledb.logic.objects.get_object(object_ids[0])
@@ -1565,7 +1614,7 @@ def _get_reference_eln_file_paths():
 
 
 @pytest.mark.parametrize(['eln_file_path'], [[eln_file_path] for eln_file_path in _get_reference_eln_file_paths()])
-def test_import_reference_eln_files(user, eln_file_path):
+def test_import_reference_eln_files(app, user, eln_file_path):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files', eln_file_path), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
@@ -1573,7 +1622,8 @@ def test_import_reference_eln_files(user, eln_file_path):
         file_name='test.eln',
         zip_bytes=eln_zip_bytes
     ).id
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     for import_notes_key, import_notes in parsed_eln_import.import_notes.items():
         if import_notes:
             if import_notes_key == 'Signature':
@@ -1583,13 +1633,14 @@ def test_import_reference_eln_files(user, eln_file_path):
                 }
             else:
                 assert import_notes == ['The .eln file did not contain any valid flexible metadata for this object.']
-    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) >= 1
     assert len(users_by_id) >= 1
 
 
-def test_import_nested_datasets(user):
+def test_import_nested_datasets(app, user):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files', 'SciLog', 'export.eln'), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
@@ -1597,7 +1648,8 @@ def test_import_nested_datasets(user):
         file_name='test.eln',
         zip_bytes=eln_zip_bytes
     ).id
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     assert len(parsed_eln_import.objects) == 6
     assert all(len(parsed_object.versions) == 1 for parsed_object in parsed_eln_import.objects)
     objects_by_name = {
@@ -1625,7 +1677,8 @@ def test_import_nested_datasets(user):
         parsed_object.id: ['The .eln file did not contain any valid flexible metadata for this object.']
         for parsed_object in parsed_eln_import.objects
     }
-    imported_object_ids, imported_users, errors = sampledb.logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        imported_object_ids, imported_users, errors = sampledb.logic.eln_import.import_eln_file(eln_import_id)
     imported_objects = [
         sampledb.logic.objects.get_object(object_id)
         for object_id in imported_object_ids
@@ -1714,7 +1767,7 @@ def test_import_nested_datasets(user):
     assert not errors
 
 
-def test_import_nested_datasets_preserves_parts_metadata(user):
+def test_import_nested_datasets_preserves_parts_metadata(app, user):
     eln_file_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         '..',
@@ -1748,7 +1801,8 @@ def test_import_nested_datasets_preserves_parts_metadata(user):
         file_name='parts-metadata.eln',
         zip_bytes=eln_zip_bytes.getvalue()
     ).id
-    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     root_object_info = next(
         object_info
         for object_info in parsed_eln_import.objects
@@ -1761,7 +1815,8 @@ def test_import_nested_datasets_preserves_parts_metadata(user):
         }
     }
 
-    imported_object_ids, _, errors = logic.eln_import.import_eln_file(eln_import_id)
+    with app.test_request_context('/'):
+        imported_object_ids, _, errors = logic.eln_import.import_eln_file(eln_import_id)
     imported_objects = [
         logic.objects.get_object(object_id)
         for object_id in imported_object_ids

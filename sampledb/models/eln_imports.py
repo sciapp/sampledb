@@ -52,3 +52,17 @@ class ELNImportObject(Model):
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ELNImportObject"]]
+
+
+class ELNImportPreviewFile(Model):
+    __tablename__ = 'eln_import_preview_files'
+
+    filepath: Mapped[str] = db.Column(db.String, primary_key=True)
+    eln_import_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('eln_imports.id'), primary_key=True)
+    binary_data: Mapped[bytes] = db.deferred(db.Column(db.LargeBinary, nullable=False))
+    sanitized_binary_data: Mapped[typing.Optional[bytes]] = db.deferred(db.Column(db.LargeBinary, nullable=True))
+    sanitizer_version: Mapped[int] = db.Column(db.Integer, nullable=False)
+    mime_type: Mapped[str] = db.Column(db.String, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ELNImportPreviewFile"]]
