@@ -142,6 +142,53 @@ function conditionalWrapper (conditionsElement, idPrefix, schemaConditions) {
         objectElement.on('refreshed.bs.select', evaluateCondition);
         objectElement.on('conditions_state_changed.sampledb', evaluateCondition);
         evaluateCondition();
+      } else if (condition.type === 'action_equals') {
+        const objectElement = parentElement.find(`[name="${parentIDPrefix}_${condition.property_name}__oid"]`);
+        const evaluateCondition = function () {
+          let conditionFulfilled = (!objectElement.data('sampledb-disabled-by-conditions') || objectElement.data('sampledb-disabled-by-conditions').length === 0);
+          if (conditionFulfilled) {
+            let selectedObjectID = '' + objectElement.val();
+            if (selectedObjectID.includes('#')) {
+              selectedObjectID = selectedObjectID.split('#')[1];
+            }
+            let selectedObjectActionID = null;
+            if (selectedObjectID === '' || selectedObjectID === null || Number.isNaN(selectedObjectID)) {
+              selectedObjectActionID = null;
+            } else {
+              let defaultObjectID = objectElement.attr('data-sampledb-default-selected');
+              let defaultObjectActionID = objectElement.attr('data-sampledb-default-selected-action-id');
+              if (objectElement[0].tagName === 'INPUT') {
+                const typeaheadElement = $(`[name="typeahead_text_${parentIDPrefix}_${condition.property_name}_"]`);
+                defaultObjectID = typeaheadElement.attr('data-sampledb-default-selected');
+                defaultObjectActionID = typeaheadElement.attr('data-sampledb-default-selected-action-id');
+              }
+              if (defaultObjectID === selectedObjectID) {
+                selectedObjectActionID = defaultObjectActionID;
+                if (selectedObjectActionID === 'None') {
+                  selectedObjectActionID = null;
+                }
+              } else if (window.referencable_objects) {
+                const referencedObjects = window.referencable_objects.filter((item) => item.id.toString() === selectedObjectID);
+                if (referencedObjects.length !== 1) {
+                  selectedObjectActionID = null;
+                } else {
+                  selectedObjectActionID = referencedObjects[0].action_id;
+                }
+              } else {
+                // no object data available yet
+                selectedObjectActionID = -100;
+              }
+            }
+            conditionFulfilled = (selectedObjectActionID === (condition.action_id !== null ? condition.action_id.toString() : '')) || (selectedObjectActionID === condition.action_id);
+          }
+          setConditionEntry(conditionFulfilled);
+        };
+        objectElement.on('object_change.sampledb', evaluateCondition); // typeahead cases
+        objectElement.on('changed.bs.select', evaluateCondition);
+        objectElement.on('loaded.bs.select', evaluateCondition);
+        objectElement.on('refreshed.bs.select', evaluateCondition);
+        objectElement.on('conditions_state_changed.sampledb', evaluateCondition);
+        evaluateCondition();
       } else if (condition.type === 'any') {
         const conditionEntry = { type: 'any', conditions: [], result: null };
         condition.conditions.forEach(function (subCondition, i) {
