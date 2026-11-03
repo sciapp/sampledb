@@ -2,7 +2,7 @@ import os
 import typing
 from urllib.parse import urlsplit
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, CData
 from bs4.element import Tag
 import flask
 import tinycss2
@@ -106,7 +106,7 @@ class ELNSanitizer:
 
         if self.add_sampledb_notice:
             self._add_sampledb_notice(soup)
-
+        self._html_clear_cdata(soup)
         return str(soup)
 
     def _add_sampledb_notice(self, soup: BeautifulSoup) -> None:
@@ -210,6 +210,10 @@ class ELNSanitizer:
 
     def _sanitize_script_script_tag(self, tag: Tag) -> None:
         tag.decompose()
+
+    def _html_clear_cdata(self, soup: BeautifulSoup) -> None:
+        for cdata in soup.findAll(text=lambda text: isinstance(text, CData)):
+            cdata.decompose()
 
     def _sanitize_css_stylesheet(self, css_content: str) -> str:
         """

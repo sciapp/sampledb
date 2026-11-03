@@ -265,6 +265,16 @@ XSS_TEST_CASES = [
         </style>""",
         "expected_result": """"""
     },
+    {
+        "payload": r"""
+            <body>
+                <p>Should Stay</p>
+                <![CDATA[><script>alert("XSS B");</script>]]>
+                <![CDATA[><img src=x onerror=alert(1)>]]>
+            </body>
+        """,
+        "expected_result": "\n<body>\n<p>Should Stay</p>\n\n\n</body>\n"
+    },
 ]
 
 CSS_EXFILTRATION_TEST_DATA = [
