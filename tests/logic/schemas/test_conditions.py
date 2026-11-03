@@ -2,6 +2,7 @@
 
 import pytest
 
+import sampledb.logic.users
 from sampledb.logic.schemas.conditions import is_condition_fulfilled, are_conditions_fulfilled, validate_condition_schema, ValidationError
 
 
@@ -278,6 +279,67 @@ def test_validate_object_equals_condition():
         )
 
 
+def test_validate_action_equals_condition():
+    property_schemas = {
+        'example_object': {
+            'title': 'Example Object',
+            'type': 'object_reference'
+        },
+        'conditional_property': {
+            'title': 'Conditional Property',
+            'type': 'text',
+        }
+    }
+    validate_condition_schema(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': None
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+    validate_condition_schema(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': 1
+        },
+        property_schemas,
+        ['conditional_property', '0']
+    )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'action_equals',
+                'property_name': 'unknown_property'
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'action_equals',
+                'property_name': 'example_object',
+                'action_id': "1"
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+    with pytest.raises(ValidationError):
+        validate_condition_schema(
+            {
+                'type': 'action_equals',
+            },
+            property_schemas,
+            ['conditional_property', '0']
+        )
+
+
 def test_is_unknown_condition_fulfilled():
     instance = {}
     assert not is_condition_fulfilled(
@@ -417,6 +479,89 @@ def test_is_object_equals_condition_fulfilled():
             'example_object': {
                 '_type': 'object_reference',
                 'object_id': 1
+            }
+        }
+    )
+
+
+def test_is_action_equals_condition_fulfilled():
+    assert is_condition_fulfilled(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': None
+        },
+        {}
+    )
+    assert not is_condition_fulfilled(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': 1
+        },
+        {}
+    )
+    assert not is_condition_fulfilled(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': 1
+        },
+        {
+            'example_object': {
+                '_type': 'object_reference',
+                'object_id': 1
+            }
+        }
+    )
+    user = sampledb.logic.users.create_user("Test User", "user@example.org", sampledb.models.UserType.PERSON)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': "Basic Schema",
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': "Name",
+                    'type': 'text'
+                },
+            },
+            'required': ['name']
+        }
+    )
+    object = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Test'}
+            }
+        },
+        user_id=user.id,
+    )
+    assert is_condition_fulfilled(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': action.id
+        },
+        {
+            'example_object': {
+                '_type': 'object_reference',
+                'object_id': object.id
+            }
+        }
+    )
+    assert not is_condition_fulfilled(
+        {
+            'type': 'action_equals',
+            'property_name': 'example_object',
+            'action_id': action.id + 1
+        },
+        {
+            'example_object': {
+                '_type': 'object_reference',
+                'object_id': object.id
             }
         }
     )

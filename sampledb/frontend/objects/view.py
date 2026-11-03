@@ -45,7 +45,7 @@ from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, PAGE_SIZ
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
-from .object_form import show_object_form, get_object_form_template_kwargs
+from .object_form import show_object_form, get_object_form_template_kwargs, get_object_action_id_or_none
 from ...utils import FlaskResponseT
 from ...models import Permissions, ObjectLogEntryType
 from ...models.file_log import FileLogEntryType
@@ -452,6 +452,7 @@ def object(object_id: int) -> FlaskResponseT:
         "get_action_type": cache_per_request()(get_action_type),
         "get_component": cache_per_request()(get_component),
         "get_shares_for_object": get_shares_for_object,
+        "get_object_action_id_or_none": get_object_action_id_or_none,
     })
 
     if mode in {'', 'inline_edit'} and not flask.current_app.config['DISABLE_INLINE_EDIT'] and user_may_edit:

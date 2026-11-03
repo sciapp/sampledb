@@ -21,6 +21,7 @@
   {% set current_value_is_fed = false %}
 {% endif %}
 
+{% set selected_id_action_id = none %}
 {% if form_data.get(id_prefix+'_oid') %}
   {% set selected_id = form_data[id_prefix+'_oid'] %}
 {% elif data is not none and "object_id" in data %}
@@ -28,6 +29,7 @@
     {% set selected_id = "-1" %}
   {% else %}
     {% set selected_id = data.object_id | string %}
+    {% set selected_id_action_id = get_object_action_id_or_none(selected_id | int) %}
   {% endif %}
 {% elif schema is not none and "default" in schema and (mode != 'edit' or is_template) %}
   {% if current_value_text is not none %}
@@ -62,12 +64,12 @@
 
 {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
   <div class="{% if is_template %} template-typeahead-container {% else %} objectpicker-container {% endif %}">
-    <input type="text" class="form-control {% if not is_template %} typeahead {% else %} template-typeahead {% endif %}" name="typeahead_text_{{ id_prefix }}" style="width: 100%" value="{% if selected_id is not none %}#{{ selected_id }}{% endif %}" placeholder="{{ _('No object selected') }}" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1" {% if current_value_text %}data-sampledb-current-value-text="{{ current_value_text }}"{% endif %} {% if current_value_is_fed %}data-sampledb-current-value-is-fed="true"{% endif %}/>
+    <input type="text" class="form-control {% if not is_template %} typeahead {% else %} template-typeahead {% endif %}" name="typeahead_text_{{ id_prefix }}" style="width: 100%" value="{% if selected_id is not none %}#{{ selected_id }}{% endif %}" placeholder="{{ _('No object selected') }}" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-default-selected-action-id="{{ selected_id_action_id }}" data-sampledb-required-perm="1" {% if current_value_text %}data-sampledb-current-value-text="{{ current_value_text }}"{% endif %} {% if current_value_is_fed %}data-sampledb-current-value-is-fed="true"{% endif %}/>
     <span class="objectpicker-caret"></span>
     <input type="hidden" name="{{ id_prefix+'_oid' }}" value="{% if selected_id is not none %}{{ selected_id }}{% endif %}" />
   </div>
 {% else %}
-  <select {% if is_template %} class="template-select" data-template-class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% else %} class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% endif %} name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
+  <select {% if is_template %} class="template-select" data-template-class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% else %} class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% endif %} name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-default-selected-action-id="{{ selected_id_action_id }}" data-sampledb-required-perm="1">
     <option value="">&mdash;</option>
   {% if selected_id == "-1" and current_value_text is not none %}
     <option value="-1" selected="selected" {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %}>{{ current_value_text }}</option>
