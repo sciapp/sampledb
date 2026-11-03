@@ -4,6 +4,9 @@
 
 {% block content %}
   <h1>{{ _('ELN Import') }} #{{ eln_import.id }}</h1>
+  {% if has_eln_preview %}
+  <p>{{ _('This .eln file provides a preview: <a href="%(preview_url)s">Open preview</a>', preview_url=url_for('.eln_preview', eln_import_id=eln_import.id)) }}</p>
+  {% endif %}
   <dl class="dl-horizontal">
     <dt>{{ _('Uploaded by') }}</dt>
     <dd>{{ user_reference(eln_import.user_id) }}</dd>
