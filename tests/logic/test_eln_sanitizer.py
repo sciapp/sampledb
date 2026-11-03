@@ -333,6 +333,10 @@ html {
         }
 """
     },
+   {
+       "payload": "@font-face{ font-family:test; src:url(\"./ro-crate-preview_files/image1.png\"); }",
+       "expected_result": ""
+   }
 ]
 
 

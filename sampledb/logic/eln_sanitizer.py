@@ -248,10 +248,9 @@ class ELNSanitizer:
         return True
 
     def _css_sanitize_at_rule(self, at_rule: tinycss2.ast.AtRule) -> bool:
-        if at_rule.prelude:
-            if not self._css_sanitize_at_rule_head(at_rule.lower_at_keyword, at_rule.prelude):
-                return False
-        if at_rule.content:
+        if not self._css_sanitize_at_rule_head(at_rule.lower_at_keyword, at_rule.prelude):
+            return False
+        if at_rule.content is not None:
             at_rule.content = self._css_sanitize_at_rule_body(at_rule.content)
         return True
 
