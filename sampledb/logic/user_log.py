@@ -152,14 +152,17 @@ def edit_user_preferences(user_id: int) -> None:
     )
 
 
-def post_comment(user_id: int, object_id: int, comment_id: int) -> None:
+def post_comment(user_id: int, object_id: int, comment_id: int, imported_from_component_id: typing.Optional[int] = None) -> None:
+    data = {
+        'object_id': object_id,
+        'comment_id': comment_id
+    }
+    if imported_from_component_id is not None:
+        data['imported_from_component_id'] = imported_from_component_id
     _store_new_log_entry(
         type=UserLogEntryType.POST_COMMENT,
         user_id=user_id,
-        data={
-            'object_id': object_id,
-            'comment_id': comment_id
-        }
+        data=data,
     )
 
 

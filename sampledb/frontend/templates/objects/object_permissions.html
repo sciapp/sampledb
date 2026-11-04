@@ -57,7 +57,97 @@
           <div class="container">
             <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="edit_component_policy" value="edit_component_policy">{{ _('Save') }}</button>
           </div>
-        </form>
+          <label class="control-label">{{ _('Permissions') }}</label>
+          <div class="well">
+            <table class="table table-striped" id="edit_policy_users_table">
+              <thead>
+                <tr style="background-color: #f9f9f9">
+                  <th scope="col" class="text-center"></th>
+                  <th scope="col" style="width: 40%">{{ _('Special Groups') }}</th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background-color: transparent">
+                  <td></td>
+                  <td>
+                    {{ _('Administrators') }}
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td class="text-center">
+                    <input type="radio" disabled="disabled" checked="checked">
+                  </td>
+                </tr>
+              </tbody>
+              <tbody id="edit_policy_projects_tbody">
+              </tbody>
+              <tbody id="edit_policy_groups_tbody">
+              </tbody>
+              <tbody id="edit_policy_users_tbody">
+              </tbody>
+            </table>
+            <h4>{{ _('Add User') }}</h4>
+            <div class="form-group">
+              <label>
+                {{ _('Select User') }} <span  data-toggle="tooltip" data-placement="bottom" title="{{ _('If a user is missing from this list, please enter their ID below.') }}"><i class="fa fa-question-circle"></i></span>
+              </label>
+              <div class="input-group">
+                <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true" data-width="100%"></select>
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-success select-group-button" id="edit_component_policy_user_select_btn" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
+                </span>
+              </div>
+            </div>
+            <div style="margin-bottom: 5px; margin-top: -10px;" class="text-muted">
+              {{ _('or') }}
+            </div>
+            <div class="form-group">
+              <label>
+                {{ _('Enter User ID') }} <span  data-toggle="tooltip" data-placement="bottom" title="{{ _('To find the user ID, check the user profile in the other database.') }}"><i class="fa fa-question-circle"></i></span>
+              </label>
+              <div class="input-group">
+                <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User ID') }}" style="width: 100%">
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-success" id="edit_component_policy_user_input_btn" name="edit_share_user_input_btn">{{ _('Add') }}</button>
+                </span>
+              </div>
+              <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
+            </div>
+            <h4>{{ _('Add Basic Group') }}</h4>
+            <div class="form-group">
+              <label>
+                {{ _('Enter Basic Group ID') }}
+              </label>
+              <div class="input-group">
+                <input type="text" id="edit_share_group_text" class="form-control" placeholder="{{ _('Basic Group ID') }}" style="width: 100%">
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-success"  id="edit_component_policy_group_input_btn" name="edit_share_group_input_btn">{{ _('Add') }}</button>
+                </span>
+              </div>
+              <span id="edit_share_group_text_help_block" style="display: none;" class="help-block"></span>
+            </div>
+            <h4>{{ _('Add Project Group') }}</h4>
+            <div class="form-group">
+              <label>
+                {{ _('Enter Project Group ID') }}
+              </label>
+              <div class="input-group">
+                <input type="text" id="edit_share_project_text" class="form-control" placeholder="{{ _('Project Group ID') }}" style="width: 100%">
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-success"  id="edit_component_policy_project_input_btn" name="edit_share_project_input_btn">{{ _('Add') }}</button>
+                </span>
+              </div>
+              <span id="edit_share_project_text_help_block" style="display: none;" class="help-block"></span>
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <button type="submit" class="btn btn-success col-md-offset-9 col-md-3" name="edit_component_policy" value="edit_component_policy">{{ _('Save') }}</button>
+        </div>
+      </form>
       {% endif %}
       {% if possible_new_components %}
       <h4>{{ _('Add database') }}</h4>

@@ -122,6 +122,8 @@ class ObjectLocationAssignment:
     component_id: typing.Optional[int] = None
     declined: bool = False
     component: typing.Optional[Component] = None
+    imported_from_component_id: typing.Optional[int] = None
+    imported_from_component: typing.Optional[Component] = None
 
     @classmethod
     def from_database(cls, object_location_assignment: locations.ObjectLocationAssignment) -> 'ObjectLocationAssignment':
@@ -137,7 +139,9 @@ class ObjectLocationAssignment:
             fed_id=object_location_assignment.fed_id,
             component_id=object_location_assignment.component_id,
             declined=object_location_assignment.declined,
-            component=Component.from_database(object_location_assignment.component) if object_location_assignment.component is not None else None
+            component=Component.from_database(object_location_assignment.component) if object_location_assignment.component is not None else None,
+            imported_from_component_id=object_location_assignment.imported_from_component_id,
+            imported_from_component=Component.from_database(object_location_assignment.imported_from_component) if object_location_assignment.imported_from_component is not None else None,
         )
 
 
@@ -539,8 +543,9 @@ def create_fed_assignment(
         user_id: typing.Optional[int],
         description: typing.Optional[typing.Dict[str, str]],
         utc_datetime: typing.Optional[datetime.datetime],
+        imported_from_component_id: int,
         confirmed: bool = False,
-        declined: bool = False
+        declined: bool = False,
 ) -> locations.ObjectLocationAssignment:
     if description is not None:
         if isinstance(description, str):
@@ -548,11 +553,12 @@ def create_fed_assignment(
                 'en': description
             }
         assert isinstance(description, dict)
-        description = languages.filter_translations(description)
+        description = languages.filter_translations(description, component_id)
 
     objects.check_object_exists(object_id)
     # ensure the component exists
     components.check_component_exists(component_id)
+    components.check_component_exists(imported_from_component_id)
     if location_id is not None:
         # ensure the location exists
         check_location_exists(location_id)
@@ -570,7 +576,8 @@ def create_fed_assignment(
         confirmed=confirmed or False,
         declined=declined,
         fed_id=fed_id,
-        component_id=component_id
+        component_id=component_id,
+        imported_from_component_id=imported_from_component_id,
     )
     db.session.add(object_location_assignment)
     db.session.commit()

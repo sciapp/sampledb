@@ -16,12 +16,15 @@ ResponseData = typing.Union[werkzeug.Response, ResponseContent, typing.Tuple[Res
 
 FlaskRouteT = typing.TypeVar('FlaskRouteT', bound=typing.Callable[..., typing.Any])
 
+POSTGRESQL_INTEGER_MAXIMUM = 2**31  # Maximum value for postgresql integer (e.g., version id)
+
 
 @typing.overload
 def _get_id(
         id: typing.Any,
         *,
         min: int = 1,
+        max: int = POSTGRESQL_INTEGER_MAXIMUM,
         special_values: typing.Optional[typing.List[int]] = None,
         convert: bool = True,
         default: int,
@@ -35,6 +38,7 @@ def _get_id(
         id: typing.Any,
         *,
         min: int = 1,
+        max: int = POSTGRESQL_INTEGER_MAXIMUM,
         special_values: typing.Optional[typing.List[int]] = None,
         convert: bool = True,
         default: typing.Optional[int] = None,
@@ -48,6 +52,7 @@ def _get_id(
         id: typing.Any,
         *,
         min: int = 1,
+        max: int = POSTGRESQL_INTEGER_MAXIMUM,
         special_values: typing.Optional[typing.List[int]] = None,
         convert: bool = True,
         default: typing.Optional[int] = None,
@@ -60,6 +65,7 @@ def _get_id(
         id: typing.Any,
         *,
         min: int = 1,
+        max: int = POSTGRESQL_INTEGER_MAXIMUM,
         special_values: typing.Optional[typing.List[int]] = None,
         convert: bool = True,
         default: typing.Optional[int] = None,
@@ -79,10 +85,10 @@ def _get_id(
                 raise errors.InvalidDataExportError(f'ID "{id}" could not be converted to an integer')
         else:
             raise errors.InvalidDataExportError(f'ID "{id}" is not an integer')
-    if min is not None and id < min:
+    if (min is not None and id < min) or id >= max:
         if special_values is not None and id in special_values:
             return id
-        raise errors.InvalidDataExportError(f'Invalid ID "{id}". Has to be greater than {min}. Allowed special values: {special_values}')
+        raise errors.InvalidDataExportError(f'Invalid ID "{id}". Has to be greater than {min} and less than {max}. Allowed special values: {special_values}')
     return id
 
 

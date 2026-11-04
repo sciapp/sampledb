@@ -76,7 +76,8 @@ def empty_fed_object(component):
         user_id=None,
         data=None,
         schema=None,
-        utc_datetime=None
+        utc_datetime=None,
+        imported_from_component_id=component.id,
     )
 
     return object
@@ -471,7 +472,7 @@ def test_update_object_version(user, action, user2, component) -> None:
             'text': 'Example'
         }
     }
-    object1 = sampledb.logic.objects.insert_fed_object_version(fed_object_id=1, fed_version_id=0, component_id=component.id, action_id=action.id, data=data, user_id=user.id, schema=None, utc_datetime=None)
+    object1 = sampledb.logic.objects.insert_fed_object_version(fed_object_id=1, fed_version_id=0, component_id=component.id, action_id=action.id, data=data, user_id=user.id, schema=None, utc_datetime=None, imported_from_component_id=component.id)
     assert [object1] == sampledb.logic.objects.get_objects()
     assert object1 == sampledb.logic.objects.get_object(object1.object_id)
     data['name']['text'] = 'Modified Example'
@@ -497,11 +498,13 @@ def test_insert_old_fed_object_version(user, action, component):
         fed_object_id=1,
         fed_version_id=1,
         component_id=component.id,
+        version_component_id=component.id,
         action_id=action.id,
         data=data1,
         user_id=user.id,
         schema=None,
-        utc_datetime=None
+        utc_datetime=None,
+        imported_from_component_id=component.id,
     )
     assert [object1] == sampledb.logic.objects.get_objects()
     assert object1 == sampledb.logic.objects.get_object(object1.object_id)
@@ -515,11 +518,13 @@ def test_insert_old_fed_object_version(user, action, component):
         fed_object_id=1,
         fed_version_id=0,
         component_id=component.id,
+        version_component_id=component.id,
         action_id=action.id,
         data=data2,
         user_id=user.id,
         schema=None,
-        utc_datetime=None
+        utc_datetime=None,
+        imported_from_component_id=component.id,
     )
     assert object1 == sampledb.logic.objects.get_object(object1.object_id)
     versions = sampledb.logic.objects.get_object_versions(object1.id)

@@ -246,7 +246,7 @@ def federation() -> FlaskResponseT:
         }
 
         for component in components:
-            if component.uuid == flask.current_app.config['FEDERATION_UUID'] or not component.discoverable:
+            if component.uuid == flask.current_app.config['FEDERATION_UUID'] or not component.discoverable or component.is_hidden:
                 continue
             node = {
                 'label': component.get_name(),

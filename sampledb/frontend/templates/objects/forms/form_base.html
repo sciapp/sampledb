@@ -40,6 +40,9 @@
   {% do set_template_value("translations.error", _('Error:')) %}
   {% do set_template_value("translations.field_index_placeholder", _('Field %(index)s', index="INDEX_PLACEHOLDER")) %}
   {% do set_template_value("translations.sets", _('sets:')) %}
+  {% if solve_conflicts %}
+  {% do set_template_value("object_data", data) %}
+  {% endif %}
 
   {{ super() }}
 {% endblock %}
@@ -57,4 +60,8 @@
   <script src="{{ fingerprinted_static('sampledb/js/object_form/datetime.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/object_form/file.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/page/form-base.js') }}" type="module"></script>
+
+  {% if solve_conflicts %}
+  <script src="{{ fingerprinted_static('sampledb/js/object_form/conflict.js') }}" type="module"></script>
+  {% endif %}
 {% endblock %}
