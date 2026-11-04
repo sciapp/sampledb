@@ -1,6 +1,7 @@
 """
 Update hash_data and hash_metadata columns for local objects in objects_current and objects_previous
 """
+import flask
 import flask_sqlalchemy
 
 from ...logic.federation.conflicts import calculate_data_hash, calculate_metadata_hash
@@ -32,20 +33,21 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
 
     objects_current_query_params = []
     objects_previous_query_params = []
-    for id, data, schema, user_id, utc_datetime in existing_current_objects:
-        objects_current_query_params.append({
-            'hash_data': calculate_data_hash(data, schema, id),
-            'hash_metadata': calculate_metadata_hash(user_id, utc_datetime),
-            'object_id': id
-        })
+    with flask.current_app.test_request_context('/'):
+        for id, data, schema, user_id, utc_datetime in existing_current_objects:
+            objects_current_query_params.append({
+                'hash_data': calculate_data_hash(data, schema, id),
+                'hash_metadata': calculate_metadata_hash(user_id, utc_datetime),
+                'object_id': id
+            })
 
-    for id, data, schema, user_id, utc_datetime, version_id in existing_previous_objects:
-        objects_previous_query_params.append({
-            'hash_data': calculate_data_hash(data, schema, id),
-            'hash_metadata': calculate_metadata_hash(user_id, utc_datetime),
-            'object_id': id,
-            'version_id': version_id
-        })
+        for id, data, schema, user_id, utc_datetime, version_id in existing_previous_objects:
+            objects_previous_query_params.append({
+                'hash_data': calculate_data_hash(data, schema, id),
+                'hash_metadata': calculate_metadata_hash(user_id, utc_datetime),
+                'object_id': id,
+                'version_id': version_id
+            })
 
     for params in objects_current_query_params:
         db.session.execute(db.text("""
