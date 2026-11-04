@@ -30,6 +30,7 @@ from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
 from ...models import Permissions, Object
 from ...utils import FlaskResponseT
+from ...logic.caching import cache_per_request
 
 
 def _default_share_error_handler(
@@ -44,6 +45,16 @@ def _default_share_error_handler(
         flask.flash(_('Unable to contact %(component_name)s (%(component_address)s).', component_name=component.get_name(), component_address=component.address), 'warning')
     else:
         raise exception
+
+
+@cache_per_request()
+def get_object_action_id_or_none(
+        object_id: int
+) -> int | None:
+    try:
+        return logic.objects.get_object(object_id).action_id
+    except logic.errors.ObjectDoesNotExistError:
+        return None
 
 
 def show_object_form(
@@ -66,6 +77,7 @@ def show_object_form(
         'ENGLISH': get_language(Language.ENGLISH),
         'get_component': get_component,
         'get_object_if_current_user_has_read_permissions': get_object_if_current_user_has_read_permissions,
+        'get_object_action_id_or_none': get_object_action_id_or_none,
         'template_mode': 'form',
     }
 

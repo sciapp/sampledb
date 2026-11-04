@@ -8,7 +8,8 @@ sampledb/static/sampledb/js/conditional_wrapper.js
 
 import typing
 
-from ..errors import ValidationError
+from ..errors import ValidationError, ObjectDoesNotExistError
+from .. import objects
 
 
 def validate_condition_schema(
@@ -58,6 +59,15 @@ def validate_condition_schema(
             raise ValidationError('property_name does not belong to a object_reference, sample or measurement property', path)
         if condition['object_id'] is not None and not isinstance(condition['object_id'], int):
             raise ValidationError('object_id must be integer or None', path)
+    elif condition['type'] == 'action_equals':
+        if set(condition.keys()) != {'type', 'property_name', 'action_id'}:
+            raise ValidationError('expected type, property_name and action_id in condition', path)
+        if condition['property_name'] not in property_schemas:
+            raise ValidationError('unknown property_name', path)
+        if property_schemas[condition['property_name']].get('type') not in {'object_reference', 'sample', 'measurement'}:
+            raise ValidationError('property_name does not belong to a object_reference, sample or measurement property', path)
+        if condition['action_id'] is not None and not isinstance(condition['action_id'], int):
+            raise ValidationError('action_id must be integer or None', path)
     elif condition['type'] in ('any', 'all'):
         if set(condition.keys()) != {'type', 'conditions'}:
             raise ValidationError('expected type and conditions in condition', path)
@@ -124,6 +134,23 @@ def is_condition_fulfilled(
             condition['property_name'] in instance and
             isinstance(instance[condition['property_name']], dict) and
             instance[condition['property_name']].get('object_id') == condition['object_id']
+        )
+    if condition['type'] == 'action_equals':
+        def get_action_id_or_none(object_id: typing.Any) -> int | None:
+            if type(object_id) is not int:
+                return None
+            try:
+                object = objects.get_object(object_id)
+            except ObjectDoesNotExistError:
+                return None
+            return object.action_id
+        return (
+            condition['action_id'] is None and
+            condition['property_name'] not in instance
+        ) or (
+            condition['property_name'] in instance and
+            isinstance(instance[condition['property_name']], dict) and
+            get_action_id_or_none(instance[condition['property_name']].get('object_id')) == condition['action_id']
         )
     if condition['type'] == 'any':
         for sub_condition in condition['conditions']:

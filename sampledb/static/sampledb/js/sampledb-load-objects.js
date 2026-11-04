@@ -491,7 +491,7 @@ function updateObjectPickers () {
       $($x.data('sampledbEmptyHide')).hide();
     }
 
-    const data = $x.data('sampledbDefaultSelected');
+    const data = $x.attr("data-sampledb-default-selected");
     const defaultObjectID = getObjectIDFromObjectPickerText('#' + data);
     if (isSelectpicker && defaultObjectID !== null) {
       updateSelectpickerManualObjectIDOption($x, '#' + defaultObjectID);
