@@ -285,7 +285,7 @@ def get_action_owner_id(
     row_or_none = db.session.query(models.Action.user_id).filter(models.Action.id == action_id).first()
     if row_or_none is None:
         raise errors.ActionDoesNotExistError()
-    return typing.cast(typing.Optional[int], row_or_none[0])
+    return row_or_none[0]
 
 
 def get_mutable_action(
