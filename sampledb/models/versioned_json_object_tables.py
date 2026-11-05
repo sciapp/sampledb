@@ -691,7 +691,7 @@ class VersionedJSONSerializableObjectTables:
         ).fetchall()
         if previous_objects:
             selected_table = self._previous_table
-            object_data = Object(*previous_objects[0])
+            object_data = Object(*previous_objects[0])  # type: ignore
         else:
             current_object = self.get_current_object(object_id, connection=connection)
             if current_object is not None and current_object.version_id == version_id:
@@ -843,7 +843,7 @@ class VersionedJSONSerializableObjectTables:
         ).fetchone()
         if current_object is None:
             return None
-        return Object(*current_object)
+        return Object(*current_object)  # type: ignore
 
     @_use_transaction
     def get_previous_subversion(
@@ -913,7 +913,7 @@ class VersionedJSONSerializableObjectTables:
         ).fetchone()
         if current_object is None:
             return None
-        return Object(*current_object)
+        return Object(*current_object)  # type: ignore
 
     @_use_transaction
     def get_fed_object_version(
@@ -949,7 +949,7 @@ class VersionedJSONSerializableObjectTables:
             ))
         ).fetchall()
         if previous_objects:
-            return Object(*previous_objects[0])
+            return Object(*previous_objects[0])  # type: ignore
         current_object = self.get_current_fed_object(component_id, fed_object_id, connection=connection)
         if current_object is not None and current_object.fed_version_id == fed_version_id:
             return current_object
@@ -1099,7 +1099,7 @@ class VersionedJSONSerializableObjectTables:
         ).fetchall()
         objects = []
         for obj in previous_objects:
-            objects.append(Object(*obj))
+            objects.append(Object(*obj))  # type: ignore
         objects.append(current_object)
         return objects
 
@@ -1141,7 +1141,7 @@ class VersionedJSONSerializableObjectTables:
             ))
         ).fetchall()
         if previous_objects:
-            return Object(*previous_objects[0])
+            return Object(*previous_objects[0])  # type: ignore
         current_object = self.get_current_object(object_id, connection=connection)
         if current_object is not None and current_object.version_id == version_id:
             return current_object
