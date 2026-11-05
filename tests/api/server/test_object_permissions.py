@@ -650,7 +650,7 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "source_object_id": object_id,
         "target_object_id": other_object_id,
     }
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v1/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 200
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(other_object_id), json=request_json, auth=auth)
     assert r.status_code == 200
@@ -685,7 +685,7 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "target_object_id": c_object_id,
         },
     ]
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v1/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 200
     perms_source = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(object_id), json=request_json, auth=auth).json()
     perms_b_obj = requests.get(flask_server.base_url + 'api/v1/objects/{}/permissions'.format(b_object_id), json=request_json, auth=auth).json()
@@ -701,13 +701,13 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
 
     # Not enough permission to view source object's permissions
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, user.id, sampledb.models.Permissions.NONE)
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v1/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 403
 
     # Not enough permissions to perform a grant action on target object
     sampledb.logic.object_permissions.set_user_object_permissions(object_id, user.id, sampledb.models.Permissions.READ)
     sampledb.logic.object_permissions.set_user_object_permissions(other_object_id, user.id, sampledb.models.Permissions.READ)
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v1/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 403
 
     # Not existing object
@@ -717,5 +717,5 @@ def test_copy_object_permissions(flask_server, auth, user, other_user, object_id
         "source_object_id": object_id,
         "target_object_id": last_object_id+1,
     }
-    r = requests.post(flask_server.base_url + '/api/v1/objects/permissions/copy/', json=request_json, auth=auth)
+    r = requests.post(flask_server.base_url + 'api/v1/objects/permissions/copy/', json=request_json, auth=auth)
     assert r.status_code == 404
