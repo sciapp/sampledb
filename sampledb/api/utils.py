@@ -5,9 +5,10 @@ import typing
 
 import cherrypy
 import flask
-from flask.views import MethodView
 import werkzeug
 import werkzeug.exceptions
+from flask.views import MethodView
+from flask.typing import RouteCallable
 
 
 ResponseContent = typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.Dict[int, typing.Any], typing.List[typing.Any], str, bool, int]]
@@ -15,9 +16,13 @@ ResponseData = typing.Union[werkzeug.Response, ResponseContent, typing.Tuple[Res
 
 
 class Resource(MethodView):
+    view_function_map: typing.ClassVar[typing.Dict[RouteCallable, typing.Type[typing.Self]]] = {}
+
     @classmethod
     def as_view(cls, name: typing.Any, *class_args: typing.Any, **class_kwargs: typing.Any) -> typing.Any:
-        return super(Resource, _resource_decorator(cls)).as_view(name, *class_args, **class_kwargs)
+        view_function = super(Resource, _resource_decorator(cls)).as_view(name, *class_args, **class_kwargs)
+        Resource.view_function_map[view_function] = cls
+        return view_function
 
 
 def _resource_decorator(cls: typing.Type[Resource]) -> typing.Type[Resource]:
@@ -57,7 +62,7 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
                         headers=headers
                     )
                 else:
-                    response = _make_json_response(
+                    response = make_json_response(
                         message,
                         status=status,
                         headers=headers
@@ -66,18 +71,22 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
             raise
         except Exception as e:
             cherrypy.log(''.join(traceback.format_exception(e)))
-            response = _make_json_response(
-                obj={'message': 'Internal Server Error'},
+            response = make_json_response(
+                obj={
+                    "error": "Internal Server Error",
+                    "message": "An internal server error occurred."
+                },
                 status=500
             )
         return response
     return decorator
 
 
-def _make_json_response(
+def make_json_response(
         obj: typing.Any,
         status: int = 200,
-        headers: typing.Optional[typing.Dict[str, typing.Any]] = None
+        headers: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        mimetype: str | None = None
 ) -> werkzeug.Response:
     if headers is None:
         headers = {}
@@ -92,14 +101,14 @@ def _make_json_response(
 
     return typing.cast(werkzeug.Response, flask.current_app.response_class(
         response=f"{json.dumps(obj=obj, indent=indent, separators=separators)}\n",
-        mimetype=getattr(flask.current_app.json, 'mimetype', 'application/json'),
+        mimetype=mimetype or getattr(flask.current_app.json, 'mimetype', 'application/json'),
         status=status,
         headers=headers
     ))
 
 
 def _on_json_loading_failed_replacement(_e: Exception) -> typing.NoReturn:
-    flask.abort(_make_json_response(
+    flask.abort(make_json_response(
         obj={'message': 'Failed to decode JSON object'},
         status=400
     ))

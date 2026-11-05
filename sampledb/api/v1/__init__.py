@@ -20,7 +20,7 @@ from .users import CurrentUser, User, Users
 from .groups import Group, Groups, GroupMemberUser, GroupMemberUsers
 from .projects import Project, Projects, ProjectMemberUser, ProjectMemberUsers
 
-api = Blueprint('api', __name__)
+api = Blueprint('api_v1', __name__)
 CORS(api)
 api.add_url_rule('/api/v1/objects/', endpoint='objects', view_func=Objects.as_view('objects'))
 api.add_url_rule('/api/v1/objects/<int:object_id>', endpoint='object', view_func=Object.as_view('object'))
