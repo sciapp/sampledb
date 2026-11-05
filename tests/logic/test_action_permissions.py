@@ -32,8 +32,14 @@ def independent_action():
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema={
             'title': 'Example Action',
-            'type': 'action',
-            'properties': {}
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
         },
         instrument_id=None
     )
@@ -405,18 +411,306 @@ def test_action_permissions_for_projects(users, user_action):
     assert action_permissions.get_action_permissions_for_projects(action_id) == {}
 
 
-def test__is_user_responsible_for_actions_instruments(users, instrument, instrument_action, independent_action):
-    assert action_permissions._is_user_responsible_for_actions_instruments(users[0].id, [independent_action.id, instrument_action.id]) == {
-        independent_action.id: False,
-        instrument_action.id: False
+def test_get_actions_with_permissions(users, instrument, instrument_action, independent_action):
+    assert action_permissions.get_user_permissions_for_multiple_actions(
+        action_ids=[instrument_action.id, independent_action.id],
+        user_id=users[1].id,
+        include_groups=True,
+        include_projects=True,
+        include_admin_permissions=True,
+        include_instrument_responsible_users=True,
+    ) == {
+        instrument_action.id: Permissions.NONE,
+        independent_action.id: Permissions.NONE,
     }
-    sampledb.logic.instruments.set_instrument_responsible_users(instrument.id, [users[1].id])
-    assert action_permissions._is_user_responsible_for_actions_instruments(users[0].id, [independent_action.id, instrument_action.id]) == {
-        independent_action.id: False,
-        instrument_action.id: False
-    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.READ, None)
+    } == set()
     sampledb.logic.instruments.set_instrument_responsible_users(instrument.id, [users[0].id])
-    assert action_permissions._is_user_responsible_for_actions_instruments(users[0].id, [independent_action.id, instrument_action.id]) == {
-        independent_action.id: False,
-        instrument_action.id: True
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.WRITE, None)
+    } == {
+        instrument_action.id
     }
+    sampledb.logic.action_permissions.set_user_action_permissions(independent_action.id, users[0].id, Permissions.WRITE)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.WRITE, None)
+    } == {
+        instrument_action.id,
+        independent_action.id
+    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.GRANT, None)
+    } == {
+        instrument_action.id
+    }
+    group = sampledb.logic.groups.create_group("Example Group", "", users[0].id)
+    sampledb.logic.action_permissions.set_group_action_permissions(independent_action.id, group.id, Permissions.GRANT)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.GRANT, None)
+    } == {
+        instrument_action.id,
+        independent_action.id
+    }
+    sampledb.logic.action_permissions.set_group_action_permissions(independent_action.id, group.id, Permissions.READ)
+    project = sampledb.logic.projects.create_project("Example Project", "", users[0].id)
+    sampledb.logic.action_permissions.set_project_action_permissions(independent_action.id, project.id, Permissions.GRANT)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.GRANT, None)
+    } == {
+        instrument_action.id,
+        independent_action.id
+    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.WRITE, None)
+    } == set()
+    sampledb.logic.projects.add_user_to_project(project.id, users[1].id, Permissions.WRITE)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.WRITE, None)
+    } == {
+        independent_action.id
+    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.GRANT, None)
+    } == set()
+    sampledb.logic.action_permissions.set_user_action_permissions(independent_action.id, users[1].id, Permissions.GRANT)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.GRANT, None)
+    } == {
+        independent_action.id
+    }
+    sampledb.logic.projects.remove_user_from_project(project.id, users[1].id)
+    sampledb.logic.action_permissions.set_user_action_permissions(independent_action.id, users[1].id, Permissions.NONE)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.READ, None)
+    } == set()
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(independent_action.id, Permissions.READ)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.READ, None)
+    } == {
+        independent_action.id
+    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.READ, None)
+    } == {
+        instrument_action.id,
+        independent_action.id
+    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.GRANT, None)
+    } == {
+        instrument_action.id,
+        independent_action.id
+    }
+    assert action_permissions.get_user_permissions_for_multiple_actions(
+        action_ids=[instrument_action.id, independent_action.id],
+        user_id=users[0].id,
+        include_groups=True,
+        include_projects=True,
+        include_admin_permissions=True,
+        include_instrument_responsible_users=True,
+    ) == {
+        instrument_action.id: Permissions.GRANT,
+        independent_action.id: Permissions.GRANT,
+    }
+    sampledb.logic.users.set_user_readonly(users[0].id, True)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.READ, None)
+    } == {
+        instrument_action.id,
+        independent_action.id
+    }
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[0].id, Permissions.GRANT, None)
+    } == set()
+    assert action_permissions.get_user_permissions_for_multiple_actions(
+        action_ids=[instrument_action.id, independent_action.id],
+        user_id=users[0].id,
+        include_groups=True,
+        include_projects=True,
+        include_admin_permissions=True,
+        include_instrument_responsible_users=True,
+    ) == {
+        instrument_action.id: Permissions.READ,
+        independent_action.id: Permissions.READ,
+    }
+    sampledb.logic.users.set_user_readonly(users[0].id, False)
+    sampledb.logic.users.set_user_administrator(users[1].id, True)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.READ, None)
+    } == {
+        independent_action.id
+    }
+    sampledb.logic.settings.set_user_settings(users[1].id, {"USE_ADMIN_PERMISSIONS": True})
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.READ, None)
+    } == {
+        independent_action.id,
+        instrument_action.id
+    }
+    sampledb.logic.users.set_user_administrator(users[1].id, False)
+    assert {
+        action.id
+        for action in action_permissions.get_actions_with_permissions(users[1].id, Permissions.READ, None)
+    } == {
+        independent_action.id
+    }
+    assert action_permissions.get_user_permissions_for_multiple_actions(
+        action_ids=[instrument_action.id, independent_action.id],
+        user_id=users[1].id,
+        include_groups=True,
+        include_projects=True,
+        include_admin_permissions=True,
+        include_instrument_responsible_users=True,
+    ) == {
+        instrument_action.id: Permissions.NONE,
+        independent_action.id: Permissions.READ,
+    }
+
+
+def test_get_sorted_actions_for_user(users, instrument_action, independent_action, user_action):
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == []
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[1].id)
+    ] == [
+        user_action.id
+    ]
+    sampledb.logic.action_permissions.set_user_action_permissions(instrument_action.id, users[0].id, Permissions.READ)
+    sampledb.logic.action_permissions.set_user_action_permissions(independent_action.id, users[0].id, Permissions.READ)
+    sampledb.logic.action_permissions.set_user_action_permissions(user_action.id, users[0].id, Permissions.READ)
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == [
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+
+    other_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema=independent_action.schema,
+        instrument_id=None
+    )
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=other_action.id,
+        name='Example Action 2',
+        description='',
+    )
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == [
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+
+    sampledb.logic.action_permissions.set_user_action_permissions(other_action.id, users[0].id, Permissions.READ)
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == [
+        independent_action.id,
+        other_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+
+    action_translations.set_action_translation(
+        language_id=languages.Language.ENGLISH,
+        action_id=other_action.id,
+        name='An Example Action',
+        description='',
+    )
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == [
+        other_action.id,
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id, action_type_id=sampledb.logic.actions.ActionType.SAMPLE_CREATION)
+    ] == [
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id, action_type_id=sampledb.logic.actions.ActionType.MEASUREMENT)
+    ] == [
+        other_action.id,
+    ]
+
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id, owner_id=users[0].id)
+    ] == []
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id, owner_id=users[1].id)
+    ] == [
+        user_action.id,
+    ]
+
+    sampledb.logic.actions.update_action(
+        action_id=other_action.id,
+        schema=other_action.schema,
+        is_hidden=True,
+    )
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == [
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id, include_hidden_actions=True)
+    ] == [
+        other_action.id,
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
+    sampledb.logic.users.set_user_administrator(users[0].id, True)
+    assert [
+        action.id
+        for action in sampledb.logic.action_permissions.get_sorted_actions_for_user(users[0].id)
+    ] == [
+        other_action.id,
+        independent_action.id,
+        instrument_action.id,
+        user_action.id,
+    ]
