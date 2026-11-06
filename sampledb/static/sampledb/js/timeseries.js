@@ -12,12 +12,14 @@ function setUpTimeseries (container) {
   $(container).find('.timeseries-container').each(function (index, element) {
     const timeseriesData = JSON.parse($(element).find('script[type="application/json"]')[0].textContent);
     window.all_timeseries_data.push({
-      id: $(element).data('sampledbTimeseriesId'),
-      title: $(element).data('sampledbTimeseriesTitle'),
+      id: `${$(element).data('sampledbTimeseriesIdPrefix')}${$(element).data('sampledbTimeseriesId')}`,
+      idPrefix: $(element).data('sampledbTimeseriesIdPrefix'),
+      title: $(element).data('sampledbTimeseriesTitleSuffix') !== '' ? `${$(element).data('sampledbTimeseriesTitle')} (${$(element).data('sampledbTimeseriesTitleSuffix')})` : $(element).data('sampledbTimeseriesTitle'),
       data: timeseriesData
     });
     $(element).find('.timeseries-chart-button').on('click', function () {
-      const currentID = $(this).closest('.timeseries-container').data('sampledbTimeseriesId');
+      const closestTimeseriesContainer = $(this).closest('.timeseries-container');
+      const currentID = `${closestTimeseriesContainer.data('sampledbTimeseriesIdPrefix')}${closestTimeseriesContainer.data('sampledbTimeseriesId')}`;
       const chartModal = $('#timeseriesChartModal');
       const chartModalBody = chartModal.find('.modal-body');
       const chartModalTitle = chartModal.find('.modal-title');
@@ -45,7 +47,7 @@ function setUpTimeseries (container) {
         const ts = window.all_timeseries_data[i];
         let name = ts.title;
         if (hasDuplicates) {
-          name += ' (' + ts.id.replaceAll('__', ' ➜ ') + ')';
+          name += ' (' + ts.id.replace(ts.idPrefix, '').replaceAll('__', ' ➜ ') + ')';
         }
         const option = $('<option></option>');
         option.attr('value', ts.id);
@@ -91,7 +93,7 @@ function setUpTimeseries (container) {
           if (timeseriesIDs.includes(ts.id)) {
             let name = ts.title;
             if (hasDuplicates) {
-              name += ' (' + ts.id.replaceAll('__', ' ➜ ') + ')';
+              name += ' (' + ts.id.replace(ts.idPrefix, '').replaceAll('__', ' ➜ ') + ')';
             }
             if (ts.data.relative_times.length > 0) {
               relative = true;

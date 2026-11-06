@@ -23,6 +23,7 @@ Currently in development.
 - Added instrument log templates
 - Minor fixes and improvements
 - Added import of eln previews
+- Added write access for shared objects
 
 
 Version 0.33.2

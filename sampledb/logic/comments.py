@@ -29,6 +29,8 @@ class Comment:
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
     component: typing.Optional[components.Component] = None
+    imported_from_component_id: typing.Optional[int] = None
+    imported_from_component: typing.Optional[components.Component] = None
 
     @classmethod
     def from_database(cls, comment: models.Comment) -> 'Comment':
@@ -41,7 +43,9 @@ class Comment:
             utc_datetime=comment.utc_datetime,
             fed_id=comment.fed_id,
             component_id=comment.component_id,
-            component=components.Component.from_database(comment.component) if comment.component is not None else None
+            component=components.Component.from_database(comment.component) if comment.component is not None else None,
+            imported_from_component_id=comment.imported_from_component_id,
+            imported_from_component=components.Component.from_database(comment.imported_from_component) if comment.imported_from_component is not None else None,
         )
 
 
@@ -54,7 +58,8 @@ def create_comment(
         *,
         create_log_entry: bool = True,
         fed_id: None = None,
-        component_id: None = None
+        component_id: None = None,
+        imported_from_component_id: None = None,
 ) -> int:
     ...
 
@@ -68,7 +73,8 @@ def create_comment(
         *,
         create_log_entry: bool = True,
         fed_id: int,
-        component_id: int
+        component_id: int,
+        imported_from_component_id: int
 ) -> int:
     ...
 
@@ -81,7 +87,8 @@ def create_comment(
         *,
         create_log_entry: bool = True,
         fed_id: typing.Optional[int] = None,
-        component_id: typing.Optional[int] = None
+        component_id: typing.Optional[int] = None,
+        imported_from_component_id: typing.Optional[int] = None,
 ) -> int:
     """
     Creates a new comment and adds it to the object and user logs.
@@ -93,6 +100,7 @@ def create_comment(
     :param create_log_entry: whether to create a log entry
     :param fed_id: the ID of the related comment at the exporting component
     :param component_id: the ID of the exporting component
+    :param imported_from_component_id: the ID of the component the comment was imported from
     :return: the ID of the new comment
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -111,21 +119,23 @@ def create_comment(
     if component_id is not None:
         # ensure that the component can be found
         components.check_component_exists(component_id)
+        components.check_component_exists(imported_from_component_id)
     comment = models.Comment(
         object_id=object_id,
         user_id=user_id,
         content=content,
         fed_id=fed_id,
         component_id=component_id,
-        utc_datetime=utc_datetime
+        utc_datetime=utc_datetime,
+        imported_from_component_id=imported_from_component_id,
     )
     db.session.add(comment)
     db.session.commit()
     if component_id is None and create_log_entry:
         # ensured by the if at the start of the function
         assert user_id is not None
-        object_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)
-        user_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)
+        object_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id, imported_from_component_id=imported_from_component_id)
+        user_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id, imported_from_component_id=imported_from_component_id)
     comment_id: int = comment.id
     return comment_id
 

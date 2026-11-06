@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %} {{ _('Solve Conflicts') }} — {{ service_name }} {% endblock %}
+
+{% set plot_counter = namespace(value=0) %}
+{% set view_only = solved_in is not none %}
+
+{% macro diff_container(key, version, name) %}
+<div class="row version-view" id="{{key}}" style="display: none;">
+  <div class="text-muted" style="margin: 1rem 0;">
+      {{ version.hint }}
+  </div>
+  {% set schema = version.schema %}
+  {% set previous_schema = version.previous_schema %}
+  {% set data = version.data %}
+  {% set indent_level = 0 %}
+  {% set show_indent_border = False %}
+  {% set diff = version.diff %}
+  {% set property_path = () %}
+  {% set version_id = current_object.version_id %}
+  {% set conflicting_import = True %}
+  {% set modal_prefix = key %}
+  {% set conflict_view_name = name %}
+  {% set id_prefix_root = "object" %}
+  {% include "objects/view/any.html" %}
+</div>
+{%- endmacro %}
+
+{% macro version_container(key, version, name) %}
+<div class="row version-view" id="{{key}}" style="display: none">
+  {% set schema = version.schema %}
+  {% set data = version.data %}
+  {% set indent_level = 0 %}
+  {% set show_indent_border = False %}
+  {% set diff = None %}
+  {% set previous_schema = none %}
+  {% set property_path = () %}
+  {% set modal_prefix = key %}
+  {% set conflict_view_name = name %}
+  {% set id_prefix_root = "object" %}
+  {% include "objects/view/any.html" %}
+</div>
+{%- endmacro %}
+
+{% macro review_container(key, version, name) %}
+{% if 'diff' in version %}
+  {{ diff_container(key, version, name) }}
+{% else %}
+  {{ version_container(key, version, name) }}
+{% endif %}
+{%- endmacro %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/conflicts.js') }}"></script>
+  <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
+  {% if get_user_language(current_user).lang_code == 'de' %}
+    <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
+  {% endif %}
+  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
+{% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("is_conflict_solved", conflict_solution is not none) %}
+
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+  {% set component =  get_component(imported_version.component_id if imported_version.component_id else imported_version.version_component_id) %}
+  <h1>Sample #{{ current_object.object_id }} {{ import_information_symbol(current_object) }}: {{ current_object.name | get_translated_text }}</h1>
+  <h2>
+    {% if not view_only %}
+      {{ _('Solving conflicts from %(component_name)s', component_name=component.get_name()) }}
+    {% else %}
+      {{ _('Conflicts from %(component_name)s', component_name=component.get_name()) }}
+    {% endif %}
+  </h2>
+
+
+  <div class="container">
+    <div class="row">
+      <select class="selectpicker" name="select-view" data-width="25rem">
+        {% for key in special_review_versions.keys() %}
+          <option value="{{key}}">{{ special_review_versions[key].title }}</option>
+        {% endfor %}
+        <option data-divider="true"></option>
+        {% for key in local_review_versions.keys() %}
+          <option value="{{key}}">{{ local_review_versions[key].title }}</option>
+        {% endfor %}
+        <option data-divider="true"></option>
+        {% for key in federated_review_versions.keys() %}
+          <option value="{{key}}">{{ federated_review_versions[key].title }}</option>
+        {% endfor %}
+      </select>
+      {% if languages|length > 1 %}
+      <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-language" aria-hidden="true"></i> {{ _("Change Language") }} <span class="caret"></span></button>
+        <ul class="dropdown-menu dropdown-menu-right">
+          {% for language in languages %}
+            <li>
+              <a
+                class="disabled"
+                href="{% if view_only %}{{ url_for('frontend.conflict_overview', object_id=current_object.object_id, component_id=imported_version.version_component_id, solved_in=solved_in, lang=language.lang_code) }}
+                      {% else %}{{ url_for('frontend.conflict_overview', object_id=current_object.object_id, component_id=imported_version.version_component_id, lang=language.lang_code) }}{% endif %}"
+              >{{ language.names | get_translated_text }}{% if (metadata_language is none and language.id == get_user_language(current_user).id) or (metadata_language is none and get_user_language(current_user) not in languages and language.lang_code == 'en') or language.lang_code == metadata_language %} <i class="fa fa-check" aria-hidden="true"> </i>{% endif %}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="container" style="margin-top: 2rem;">
+    {% if not view_only %}
+    <form method="post">
+    {% endif %}
+      {% set merged_version_descriptions = dict(special_review_versions) %}
+      {% do merged_version_descriptions.update(local_review_versions) %}
+      {% do merged_version_descriptions.update(federated_review_versions) %}
+      {% for key, version in merged_version_descriptions.items() %}
+        {{ review_container(key, version, version.title) }}
+      {% endfor %}
+    {% if not view_only %}
+    <span style="float: right;">
+      <div class="btn-group">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ _("Solve") }} <span class="caret"></span>
+        </button>
+
+        <form method="post" action="{{ url_for('frontend.conflict_overview', object_id=current_object.object_id, component_id=component.id) }}">
+          <input type="hidden" name="component_id" value="{{ conflict_component_id }}" />
+          <ul class="dropdown-menu dropdown-menu-right multiselect-actions">
+            <li><a href="{{ url_for('frontend.object', object_id=current_object.object_id, mode='conflict', component_id=component.id) }}">{{ _('Interactive solving') }}</a></li>
+            <li class="divider" role="separator"></li>
+            <li><button type="submit" class="btn btn-link" name="strategy" value="apply_local">{{ _('Apply local version') }}</button></li>
+            <li><button type="submit" class="btn btn-link" name="strategy" value="apply_imported">{{ _('Apply imported version') }}</button></li>
+          </ul>
+        </form>
+      </div>
+    <span>
+  </form>
+  {% endif %}
+  </div>
+  {% include "objects/view/timeseries_modals.html" %}
+{% endblock %}
