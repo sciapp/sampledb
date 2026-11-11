@@ -1561,6 +1561,31 @@ If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled
       "object_id": null
     }
 
+action_equals
+`````````````
+
+For this type of condition, the ``property_name`` attribute must be the name of another property, in the same object as the property the condition is for. The property of that name must be a property of type ``object_reference``, ``sample`` or ``measurement``. The condition must have a ``action_id`` attribute that must be the ID of an action, and for the condition to be fulfilled an object created with that action must be selected.
+
+.. code-block:: javascript
+    :caption: An action_equals condition
+
+    {
+      "type": "action_equals",
+      "property_name": "precursor",
+      "action_id": 1
+    }
+
+If the ``action_id`` is set to ``null`` instead, the condition will be fulfilled if no object has been selected, or if the object does not belong to an action.
+
+.. code-block:: javascript
+    :caption: An action_equals condition for not having selected an object
+
+    {
+      "type": "action_equals",
+      "property_name": "precursor",
+      "action_id": null
+    }
+
 any / all
 `````````
 
