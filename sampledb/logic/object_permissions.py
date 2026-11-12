@@ -30,6 +30,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 object_permissions = ResourcePermissions(
     resource_id_name='object_id',
+    resource_id_column=Objects.current_table.c.object_id,
     all_user_permissions_table=AllUserObjectPermissions,
     anonymous_user_permissions_table=AnonymousUserObjectPermissions,
     user_permissions_table=UserObjectPermissions,

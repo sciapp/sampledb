@@ -3,10 +3,11 @@ import typing
 from . import users
 from .permissions import ResourcePermissions
 from .errors import InvalidDefaultPermissionsError
-from ..models import Permissions, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
+from ..models import Permissions, DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions, User
 
 default_permissions = ResourcePermissions(
     resource_id_name='creator_id',
+    resource_id_column=User.__table__.c.id,
     all_user_permissions_table=AllUserDefaultPermissions,
     anonymous_user_permissions_table=None,
     user_permissions_table=DefaultUserPermissions,
