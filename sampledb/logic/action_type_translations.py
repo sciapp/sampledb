@@ -114,6 +114,8 @@ def set_action_type_translation(
     :raise errors.ActionTypeDoesNotExistError: if no action type with the
         given ID exists
     """
+    action_types.ActionType.from_database.clear_cache(key=action_type_id)
+
     action_type_translation = models.ActionTypeTranslation.query.filter_by(
         action_type_id=action_type_id,
         language_id=language_id
@@ -155,6 +157,8 @@ def delete_action_type_translation(
     :raise errors.ActionTypeTranslationDoesNotExistError: when no action type translation exist for the given
         action type and language ID
     """
+    action_types.ActionType.from_database.clear_cache(key=action_type_id)
+
     action_type_translation = models.ActionTypeTranslation.query.filter_by(
         action_type_id=action_type_id,
         language_id=language_id
