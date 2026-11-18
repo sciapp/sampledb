@@ -8,15 +8,16 @@ a single OIDC provider using the
 :ref:`OIDC Configuration Environment Variables <oidc_configuration>`.
 
 The client must be statically registered, while the configuration and keys
-must be dynamically discoverable. The ``name``, ``email`` and
-``email_verified`` claims are required.
+must be dynamically discoverable. The configuration is cached until shutdown,
+the keys are cached for 10 hours. Startup and key refresh require the IdP to
+be reachable, otherwise startup will fail and OIDC users will be signed out.
+The ``name``, ``email`` and ``email_verified`` claims are required, the latter
+must be ``true``.
 
 Only the Authorization Code Flow with ``client_secret_basic`` authentication
-is supported. Proof Key for Code Exchange (PKCE) is used if the OIDC provider
-signals support for the ``S256`` method. The provider should support the
-``nonce`` parameter to allow for the detection of replay attacks. To increase
-compatibility with some providers, the use of the parameter can be disabled
-using a configuration variable. If a provider supports neither PKCE with
+is supported. Proof Key for Code Exchange (PKCE) with method ``S256`` is
+always offered. The provider should support the ``nonce`` parameter to allow
+for the detection of replay attacks. If a provider supports neither PKCE with
 method ``S256``, nor ``nonce``, using it is not recommended.
 
 RP-Initiated Logout will be used if the provider indicates support. If
@@ -50,6 +51,60 @@ The following URLs can or must be configured at the OIDC provider:
 For example, if the SampleDB is hosted at ``https://samples.example.net``,
 then the authentication callback would be
 ``https://samples.example.net/users/me/oidc/callback``.
+
+.. _oidc_account_linking:
+
+Account Linking
+^^^^^^^^^^^^^^^
+
+OIDC sign-ins provide a subject identifier (the ``sub`` claim) that uniquely
+links the user's account at the OIDC provider to their account in SampleDB.
+
+When a user signs in via OIDC for the first time, this link does not yet
+exist. In this case, SampleDB checks whether a user with the same email
+address exists and whether the configuration variable
+``SAMPLEDB_OIDC_CREATE_ACCOUNT`` allows creating a new account or linking to
+an existing one.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Email address exists
+     - OIDC_CREATE_ACCOUNT
+     - Resulting action
+
+   * - No
+     - ``deny_existing``
+     - New account created
+
+   * - No
+     - ``auto_link``
+     - New account created
+
+   * - No
+     - ``no``
+     - Sign-in denied
+
+   * - Yes
+     - ``deny_existing``
+     - Sign-in denied
+
+   * - Yes
+     - ``auto_link``
+     - Linked to the account (if the account is active, otherwise denied)
+
+   * - Yes
+     - ``no``
+     - Sign-in denied
+
+
+If the OIDC provider reuses email addresses, the ``auto_link`` option may
+allow a new user (e.g., Jane Doe) to access the SampleDB account of a previous
+user (e.g., John Doe) who formerly held the address ``j.doe@example.org``.
+Accordingly, use of the ``auto_link`` option should be carefully considered.
+
+It is not yet possible to create these links through the user interface or
+administration scripts.
 
 OIDC roles
 ^^^^^^^^^^
