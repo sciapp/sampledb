@@ -96,7 +96,7 @@ OpenID Connect (OIDC)
    * - SAMPLEDB_OIDC_ONLY
      - If set, other login methods and invitations will be disabled. This does not affect API keys.
    * - SAMPLEDB_OIDC_CREATE_ACCOUNT
-     - Which method should be used to create or link accounts. If ``auto_link`` (the default), new accounts will be automatically created and existing accounts linked via email. If ``deny_existing``, new accounts will be automatically created, but existing accounts must be manually configured to use OIDC. If ``no``, authentication methods must be manually added.
+     - Which method should be used to create or link accounts. If ``deny_existing`` (the default), new accounts will be automatically created, but existing accounts with the same email address must be manually configured to use OIDC. If ``auto_link``, new accounts will be automatically created and existing accounts linked to verified email addresses. If ``no``, authentication methods must be manually added. See :ref:`Account linking<oidc_account_linking>` for security considerations.
    * - SAMPLEDB_OIDC_ACCESS_TOKEN_AS_API_KEY
      - If set, then OIDC Access Tokens may be used as API keys using ``Bearer Authentication``. Depending on the Access Token, validation may require an HTTP request to the OIDC provider, which can be enabled using ``OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION``.
    * - SAMPLEDB_OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION
