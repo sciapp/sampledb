@@ -4,7 +4,7 @@ Changelog
 Version 0.33.3
 --------------
 
-Released on November 17th, 2026.
+Released on November 18th, 2026.
 
 - Fixed a security issue when using an OIDC provider that does not require verified email addresses
 - Fixed a security issue where access tokens from another OIDC client could be used with the API without a valid SampleDB audience (``aud`` claim)
