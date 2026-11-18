@@ -1338,6 +1338,7 @@ def test_validate_sample_with_federated_action_type():
     mutable_action_type.fed_id = -1
     sampledb.db.session.add(mutable_action_type)
     sampledb.db.session.commit()
+    sampledb.logic.action_types.ActionType.from_database.clear_cache()
     with pytest.raises(ValidationError):
         validate(instance, schema)
 
@@ -1345,6 +1346,7 @@ def test_validate_sample_with_federated_action_type():
     mutable_action_type.fed_id = sampledb.models.ActionType.SAMPLE_CREATION
     sampledb.db.session.add(mutable_action_type)
     sampledb.db.session.commit()
+    sampledb.logic.action_types.ActionType.from_database.clear_cache()
     validate(instance, schema)
 
 
@@ -1604,6 +1606,7 @@ def test_validate_measurement_with_federated_action_type():
     mutable_action_type.fed_id = -1
     sampledb.db.session.add(mutable_action_type)
     sampledb.db.session.commit()
+    sampledb.logic.action_types.ActionType.from_database.clear_cache()
     with pytest.raises(ValidationError):
         validate(instance, schema)
 
@@ -1611,6 +1614,7 @@ def test_validate_measurement_with_federated_action_type():
     mutable_action_type.fed_id = sampledb.models.ActionType.MEASUREMENT
     sampledb.db.session.add(mutable_action_type)
     sampledb.db.session.commit()
+    sampledb.logic.action_types.ActionType.from_database.clear_cache()
     validate(instance, schema)
 
 
@@ -2120,6 +2124,7 @@ def test_validate_object_reference_with_federated_action_type():
     mutable_action_type.fed_id = -1
     sampledb.db.session.add(mutable_action_type)
     sampledb.db.session.commit()
+    sampledb.logic.action_types.ActionType.from_database.clear_cache()
     with pytest.raises(ValidationError):
         validate(instance, schema)
 
@@ -2127,6 +2132,7 @@ def test_validate_object_reference_with_federated_action_type():
     mutable_action_type.fed_id = sampledb.models.ActionType.SIMULATION
     sampledb.db.session.add(mutable_action_type)
     sampledb.db.session.commit()
+    sampledb.logic.action_types.ActionType.from_database.clear_cache()
     validate(instance, schema)
 
 
