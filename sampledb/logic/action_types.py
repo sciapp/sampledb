@@ -5,6 +5,7 @@ from . import errors, components
 from .utils import cache
 from .. import db, models
 from ..models import SciCatExportType
+from .caching import cache_per_request
 
 
 @dataclasses.dataclass(frozen=True)
@@ -47,9 +48,9 @@ class ActionType:
     SIMULATION = models.ActionType.SIMULATION
     TEMPLATE = models.ActionType.TEMPLATE
 
-    @classmethod
+    @staticmethod
+    @cache_per_request(key=lambda action_type, previously_wrapped_action_types=None: action_type.id)
     def from_database(
-            cls,
             action_type: models.ActionType,
             previously_wrapped_action_types: typing.Optional[typing.Dict[int, 'ActionType']] = None
     ) -> 'ActionType':
@@ -340,6 +341,8 @@ def update_action_type(
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     """
+    ActionType.from_database.clear_cache(key=action_type_id)
+
     action_type = models.ActionType.query.filter_by(id=action_type_id).first()
     if action_type is None:
         raise errors.ActionTypeDoesNotExistError()
@@ -386,6 +389,8 @@ def set_action_types_order(action_type_id_list: typing.List[int]) -> None:
 
     :param action_type_id_list: list of action type ids
     """
+    ActionType.from_database.clear_cache()
+
     for i, action_type_id in enumerate(action_type_id_list):
         action_type = models.ActionType.query.filter_by(id=action_type_id).first()
         if action_type is not None:
@@ -399,6 +404,8 @@ def add_action_type_to_order(action_type: ActionType) -> None:
 
     :param action_type: the action type to insert
     """
+    ActionType.from_database.clear_cache()
+
     if action_type.order_index is not None:
         # action type already has a place in the current sort order
         return
