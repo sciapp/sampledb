@@ -365,4 +365,4 @@ def oidc_backchannel_logout() -> FlaskResponseT:
         oidc.handle_backchannel_logout(flask.request.form['logout_token'])
         return '', 200
     except Exception:
-        return '', 401
+        return '', 400
