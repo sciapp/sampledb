@@ -216,6 +216,8 @@ def test_oidc_missing_attributes(setup):
 
 
 def test_oidc_unstable_sub(setup):
+    flask.current_app.config["OIDC_CREATE_ACCOUNT"] = "auto_link"
+
     auth_helper(setup)
 
     with pytest.raises(RuntimeError, match="Unstable subject identifier from issuer"):
@@ -290,6 +292,8 @@ def test_oidc_duplicate_auth_method(setup):
 
 
 def test_oidc_multiple_issuer(setup):
+    flask.current_app.config["OIDC_CREATE_ACCOUNT"] = "auto_link"
+
     user1 = sampledb.logic.users.create_user(
         "Test",
         "test@example.net",

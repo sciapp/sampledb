@@ -18,6 +18,7 @@ from simple_openid_connect.data import (
     TokenErrorResponse, TokenIntrospectionSuccessResponse,
     TokenSuccessResponse, UserinfoErrorResponse
 )
+from simple_openid_connect.exceptions import AuthenticationFailedError
 from simple_openid_connect.pkce import generate_pkce_pair
 
 from ..config import OIDC_REQUIRED_CONFIG_KEYS
@@ -77,8 +78,8 @@ class _AuthenticationData(pydantic.BaseModel):
     redirect_uri: str
     state: str
     nonce_value: str | None
-    code_challenge_method: typing.Literal['S256'] | None
-    code_verifier: str | None
+    code_challenge_method: typing.Literal['S256']
+    code_verifier: str
     started: float = pydantic.Field(default_factory=time.time)
 
 
@@ -86,7 +87,7 @@ class _LoginSessionData(pydantic.BaseModel):
     sub: str
     sid: str | None
     id_token_hint: str
-    access_token: str
+    nonce: str | None = None
     refresh_token: str | None
 
 
@@ -115,14 +116,8 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
         nonce_value = secrets.token_urlsafe(32)
         nonce_hash = hashlib.sha256(nonce_value.encode()).hexdigest()
 
-    code_challenge_method: typing.Optional[typing.Literal['S256']]
-    if 'S256' in getattr(client.provider_config, 'code_challenge_methods_supported', []):
-        code_challenge_method = 'S256'
-        code_verifier, code_challenge = generate_pkce_pair()
-    else:
-        code_challenge_method = None
-        code_verifier = None
-        code_challenge = None
+    code_challenge_method: typing.Literal['S256'] = 'S256'
+    code_verifier, code_challenge = generate_pkce_pair()
 
     url = client.authorization_code_flow.start_authentication(
         state=state,
@@ -169,11 +164,15 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str]:
 
     client = _get_client()
 
-    token_response = client.authorization_code_flow.handle_authentication_result(
-        url,
-        state=data.state,
-        code_verifier=data.code_verifier,
-    )
+    try:
+        token_response = client.authorization_code_flow.handle_authentication_result(
+            url,
+            state=data.state,
+            code_verifier=data.code_verifier,
+        )
+    except AuthenticationFailedError as e:
+        # E.g. if the user denied the authentication request at the OP.
+        raise errors.TemporaryLoginAttemptError('Authentication Error') from e
 
     if isinstance(token_response, TokenErrorResponse):
         raise errors.TemporaryLoginAttemptError('Token Error')
@@ -230,8 +229,12 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str]:
             sub=id_token.sub,
             sid=id_token.sid,
             id_token_hint=token_response.id_token,
-            access_token=token_response.access_token,
-            refresh_token=token_response.refresh_token,
+            nonce=nonce,
+            refresh_token=(
+                token_response.refresh_token
+                if flask.current_app.config['OIDC_USE_SESSION']
+                else None
+            ),
         ).model_dump(),
     )
     user = user.with_login_session(login_session.id)
@@ -342,7 +345,10 @@ def validate_login_session(login_session: authentication.LoginSession) -> bool:
         return False  # Invalid data, abort.
 
     try:
-        client.decode_id_token(session_data.id_token_hint)
+        _validate_id_token_with_optional_nonce(
+            session_data.id_token_hint,
+            session_data.nonce,
+        )
         return True  # Token is still valid.
     except Exception:
         pass  # Token isn't valid, continue with refresh.
@@ -355,13 +361,21 @@ def validate_login_session(login_session: authentication.LoginSession) -> bool:
         if isinstance(response, TokenErrorResponse):
             return False
 
+        # The ID Token of a Refresh Response should not contain a nonce, but
+        # if one is present, it must match the nonce of the initial
+        # authentication.
+        _validate_id_token_with_optional_nonce(
+            response.id_token,
+            session_data.nonce,
+        )
+
         authentication.update_login_session(
             login_session_id=login_session.id,
             data=_LoginSessionData(
                 sub=session_data.sub,
                 sid=session_data.sid,
                 id_token_hint=response.id_token,
-                access_token=response.access_token,
+                nonce=session_data.nonce,
                 refresh_token=response.refresh_token or session_data.refresh_token,
             ).model_dump(),
         )
@@ -369,6 +383,20 @@ def validate_login_session(login_session: authentication.LoginSession) -> bool:
         return True
     except Exception:
         return False
+
+
+def _validate_id_token_with_optional_nonce(id_token_hint: str, nonce: str | None) -> None:
+    client = _get_client()
+
+    id_token = IdToken.parse_jwt(
+        id_token_hint,
+        client.provider_keys,
+    )
+    id_token.validate_extern(
+        issuer=client.provider_config.issuer,
+        client_id=client.client_auth.client_id,
+        nonce=nonce if id_token.nonce else None,
+    )
 
 
 def validate_access_token(access_token: str) -> typing.Tuple[authentication.AuthenticationMethod, users.User]:
@@ -411,6 +439,7 @@ def _validate_access_token(access_token: str) -> typing.Union[JwtAccessToken, To
     # and return the result or bail out if the validation fails.
     # If it's not a JWT and the config permits token introspection, use the
     # Introspection Endpoint and return a valid response or bail out.
+
     try:
         token = JwtAccessToken.parse_jwt(access_token, client.provider_keys)
     except Exception:
@@ -422,18 +451,33 @@ def _validate_access_token(access_token: str) -> typing.Union[JwtAccessToken, To
         )
         return token
 
-    if flask.current_app.config['OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION']:
-        introspection_response = client.introspect_token(
-            access_token,
-            token_type_hint='access_token',
-        )
-        if isinstance(introspection_response, TokenIntrospectionSuccessResponse):
-            if introspection_response.active:
-                return introspection_response
-            raise RuntimeError('Introspection Endpoint returned expired session')
+    if not flask.current_app.config['OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION']:
+        raise RuntimeError('Not a JWT and not allowed to use introspection')
+
+    introspection_response = client.introspect_token(
+        access_token,
+        token_type_hint='access_token',
+    )
+
+    if not isinstance(introspection_response, TokenIntrospectionSuccessResponse):
         raise RuntimeError('Introspection Endpoint returned an error')
 
-    raise RuntimeError('Not a JWT and not allowed to use introspection')
+    if not introspection_response.active:
+        raise RuntimeError('Introspection Endpoint returned expired session')
+
+    if introspection_response.iss != client.provider_config.issuer:
+        raise RuntimeError('Access Token was issued from unexpected issuer')
+
+    if isinstance(introspection_response.aud, str):
+        aud = [introspection_response.aud]
+    else:
+        aud = introspection_response.aud or []
+    if introspection_response.client_id:
+        aud.append(introspection_response.client_id)
+    if client.client_auth.client_id not in aud:
+        raise RuntimeError('client_id and aud do not contain own client_id')
+
+    return introspection_response
 
 
 def _update_user(user: users.User, id_token: IdToken) -> users.User:
@@ -445,10 +489,7 @@ def _update_user(user: users.User, id_token: IdToken) -> users.User:
         typing.Union[str, None],
         getattr(id_token, 'email', None),
     )
-    email_verified = typing.cast(
-        typing.Union[bool, None],
-        getattr(id_token, 'email_verified', None),
-    )
+    email_verified = getattr(id_token, 'email_verified', None)
 
     if (
         name is not None and
@@ -460,7 +501,7 @@ def _update_user(user: users.User, id_token: IdToken) -> users.User:
     if (
             name is not None and
             email is not None and
-            email_verified and
+            _is_email_verified(email_verified) and
             (name != user.name or email != user.email)
     ):
         users.update_user(
@@ -472,6 +513,20 @@ def _update_user(user: users.User, id_token: IdToken) -> users.User:
         return users.get_user(user.id)
 
     return user
+
+
+def _is_email_verified(value: typing.Any) -> bool:
+    """
+    Check the value of an `email_verified` claim.
+
+    :param value: The value of the `email_verified` claim.
+    :return: Whether the email address is verified.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() == 'true'
+    return False
 
 
 def _handle_new_user(client: OpenidClient, token_response: TokenSuccessResponse, id_token: IdToken) -> users.User:
@@ -486,14 +541,13 @@ def _handle_new_user(client: OpenidClient, token_response: TokenSuccessResponse,
     try:
         name = typing.cast(str, userinfo.name)  # type: ignore
         email = typing.cast(str, userinfo.email)  # type: ignore
-        email_verified = typing.cast(
-            str, userinfo.email_verified)  # type: ignore
+        email_verified = userinfo.email_verified  # type: ignore
         if not name or '@' not in email:
             raise RuntimeError()
     except Exception as e:
         raise RuntimeError('Missing required attributes in userinfo') from e
 
-    if not email_verified:
+    if not _is_email_verified(email_verified):
         raise RuntimeError('Email not verified')
 
     matching_users = users.get_users_by_email(email)
@@ -514,6 +568,9 @@ def _handle_new_user(client: OpenidClient, token_response: TokenSuccessResponse,
             raise RuntimeError('OIDC authentication method from other issuer')
 
         user = matching_users[0]
+
+        if not user.is_active:
+            raise RuntimeError('Inactive users may not be automatically linked')
     else:
         user = users.create_user(
             name=name,
@@ -546,6 +603,8 @@ def _handle_roles(
             path = int(path)
         i = i[path]  # pyright: ignore
     roles = typing.cast(list[str], i)
+    if not isinstance(roles, list) or not all(isinstance(role, str) for role in roles):
+        raise RuntimeError('Roles attribute must be a list of strings')
 
     def f(prop: str, func: typing.Callable[[int, bool], None]) -> bool:
         v = None
