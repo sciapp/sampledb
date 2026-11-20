@@ -58,7 +58,7 @@ def _validate_url(url: str) -> None:
 
 
 class ExternalLinkForm(FlaskForm):
-    url = StringField()
+    url = StringField(filters=[lambda url: url.strip() if url is not None else None])
 
     def validate_url(form, field: StringField) -> None:
         _validate_url(field.data)
@@ -66,7 +66,7 @@ class ExternalLinkForm(FlaskForm):
 
 class FileInformationForm(FlaskForm):
     title = StringField()
-    url = StringField()
+    url = StringField(filters=[lambda url: url.strip() if url is not None else None])
     description = TextAreaField()
 
     def validate_url(form, field: StringField) -> None:
