@@ -277,6 +277,18 @@ def test_update_url_file_information(flask_server, user):
     assert file.url == 'http://example.com/'
     assert file.description == 'Description'
 
+    r = session.post(flask_server.base_url + 'objects/{}/files/0'.format(object.id), data={
+        'csrf_token': csrf_token,
+        'title': 'Title',
+        'url': '  https://example.com/\t',
+        'description': 'Description'
+    })
+    assert r.status_code == 200
+    file = sampledb.logic.files.get_file_for_object(object.id, 0)
+    assert file.title == 'Title'
+    assert file.url == 'https://example.com/'
+    assert file.description == 'Description'
+
 
 def test_download_zip_archive(flask_server, user):
     schema = {
