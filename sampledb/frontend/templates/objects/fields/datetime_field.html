@@ -1,6 +1,35 @@
-<div class="input-group {% if is_template %} date-template {% else %} date {% endif %}" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none and 'utc_datetime' in data %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{% if schema.default is not none %}{{ schema.default | default_format_datetime }}{% endif %}{% elif mode != 'edit' or is_template %}{{ datetime.datetime.now(datetime.timezone.utc) | default_format_datetime }}{% endif %}">
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+{% set conflicting = 'imported' in data %}
+  {% if conflicting%}
+    {% set imported_data = data['imported']%}
+    {% set local_data = data['local'] %}
+    {% set data = data['local'] %}
+  {% endif %}
+{% endif %}
+<div
+  class="input-group {% if conflicting %} has-conflict conflict-field-resizing {% endif %}  {% if is_template %} date-template {% else %} date {% endif %}"
+  data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none and 'utc_datetime' in data %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{% if schema.default is not none %}{{ schema.default | default_format_datetime }}{% endif %}{% elif mode != 'edit' or is_template %}{{ datetime.datetime.now(datetime.timezone.utc) | default_format_datetime }}{% endif %}">
   <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
-  <span class="input-group-addon">
+  <span class="input-group-addon" {% if conflicting %} style="border-left: none;" {% endif %} >
     <span class="glyphicon glyphicon-calendar"></span>
   </span>
+  {% if conflicting %}
+  <div
+    class="input-group-btn "
+    data-field-type="datetime"
+    data-reference-field="input[name='{{ id_prefix }}_datetime']"
+    data-conflict="true"
+    data-content-local="{% if local_data is not none and 'utc_datetime' in local_data %}{{ local_data.utc_datetime | default_format_datetime | base64encode }}{% endif %}"
+    data-content-imported="{% if imported_data is not none and 'utc_datetime' in imported_data %}{{ imported_data.utc_datetime | default_format_datetime | base64encode }}{% endif %}"
+  >
+    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"><span class="caret"></span></button>
+    <ul class="dropdown-menu dropdown-menu-right">
+      <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _('Local Version') }}</button></li>
+      <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _('Imported Version') }} </button></li>
+    </ul>
+  </div>
+  {% endif %}
 </div>

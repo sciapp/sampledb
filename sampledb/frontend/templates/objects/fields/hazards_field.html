@@ -1,21 +1,58 @@
-<input type="hidden" name="{{ id_prefix }}_hidden" value="field exists" />
-<div class="radio">
-  <label>
-    <input type="radio" name="{{ id_prefix }}_hasnohazards" value="true" {% if (data is not none and "hazards" in data and not data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'true') %}checked="checked"{% endif %}>
-    {{ _('This object does not pose any of these hazards.')}}
-  </label>
-</div>
-<div class="radio">
-  <label>
-    <input type="radio" name="{{ id_prefix }}_hasnohazards" value="false" {% if (data is not none and "hazards" in data and data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'false') %}checked="checked"{% endif %}>
-    {{ _('This object poses the following hazards:') }}
-  </label>
-</div>
-<div class="ghs-hazards-selection">
-  {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
-  {% for hazard_index in hazard_titles.keys() | sort %}
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+    {% set conflicting = 'imported' in data %}
+    {% if conflicting%}
+      {% set imported_data = data['imported']%}
+      {% set local_data = data['local'] %}
+      {% set data = data['local'] %}
+    {% endif %}
+{% endif %}
+
+{% if conflicting %}
+<div class="has-conflict row hazard-conflict">
+
+<div class="col-sm-11">
+{% endif %}
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="field exists" />
+  <div class="radio">
     <label>
-      <input type="checkbox" id="{{ id_prefix }}_ghs0{{ hazard_index }}" name="{{ id_prefix }}_ghs0{{ hazard_index }}" {% if (data is not none and "hazards" in data and hazard_index in data["hazards"]) or (id_prefix+('_ghs0%d' | format(hazard_index)) in form_data) %}checked="checked"{% endif %}><span>{{ hazard_titles[hazard_index] }}</span><img src="{{ fingerprinted_static('sampledb/img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
+      <input type="radio" name="{{ id_prefix }}_hasnohazards" value="true" {% if (data is not none and "hazards" in data and not data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'true') %}checked="checked"{% endif %}>
+      {{ _('This object does not pose any of these hazards.')}}
     </label>
-  {% endfor %}
+  </div>
+  <div class="radio">
+    <label>
+      <input type="radio" name="{{ id_prefix }}_hasnohazards" value="false" {% if (data is not none and "hazards" in data and data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'false') %}checked="checked"{% endif %}>
+      {{ _('This object poses the following hazards:') }}
+    </label>
+  </div>
+  <div class="ghs-hazards-selection">
+    {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
+    {% for hazard_index in hazard_titles.keys() | sort %}
+      <label>
+        <input type="checkbox" id="{{ id_prefix }}_ghs0{{ hazard_index }}" name="{{ id_prefix }}_ghs0{{ hazard_index }}" {% if (data is not none and "hazards" in data and hazard_index in data["hazards"]) or (id_prefix+('_ghs0%d' | format(hazard_index)) in form_data) %}checked="checked"{% endif %}><span>{{ hazard_titles[hazard_index] }}</span><img src="{{ fingerprinted_static('sampledb/img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
+      </label>
+    {% endfor %}
+  </div>
+{% if conflicting %}
+
 </div>
+<div
+  class="col-sm-1"
+  data-field-type="hazards"
+  data-reference-field="[name='{{ id_prefix }}_hasnohazards']"
+  data-conflict="true"
+  data-content-local="{%- if local_data is not none and local_data['hazards'] -%}{{ local_data['hazards'] | base64encode }}{%- else -%}{{ [] | base64encode }}{%- endif -%}"
+  data-content-imported="{%- if imported_data is not none and imported_data['hazards'] -%}{{ imported_data['hazards'] | base64encode }}{%- else -%}{{ [] | base64encode }}{%- endif -%}"
+  data-ghs-hazard-prefix="{{ id_prefix }}_ghs0"
+>
+  <button class="btn btn-default dropdown-toggle conflict-dropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+  <ul class="dropdown-menu dropdown-menu-right">
+    <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _('Local Version') }}</button></li>
+    <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _('Imported Version') }} </button></li>
+  </ul>
+</div>
+</div>
+{% endif %}

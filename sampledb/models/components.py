@@ -22,6 +22,7 @@ class Component(Model):
     last_sync_timestamp: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     discoverable: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
     fed_login_available: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Component"]]
@@ -34,7 +35,8 @@ class Component(Model):
             address: typing.Optional[str] = None,
             last_sync_timestamp: typing.Optional[datetime.datetime] = None,
             discoverable: bool = True,
-            fed_login_available: bool = False
+            fed_login_available: bool = False,
+            is_hidden: bool = False,
     ) -> None:
         super().__init__(
             address=address,
@@ -43,7 +45,8 @@ class Component(Model):
             description=description,
             last_sync_timestamp=last_sync_timestamp,
             discoverable=discoverable,
-            fed_login_available=fed_login_available
+            fed_login_available=fed_login_available,
+            is_hidden=is_hidden,
         )
 
     def __repr__(self) -> str:

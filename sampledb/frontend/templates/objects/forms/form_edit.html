@@ -8,6 +8,10 @@
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
     <input type="hidden" name="array_buttons" id="input-array_buttons" value="[]" />
+    {% if solve_conflicts %}
+      <input type="hidden" name="conflict_version_id" value="{{ conflict_version_id }}" />
+      <input type="hidden" name="conflict_component_id" value="{{ conflict_component_id }}" />
+    {% endif %}
     {% set id_prefix_root = "object" %}
     {% set property_path = () %}
     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}

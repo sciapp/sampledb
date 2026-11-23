@@ -1,6 +1,22 @@
 {% extends "objects/forms/table_property.html" %}
 
+{% set imported_data = none %}
+{% set local_data = none %}
+{% set conflicting = false %}
+{% if data %}
+  {% set conflicting = data is not none and ('local' in data or 'imported' in data)  %}
+  {% if conflicting %}
+    {% set imported_data = data.get('imported') %}
+    {% set local_data = data.get('local') %}
+    {% set data = data.get('local') or data.get('imported') %}
+  {% endif %}
+{% endif %}
+
 {% block property_field %}
+  {% if conflicting and 'choices' not in schema %}
+  <div class="has-conflict input-group">
+  {% endif %}
+
   {% if schema.multiline or schema.markdown %}
     {% set num_rows = 1 %}
     {% include "objects/fields/text_multiline_field.html" %}
@@ -8,5 +24,23 @@
     {% include "objects/fields/text_choices_field.html" %}
   {% else %}
     {% include "objects/fields/text_plain_field.html" %}
+  {% endif %}
+
+  {% if conflicting and 'choices' not in schema %}
+    <div
+      class="input-group-btn"
+      data-field-type="text"
+      data-reference-field="input[name='{{ id_prefix }}_text']"
+      data-conflict="true"
+      data-content-local="{% if local_data is not none and 'text' in local_data %}{{ local_data.text | get_all_translated_texts('\n') | base64encode }}{% endif %}"
+      data-content-imported="{% if imported_data is not none and 'text' in imported_data %}{{ imported_data.text | get_all_translated_texts('\n') | base64encode }}{% endif %}"
+    >
+      <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" ><span class="caret"></span></button>
+      <ul class="dropdown-menu dropdown-menu-right">
+        <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _("Local Version") }}</button></li>
+        <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _("Imported Version") }}</button></li>
+      </ul>
+    </div>
+  </div>
   {% endif %}
 {% endblock %}

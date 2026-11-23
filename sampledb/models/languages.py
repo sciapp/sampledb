@@ -16,6 +16,10 @@ __author__ = 'Du Kim Nguyen <k.nguyen@fz-juelich.de>'
 class Language(Model):
     __tablename__ = 'languages'
 
+    __table_args__ = (
+        db.UniqueConstraint('lang_code', 'fed_lang_id', 'component_id', name='languages_lang_code_fed_lang_id_component_id_key'),
+    )
+
     # default language IDs
     # offset to -100 to allow later addition of new default languages
     # see: migrations/languages_create_default_languages.py
@@ -23,7 +27,7 @@ class Language(Model):
     GERMAN: int = -100 + 2
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    lang_code: Mapped[str] = db.Column(db.String, nullable=False, unique=True)
+    lang_code: Mapped[str] = db.Column(db.String, nullable=False, unique=False)
     names: Mapped[typing.Dict[str, str]] = db.Column(db.JSON, nullable=False)
     datetime_format_datetime: Mapped[str] = db.Column(db.String, nullable=False)
     datetime_format_moment: Mapped[str] = db.Column(db.String, nullable=False)
@@ -31,6 +35,8 @@ class Language(Model):
     enabled_for_user_interface: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
     datetime_format_moment_output: Mapped[str] = db.Column(db.String, nullable=False, default='lll', server_default='lll')
     date_format_moment_output: Mapped[str] = db.Column(db.String, nullable=False, default='ll', server_default='ll')
+    fed_lang_id: Mapped[int] = db.Column(db.Integer, default=None, server_default=db.null())
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), default=None, server_default=db.null())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Language"]]
@@ -44,7 +50,9 @@ class Language(Model):
             datetime_format_moment_output: str,
             date_format_moment_output: str,
             enabled_for_input: bool,
-            enabled_for_user_interface: bool
+            enabled_for_user_interface: bool,
+            fed_lang_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None
     ) -> None:
         super().__init__(
             names=names,
@@ -54,7 +62,9 @@ class Language(Model):
             datetime_format_moment_output=datetime_format_moment_output,
             date_format_moment_output=date_format_moment_output,
             enabled_for_input=enabled_for_input,
-            enabled_for_user_interface=enabled_for_user_interface
+            enabled_for_user_interface=enabled_for_user_interface,
+            fed_lang_id=fed_lang_id,
+            component_id=component_id
         )
 
     def __eq__(self, other: typing.Any) -> bool:

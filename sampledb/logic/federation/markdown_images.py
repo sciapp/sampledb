@@ -2,6 +2,9 @@ import base64
 import binascii
 import typing
 
+import flask
+
+from .components import _get_or_create_component_id
 from ..markdown_images import get_markdown_image
 from ..components import Component
 from .. import errors
@@ -26,8 +29,17 @@ def import_markdown_image(
         component: Component
 ) -> None:
     filename, data = markdown_image_data
-    if get_markdown_image(filename, None, component.id) is None:
-        md_image = MarkdownImage(filename, data, None, permanent=True, component_id=component.id)
+    component_id: typing.Optional[int] = component.id
+    pure_filename = filename
+    if '/' in filename:
+        component_uuid, pure_filename = filename.split('/')
+        if component_uuid == flask.current_app.config['FEDERATION_UUID']:
+            component_id = None
+        else:
+            component_id = _get_or_create_component_id(component_uuid=component_uuid)
+
+    if get_markdown_image(pure_filename, None, component_id) is None:
+        md_image = MarkdownImage(pure_filename, data, None, permanent=True, component_id=component_id)
         db.session.add(md_image)
         db.session.commit()
 

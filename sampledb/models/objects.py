@@ -8,11 +8,12 @@ from .users import User
 from .actions import Action
 from .components import Component
 from .eln_imports import ELNImport
-from .versioned_json_object_tables import VersionedJSONSerializableObjectTables, Object
+from .versioned_json_object_tables import VersionedJSONSerializableObjectTables, Object, FederatedObject
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 __all__ = [
+    'FederatedObject',
     'Object',
     'Objects'
 ]
