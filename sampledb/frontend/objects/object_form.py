@@ -311,6 +311,10 @@ def show_object_form(
                     logic.temporary_files.replace_file_reference_ids(object_data, actual_temporary_file_id_map)
                     update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
                     flask.flash(_('The object was updated successfully.'), 'success')
+                    if form_data['action_submit'] == 'inline_edit':
+                        return flask.jsonify({
+                            "message": "The object was updated successfully.",
+                        }), 200
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
 
     _update_recipes_for_input(schema)
