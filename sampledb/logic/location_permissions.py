@@ -8,7 +8,7 @@ import typing
 import flask
 
 from . import locations, users
-from ..models import Permissions, AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
+from ..models import Permissions, AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions, Location
 from ..models.locations import location_user_association_table
 from .permissions import ResourcePermissions
 from .. import db
@@ -19,6 +19,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 location_permissions = ResourcePermissions(
     resource_id_name='location_id',
+    resource_id_column=Location.__table__.c.id,
     all_user_permissions_table=AllUserLocationPermissions,
     anonymous_user_permissions_table=None,
     user_permissions_table=UserLocationPermissions,
@@ -57,11 +58,8 @@ def get_user_permissions_for_multiple_locations(
     if not location_ids:
         return {}
 
-    additional_permissions = {
-        location_id: Permissions.NONE
-        for location_id in location_ids
-    }
     if user_id is None:
+        # locations do not have permissions for anonymous users at this time
         return {
             location_id: Permissions.NONE
             for location_id in location_ids
@@ -74,10 +72,13 @@ def get_user_permissions_for_multiple_locations(
         if not (include_admin_permissions and user.has_admin_permissions):
             max_permissions = min(max_permissions, Permissions.READ)
 
-    for location_id in location_ids:
-        # apply responsible user permissions
-        if bool(db.session.query(db.exists().where(location_user_association_table.c.location_id == location_id, location_user_association_table.c.user_id == user_id)).scalar()):
-            additional_permissions[location_id] = min(Permissions.GRANT, max_permissions)
+    location_responsible_user_query = db.select(
+        location_user_association_table.c.location_id,
+        db.cast(Permissions.GRANT, UserLocationPermissions.permissions.type).label("permissions")
+    ).where(
+        location_user_association_table.c.user_id == user_id,
+        location_user_association_table.c.location_id.in_(location_ids)
+    )
 
     # resource independent permissions
     return location_permissions.get_permissions_for_user_for_multiple_resources(
@@ -88,7 +89,7 @@ def get_user_permissions_for_multiple_locations(
         include_projects=include_projects,
         include_admin_permissions=include_admin_permissions,
         limit_readonly_users=True,
-        additional_permissions=additional_permissions,
+        additional_permissions_queries=[location_responsible_user_query],
         max_permissions=max_permissions
     )
 

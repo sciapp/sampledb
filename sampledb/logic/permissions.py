@@ -29,15 +29,19 @@ for the individual resource types, as a base to avoid code duplication.
 """
 import typing
 
+import sqlalchemy
+
 from . import users, groups, projects
 from ..models import Permissions
-from .. import db
+from .. import db, models
 
 
 class ResourcePermissions:
     def __init__(
             self,
+            *,
             resource_id_name: str,
+            resource_id_column: sqlalchemy.ColumnElement[int],
             all_user_permissions_table: typing.Any,
             anonymous_user_permissions_table: typing.Any,
             user_permissions_table: typing.Any,
@@ -46,12 +50,14 @@ class ResourcePermissions:
             check_resource_exists: typing.Callable[[int], typing.Any]
     ) -> None:
         self._resource_id_name = resource_id_name
+        self._resource_id_column = resource_id_column
         self._all_user_permissions_table = all_user_permissions_table
         self._anonymous_user_permissions_table = anonymous_user_permissions_table
         self._user_permissions_table = user_permissions_table
         self._group_permissions_table = group_permissions_table
         self._project_permissions_table = project_permissions_table
         self._check_resource_exists = check_resource_exists
+        self._permissions_type = self._user_permissions_table.permissions.type
 
     def _get_user_independent_permissions(
             self,
@@ -469,6 +475,137 @@ class ResourcePermissions:
             max_permissions=max_permissions
         )[resource_id]
 
+    def get_combined_permissions_query(
+            self,
+            user_id: typing.Optional[int],
+            resource_id_filter: typing.Callable[[sqlalchemy.ColumnElement[int]], sqlalchemy.ColumnElement[bool]],
+            *,
+            include_all_users: bool = False,
+            include_anonymous_users: bool = False,
+            include_groups: bool = False,
+            include_projects: bool = False,
+            include_admin_permissions: bool = False,
+            limit_readonly_users: bool = False,
+            additional_permissions_queries: typing.Sequence[typing.Any] = (),
+            max_permissions: Permissions = Permissions.GRANT
+    ) -> sqlalchemy.Select[int, Permissions]:
+        if user_id is not None:
+            user = users.get_user(user_id)
+            if limit_readonly_users and user.is_readonly:
+                max_permissions = Permissions.READ
+            if include_admin_permissions and user.has_admin_permissions:
+                return typing.cast(
+                    sqlalchemy.Select[int, Permissions],
+                    db.select(
+                        self._resource_id_column.label(self._resource_id_name),
+                        db.cast(max_permissions, self._permissions_type).label("permissions")
+                    ).filter(
+                        resource_id_filter(self._resource_id_column)
+                    ).group_by(db.column(self._resource_id_name, db.Integer))
+                )
+
+        permissions_queries: list[sqlalchemy.Select[int, Permissions]] = []
+
+        if additional_permissions_queries:
+            permissions_queries.extend(additional_permissions_queries)
+
+        none_permissions_query = db.select(
+            self._resource_id_column.label(self._resource_id_name),
+            db.cast(Permissions.NONE, self._permissions_type).label("permissions")
+        ).filter(
+            resource_id_filter(self._resource_id_column)
+        )
+        permissions_queries.append(none_permissions_query)
+
+        if include_anonymous_users and self._anonymous_user_permissions_table:
+            resource_id_column = getattr(self._anonymous_user_permissions_table, self._resource_id_name)
+            permissions_from_anonymous_users_stmt = db.select(
+                resource_id_column,
+                self._anonymous_user_permissions_table.permissions
+            ).filter(
+                resource_id_filter(resource_id_column)
+            )
+            permissions_queries.append(permissions_from_anonymous_users_stmt)
+
+        if user_id is not None and include_all_users and self._all_user_permissions_table:
+            resource_id_column = getattr(self._all_user_permissions_table, self._resource_id_name)
+            permissions_from_all_users_stmt = db.select(
+                resource_id_column,
+                self._all_user_permissions_table.permissions
+            ).filter(
+                resource_id_filter(resource_id_column)
+            )
+            permissions_queries.append(permissions_from_all_users_stmt)
+
+        if user_id is not None and self._user_permissions_table:
+            resource_id_column = getattr(self._user_permissions_table, self._resource_id_name)
+            permissions_from_user_stmt = db.select(
+                resource_id_column,
+                self._user_permissions_table.permissions
+            ).filter(
+                user_id == self._user_permissions_table.user_id,
+                resource_id_filter(resource_id_column)
+            )
+            permissions_queries.append(permissions_from_user_stmt)
+
+        if user_id is not None and include_groups and self._group_permissions_table:
+            resource_id_column = getattr(self._group_permissions_table, self._resource_id_name)
+            permissions_from_groups_stmt = db.select(
+                resource_id_column,
+                self._group_permissions_table.permissions
+            ).filter(
+                self._group_permissions_table.group_id == models.groups.association_table.c.group_id,
+                user_id == models.groups.association_table.c.user_id,
+                resource_id_filter(resource_id_column)
+            )
+            permissions_queries.append(permissions_from_groups_stmt)
+
+        if user_id is not None and include_projects and self._project_permissions_table:
+            resource_id_column = getattr(self._project_permissions_table, self._resource_id_name)
+            permissions_from_projects_stmt = db.select(
+                resource_id_column,
+                db.func.least(
+                    self._project_permissions_table.permissions,
+                    models.projects.UserProjectPermissions.permissions,
+                    type_=self._permissions_type
+                ).label('permissions')
+            ).filter(
+                self._project_permissions_table.project_id == models.projects.UserProjectPermissions.project_id,
+                user_id == models.projects.UserProjectPermissions.user_id,
+                resource_id_filter(resource_id_column)
+            )
+            permissions_queries.append(permissions_from_projects_stmt)
+
+            if include_groups:
+                permissions_from_group_projects_stmt = db.select(
+                    resource_id_column,
+                    db.func.least(
+                        self._project_permissions_table.permissions,
+                        models.projects.GroupProjectPermissions.permissions,
+                        type_=self._permissions_type
+                    ).label('permissions')
+                ).filter(
+                    self._project_permissions_table.project_id == models.projects.GroupProjectPermissions.project_id,
+                    models.groups.association_table.c.group_id == models.projects.GroupProjectPermissions.group_id,
+                    user_id == models.groups.association_table.c.user_id,
+                    resource_id_filter(resource_id_column)
+                )
+                permissions_queries.append(permissions_from_group_projects_stmt)
+
+        return typing.cast(
+            sqlalchemy.Select[int, Permissions],
+            db.select(
+                db.column(self._resource_id_name, db.Integer),
+                db.func.least(
+                    db.func.max(db.column("permissions", self._permissions_type)),
+                    db.cast(max_permissions, self._permissions_type),
+                    type_=self._permissions_type,
+                ).label("permissions"),
+            ).select_from(
+                db.union(*permissions_queries).subquery()
+            ).group_by(db.column(self._resource_id_name, db.Integer))
+        )
+
     def get_permissions_for_user_for_multiple_resources(
             self,
             resource_ids: typing.Sequence[int],
@@ -481,6 +618,7 @@ class ResourcePermissions:
             include_admin_permissions: bool = False,
             limit_readonly_users: bool = False,
             additional_permissions: typing.Optional[typing.Mapping[int, Permissions]] = None,
+            additional_permissions_queries: typing.Sequence[typing.Any] = (),
             max_permissions: Permissions = Permissions.GRANT
     ) -> typing.Mapping[int, Permissions]:
         """
@@ -500,125 +638,42 @@ class ResourcePermissions:
         :param include_admin_permissions: whether admin permissions should be included
         :param limit_readonly_users: whether readonly users should be limited to READ permissions
         :param additional_permissions: additional permissions to assume for this user, or None
+        :param additional_permissions_queries: additional queries returning rows of resource IDs and permissions
         :param max_permissions: the maximum permissions to return
         :return: a dict mapping the resource IDs to the combined permissions
             for the given user
         """
-        if not resource_ids:
-            return {}
-
-        for resource_id in resource_ids:
-            self._check_resource_exists(resource_id)
-
-        permissions = {
-            resource_id: additional_permissions.get(resource_id, Permissions.NONE) if additional_permissions else Permissions.NONE
-            for resource_id in resource_ids
-        }
-
-        if include_anonymous_users:
-            anonymous_user_permissions = self.get_permissions_for_anonymous_users_for_multiple_resources(
-                resource_ids=[
-                    resource_id
-                    for resource_id in resource_ids
-                    if max_permissions not in permissions[resource_id]
-                ]
-            )
-            for resource_id in anonymous_user_permissions:
-                permissions[resource_id] = max(permissions[resource_id], anonymous_user_permissions[resource_id])
-
-        if user_id is None:
-            return permissions
-
-        # ensure that the user can be found
-        user = users.get_user(user_id)
-
-        # readonly users may never have more than READ permissions
-        if user.is_readonly and limit_readonly_users:
-            max_permissions = min(Permissions.READ, max_permissions)
-
-        if include_admin_permissions and user.has_admin_permissions:
-            for resource_id in resource_ids:
-                if max_permissions not in permissions[resource_id]:
-                    # administrators have GRANT permissions if they use admin permissions
-                    permissions[resource_id] = max(permissions[resource_id], Permissions.GRANT)
-
-        if include_all_users:
-            all_user_permissions = self.get_permissions_for_all_users_for_multiple_resources(
-                resource_ids=[
-                    resource_id
-                    for resource_id in resource_ids
-                    if max_permissions not in permissions[resource_id]
-                ]
-            )
-            for resource_id in all_user_permissions:
-                permissions[resource_id] = max(permissions[resource_id], all_user_permissions[resource_id])
-
-        non_max_permissions_resource_ids = [
-            resource_id
-            for resource_id in resource_ids
-            if max_permissions not in permissions[resource_id]
-        ]
-        if non_max_permissions_resource_ids:
-            resource_id_column = getattr(self._user_permissions_table, self._resource_id_name)
-            permissions_rows = self._user_permissions_table.query.filter_by(
-                user_id=user_id
-            ).filter(
-                resource_id_column.in_(non_max_permissions_resource_ids)
-            ).all()
-            for permissions_row in permissions_rows:
-                resource_id = getattr(permissions_row, self._resource_id_name)
-                permissions[resource_id] = max(permissions[resource_id], permissions_row.permissions)
-
-        if include_groups:
-            non_max_permissions_resource_ids = [
-                resource_id
+        additional_permissions_queries = list(additional_permissions_queries)
+        if additional_permissions:
+            additional_permissions_rows = db.values(
+                db.column(self._resource_id_name, db.Integer),
+                db.column("permissions", self._permissions_type),
+                name="additional_permissions_rows",
+            ).data([
+                (resource_id, additional_permissions.get(resource_id, Permissions.NONE))
                 for resource_id in resource_ids
-                if max_permissions not in permissions[resource_id]
-            ]
-            if non_max_permissions_resource_ids:
-                group_ids = [
-                    group.id
-                    for group in groups.get_user_groups(user_id)
-                ]
-                if group_ids:
-                    resource_id_column = getattr(self._group_permissions_table, self._resource_id_name)
-                    permissions_rows = self._group_permissions_table.query.filter(
-                        self._group_permissions_table.group_id.in_(group_ids),
-                        resource_id_column.in_(non_max_permissions_resource_ids)
-                    ).all()
-                    for permissions_row in permissions_rows:
-                        resource_id = getattr(permissions_row, self._resource_id_name)
-                        permissions[resource_id] = max(permissions[resource_id], permissions_row.permissions)
+            ])
 
-        if include_projects:
-            non_max_permissions_resource_ids = [
-                resource_id
-                for resource_id in resource_ids
-                if max_permissions not in permissions[resource_id]
-            ]
-            if non_max_permissions_resource_ids:
-                project_ids = [
-                    project.id
-                    for project in projects.get_user_projects(user_id, include_groups=include_groups)
-                ]
-                if project_ids:
-                    user_project_permissions = {
-                        project_id: projects.get_user_project_permissions(project_id=project_id, user_id=user_id, include_groups=include_groups)
-                        for project_id in project_ids
-                    }
-                    resource_id_column = getattr(self._project_permissions_table, self._resource_id_name)
-                    permissions_rows = self._project_permissions_table.query.filter(
-                        self._project_permissions_table.project_id.in_(project_ids),
-                        resource_id_column.in_(non_max_permissions_resource_ids)
-                    ).all()
-                    for permissions_row in permissions_rows:
-                        resource_id = getattr(permissions_row, self._resource_id_name)
-                        max_project_permissions = user_project_permissions[permissions_row.project_id]
-                        permissions[resource_id] = max(permissions[resource_id], min(max_project_permissions, permissions_row.permissions))
-
+            resource_id_column = getattr(additional_permissions_rows.c, self._resource_id_name)
+            additional_permissions_stmt = db.select(
+                resource_id_column, additional_permissions_rows.c.permissions.cast(self._permissions_type)
+            )
+            additional_permissions_queries.append(additional_permissions_stmt)
+        permissions_query = self.get_combined_permissions_query(
+            resource_id_filter=lambda resource_id_column: resource_id_column.in_(resource_ids),
+            user_id=user_id,
+            include_all_users=include_all_users,
+            include_anonymous_users=include_anonymous_users,
+            include_groups=include_groups,
+            include_projects=include_projects,
+            include_admin_permissions=include_admin_permissions,
+            limit_readonly_users=limit_readonly_users,
+            additional_permissions_queries=additional_permissions_queries,
+            max_permissions=max_permissions,
+        )
         return {
-            resource_id: min(permissions[resource_id], max_permissions)
-            for resource_id in resource_ids
+            resource_id: permissions_from_row
+            for resource_id, permissions_from_row in db.session.execute(permissions_query).fetchall()
         }
 
     def copy_permissions(self, source_resource_id: int, target_resource_id: int) -> None:

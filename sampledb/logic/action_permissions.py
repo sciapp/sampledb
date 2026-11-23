@@ -6,6 +6,7 @@
 import typing
 
 import flask
+import sqlalchemy
 
 from . import actions
 from . import users
@@ -20,6 +21,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 action_permissions = ResourcePermissions(
     resource_id_name='action_id',
+    resource_id_column=models.Action.__table__.c.id,
     all_user_permissions_table=AllUserActionPermissions,
     anonymous_user_permissions_table=None,
     user_permissions_table=UserActionPermissions,
@@ -80,6 +82,76 @@ def get_user_action_permissions(
     )[action_id]
 
 
+def _build_additional_queries(
+        user_id: int,
+        include_instrument_responsible_users: bool,
+        action_id_filter: typing.Callable[[sqlalchemy.ColumnElement[int]], sqlalchemy.ColumnElement[bool]],
+) -> list[sqlalchemy.Select[int, Permissions]]:
+    additional_permissions_queries = []
+
+    action_id_column = models.Action.__table__.c.id
+
+    action_owner_query = db.select(
+        action_id_column.label("action_id"),
+        db.cast(Permissions.GRANT, models.UserActionPermissions.permissions.type).label("permissions")
+    ).where(
+        models.Action.user_id == user_id,
+        action_id_filter(action_id_column)
+    )
+    additional_permissions_queries.append(action_owner_query)
+
+    if include_instrument_responsible_users:
+        instrument_responsible_user_query = db.select(
+            action_id_column.label("action_id"),
+            db.cast(Permissions.GRANT, models.UserActionPermissions.permissions.type).label("permissions")
+        ).where(
+            models.Action.instrument_id == instrument_user_association_table.c.instrument_id,
+            instrument_user_association_table.c.user_id == user_id,
+            action_id_filter(action_id_column)
+        )
+        additional_permissions_queries.append(instrument_responsible_user_query)
+
+    return additional_permissions_queries
+
+
+def get_permissions_query(
+        action_ids: typing.Optional[typing.Sequence[int]],
+        user_id: int,
+        *,
+        include_groups: bool = True,
+        include_projects: bool = True,
+        include_admin_permissions: bool = True,
+        include_instrument_responsible_users: bool = True,
+        max_permissions: Permissions = Permissions.GRANT
+) -> sqlalchemy.Select[int, Permissions]:
+
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        include_instrument_responsible_users = False
+
+    if action_ids:
+        def resource_id_filter(resource_id_column: sqlalchemy.ColumnElement[int]) -> sqlalchemy.ColumnElement[bool]:
+            return resource_id_column.in_(action_ids)
+    else:
+        def resource_id_filter(resource_id_column: sqlalchemy.ColumnElement[int]) -> sqlalchemy.ColumnElement[bool]:
+            return sqlalchemy.true()
+    return action_permissions.get_combined_permissions_query(
+        resource_id_filter=resource_id_filter,
+        user_id=user_id,
+        include_all_users=True,
+        include_anonymous_users=False,
+        include_groups=include_groups,
+        include_projects=include_projects,
+        include_admin_permissions=include_admin_permissions,
+        limit_readonly_users=True,
+        additional_permissions_queries=_build_additional_queries(
+            user_id=user_id,
+            include_instrument_responsible_users=include_instrument_responsible_users,
+            action_id_filter=resource_id_filter,
+        ),
+        max_permissions=max_permissions,
+    )
+
+
 def get_user_permissions_for_multiple_actions(
         action_ids: typing.Sequence[int],
         user_id: typing.Optional[int],
@@ -94,65 +166,24 @@ def get_user_permissions_for_multiple_actions(
         return {}
 
     if user_id is None:
+        # actions do not have permissions for anonymous users at this time
         return {
             action_id: Permissions.NONE
             for action_id in action_ids
         }
 
-    if flask.current_app.config['DISABLE_INSTRUMENTS']:
-        include_instrument_responsible_users = False
-
-    additional_permissions = {
-        action_id: Permissions.NONE
-        for action_id in action_ids
-    }
-
-    for action_id in action_ids:
-        # users have GRANT permissions for actions they own
-        owner_id = actions.get_action_owner_id(action_id)
-        if owner_id is not None and owner_id == user_id:
-            additional_permissions[action_id] = Permissions.GRANT
-
-    if include_instrument_responsible_users:
-        # instrument responsible users have GRANT permissions for actions of their instrument
-        user_is_instrument_responsible = _is_user_responsible_for_actions_instruments(
-            user_id=user_id,
-            action_ids=[
-                action_id
-                for action_id in action_ids
-                if Permissions.GRANT not in additional_permissions[action_id]
-            ]
-        )
-        for action_id in user_is_instrument_responsible:
-            if user_is_instrument_responsible[action_id]:
-                additional_permissions[action_id] = max(additional_permissions[action_id], Permissions.GRANT)
-
-    # resource independent permissions
-    return action_permissions.get_permissions_for_user_for_multiple_resources(
-        resource_ids=action_ids,
+    permissions_query = get_permissions_query(
+        action_ids=action_ids,
         user_id=user_id,
-        include_all_users=True,
         include_groups=include_groups,
         include_projects=include_projects,
         include_admin_permissions=include_admin_permissions,
-        limit_readonly_users=True,
-        additional_permissions=additional_permissions,
-        max_permissions=max_permissions
+        include_instrument_responsible_users=include_instrument_responsible_users,
+        max_permissions=max_permissions,
     )
-
-
-def _is_user_responsible_for_actions_instruments(
-        user_id: int,
-        action_ids: typing.Sequence[int]
-) -> typing.Mapping[int, bool]:
-    responsible_action_id_rows = db.session.query(models.Action.id).filter(
-        models.Action.id.in_(tuple(action_ids)),
-        models.Action.instrument_id == instrument_user_association_table.c.instrument_id,
-        instrument_user_association_table.c.user_id == user_id
-    ).all()
     return {
-        action_id: (action_id,) in responsible_action_id_rows
-        for action_id in action_ids
+        resource_id: permissions_from_row
+        for resource_id, permissions_from_row in db.session.execute(permissions_query).fetchall()
     }
 
 
@@ -176,19 +207,28 @@ def get_actions_with_permissions(user_id: typing.Optional[int], permissions: Per
     if user_id is not None:
         # ensure that the user can be found
         users.check_user_exists(user_id)
+    # actions do not have permissions for anonymous users at this time
+    if user_id is None:
+        return []
     if permissions == Permissions.NONE:
         return []
-    all_actions = actions.get_actions(action_type_id=action_type_id)
-    action_permissions = get_user_permissions_for_multiple_actions(
-        action_ids=[action.id for action in all_actions],
+
+    permissions_query = get_permissions_query(
+        action_ids=None,
         user_id=user_id,
-        max_permissions=permissions
     )
-    actions_with_permissions = []
-    for action in all_actions:
-        if permissions in action_permissions.get(action.id, Permissions.NONE):
-            actions_with_permissions.append(action)
-    return actions_with_permissions
+    permissions_subquery = permissions_query.having(
+        permissions_query.selected_columns.permissions >= permissions
+    ).subquery()
+    actions_query = models.Action.query.filter(
+        models.Action.id.in_(db.select(permissions_subquery.c.action_id))
+    )
+    if action_type_id is not None:
+        actions_query = actions_query.filter_by(action_type_id=action_type_id)
+    return [
+        Action.from_database(action)
+        for action in actions_query.all()
+    ]
 
 
 def get_sorted_actions_for_user(
@@ -213,25 +253,32 @@ def get_sorted_actions_for_user(
     :raise errors.UserDoesNotExistError: if no user with the given user ID
         exists
     """
-    user = users.get_user(user_id)
-    possibly_visible_actions = []
-    for action in actions.get_actions(
-        action_type_id=action_type_id
-    ):
-        if owner_id is not None and action.user_id != owner_id:
-            continue
-        if not include_hidden_actions and action.is_hidden and not user.is_admin and owner_id != user_id:
-            continue
-        possibly_visible_actions.append(action)
-    visible_actions = []
-    action_permissions = {}
-    permissions = get_user_permissions_for_multiple_actions(
+    permissions_query = get_permissions_query(
+        action_ids=None,
         user_id=user_id,
-        action_ids=[action.id for action in possibly_visible_actions],
-        max_permissions=Permissions.READ
     )
-    for action in possibly_visible_actions:
-        if Permissions.READ in permissions[action.id]:
-            visible_actions.append(action)
-            action_permissions[action.id] = permissions[action.id]
+    permissions_subquery = permissions_query.having(
+        permissions_query.selected_columns.permissions >= Permissions.READ
+    ).subquery()
+    actions_query = models.Action.query.filter(
+        models.Action.id.in_(db.select(permissions_subquery.c.action_id))
+    )
+
+    if owner_id is not None:
+        actions_query = actions_query.filter_by(
+            user_id=owner_id
+        )
+    if not include_hidden_actions:
+        user = users.get_user(user_id)
+        if not user.is_admin:
+            actions_query = actions_query.filter_by(
+                is_hidden=False
+            )
+
+    if action_type_id is not None:
+        actions_query = actions_query.filter_by(type_id=action_type_id)
+    visible_actions = [
+        Action.from_database(action)
+        for action in actions_query.all()
+    ]
     return actions.sort_actions_for_user(actions=visible_actions, user_id=user_id)
