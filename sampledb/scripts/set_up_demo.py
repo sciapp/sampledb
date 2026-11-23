@@ -777,6 +777,17 @@ This example shows how Markdown can be used for instrument Notes.
                                 'object_id': 1
                             }
                         ]
+                    },
+                    'conditional_field': {
+                        'title': 'Conditional Field A',
+                        'type': 'text',
+                        'conditions': [
+                            {
+                                'type': 'action_equals',
+                                'property_name': 'object',
+                                'action_id': 1
+                            }
+                        ]
                     }
                 },
                 'required': ['name']
