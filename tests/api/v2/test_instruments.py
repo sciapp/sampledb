@@ -1,0 +1,148 @@
+# coding: utf-8
+"""
+
+"""
+import flask
+import requests
+import pytest
+
+import sampledb
+import sampledb.logic
+import sampledb.models
+
+
+UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+
+
+@pytest.fixture
+def auth_user(flask_server):
+    with flask_server.app.app_context():
+        user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.logic.authentication.add_other_authentication(user.id, 'username', 'password')
+        assert user.id is not None
+    return ('username', 'password'), user
+
+
+@pytest.fixture
+def auth(auth_user):
+    return auth_user[0]
+
+
+@pytest.fixture
+def user(auth_user):
+    return auth_user[1]
+
+
+@pytest.fixture
+def location(flask_server, user):
+    with flask_server.app.app_context():
+        return sampledb.logic.locations.create_location(
+            name={"en": "Example Location"},
+            description={"en": ""},
+            parent_location_id=None,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+
+
+def test_get_instrument(flask_server, auth, user, location):
+    flask.current_app.config["SERVER_NAME"] = "localhost"
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/1', auth=auth)
+    assert r.status_code == 404
+    assert r.json() == {
+        "detail": "Instrument #1 does not exist.",
+        "errors": [],
+        "status": 404,
+        "title": "The requested instrument does not exist.",
+        "type": "http://localhost/api/v2/errors/InstrumentNotFound",
+    }
+
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument.id,
+        name="Example Instrument",
+        short_description='This is the short description',
+        description="This is an example instrument"
+    )
+    instrument = sampledb.logic.instruments.get_instrument(instrument.id)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/{}'.format(instrument.id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == {
+        'instrument_id': instrument.id,
+        'name': instrument.name,
+        'short_description': instrument.short_description,
+        'description': instrument.description,
+        'is_hidden': False,
+        'instrument_scientists': [],
+        'location_id': None,
+        'fed_id': None,
+        'component_id': None,
+    }
+
+    sampledb.logic.instruments.set_instrument_location(instrument.id, location.id)
+    sampledb.logic.instruments.add_instrument_responsible_user(instrument.id, user.id)
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/{}'.format(instrument.id), auth=auth)
+    assert r.status_code == 200
+    assert r.json() == {
+        'instrument_id': instrument.id,
+        'name': instrument.name,
+        'short_description': instrument.short_description,
+        'description': instrument.description,
+        'is_hidden': False,
+        'instrument_scientists': [user.id],
+        'location_id': location.id,
+        'fed_id': None,
+        'component_id': None,
+    }
+
+
+def test_get_instruments(flask_server, auth):
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == []
+
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=instrument.id,
+        name="Example Instrument",
+        description="This is an example instrument"
+    )
+    instrument = sampledb.logic.instruments.get_instrument(instrument.id)
+    component = sampledb.logic.components.add_component(UUID_1, 'TestDB', None, '')
+    fed_instrument = sampledb.logic.instruments.create_instrument(component_id=component.id, fed_id=12)
+    sampledb.logic.instrument_translations.set_instrument_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        instrument_id=fed_instrument.id,
+        name="Example Fed Instrument",
+        description="This is an example fed instrument"
+    )
+    fed_instrument = sampledb.logic.instruments.get_instrument(fed_instrument.id)
+
+    r = requests.get(flask_server.base_url + 'api/v2/instruments/', auth=auth)
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            'instrument_id': instrument.id,
+            'name': instrument.name,
+            'short_description': instrument.short_description,
+            'description': instrument.description,
+            'is_hidden': False,
+            'instrument_scientists': [],
+            'location_id': None,
+            'fed_id': None,
+            'component_id': None,
+        },
+        {
+            'instrument_id': fed_instrument.id,
+            'name': fed_instrument.name,
+            'short_description': fed_instrument.short_description,
+            'description': fed_instrument.description,
+            'is_hidden': False,
+            'instrument_scientists': [],
+            'location_id': None,
+            'fed_id': fed_instrument.fed_id,
+            'component_id': component.id,
+        },
+    ]

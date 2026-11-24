@@ -68,8 +68,8 @@ psycopg2-binary==2.9.13
 py-minisign==0.21.1
 pyasn1==0.6.5
 pycparser==3.12
-pydantic==2.14.2
-pydantic_core==2.50.2
+pydantic==2.14.3
+pydantic_core==2.50.4
 pydyf==0.13.0
 Pygments==2.21.0
 pyOpenSSL==26.4.0
@@ -78,6 +78,7 @@ pyphen==0.18.1
 pysaml2==7.5.5
 python-dateutil==4.0.0
 pytz==2026.6
+PyYAML==6.0.3
 qrcode==8.2
 requests==2.34.2
 rich==15.0.0
