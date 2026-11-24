@@ -19,6 +19,12 @@ body {
     pointer-events: auto;
 }
 
+#upload-area > #input-file-text,
+#edit-upload-area > #input-edit-file-text {
+    /* Let the surrounding upload area receive file drops over the disabled field. */
+    pointer-events: none;
+}
+
 .navbar-static-top {
     margin-bottom: 0;
 }
